@@ -21,7 +21,16 @@ import type { CodeGraphProvider, ModelAdapter } from "./types.js";
 const roots: string[] = [];
 
 afterEach(async () => {
-  await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
+  // Several cases deliberately abandon a Runtime mid-Run next to a second
+  // writer on the same tree, so a queued ledger/session write can still land
+  // while the tree is being walked and surface as ENOTEMPTY on rmdir. force
+  // only swallows ENOENT, so retry the whole removal instead.
+  await Promise.all(roots.splice(0).map((root) => rm(root, {
+    recursive: true,
+    force: true,
+    maxRetries: 5,
+    retryDelay: 20,
+  })));
 });
 
 describe("G14 Runtime steering and cancellation", () => {
