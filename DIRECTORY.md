@@ -330,7 +330,6 @@ tracegraph-agent/
 └── docs/
     ├── README.md                   中英文文档入口与模块索引
     ├── modules/                    01–16 模块实现说明；14 为附件与多模态，15 为插件与扩展系统，16 为 G-08 Agent Team
-    ├── 12-能力差距对标与补强路线图.md  G-01..G-23 差距路线；已完成项与剩余依赖仍逐项标记
     ├── supply-chain-policy.md      exact/time-based/24h、manifest/lockfile guard、audit 与例外纪律
     ├── known-limitations-map.json  显式限制到实现/测试证据的 mapped/unmapped 机器可审计映射
     └── verification-map.md         已完成 G-xx（含 G-08/G-17/G-22/G-23）的实现文件、自动化断言、命令与明确边界映射
@@ -375,7 +374,7 @@ tracegraph-agent/
 
 1. **`.tracegraph/` 与 `~/.tracegraph/` 都是运行时数据不是源码**；前者由仓库 `.gitignore` 排除，后者本来就在仓库外。`.tracegraph/artifacts` 同时保存公开证据、G-02 外置 Context 原文与不进入公开 Wire 的恢复工件；`.tracegraph/wal/backups` 保存 rollback 所需的精确 before-image，`.tracegraph/recovery` 保存恢复尝试；`.tracegraph/memory/records.jsonl` 是 G-21 canonical Memory record，`.tracegraph/retrieval-index` 是可由其重建的 JSONL/BM25 投影。Artifact/WAL 等各自按实现收紧目录/文件权限并做 symlink/hash 校验，但这些运行数据整体仍不是静态加密或跨 Host 锁；Memory record 只在创建时请求 `0600`，当前 append store 不复核已有文件的 owner/mode/symlink，检索索引也只做单进程写队列而没有跨进程 writer lock，因此尤其不要让 CLI 本地镜像与独立 retrieval-service 直接共享同一个索引目录。`.tracegraph/model-config.json` 只含 `${secret:NAME}` 引用；`.tracegraph/token-calibration.json` 只含 provider/model、比例样本与 revision；可选 `.tracegraph/extensions.json` 只允许选择 Host 内置 trusted catalog id，`module` 不是可执行路径；可选 `.tracegraph/telemetry.json` 只应保存 sink 选项、endpoint 环境变量名与 `${secret:NAME}` authorization reference，不能保存明文 endpoint authorization/header。默认 Session 索引在 `~/.tracegraph/sessions`，只存 header + Event 引用，删除移到同级 `sessions-trash`。Session 引用不含 ledger locator，所以一个 Session root 必须固定配对一个 `dataDir`；多数据目录部署必须分别指定 `--session-dir`。macOS 的值在 Keychain；非 macOS 的 `~/.tracegraph/credentials.json` 强制 `0600`，但仍是 plaintext-at-rest。这些运行数据都不要提交或外发。Telemetry 的队列/错误状态也不在这些 durable 数据里；它们只在当前进程内且不参与恢复。
 2. **`apps/cli/.tracegraph/` 是残留空目录**：历史上从 `apps/cli` 作为 cwd 启动过一次 Host 留下的 `artifacts/events/projects` 三个空目录，不是 canonical 数据目录（canonical 是仓库根 `.tracegraph`），可以安全删除。
-3. **模块说明统一在 `docs/modules/01`–`16`**；`docs/` 根目录保留入口、路线图、verification map、供应链策略与机器可审计 limitation map。已知限制的唯一人类可读事实源仍是根目录 `KNOWN_LIMITATIONS.md`，不要再创建第二份叙述清单。
+3. **模块说明统一在 `docs/modules/01`–`16`**；`docs/` 根目录保留入口、verification map、供应链策略与机器可审计 limitation map。已知限制的唯一人类可读事实源仍是根目录 `KNOWN_LIMITATIONS.md`，不要再创建第二份叙述清单。
 4. **`examples/failing-typescript-repo` 是刻意失败模板**，其中的 bug 是设计的一部分，不要"顺手修好"；运行时会复制成一次性工作区再打补丁。
 5. **单元测试不逐个列在目录树里**：`apps/web` 与 `packages/{contracts,core,host,sdk,test-support}` 的 `*.test.ts(x)` 与源码同目录（`packages/codegraph` 例外，放在独立 `tests/` 目录）；只有三个跨层套件单列——`apps/cli/src/e2e.test.ts`（纵向 E2E）、`packages/test-support/src/runtime.integration.test.ts`（Runtime 集成）与 `packages/test-support/src/sandbox.integration.test.ts`（G-13 Host/Runtime 整链）。找用例时按这三条路径约定定位。
 6. **G-06（权限预设/策略引擎/审批令牌）已经接入主链**：

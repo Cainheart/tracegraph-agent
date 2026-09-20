@@ -9,7 +9,6 @@
 - [主 README](../README.md)：产品定位、已实现能力、五分钟启动和项目模式。
 - [已知限制](../KNOWN_LIMITATIONS.md)：当前真实边界及未完成项映射。
 - [目录说明](../DIRECTORY.md)：源码、配置和验证文件职责。
-- [能力路线图](12-能力差距对标与补强路线图.md)：G-01 至 G-23 的状态、依赖与验收。
 - [验证映射](verification-map.md)：需求、不变量、实现文件和可执行命令。
 
 ### 模块文档
@@ -39,7 +38,6 @@
 - [Chinese README](../README.md): the same content in Chinese.
 - [Known limitations](../KNOWN_LIMITATIONS.md): authoritative current boundaries.
 - [Repository map](../DIRECTORY.md): responsibility of source/configuration files.
-- [Capability roadmap](12-能力差距对标与补强路线图.md): G-01 through G-23.
 - [Verification map](verification-map.md): requirement-to-code-to-command evidence.
 - [Engineering and release](modules/13-工程化与发布.md): CI, coverage,
   supply-chain, and tag artifact contract.

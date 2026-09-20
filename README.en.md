@@ -56,11 +56,9 @@ produced it.
 - **Three working modes**: Plain Chat (no file or command capability), Managed
   Project, and Linked Local Folder.
 
-Full specifications, dependencies, and acceptance criteria for each G-xx item
-are in the [capability roadmap](docs/12-能力差距对标与补强路线图.md); per-file
-responsibilities are in the [repository map](DIRECTORY.md); requirement-to-
-assertion mapping is in the
-[verification map](docs/verification-map.md).
+The scope and verified boundaries of each G-01 through G-23 item are in the
+[verification map](docs/verification-map.md); per-file responsibilities are in
+the [repository map](DIRECTORY.md).
 
 ## What this is not
 
@@ -215,7 +213,6 @@ executable commands is in
 - [Documentation index](docs/README.md) — entry point for modules 01–19 and all reference documents
 - [Known limitations](KNOWN_LIMITATIONS.md) — the single source of truth for boundaries
 - [Repository map](DIRECTORY.md) — responsibility of every source and configuration file
-- [Capability roadmap](docs/12-能力差距对标与补强路线图.md) — status, dependencies, and acceptance criteria for G-01 through G-23 (Chinese)
 - [Verification map](docs/verification-map.md) — requirement / invariant / implementation / command
 - [Changelog](CHANGELOG.md)
 

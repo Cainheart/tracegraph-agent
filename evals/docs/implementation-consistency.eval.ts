@@ -8,22 +8,21 @@ const REPOSITORY_ROOT = nodePath.resolve(
   nodePath.dirname(fileURLToPath(import.meta.url)),
   "../..",
 );
-const ROADMAP = "docs/12-能力差距对标与补强路线图.md";
 
 const IDENTIFIER_FACTS = [
   {
     identifier: "SCHEMA_VERSION",
-    documentation: ["docs/modules/01-契约层-contracts.md", ROADMAP],
+    documentation: ["docs/modules/01-契约层-contracts.md"],
     implementation: "packages/contracts/src/common.ts",
   },
   {
     identifier: "PROJECTOR_VERSION",
-    documentation: ["docs/modules/01-契约层-contracts.md", ROADMAP],
+    documentation: ["docs/modules/01-契约层-contracts.md"],
     implementation: "packages/contracts/src/common.ts",
   },
   {
     identifier: "SESSION_FORMAT_VERSION",
-    documentation: ["docs/modules/01-契约层-contracts.md", ROADMAP],
+    documentation: ["docs/modules/01-契约层-contracts.md"],
     implementation: "packages/contracts/src/session.ts",
   },
   {
@@ -33,22 +32,22 @@ const IDENTIFIER_FACTS = [
   },
   {
     identifier: "EXTENSION_API_VERSION",
-    documentation: ["docs/modules/01-契约层-contracts.md", "docs/modules/15-插件与扩展系统.md", ROADMAP],
+    documentation: ["docs/modules/01-契约层-contracts.md", "docs/modules/15-插件与扩展系统.md"],
     implementation: "packages/contracts/src/extension.ts",
   },
   {
     identifier: "EventTypeSchema",
-    documentation: ["docs/modules/01-契约层-contracts.md", ROADMAP],
+    documentation: ["docs/modules/01-契约层-contracts.md"],
     implementation: "packages/contracts/src/event.ts",
   },
   {
     identifier: "TeamProjectionSchema",
-    documentation: ["docs/modules/01-契约层-contracts.md", "docs/modules/16-Agent-Team.md", ROADMAP],
+    documentation: ["docs/modules/01-契约层-contracts.md", "docs/modules/16-Agent-Team.md"],
     implementation: "packages/contracts/src/team.ts",
   },
   {
     identifier: "TeamDomainService",
-    documentation: ["docs/modules/16-Agent-Team.md", ROADMAP],
+    documentation: ["docs/modules/16-Agent-Team.md"],
     implementation: "packages/core/src/team.ts",
   },
   {
@@ -58,12 +57,12 @@ const IDENTIFIER_FACTS = [
   },
   {
     identifier: "SkillRegistry",
-    documentation: ["docs/modules/17-Skill系统.md", ROADMAP],
+    documentation: ["docs/modules/17-Skill系统.md"],
     implementation: "packages/core/src/skill.ts",
   },
   {
     identifier: "load_skill",
-    documentation: ["docs/modules/17-Skill系统.md", ROADMAP],
+    documentation: ["docs/modules/17-Skill系统.md"],
     implementation: "packages/core/src/tool-registry.ts",
   },
   {
@@ -73,42 +72,42 @@ const IDENTIFIER_FACTS = [
   },
   {
     identifier: "runSkillsCommand",
-    documentation: ["docs/modules/17-Skill系统.md", ROADMAP],
+    documentation: ["docs/modules/17-Skill系统.md"],
     implementation: "apps/cli/src/skill-command.ts",
   },
   {
     identifier: "MCP_CONFIG_VERSION",
-    documentation: ["docs/modules/18-MCP客户端.md", ROADMAP],
+    documentation: ["docs/modules/18-MCP客户端.md"],
     implementation: "packages/contracts/src/mcp.ts",
   },
   {
     identifier: "McpManager",
-    documentation: ["docs/modules/18-MCP客户端.md", ROADMAP],
+    documentation: ["docs/modules/18-MCP客户端.md"],
     implementation: "packages/core/src/mcp/manager.ts",
   },
   {
     identifier: "createMcpToolsExtension",
-    documentation: ["docs/modules/18-MCP客户端.md", ROADMAP],
+    documentation: ["docs/modules/18-MCP客户端.md"],
     implementation: "packages/core/src/mcp/manager.ts",
   },
   {
     identifier: "runMcpCommand",
-    documentation: ["docs/modules/11-CLI-与装配.md", "docs/modules/18-MCP客户端.md", ROADMAP],
+    documentation: ["docs/modules/11-CLI-与装配.md", "docs/modules/18-MCP客户端.md"],
     implementation: "apps/cli/src/mcp-command.ts",
   },
   {
     identifier: "LSP_CONFIG_VERSION",
-    documentation: ["docs/modules/19-LSP客户端.md", ROADMAP],
+    documentation: ["docs/modules/19-LSP客户端.md"],
     implementation: "packages/contracts/src/lsp.ts",
   },
   {
     identifier: "LspManager",
-    documentation: ["docs/modules/19-LSP客户端.md", ROADMAP],
+    documentation: ["docs/modules/19-LSP客户端.md"],
     implementation: "packages/core/src/lsp/manager.ts",
   },
   {
     identifier: "createLspToolsExtension",
-    documentation: ["docs/modules/19-LSP客户端.md", ROADMAP],
+    documentation: ["docs/modules/19-LSP客户端.md"],
     implementation: "packages/core/src/lsp/manager.ts",
   },
   {
@@ -136,7 +135,7 @@ const IDENTIFIER_FACTS = [
   },
   {
     identifier: "CODE_INTEL_VERSION",
-    documentation: ["docs/modules/01-契约层-contracts.md", "docs/modules/07-CodeGraph-代码图.md", ROADMAP],
+    documentation: ["docs/modules/01-契约层-contracts.md", "docs/modules/07-CodeGraph-代码图.md"],
     implementation: "packages/contracts/src/code-intel.ts",
   },
   {
@@ -170,7 +169,7 @@ const VERSION_FACTS = [
   {
     identifier: "SESSION_FORMAT_VERSION",
     implementation: "packages/contracts/src/session.ts",
-    documentation: ROADMAP,
+    documentation: "docs/modules/01-契约层-contracts.md",
   },
   {
     identifier: "TELEMETRY_STATUS_SCHEMA_VERSION",
@@ -191,10 +190,10 @@ const EVENT_FACTS = [
   { event: "tool.completed", documentation: "docs/modules/04-工具与策略审批.md" },
   { event: "permission.configured", documentation: "docs/modules/02-Agent-Runtime.md" },
   { event: "sandbox.enforced", documentation: "docs/modules/02-Agent-Runtime.md" },
-  { event: "user.input_queued", documentation: ROADMAP },
-  { event: "attachment.added", documentation: ROADMAP },
-  { event: "attachment.rejected", documentation: ROADMAP },
-  { event: "attachment.offloaded", documentation: ROADMAP },
+  { event: "user.input_queued", documentation: "docs/modules/02-Agent-Runtime.md" },
+  { event: "attachment.added", documentation: "docs/modules/14-附件与多模态.md" },
+  { event: "attachment.rejected", documentation: "docs/modules/14-附件与多模态.md" },
+  { event: "attachment.offloaded", documentation: "docs/modules/14-附件与多模态.md" },
   { event: "extension.error", documentation: "docs/modules/15-插件与扩展系统.md" },
   { event: "team.created", documentation: "docs/modules/16-Agent-Team.md" },
   { event: "team.member_joined", documentation: "docs/modules/16-Agent-Team.md" },
@@ -238,21 +237,21 @@ const ROUTE_FACTS = [
   },
   {
     method: "GET",
-    documentedRoute: "/api/sessions/:id",
+    documentedRoute: "/api/sessions/:sessionId",
     implementationRoute: "/api/sessions/:sessionId",
-    documentation: ROADMAP,
+    documentation: "docs/modules/09-Host-与-SDK-接口层.md",
   },
   {
     method: "POST",
-    documentedRoute: "/api/sessions/:id/resume",
+    documentedRoute: "/api/sessions/:sessionId/resume",
     implementationRoute: "/api/sessions/:sessionId/resume",
-    documentation: ROADMAP,
+    documentation: "docs/modules/09-Host-与-SDK-接口层.md",
   },
   {
     method: "POST",
     documentedRoute: "/api/runs/:runId/actions/:actionId/rollback",
     implementationRoute: "/api/runs/:runId/actions/:actionId/rollback",
-    documentation: ROADMAP,
+    documentation: "docs/modules/09-Host-与-SDK-接口层.md",
   },
   {
     method: "POST",
@@ -357,7 +356,7 @@ const COMMAND_FACTS = [
   { script: "typecheck", documentation: "README.md" },
   { script: "test", documentation: "README.md" },
   { script: "test:e2e", documentation: "README.md" },
-  { script: "evals", documentation: ROADMAP },
+  { script: "evals", documentation: "docs/modules/12-评测体系.md" },
 ] as const;
 
 const documentCache = new Map<string, Promise<string>>();
@@ -517,7 +516,7 @@ describe("G16 documentation consistency", () => {
     const lspModule = await readRepositoryFile("docs/modules/19-LSP客户端.md");
     expect(lspModule).toContain("LSP_CONFIG_VERSION");
     expect(lspModule).toContain("lsp.diagnostics_received");
-    for (const documentationPath of ["docs/modules/01-契约层-contracts.md", "docs/modules/16-Agent-Team.md", "docs/modules/17-Skill系统.md", "docs/modules/18-MCP客户端.md", "docs/modules/19-LSP客户端.md", ROADMAP]) {
+    for (const documentationPath of ["docs/modules/01-契约层-contracts.md", "docs/modules/16-Agent-Team.md", "docs/modules/17-Skill系统.md", "docs/modules/18-MCP客户端.md", "docs/modules/19-LSP客户端.md"]) {
       const documentation = await readRepositoryFile(documentationPath);
       expect(
         hasIdentifier(documentation, "PROJECTOR_VERSION")
@@ -542,7 +541,7 @@ describe("G16 documentation consistency", () => {
     }
   });
 
-  it("keeps implemented README, module, and roadmap routes registered by Host", async () => {
+  it("keeps implemented README and module routes registered by Host", async () => {
     const host = await readRepositoryFile("packages/host/src/index.ts");
     for (const fact of ROUTE_FACTS) {
       const documentation = await readRepositoryFile(fact.documentation);

@@ -22,7 +22,7 @@ TraceGraph Agent 把 Decision、Tool、Approval、Patch、Test、Context 和代�
 - **长期 Memory**：Markdown 按标题/段落分块、原子 JSONL 索引、本地 BM25 检索，命中带来源路径、精确行号与内容 hash，每轮模型请求前自动注入带引用的上下文。
 - **三种工作模式**：Plain Chat（无任何文件与命令能力）、Managed Project、Linked Local Folder。
 
-每个 G-xx 项的完整规格、依赖与验收见[能力路线图](docs/12-能力差距对标与补强路线图.md)；每个源文件的职责见[目录说明](DIRECTORY.md)；需求到断言的映射见[验证映射](docs/verification-map.md)。
+G-01 至 G-23 各能力的范围与验证见[验证映射](docs/verification-map.md)；每个源文件的职责见[目录说明](DIRECTORY.md)。
 
 ## 一眼看清边界
 
@@ -127,7 +127,6 @@ CI 由三个独立 job 组成（`typecheck` / `test` / `evals`），另设覆盖
 - [文档索引](docs/README.md) —— 模块 01–19 与全部参考文档的入口
 - [已知限制](KNOWN_LIMITATIONS.md) —— 边界的唯一事实源
 - [目录说明](DIRECTORY.md) —— 每个源文件与配置文件的职责
-- [能力路线图](docs/12-能力差距对标与补强路线图.md) —— G-01 至 G-23 的状态、依赖与验收
 - [验证映射](docs/verification-map.md) —— 需求 / 不变量 / 实现 / 命令
 - [变更记录](CHANGELOG.md)
 
