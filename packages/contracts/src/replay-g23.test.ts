@@ -69,6 +69,42 @@ describe("G23 replay contracts", () => {
     })).toThrow("until_sequence cannot exceed head_sequence");
   });
 
+  it("rejects a projection that does not describe the claimed replay prefix", () => {
+    const snapshot = replaySnapshot();
+    const project = (overrides: Record<string, unknown>) => ({
+      ...snapshot,
+      projection: { ...snapshot.projection, ...overrides },
+    });
+    expect(() => ReplaySnapshotSchema.parse(project({ session_id: "session:other" })))
+      .toThrow("projection session_id must match replay session_id");
+    expect(() => ReplaySnapshotSchema.parse(project({ project_id: "project:other" })))
+      .toThrow("projection project_id must match replay project_id");
+    expect(() => ReplaySnapshotSchema.parse(project({ last_sequence: 1 })))
+      .toThrow("projection last_sequence must equal until_sequence");
+    expect(() => ReplaySnapshotSchema.parse(project({ todos: { items: [], last_sequence: 1 } })))
+      .toThrow("Todo projection must cover the same replay prefix");
+    expect(() => ReplaySnapshotSchema.parse(project({ timeline: [snapshot.projection.timeline[0]!] })))
+      .toThrow("replay timeline must contain every sequence from one through until_sequence");
+    expect(() => ReplaySnapshotSchema.parse(project({
+      timeline: [
+        { ...snapshot.projection.timeline[0]!, run_id: "run:other" },
+        snapshot.projection.timeline[1]!,
+      ],
+    }))).toThrow("replay timeline event is outside the snapshot scope");
+    expect(() => ReplaySnapshotSchema.parse(project({
+      artifact_refs: [{
+        artifact_id: "artifact:test",
+        kind: "report",
+        content_hash: HASH_A,
+        mime_type: "text/markdown",
+        byte_length: 1,
+        project_id: "project:test",
+        run_id: "run:other",
+        created_at: "2026-09-19T12:00:00.000Z",
+      }],
+    }))).toThrow("replay Artifact is outside the snapshot scope");
+  });
+
   it("keeps Host replay authority outside the canonical snapshot", () => {
     const snapshot = replaySnapshot();
     expect(() => ReplaySnapshotSchema.parse({
