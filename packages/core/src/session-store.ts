@@ -852,8 +852,16 @@ async function replaceOpenFileContents(
   handle: Awaited<ReturnType<typeof open>>,
   content: string,
 ): Promise<void> {
-  await handle.truncate(0);
-  await handle.write(content, 0, "utf8");
+  // Other processes read this file while the lease is heartbeating, so the
+  // rewrite must not open a window in which the document is incomplete.
+  // Truncating first guarantees one: every reader that lands in the event-loop
+  // turn between truncate and write observes an empty file and reports a
+  // corrupt lease, which is why a concurrent acquireLease could surface
+  // session_corruption instead of session_lease_conflict. Overwrite from
+  // offset 0 instead and only then drop bytes a shorter document left behind.
+  const bytes = Buffer.from(content, "utf8");
+  await handle.write(bytes, 0, bytes.byteLength, 0);
+  await handle.truncate(bytes.byteLength);
   await handle.sync();
 }
 
