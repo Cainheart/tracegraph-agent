@@ -1891,7 +1891,12 @@ describe("TraceGraph Host", () => {
       code: "too_large",
       bytes: MAX_ATTACHMENT_BYTES + 1,
     });
-    expect(runtime.stageAttachment).toHaveBeenCalledWith(expect.objectContaining({ bytes }));
+    const [stagedUpload] = vi.mocked(runtime.stageAttachment).mock.calls.at(-1) ?? [];
+    // Vitest's asymmetric deep equality walks a multi-megabyte Buffer element by
+    // element: this single assertion cost ~5.5s locally and blew the timeout on
+    // slower CI runners. A native memcmp proves the same byte-exact guarantee.
+    expect(Buffer.isBuffer(stagedUpload?.bytes)).toBe(true);
+    expect(Buffer.compare(stagedUpload!.bytes as Buffer, bytes)).toBe(0);
     await host.close();
   }, 15_000);
 
