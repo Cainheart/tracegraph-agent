@@ -14,9 +14,25 @@ import {
 } from "@tracegraph/contracts";
 import { afterEach, describe, expect, it } from "vitest";
 import { sha256 } from "./crypto.js";
-import { createAgentRuntime, type AgentRuntime } from "./runtime.js";
+import {
+  createAgentRuntime as createAgentRuntimeWithNativeSandbox,
+  type AgentRuntime,
+} from "./runtime.js";
+import { createFixtureSandboxRunner } from "./sandbox/fixture-runner.js";
 import type { CodeGraphProvider } from "./types.js";
 import { removeControlledTemporaryDirectory } from "./workspace.js";
+
+/**
+ * run_test fails closed unless the host proves full OS isolation, which Linux
+ * (unlike macOS seatbelt) never does. These suites cover approval, WAL and
+ * crash recovery semantics rather than isolation, so every Runtime they build
+ * gets a fixture sandbox boundary -- see sandbox/fixture-runner.ts.
+ */
+const createAgentRuntime: typeof createAgentRuntimeWithNativeSandbox = (options) =>
+  createAgentRuntimeWithNativeSandbox({
+    ...options,
+    sandboxRunner: createFixtureSandboxRunner(),
+  });
 
 const roots: string[] = [];
 

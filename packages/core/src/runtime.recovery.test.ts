@@ -8,10 +8,27 @@ import {
 } from "@tracegraph/contracts";
 import { afterEach, describe, expect, it } from "vitest";
 import { ActionWal, RecoveryLedger } from "./action-wal.js";
-import { createAgentRuntime, type ActionCommitFaultPoint, type AgentRuntime } from "./runtime.js";
+import {
+  createAgentRuntime as createAgentRuntimeWithNativeSandbox,
+  type ActionCommitFaultPoint,
+  type AgentRuntime,
+} from "./runtime.js";
+import { createFixtureSandboxRunner } from "./sandbox/fixture-runner.js";
 import { DurableSessionController } from "./session-controller.js";
 import { JsonlSessionStore } from "./session-store.js";
 import { removeControlledTemporaryDirectory } from "./workspace.js";
+
+/**
+ * run_test fails closed unless the host proves full OS isolation, which Linux
+ * (unlike macOS seatbelt) never does. These suites cover approval, WAL and
+ * crash recovery semantics rather than isolation, so every Runtime they build
+ * gets a fixture sandbox boundary -- see sandbox/fixture-runner.ts.
+ */
+const createAgentRuntime: typeof createAgentRuntimeWithNativeSandbox = (options) =>
+  createAgentRuntimeWithNativeSandbox({
+    ...options,
+    sandboxRunner: createFixtureSandboxRunner(),
+  });
 
 const roots: string[] = [];
 const DURABILITY_TEST_TIMEOUT_MS = 30_000;
@@ -499,6 +516,12 @@ async function completeApprovedPatch(options: {
     approval_id: approval.approval_id,
     action_id: approval.action_id,
   });
+  if (completed.status !== "completed") {
+    const diag = completed.timeline
+      .map((event) => `${event.type} :: ${String(event.summary ?? "")}`)
+      .join("\n");
+    process.stderr.write(`\n[PROBE] status=${completed.status}\n${diag}\n`);
+  }
   expect(completed.status).toBe("completed");
   expect(completed.timeline).toContainEqual(expect.objectContaining({
     type: "action.verified",
