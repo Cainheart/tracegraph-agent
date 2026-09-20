@@ -63,7 +63,7 @@ describe("analyzeCodeGraph", () => {
         expect.objectContaining({ file_path: "src/value.ts", kind: "file" }),
       ]),
     );
-    expect(first.snapshot.edges).toHaveLength(2);
+    expect(first.snapshot.edges.filter(({ kind }) => kind !== "contains")).toHaveLength(2);
     expect(first.snapshot.edges).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -86,6 +86,17 @@ describe("analyzeCodeGraph", () => {
         }),
       ]),
     );
+    expect(first.snapshot.nodes).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        kind: "symbol",
+        file_path: "src/value.ts",
+        symbol_name: "value",
+        declaration_kind: "variable",
+      }),
+    ]));
+    expect(first.snapshot.edges).toEqual(expect.arrayContaining([
+      expect.objectContaining({ kind: "contains", file_path: "src/value.ts" }),
+    ]));
     expect(JSON.stringify(first.snapshot)).not.toContain(root);
   });
 
@@ -113,7 +124,7 @@ describe("analyzeCodeGraph", () => {
       unresolved_static_edge_count: 1,
       partial_static_edge_count: 1,
     });
-    expect(analysis.snapshot.edges).toHaveLength(2);
+    expect(analysis.snapshot.edges.filter(({ kind }) => kind !== "contains")).toHaveLength(2);
     expect(analysis.snapshot.edges).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -287,6 +298,36 @@ describe("analyzeCodeGraph", () => {
 });
 
 describe("diffGraphSnapshots", () => {
+  it("keeps a declaration identity through line-only formatting changes", async () => {
+    const root = await fixture({
+      "src/format.ts": "export function stableName(): number {\n  return 1;\n}\n",
+    });
+    const before = await analyzeCodeGraph({
+      workspace_root: root,
+      project_id: "project:symbol-identity",
+      created_at: FIXED_TIME,
+    });
+    await fs.writeFile(
+      nodePath.join(root, "src/format.ts"),
+      "\n\nexport function stableName(): number {\n\n  return 1;\n}\n",
+    );
+    const after = await analyzeCodeGraph({
+      workspace_root: root,
+      project_id: "project:symbol-identity",
+      created_at: "2026-09-16T08:01:00.000Z",
+    });
+    const delta = diffGraphSnapshots(before.snapshot, after.snapshot, { created_at: FIXED_TIME });
+    const symbolChanges = delta.node_changes.filter((change) => (
+      (change.before ?? change.after)?.kind === "symbol"
+    ));
+
+    expect(symbolChanges).toEqual([expect.objectContaining({
+      change: "changed",
+      before: expect.objectContaining({ symbol_name: "stableName", line: 1 }),
+      after: expect.objectContaining({ symbol_name: "stableName", line: 3 }),
+    })]);
+  });
+
   it("reports added, removed, changed, unknown, and partial evidence", async () => {
     const root = await fixture({
       "src/index.ts": [
@@ -348,6 +389,21 @@ describe("diffGraphSnapshots", () => {
         }),
       ]),
     );
+    expect(delta.node_changes).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        change: "changed",
+        before: expect.objectContaining({
+          kind: "symbol",
+          file_path: "src/value.ts",
+          symbol_name: "value",
+        }),
+        after: expect.objectContaining({
+          kind: "symbol",
+          file_path: "src/value.ts",
+          symbol_name: "value",
+        }),
+      }),
+    ]));
     expect(delta.edge_changes.map(({ change }) => change)).toEqual(
       expect.arrayContaining(["removed", "changed"]),
     );

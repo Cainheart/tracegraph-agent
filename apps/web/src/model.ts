@@ -10,6 +10,9 @@ import type {
   TeamProjection,
   TokenEstimateConfidence,
   TokenSection,
+  ChangedSymbol,
+  CodeIntelStaleBase,
+  LspDiagnosticsSummary,
 } from "@tracegraph/contracts";
 
 export type WorkspaceKind = "disposable_fixture" | "readonly_local" | "managed_local";
@@ -310,6 +313,8 @@ export interface RunSnapshot {
   readonly team?: TeamProjection;
   /** Durable attachment projection rebuilt from attachment.* ledger events. */
   readonly attachments: readonly AttachmentSnapshot[];
+  /** Latest bounded G-20 semantic CodeGraph view for the current Run head. */
+  readonly codeIntel?: CodeIntelSnapshot;
   /** Exact plan.ready revision that the user may approve. */
   readonly pendingPlan?: {
     readonly eventId: string;
@@ -411,12 +416,23 @@ export interface EvidenceSnapshot {
   readonly test: EvidenceSlot;
 }
 
+export interface CodeIntelSnapshot {
+  readonly changedFiles: readonly string[];
+  readonly changedFilesTruncated: boolean;
+  readonly changedSymbols: readonly ChangedSymbol[];
+  readonly changedSymbolsTruncated: boolean;
+  readonly diagnosticsSummary?: LspDiagnosticsSummary;
+  readonly staleBase?: CodeIntelStaleBase;
+}
+
 export interface EventEvidenceSnapshot {
   readonly contextSources: readonly ContextSource[];
   readonly changedFiles: readonly ChangedFile[];
   readonly diffs: Readonly<Record<string, readonly DiffLine[]>>;
   readonly graphNodes: readonly GraphNode[];
   readonly graphEdges: readonly GraphEdge[];
+  /** Time-bounded semantic state linked to this selected patch/event only. */
+  readonly codeIntel?: CodeIntelSnapshot;
   readonly evidence: EvidenceSnapshot;
   readonly contextManifestId?: string;
   readonly patchEventId?: string;
@@ -648,6 +664,7 @@ export function evidenceForSelection(
     diffs: snapshot.diffs,
     graphNodes: snapshot.graphNodes,
     graphEdges: snapshot.graphEdges,
+    ...(snapshot.run?.codeIntel === undefined ? {} : { codeIntel: snapshot.run.codeIntel }),
     evidence: snapshot.evidence,
     ...(latestContext?.contextManifestRef ? { contextManifestId: latestContext.contextManifestRef } : {}),
     ...(latestPatch?.patchRef ? { patchEventId: latestPatch.patchRef } : {}),

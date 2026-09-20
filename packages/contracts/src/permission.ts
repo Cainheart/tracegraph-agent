@@ -397,6 +397,7 @@ export const ApprovalDenialReasonSchema = z.enum([
   "cancelled",
   "unavailable",
   "digest_mismatch",
+  "stale_base",
   "token_expired",
   "token_consumed",
 ]);

@@ -592,7 +592,7 @@ function Workbench({ client }: { client: WorkbenchClient }) {
 
           {run && view === "changes" && (
             <main className="changes-workbench">
-              <ChangesView diffs={selectedEvidence.diffs} edges={selectedEvidence.graphEdges} evidence={selectedEvidence.evidence} files={selectedEvidence.changedFiles} nodes={selectedEvidence.graphNodes} onJumpToPatch={jumpToPatch} onOpenDetails={() => setDetailsOpen(true)} patchId={selectedEvidence.patchEventId} verified={["available", "demo"].includes(selectedEvidence.evidence.test.status)} />
+              <ChangesView {...((selectedEvent ? selectedEvidence.codeIntel : run?.codeIntel) === undefined ? {} : { codeIntel: selectedEvent ? selectedEvidence.codeIntel : run?.codeIntel })} diffs={selectedEvidence.diffs} edges={selectedEvidence.graphEdges} evidence={selectedEvidence.evidence} files={selectedEvidence.changedFiles} nodes={selectedEvidence.graphNodes} onJumpToPatch={jumpToPatch} onOpenDetails={() => setDetailsOpen(true)} patchId={selectedEvidence.patchEventId} verified={["available", "demo"].includes(selectedEvidence.evidence.test.status)} />
             </main>
           )}
 

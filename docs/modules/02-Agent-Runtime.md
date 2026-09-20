@@ -178,7 +178,7 @@ Todo 不是 UI 临时数组，而是 canonical Ledger 投影。`todo.created|upd
 
 普通 message/approve hint 只在安全点消费：工具批次完全 settle 后、下一次 Context/模型请求前，每个安全点最多一条 FIFO。Runtime 写 `user.input_consumed {input_id,kind,consumed_at,at_step,queued_event_id}` 后才把它作为 user history 加进下一次请求。若模型在输入排队期间返回 `finish`，finish Decision 被视为陈旧；`#transitionAfterFinish` 在同一 control gate 中看到 pending inbox 后让路，而不是抢先 `run.completed` 或 `plan.ready`。三条普通输入因此需要三个安全点，`at_step` 严格递增。cancel 是专用 control lane：durable finalizer 可越过最多 99 条更早的普通输入，消费指定 cancel 并立即终结；被越过的普通输入保持 pending，供终态投影解释“未被模型处理”。
 
-恢复不信任进程内数组：Projection v8 从当前 100 种事件中的 queued/consumed 差集重建 `input_queue.pending`，从 `attachment.*` 重建只读 `attachments`，并从 `team.*` 重建可选 roster/mailbox/task board；`#restoreRunState` 从所有已消费的 message/approve hint 重建 conversation history，覆盖“consumed Event 已落、内存 history 尚未更新”崩溃窗且不重复。恢复和 duplicate 返回还会按**当前** secret registry 重新脱敏并截到 8,000 字符，避免后来登记的秘密泄漏或替换文本膨胀突破契约。未消费输入在重启后仍保留。普通 running/indexing Run 仍遵守 G-01 的 fail-safe 只读恢复，不因 pending message 自动重跑未知的模型/工具；若崩溃前已有 durable pending cancel，显式 `resumeRun()` 只恢复最小 Run shell，适用于 prior indexing/running/待批状态，直接 consume+cancel，绝不重启旧 indexing/model/tool；未知外部副作用仍交给 Action WAL 对账。附件 Projection 可重放，但恢复不会重新发送历史图片或重新 claim 旧 upload；Team facts 可重放，但不会复活旧 worker 或自动重派任务。若 cancel 已 consumed、但进程在 terminal append 前崩溃，`markRunInterrupted()` 直接补唯一 `run.cancelled`，不会把它误写成 `run.interrupted`。
+恢复不信任进程内数组：Projection v9 从当前 102 种事件中的 queued/consumed 差集重建 `input_queue.pending`，从 `attachment.*` 重建只读 `attachments`，从 `team.*` 重建可选 roster/mailbox/task board，并从 `code.*`/`lsp.*` 重建可选 `code_intel`；`#restoreRunState` 从所有已消费的 message/approve hint 重建 conversation history，覆盖“consumed Event 已落、内存 history 尚未更新”崩溃窗且不重复。恢复和 duplicate 返回还会按**当前** secret registry 重新脱敏并截到 8,000 字符，避免后来登记的秘密泄漏或替换文本膨胀突破契约。未消费输入在重启后仍保留。普通 running/indexing Run 仍遵守 G-01 的 fail-safe 只读恢复，不因 pending message 自动重跑未知的模型/工具；若崩溃前已有 durable pending cancel，显式 `resumeRun()` 只恢复最小 Run shell，适用于 prior indexing/running/待批状态，直接 consume+cancel，绝不重启旧 indexing/model/tool；未知外部副作用仍交给 Action WAL 对账。附件 Projection 可重放，但恢复不会重新发送历史图片或重新 claim 旧 upload；Team facts 可重放，但不会复活旧 worker 或自动重派任务。若 cancel 已 consumed、但进程在 terminal append 前崩溃，`markRunInterrupted()` 直接补唯一 `run.cancelled`，不会把它误写成 `run.interrupted`。
 
 ### 3.5 G-15 committed-Event Telemetry 旁路
 
@@ -466,6 +466,7 @@ sandbox.configured  sandbox.enforced  sandbox.disabled
 patch.preview_created  patch.applied  patch.rolled_back
 test.completed
 graph.snapshot_created  graph.delta_created
+code.intel_updated  code.stale_base_detected
 memory.candidate_evaluated  memory.written  memory.recalled  retrieval.index_updated
 subagent.started  subagent.message_sent  subagent.completed  subagent.failed  subagent.interrupted
 attachment.added  attachment.rejected  attachment.offloaded
@@ -477,7 +478,7 @@ run.interrupted  run.resumed
 user.input_queued  user.input_consumed
 ```
 
-契约当前声明 **100** 种，Projection 使用 `tracegraph.projector.v8`；G-21 的四个 Memory/Retrieval 事件、G-07 的五个 subagent lifecycle、G-18 的三个 attachment lifecycle、G-17 `extension.error`、G-08 的十三个 team lifecycle 与 G-12 的两个 LSP lifecycle 都已有生产路径。只有 `artifact.stored` 仍没有独立生产者（工件通过 `artifact_refs` 关联），其余 99 种由 Runtime/恢复/维护路径产生。G-15 不增加 Session Event：span/metric/log 只从 committed Event 旁路派生，使用独立 `tracegraph.telemetry-status.v1` 报告健康度。
+契约当前声明 **102** 种，Projection 使用 `tracegraph.projector.v9`；G-21 的四个 Memory/Retrieval 事件、G-07 的五个 subagent lifecycle、G-18 的三个 attachment lifecycle、G-17 `extension.error`、G-08 的十三个 team lifecycle、G-12 的两个 LSP lifecycle 与 G-20 的两个 CodeIntel lifecycle 都已有生产路径。`code.intel_updated` 只记录有界 snapshot/Git/symbol/LSP 摘要事实；`code.stale_base_detected` 会使旧 Patch approval 失效并生成新的 request，而不是写盘或直接终止 Run。只有 `artifact.stored` 仍没有独立生产者（工件通过 `artifact_refs` 关联），其余 101 种由 Runtime/恢复/维护路径产生。G-15 不增加 Session Event：span/metric/log 只从 committed Event 旁路派生，使用独立 `tracegraph.telemetry-status.v1` 报告健康度。
 
 失败码（`run.failed` 的 `code`）可观察到的取值包括：`turn_budget_exhausted`、`model_request_failed`、`model_output_invalid`、`missing_tool_call`、`action_id_duplicate`、`action_id_conflict`、`capability_denied`、`plan_mode_denied`、`sandbox_denied`、`preset_denied`、`path_scope_denied`、`invalid_policy_path`、`policy_denied`、`approval_unavailable`、`approval_required`、`approval_expired`、`approval_binding_unavailable`、`approval_digest_mismatch`、`patch_preview_expired`、`action_digest_mismatch` 与其它 token/digest 拒绝码，以及 `schema_invalid`、`unknown_side_effect`、`stale_base`、`patch_anchor_mismatch` 等（工具业务 code 原样透传）、`graph_delta_failed`、`indexing_failed`、`runtime_failed`。G-05 的通用分类写在失败 Receipt metadata 的 `failure_code`、`tool.failed.data.code` 与 batch result 的 `failure_code`，用于跨工具控制；业务 code 则保留在 Receipt `code` 和 `business_code`，不会被覆盖。
 
@@ -492,22 +493,23 @@ user.input_queued  user.input_consumed
 5. 模型输出的凭据检查发生在写事件与执行动作之前。
 6. `unknown` 副作用**不自动重试**。
 7. CodeGraph 返回的 delta 必须与本 Run 的项目与快照 ID 一致。
-8. `getProjection` / `replay` / `replayAt` / `replayDiff` 只依赖账本，不依赖进程内存；G-23 的历史 hash 不包含会增长的 head 或 Host replay authority。
-9. `ContextManifest.token_estimate` 是不可变 preflight；provider usage 通过后续 Event 关联，同一 model call 的 repair 不参与 initial 校准。
-10. 若本轮会压缩，`context.compaction_started` 必须早于 archive/provider 副作用；summary usage 与 Decision usage 用不同 model call 分账。
-11. `read_artifact` 只读当前 Run 的 Context archive、逐页最多 4,000 字节，不能因 Plain Chat 的 capability 例外变成 Workspace 文件读取入口。
-12. `commit_patch` 在 WAL `prepare` durable 前不能改盘；WAL `verified` 必须有对应的 `patch.applied` 与 `action.verified` durable 事实。
-13. 磁盘既不匹配 before 也不匹配 after 时不得自动覆盖或回滚；`needs_manual_review` 不会被后续维护事件清除。
-14. rollback 默认关闭、只支持单目标，force 不能绕过 workspace binding 或 after-hash。
-15. 显式 batch 在任何工具开始前完成全批预校验；安全波可以并行执行，但 durable start/completion 与 Observation 都保持请求顺序。
-16. 写、需审批或 `concurrencySafe:false` 的调用不得进入并行波；默认峰值不超过 4，durable cancel 或 legacy stop 可让已开始的 batch 以零完成闭合。
-17. 每个新 Run 必须在 `run.started` 前留下 `permission.configured` 与 sandbox configured + enforced/disabled；每个 Tool action 先有 `policy.evaluated`，deny 另有 `policy.denied`。
-18. Sandbox mode 来自本 Run 冻结的 Host-owned permission preset，不来自 StartRun/StartChat；preset/rule 不能替代或放宽 Workspace capability。full-write 不使用 approval token，但也不能绕过 Patch digest、hash、Workspace capability 或 WAL。
-19. 项目 policy 只能 ask/deny，Host allow 规则不能覆盖 hard constraint，project 高优先级条目也不能用 allow 遮挡后续收紧规则。
-20. 非 Patch ask 的 answerer unavailable/throw/invalid 必须 fail-closed；Patch ask 只由公开 approve/reject 命令继续。
-21. v5/v4/v3/v2 恢复必须保留原 policy digest 与 Host/project layers；设置变化不得改变已存在 Run 的权限。v3 起保存当前 `plan|execute` mode，v4 另保存 root/child orchestration 与冻结 delegation，v5 再保存冻结 extension snapshot；待批 Plan revision 与 Todo 不复制进 recovery Artifact，必须从 canonical Ledger 重放。
-22. Plan 的 `finish` 至少要有一条 Todo；它只产生 `plan.ready` 并暂停，同 Run 只有批准当前 revision 后才能转入 `execute`。
-23. Todo 写入按 Run 串行、依赖图必须无环且总数不超过 500；模型完成 Todo 必须引用同 Run、早于本次 mutation 的 eligible 独立成功执行 Event，且已有证据的 done Todo 在保持 done 时不能清空证据。该引用证明 durable execution fact，不承担 Todo 语义验收。
+8. 先前可用的 G-20 Git baseline 在 Patch ask 批准进入 `commit_patch` 前若发生 commit/branch/status-fingerprint 漂移，旧 approval 必须先 durable 作废，并以新 approval 重新请求；Git unavailable 不得伪装成未漂移，也不构成此 fence 的保证。
+9. `getProjection` / `replay` / `replayAt` / `replayDiff` 只依赖账本，不依赖进程内存；G-23 的历史 hash 不包含会增长的 head 或 Host replay authority。
+10. `ContextManifest.token_estimate` 是不可变 preflight；provider usage 通过后续 Event 关联，同一 model call 的 repair 不参与 initial 校准。
+11. 若本轮会压缩，`context.compaction_started` 必须早于 archive/provider 副作用；summary usage 与 Decision usage 用不同 model call 分账。
+12. `read_artifact` 只读当前 Run 的 Context archive、逐页最多 4,000 字节，不能因 Plain Chat 的 capability 例外变成 Workspace 文件读取入口。
+13. `commit_patch` 在 WAL `prepare` durable 前不能改盘；WAL `verified` 必须有对应的 `patch.applied` 与 `action.verified` durable 事实。
+14. 磁盘既不匹配 before 也不匹配 after 时不得自动覆盖或回滚；`needs_manual_review` 不会被后续维护事件清除。
+15. rollback 默认关闭、只支持单目标，force 不能绕过 workspace binding 或 after-hash。
+16. 显式 batch 在任何工具开始前完成全批预校验；安全波可以并行执行，但 durable start/completion 与 Observation 都保持请求顺序。
+17. 写、需审批或 `concurrencySafe:false` 的调用不得进入并行波；默认峰值不超过 4，durable cancel 或 legacy stop 可让已开始的 batch 以零完成闭合。
+18. 每个新 Run 必须在 `run.started` 前留下 `permission.configured` 与 sandbox configured + enforced/disabled；每个 Tool action 先有 `policy.evaluated`，deny 另有 `policy.denied`。
+19. Sandbox mode 来自本 Run 冻结的 Host-owned permission preset，不来自 StartRun/StartChat；preset/rule 不能替代或放宽 Workspace capability。full-write 不使用 approval token，但也不能绕过 Patch digest、hash、Workspace capability 或 WAL。
+20. 项目 policy 只能 ask/deny，Host allow 规则不能覆盖 hard constraint，project 高优先级条目也不能用 allow 遮挡后续收紧规则。
+21. 非 Patch ask 的 answerer unavailable/throw/invalid 必须 fail-closed；Patch ask 只由公开 approve/reject 命令继续。
+22. v5/v4/v3/v2 恢复必须保留原 policy digest 与 Host/project layers；设置变化不得改变已存在 Run 的权限。v3 起保存当前 `plan|execute` mode，v4 另保存 root/child orchestration 与冻结 delegation，v5 再保存冻结 extension snapshot；待批 Plan revision 与 Todo 不复制进 recovery Artifact，必须从 canonical Ledger 重放。
+23. Plan 的 `finish` 至少要有一条 Todo；它只产生 `plan.ready` 并暂停，同 Run 只有批准当前 revision 后才能转入 `execute`。
+24. Todo 写入按 Run 串行、依赖图必须无环且总数不超过 500；模型完成 Todo 必须引用同 Run、早于本次 mutation 的 eligible 独立成功执行 Event，且已有证据的 done Todo 在保持 done 时不能清空证据。该引用证明 durable execution fact，不承担 Todo 语义验收。
 24. Todo 在 `plan.ready` 后发生变化会使旧 Plan revision 失效；终态或人工复核状态禁止新写入，但相同 `command_id` 的已提交结果仍可幂等重放。
 25. `user.input_queued` 必须先于 cancel abort；普通输入只能在工具批次结束后、下一模型调用前的安全点按 FIFO 每次消费一条。cancel 是 control-lane 例外，可越过旧普通输入但仍须等待当前工具安全边界；所有 consumed Event 的 `at_step` 在同 Run 内严格递增。
 26. 普通输入在 pending 99 条时拒绝，给第 100 槽保留 cancel；cancel 仅在 pending 已达 100 时拒绝。

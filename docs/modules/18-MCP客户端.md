@@ -10,8 +10,8 @@ G-11 的目标是让外部能力进入现有 Tool/Policy/Receipt/Observation/Ses
 - 传输：只接受 transport: "stdio"；进程以 shell: false 启动，stdout 使用有界 JSON-RPC 行协议，stderr 只保留 4 KiB 尾部。
 - 生命周期：spawning → initializing → ready → degraded → stopped。
 - 工具模式：当前交付的是 native bridge——tools/list 的每个 MCP tool 映射为一个动态内部 Tool；PTC（脚本/子进程内的 Programmatic Tool Calling）没有假装启用，未来必须复用 G-13 沙箱与 G-05 批调度后再开放。
-- 事件：mcp.server_started、mcp.server_failed、mcp.server_stopped、mcp.tools_changed、mcp.tool_called 追加到 canonical EventTypeSchema；随后 G-12 追加两个 `lsp.*` 事件，当前总数为 100；事件账本仍是唯一事实源。
-- 版本边界：`SCHEMA_VERSION = "tracegraph.session-event.v1"`、`PROJECTOR_VERSION = "tracegraph.projector.v8"` 保持不变；`MCP_CONFIG_VERSION = "tracegraph.mcp.v1"` 只约束 MCP 配置 envelope。
+- 事件：mcp.server_started、mcp.server_failed、mcp.server_stopped、mcp.tools_changed、mcp.tool_called 追加到 canonical EventTypeSchema；随后 G-12 追加两个 `lsp.*`、G-20 追加两个 `code.*` 事件，当前总数为 102；事件账本仍是唯一事实源。
+- 版本边界：`SCHEMA_VERSION = "tracegraph.session-event.v1"` 保持不变；G-20 的可选 `code_intel` 使当前 `PROJECTOR_VERSION = "tracegraph.projector.v9"`；`MCP_CONFIG_VERSION = "tracegraph.mcp.v1"` 只约束 MCP 配置 envelope。
 
 ## 2. 配置与密钥
 

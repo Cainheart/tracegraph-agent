@@ -1,7 +1,10 @@
 import {
   ContextManifestSchema,
+  CodeIntelUpdatedDataSchema,
+  CodeStaleBaseDetectedDataSchema,
   ExtensionStatusSchema,
   LspStatusSnapshotSchema,
+  LspDiagnosticsReceivedDataSchema,
   McpServerStatusSchema,
   McpStatusSnapshotSchema,
   SkillProjectInspectionSchema,
@@ -82,6 +85,7 @@ import type {
   ContextBudgetSnapshot,
   ContextTokenEstimateSnapshot,
   ContextSource,
+  CodeIntelSnapshot,
   DiffLine,
   EvidenceSlot,
   EventKind,
@@ -1839,6 +1843,7 @@ function mapProjection(
     ...(turnLimit === undefined ? {} : { turnLimit }),
     ...(sandboxReport === undefined ? {} : { sandboxReport }),
     ...(permission === undefined ? {} : { permission }),
+    ...(projection.code_intel === undefined ? {} : { codeIntel: mapCodeIntelProjection(projection.code_intel) }),
     ...(contextBudget === undefined ? {} : { contextBudget }),
     events,
     todos: todoList.items,
@@ -2102,6 +2107,7 @@ async function hydrateEventEvidence(
       fetchArtifact(sdk, projection.run_id, relations.testRef, artifactCache),
     ]);
     const linked = emptyEventEvidence("The selected event does not reference this evidence type.");
+    const codeIntel = codeIntelForEvent(projection.timeline, event);
     let contextSources = linked.contextSources;
     let contextSlot = relations.contextRef
       ? artifactSlot(relations.contextRef, "Context Manifest")
@@ -2159,6 +2165,7 @@ async function hydrateEventEvidence(
       diffs,
       graphNodes,
       graphEdges,
+      ...(codeIntel === undefined ? {} : { codeIntel }),
       evidence: { context: contextSlot, diff: diffSlot, graph: graphSlot, test: testSlot },
       ...(relations.contextManifestId === undefined ? {} : { contextManifestId: relations.contextManifestId }),
       ...(relations.patchEventId === undefined ? {} : { patchEventId: relations.patchEventId }),
@@ -2171,6 +2178,86 @@ async function hydrateEventEvidence(
     } satisfies EventEvidenceSnapshot] as const;
   }));
   return Object.fromEntries(entries);
+}
+
+function mapCodeIntelProjection(
+  value: NonNullable<RunProjection["code_intel"]>,
+): CodeIntelSnapshot {
+  return {
+    changedFiles: value.changed_files,
+    changedFilesTruncated: value.changed_files_truncated,
+    changedSymbols: value.changed_symbols,
+    changedSymbolsTruncated: value.changed_symbols_truncated,
+    ...(value.diagnostics_summary === undefined ? {} : { diagnosticsSummary: value.diagnostics_summary }),
+    ...(value.stale_base === undefined ? {} : { staleBase: value.stale_base }),
+  };
+}
+
+/**
+ * Resolve semantic data from the selected event's own patch relation. Never
+ * use projection.code_intel here: that is the run head and may be newer than
+ * a replayed/selected historical patch.
+ */
+function codeIntelForEvent(
+  timeline: readonly WireSessionEvent[],
+  selected: WireSessionEvent,
+): CodeIntelSnapshot | undefined {
+  const selectedPatchId = selected.type === "patch.applied" || selected.type === "patch.preview_created"
+    ? selected.event_id
+    : selected.patch_event_id;
+  const semanticEvent = selected.type === "code.intel_updated" || selected.type === "code.stale_base_detected"
+    ? selected
+    : selectedPatchId === undefined
+      ? selected.action_id === undefined
+        ? undefined
+        // A drift has no applied Patch yet. Tie its replacement approval to
+        // the same action only when the drift fact already existed, so an old
+        // preview cannot inherit a later reapproval warning.
+        : [...timeline].reverse().find((event) => (
+          event.type === "code.stale_base_detected"
+          && event.action_id === selected.action_id
+          && event.sequence <= selected.sequence
+        ))
+      : [...timeline].reverse().find((event) => (
+        event.type === "code.intel_updated" && event.patch_event_id === selectedPatchId
+      ));
+  if (semanticEvent === undefined) return undefined;
+
+  const diagnosticsSummary = lspSummaryAtOrBefore(timeline, semanticEvent.sequence);
+  if (semanticEvent.type === "code.intel_updated") {
+    const parsed = CodeIntelUpdatedDataSchema.safeParse(semanticEvent.data);
+    if (!parsed.success) return undefined;
+    return {
+      changedFiles: parsed.data.changed_files,
+      changedFilesTruncated: parsed.data.changed_files_truncated,
+      changedSymbols: parsed.data.changed_symbols,
+      changedSymbolsTruncated: parsed.data.changed_symbols_truncated,
+      ...(diagnosticsSummary === undefined ? {} : { diagnosticsSummary }),
+    };
+  }
+  const stale = CodeStaleBaseDetectedDataSchema.safeParse(semanticEvent.data);
+  if (!stale.success) return undefined;
+  return {
+    changedFiles: [],
+    changedFilesTruncated: false,
+    changedSymbols: [],
+    changedSymbolsTruncated: false,
+    ...(diagnosticsSummary === undefined ? {} : { diagnosticsSummary }),
+    staleBase: stale.data.stale_base,
+  };
+}
+
+function lspSummaryAtOrBefore(
+  timeline: readonly WireSessionEvent[],
+  sequence: number,
+): CodeIntelSnapshot["diagnosticsSummary"] | undefined {
+  const event = [...timeline].reverse().find((candidate) => (
+    candidate.sequence <= sequence && candidate.type === "lsp.diagnostics_received"
+  ));
+  const parsed = event === undefined ? undefined : LspDiagnosticsReceivedDataSchema.safeParse(event.data);
+  if (parsed === undefined || !parsed.success) return undefined;
+  const { project_id: _projectId, ...summary } = parsed.data;
+  return summary;
 }
 
 function resolveEventRelations(
@@ -2397,7 +2484,7 @@ function mapEventKind(type: WireSessionEvent["type"]): EventKind {
   if (type.startsWith("tool.")) return "tool";
   if (type.startsWith("approval.")) return "approval";
   if (type.startsWith("patch.")) return "patch";
-  if (type.startsWith("graph.")) return "graph";
+  if (type.startsWith("graph.") || type.startsWith("code.")) return "graph";
   if (type.startsWith("test.")) return "test";
   return "run";
 }
@@ -2418,7 +2505,7 @@ function mapEventState(
     return "running";
   }
   if (type.endsWith("failed") || type === "model.output_invalid" || type === "tool.unknown" || type === "action.diverged") return "failed";
-  if (type === "approval.denied" || type === "approval.expired" || type === "policy.denied" || type === "action.rejected" || type === "action.rollback_refused" || type === "subagent.interrupted" || type === "attachment.rejected") return "denied";
+  if (type === "approval.denied" || type === "approval.expired" || type === "policy.denied" || type === "action.rejected" || type === "action.rollback_refused" || type === "subagent.interrupted" || type === "attachment.rejected" || type === "code.stale_base_detected") return "denied";
   return "succeeded";
 }
 
@@ -2496,6 +2583,8 @@ function eventTitle(type: WireSessionEvent["type"]): string {
     "patch.rolled_back": "Patch rolled back",
     "graph.snapshot_created": "Graph snapshot created",
     "graph.delta_created": "Architecture delta created",
+    "code.intel_updated": "Semantic CodeGraph updated",
+    "code.stale_base_detected": "Git base drift requires reapproval",
     "test.completed": "Tests completed",
   };
   return titles[type] ?? type.split(".").map((part) => part[0]?.toUpperCase() + part.slice(1)).join(" · ");
@@ -2969,10 +3058,13 @@ function mapGraphDelta(delta: GraphDelta): { nodes: readonly GraphNode[]; edges:
       const mergedAfter = existing.after ?? after;
       nodes.set(id, {
         ...existing,
-        state: existing.state === "partial"
-          ? state
-          : state === "partial" || existing.state === state
-            ? existing.state
+        // An edge may introduce only a partial endpoint after the node delta
+        // has already supplied a precise added/changed/removed state. Keep
+        // that stronger recorded state rather than degrading the graph view.
+        state: state === "partial"
+          ? existing.state
+          : existing.state === "partial" || existing.state === state
+            ? state
             : "partial",
         ...(mergedBefore === undefined ? {} : { before: mergedBefore }),
         ...(mergedAfter === undefined ? {} : { after: mergedAfter }),
@@ -3006,13 +3098,13 @@ function mapGraphDelta(delta: GraphDelta): { nodes: readonly GraphNode[]; edges:
     const before = change.before ? {
       from: change.before.source_node_id,
       to: change.before.target_node_id,
-      label: change.before.kind === "static_import" ? "imports" : "exports",
+      label: graphEdgeLabel(change.before.kind),
       confidence: graphConfidence(change.before.confidence),
     } : undefined;
     const after = change.after ? {
       from: change.after.source_node_id,
       to: change.after.target_node_id,
-      label: change.after.kind === "static_import" ? "imports" : "exports",
+      label: graphEdgeLabel(change.after.kind),
       confidence: graphConfidence(change.after.confidence),
     } : undefined;
     if (change.before) {
@@ -3055,6 +3147,12 @@ function mapGraphDelta(delta: GraphDelta): { nodes: readonly GraphNode[]; edges:
 
 function graphConfidence(confidence: "high" | "medium" | "low"): number {
   return confidence === "high" ? 1 : confidence === "medium" ? 0.7 : 0.4;
+}
+
+function graphEdgeLabel(kind: "static_import" | "static_export" | "contains"): string {
+  if (kind === "static_import") return "imports";
+  if (kind === "static_export") return "exports";
+  return "contains";
 }
 
 function mapGraphChange(change: GraphDelta["node_changes"][number]["change"]): GraphNode["state"] {

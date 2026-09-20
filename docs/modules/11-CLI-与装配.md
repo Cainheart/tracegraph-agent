@@ -123,13 +123,15 @@ operator 应使用自己稳定且无内部前缀的 id。`team-expire:`、`team-
 5. 打开 `HostExtensionController`：配置仅为最大 256 KiB、O_NOFOLLOW 的 strict JSON，`module` 只能等于 Host trusted catalog id；Core/CLI 不执行项目 `tracegraph.config.ts`、本地 JS/TS 或 npm specifier。随后读取 MCP 配置，先启动每个 stdio server，再把 native tools 接入同一个 ExtensionManager；required server 失败会在 Host listen 前中止，optional server 记录 degraded 并继续。随后建 `JsonlSessionStore`、`projects/` 与 `chat-workspace/`，打开本地项目注册表并汇总 managed/linked/readonly 项目，构造无 Workspace 能力的聊天工作区。
 6. 装配模型适配器，读取/迁移 persisted model config，并选择 environment 或 persisted 活动配置；G-18 `TRACEGRAPH_MODEL_IMAGE_INPUT` 只接受 `true/false/1/0`，未设置默认 false，作为显式 Host-owned capability 注入适配器。
 7. 调用 `createConfiguredSubagents()`：只从编译期 trusted catalog 选 profile name，并用 flag/env 收窄 profile 集合、parallel/depth 与 step/token 默认预算；provider 绑定、role prompt/version/hash、tool allowlist 不从环境、HTTP 或模型输入读取。
-8. 建 Runtime：注入与 Host controller **同一个** `extensionManager`，再注入 `telemetrySink`、`sessionStore`、`retriever`、`subagentRegistry`、parallel/depth limits、初始 legacy fallback `sandboxMode` 与逐新 Run 调用的 `permissionPolicyResolver`；Runtime 默认建立 `<dataDir>/token-calibration.json`、`memory/records.jsonl`、`wal/`、`recovery/` 与 `attachments/`；这里也是全仓唯一注入 `codeGraph`、标准 retrieval、G-07 trusted subagent composition 与 G-18 model image capability 的地方。
+8. 建 Runtime：注入与 Host controller **同一个** `extensionManager`，再注入 `telemetrySink`、`sessionStore`、`retriever`、`subagentRegistry`、parallel/depth limits、初始 legacy fallback `sandboxMode` 与逐新 Run 调用的 `permissionPolicyResolver`；Runtime 默认建立 `<dataDir>/token-calibration.json`、`memory/records.jsonl`、`wal/`、`recovery/` 与 `attachments/`；这里也是标准 serve 路径注入 `codeGraph`、标准 retrieval、G-07 trusted subagent composition 与 G-18 model image capability 的地方。G-20 的 `createCodeGraphProvider()` 同时提供 AST snapshot/delta 与固定只读 Git context probe；Host 本身不构造该 provider。
 9. 用已加载 workspace 建只读 `recoveryWorkspaces` Map，注入 `DurableSessionController.workspaceResolver`。
 10. 建 Host（注入 bounded permission settings get/configure 与同一 `HostExtensionController`）。Telemetry status 不另设 composition seam；Host 直接读取 Runtime 的 `getTelemetryStatus()`，避免第二份状态源。在 `listen()` 前完成 Session tail repair → 已注册 workspace 的 Action WAL/父子 Run 对账 → 其它非终态 Run 的 interrupted 标记，失败则 fail-closed。
 11. 打印 Permission preset、对应 sandbox 状态、Retrieval 模式、启用的 Subagent profiles 与 parallel/depth、Model image input enabled/disabled、Host 地址、Web Workbench 地址、模型配置来源与令牌到期时间；full-write 文案明确注明 sandbox disabled。
 12. `SIGINT` / `SIGTERM` 调用 `closeHostAndFlushTelemetry()`：先等待 `host.close()` settle，无论 close 成功或失败都会随后启动 `runtime.flushTelemetry()`；整个 Telemetry flush barrier 共用默认 5,000 ms 总等待预算，超时即继续关停。该预算不同于 `telemetry.json.timeout_ms` 的单次 HTTP 请求 timeout。
 
 **这是全仓唯一的组合根。** 所有可选能力（项目创建、目录选择、目录揭示、模型配置、Permission 设置、代码图、Memory retriever、Telemetry sink）都在这里被接线。Telemetry 缺失配置时明确装配 Noop sink，保持零网络；Retrieval 缺失远端配置时明确装配本地 backend，而不是关闭 recall。
+
+G-20 的 `createCodeGraphProvider().captureGitContext()` Git probe 不是模型 Tool，也不是 shell escape hatch：它只运行 `git -c core.hooksPath=/dev/null -C <canonical workspace>` 的固定只读子命令，`shell:false`、5 秒 deadline、64 KiB stdout 上限、禁用 system config/optional locks；工作树探测使用 `git status --porcelain=v1 -z --untracked-files=normal`，故 status SHA-256 fingerprint **覆盖 untracked 文件**。公开事实只写 full commit、branch、dirty、该 fingerprint 与时间。Git 不可用时返回严格的 `unavailable` context；不会把“无法探测”当作“工作树未变化”，因此不会承诺 stale-base 重新审批保护。
 
 Session 目录有独立 flag/env，但**不是可与任意 `dataDir` 自由组合的独立数据库**：JSONL 只保存 Event ref，没有 ledger locator，Controller 总是到当前 `dataDir/events` 解析它。一个 Session root 必须固定配对创建它的同一个 `dataDir`；多数据目录/多实例应同时指定不同且稳定的 `--session-dir`。误把多个 Ledger 指向同一 Session root 时，启动扫描会因找不到或作用域不匹配而 fail-closed。默认组合为 `<repo>/.tracegraph` + `~/.tracegraph/sessions`，隐含单一 TraceGraph data root 的使用方式。删除会话移动到 Session 根的同级 `sessions-trash`，不会删除 Project、Run Ledger 或真实工作区文件。
 
@@ -413,6 +415,8 @@ CLI 在启动时只建立一个 `CredentialStore` seam：
 21. **G-07 profile catalog 是编译期本地配置，不是插件或远程 registry。** flag/env 只能选择内置名字和数值 limits，不能新增 provider、role prompt 或 tool allowlist；修改 catalog 需要改代码并重启。G-08 已提供 durable Agent Team 协调事实，但默认 depth 1/parallel 2 与同步单 spawn 仍限制执行模型；不能据此宣称任意多轮 child 续聊、旧 worker 自动恢复或跨 Host 调度。
 
 22. **G-17 配置不是任意第三方插件加载器。** 标准 catalog 精确只有 Artifact 与 Run-state 两个内置 id；`module` 是数据 key，不是 path/npm specifier。没有签名分发、依赖解析、恶意代码隔离、扩展 UI 或 active-Run HMR；修改配置后只能在所有 Run lease 释放时显式 reload。
+
+23. **G-20 的 Git fence 不是通用并发锁或写入事务。** 它只在已有可用 Git baseline 的 Patch 审批进入写入前比较 commit/branch/status fingerprint；若 policy `allow` 的 Patch 检出漂移，Runtime 也会降级为新的手工审批。Git unavailable、非 Git 工作区、未注入 Git provider 的自定义 composition 和外部系统副作用不获得该保证。最终 `commit_patch` 仍只靠目标文件 `base_hash` 与 G-04 WAL 收口；动态调用、DI、路由、方法级和跨语言影响面不由 CodeGraph 推断。
 
 ---
 

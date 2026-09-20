@@ -92,17 +92,33 @@
     },
     {
       "id": "LIM-SEMANTIC-CODEGRAPH",
-      "status": "unmapped",
-      "summary": "CodeGraph does not model dynamic calls, DI, routes, or the G-20 code_intel merge; semantic diagnostics themselves are provided by the separate LSP seam.",
-      "code": [],
-      "tests": [],
-      "commands": [],
-      "roadmap": "G-20"
+      "status": "mapped",
+      "summary": "G-20 exposes only JS/TS top-level declaration symbols, static contains/import/export relations, bounded LSP summaries, and Git stale-base reapproval. It does not model dynamic calls, DI, routes, runtime dispatch, method/local symbols, or cross-language references.",
+      "code": [
+        "packages/codegraph/src/analyze.ts",
+        "packages/contracts/src/code-intel.ts",
+        "packages/core/src/runtime.ts",
+        "apps/cli/src/composition.ts",
+        "apps/web/src/components/ChangesView.tsx"
+      ],
+      "tests": [
+        "packages/codegraph/tests/codegraph.test.ts",
+        "packages/contracts/src/code-intel-g20.test.ts",
+        "packages/core/src/runtime.code-intel.test.ts",
+        "apps/web/src/components/ChangesView.test.tsx"
+      ],
+      "commands": [
+        "pnpm --filter @tracegraph/codegraph test:unit",
+        "pnpm --filter @tracegraph/contracts test:unit",
+        "pnpm --filter @tracegraph/core test:unit",
+        "pnpm --filter @tracegraph/web test:unit"
+      ],
+      "roadmap": "G-20 follow-up"
     },
     {
       "id": "LIM-LSP-PLATFORM",
       "status": "mapped",
-      "summary": "Native stdio LSP diagnostics, definition, and references are implemented, but full indexing, automatic Context injection, HTTP/SSE, cross-Host sessions, and the G-20 code_intel merge remain absent.",
+      "summary": "Native stdio LSP diagnostics, definition, and references are implemented. G-20 reuses the bounded durable diagnostic summary in code_intel, but full indexing, automatic Context injection, automatic post-patch diagnostics, HTTP/SSE, and cross-Host sessions remain absent.",
       "code": [
         "packages/contracts/src/lsp.ts",
         "packages/core/src/lsp/client.ts",

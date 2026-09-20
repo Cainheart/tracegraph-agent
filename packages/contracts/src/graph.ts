@@ -10,17 +10,48 @@ import {
 
 export const GraphNodeSchema = z.object({
   id: IdentifierSchema,
-  kind: z.enum(["file", "directory", "module"]),
+  kind: z.enum(["file", "directory", "module", "symbol"]),
   label: NonEmptyStringSchema,
   file_path: RelativePathSchema.optional(),
   line: z.number().int().positive().optional(),
+  end_line: z.number().int().positive().optional(),
+  /** Present only for declaration-level semantic nodes introduced by G-20. */
+  symbol_name: NonEmptyStringSchema.max(256).optional(),
+  declaration_kind: z.enum([
+    "class",
+    "enum",
+    "function",
+    "interface",
+    "namespace",
+    "type",
+    "variable",
+  ]).optional(),
   content_hash: Sha256Schema.optional(),
+}).superRefine((node, context) => {
+  if (node.kind === "symbol") {
+    if (node.file_path === undefined) {
+      context.addIssue({ code: "custom", path: ["file_path"], message: "symbol node requires file_path" });
+    }
+    if (node.line === undefined) {
+      context.addIssue({ code: "custom", path: ["line"], message: "symbol node requires line" });
+    }
+    if (node.symbol_name === undefined || node.declaration_kind === undefined) {
+      context.addIssue({
+        code: "custom",
+        path: ["symbol_name"],
+        message: "symbol node requires symbol_name and declaration_kind",
+      });
+    }
+  }
+  if (node.end_line !== undefined && node.line !== undefined && node.end_line < node.line) {
+    context.addIssue({ code: "custom", path: ["end_line"], message: "end_line cannot precede line" });
+  }
 });
 export type GraphNode = z.infer<typeof GraphNodeSchema>;
 
 export const GraphEdgeSchema = z.object({
   id: IdentifierSchema,
-  kind: z.enum(["static_import", "static_export"]),
+  kind: z.enum(["static_import", "static_export", "contains"]),
   source_node_id: IdentifierSchema,
   target_node_id: IdentifierSchema,
   file_path: RelativePathSchema,

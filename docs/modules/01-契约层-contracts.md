@@ -33,8 +33,9 @@
 | `credentials.ts` | 约 100 行 | Credential backend/name、`${secret:NAME}`、迁移 outbox、安全元数据、模型配置写入/公开响应 |
 | `sandbox.ts` | — | G-13 三档 mode、enforcement/platform、versioned report 与 lifecycle Event data |
 | `permission.ts` | — | G-06 权限预设、Host/project 策略层、可解释决策、公开设置、审批 outcome/token 与 Event payload |
-| `event.ts` | — | 100 种事件类型、可选 `session_id`、canonical 事件、提案、wire 事件 |
+| `event.ts` | — | 102 种事件类型、可选 `session_id`、canonical 事件、提案、wire 事件 |
 | `lsp.ts` | — | G-12 stdio LSP 配置、server status、位置/诊断、摘要与 unavailable 事件 payload |
+| `code-intel.ts` | — | G-20 的 Git 基线、静态变更符号、stale-base、`code.intel_updated` / `code.stale_base_detected` payload 与 replay-safe `CodeIntelProjection` |
 | `session.ts` | — | Session JSONL v1 header/event-ref、root/all 查询、恢复响应与 v1/v2/v3/v4/v5 内部恢复 Artifact 契约 |
 | `context.ts` | — | 上下文策略、G-02 surface node/spill/summary/step、预算、preflight `TokenEstimate` 与 `ContextManifest` |
 | `token.ts` | — | G-03 的 section、preflight estimate、provider usage、observation 与持久校准格式 |
@@ -72,10 +73,10 @@
 
 ```3:4:packages/contracts/src/common.ts
 export const SCHEMA_VERSION = "tracegraph.session-event.v1" as const;
-export const PROJECTOR_VERSION = "tracegraph.projector.v8" as const;
+export const PROJECTOR_VERSION = "tracegraph.projector.v9" as const;
 ```
 
-`SCHEMA_VERSION` 被 `SessionEvent`、`WireSessionEvent`、`RunProjection`、`LivePublicActivity`、`ModelSurfaceEvent` 共同引用；`EventTypeSchema` 是 durable event type 的唯一枚举；`PROJECTOR_VERSION` 只出现在 `RunProjection`。G-01 的 Session identity / `interrupted` 使 projector 升到 v2，G-04 的粘性 `needs_manual_review` 升到 v3，G-09 的 execute 迁移、PendingPlan 与 Todo 投影升到 v4，G-14 的 durable input queue / consumption fact 升到 v5，G-07 的 durable `subagents` 父侧派生形状升到 v6，G-18 的 `attachments` 派生形状升到 v7，G-08 的可选 `team` 派生形状再升到当前 v8。这些只追加 Event 类型/派生形状，所以 canonical Event schema 仍保持 v1。G-21 曾把 Event 总数增至 68；G-07 追加 5 个 `subagent.*` 后为 73；G-18 再追加 3 个 `attachment.*` 后为 76；G-17 追加 `extension.error` 后为 77；G-08 追加 13 个 `team.*` 后为 90；G-10 追加 3 个 `skill.*`、G-11 追加 5 个 `mcp.*`、G-12 追加 2 个 `lsp.*` 后当前为 100。Telemetry 的只读健康状态使用独立 `TELEMETRY_STATUS_SCHEMA_VERSION = "tracegraph.telemetry-status.v1"`，检索 wire/index 使用独立 `tracegraph.retrieval.v1`，扩展 API 使用 `EXTENSION_API_VERSION = "tracegraph.extension.v1"`，LSP 配置使用 `LSP_CONFIG_VERSION = "tracegraph.lsp.v1"`，都不能与 canonical schema 混用。Session 文件仍使用 `SESSION_FORMAT_VERSION = 1`；G-08 的 Team 与 G-12 LSP 状态均由 Ledger/manager 边界重建，没有私有不可重放状态，因此内部 Run recovery 仍为 v5，Action WAL / Recovery Ledger 各自有磁盘格式 v1。
+`SCHEMA_VERSION` 被 `SessionEvent`、`WireSessionEvent`、`RunProjection`、`LivePublicActivity`、`ModelSurfaceEvent` 共同引用；`EventTypeSchema` 是 durable event type 的唯一枚举；`PROJECTOR_VERSION` 只出现在 `RunProjection`。G-01 的 Session identity / `interrupted` 使 projector 升到 v2，G-04 的粘性 `needs_manual_review` 升到 v3，G-09 的 execute 迁移、PendingPlan 与 Todo 投影升到 v4，G-14 的 durable input queue / consumption fact 升到 v5，G-07 的 durable `subagents` 父侧派生形状升到 v6，G-18 的 `attachments` 派生形状升到 v7，G-08 的可选 `team` 派生形状升到 v8，G-20 的可选 `code_intel` 派生形状升到当前 v9。这些只追加 Event 类型/派生形状，所以 canonical Event schema 仍保持 v1。G-21 曾把 Event 总数增至 68；G-07 追加 5 个 `subagent.*` 后为 73；G-18 再追加 3 个 `attachment.*` 后为 76；G-17 追加 `extension.error` 后为 77；G-08 追加 13 个 `team.*` 后为 90；G-10 追加 3 个 `skill.*`、G-11 追加 5 个 `mcp.*`、G-12 追加 2 个 `lsp.*`、G-20 再追加 2 个 `code.*` 后当前为 102。Telemetry 的只读健康状态使用独立 `TELEMETRY_STATUS_SCHEMA_VERSION = "tracegraph.telemetry-status.v1"`，检索 wire/index 使用独立 `tracegraph.retrieval.v1`，扩展 API 使用 `EXTENSION_API_VERSION = "tracegraph.extension.v1"`，LSP 配置使用 `LSP_CONFIG_VERSION = "tracegraph.lsp.v1"`，CodeIntel 使用 `CODE_INTEL_VERSION = "tracegraph.code-intel.v1"`，都不能与 canonical schema 混用。Session 文件仍使用 `SESSION_FORMAT_VERSION = 1`；G-08 Team、G-12 LSP 与 G-20 CodeIntel 都可由 Ledger/manager 边界重建，没有私有不可重放状态，因此内部 Run recovery 仍为 v5，Action WAL / Recovery Ledger 各自有磁盘格式 v1。
 
 ---
 
@@ -177,7 +178,7 @@ ObservationSchema   观测：status / summary / facts / artifact_refs
 | `AttachmentRefSchema` | attachment id、MIME、1..5 MiB、SHA-256、source 与可选 PDF 文本 Artifact id |
 | `AttachmentAdded/Rejected/OffloadedDataSchema` | 三种 durable Event 的 strict payload；PDF/delivery/extraction/locator 有交叉约束 |
 | `ModelCapabilitiesSchema` / `ModelImageInputSchema` | Host-owned `image_input`；只允许 PNG/JPEG base64，解码后仍须落在 5 MiB 内 |
-| `AttachmentListProjectionSchema` | G-18 在 v7 引入的 replay 派生列表；旧 Ledger 默认为空，当前随整体 Projection 使用 v8 |
+| `AttachmentListProjectionSchema` | G-18 在 v7 引入的 replay 派生列表；旧 Ledger 默认为空，当前随整体 Projection 使用 v9 |
 
 附件 raw bytes 不属于任何 command/event JSON schema。StartRun/StartChat 只携带 opaque upload ids，Host/Core 再用内部 staging record 恢复 project/session scope；这避免 Plain Chat 隐藏 project id 被 receipt 回显，也避免 base64 膨胀进入 Ledger。
 
@@ -196,7 +197,7 @@ ObservationSchema   观测：status / summary / facts / artifact_refs
 
 Team task `done` 必须带 durable evidence；`claimed|done|blocked` 必须有 owner，`open|cancelled` 必须释放 owner。`TeamProjectionSchema` 还会确认 member 与父 `RunProjection.subagents` 中的 canonical link 一致，避免把任意 id 提升为 worker。
 
-### 5.6 `event.ts` — 100 种事件
+### 5.6 `event.ts` — 102 种事件
 
 ```
 run.created          run.started          run.completed / run.failed / run.cancelled
@@ -217,6 +218,7 @@ sandbox.configured / sandbox.enforced / sandbox.disabled
 patch.preview_created / patch.applied / patch.rolled_back
 test.completed
 graph.snapshot_created / graph.delta_created
+code.intel_updated / code.stale_base_detected
 memory.candidate_evaluated  memory.written  memory.recalled  retrieval.index_updated
 subagent.started / subagent.message_sent / subagent.completed / subagent.failed / subagent.interrupted
 attachment.added / attachment.rejected / attachment.offloaded
@@ -279,14 +281,23 @@ G-02 又增加了四组契约：
 
 ### 5.9 `graph.ts` — 图的引用完整性
 
-`GraphNodeSchema.kind`（3）：`file` / `directory` / `module`
-`GraphEdgeSchema.kind`（2）：`static_import` / `static_export`，另有 `confidence`（`high`/`medium`/`low`）与 `resolution`（`resolved`/`partial`/`unknown`）
+`GraphNodeSchema.kind`（4）：`file` / `directory` / `module` / `symbol`。`symbol` 必须同时有 workspace-relative `file_path`、起始 `line`、`symbol_name`、`declaration_kind`，可选 `end_line` 不得早于起始行。
+`GraphEdgeSchema.kind`（3）：`static_import` / `static_export` / `contains`，另有 `confidence`（`high`/`medium`/`low`）与 `resolution`（`resolved`/`partial`/`unknown`）
 `GraphChangeSchema`（5）：`added` / `removed` / `changed` / `unknown` / `partial`
 
 `GraphSnapshotSchema` 校验：节点 id 唯一、边 id 唯一、**每条边的 source/target 都必须存在于本快照节点集中**。
 `validateDeltaShape()` 校验：`added` 只能有 `after`、`removed` 只能有 `before`、`changed` 两者都要有、`unknown`/`partial` 至少有一个；且 `before` 与 `after` 若同时存在，`id` 必须相同。
 
-### 5.10 `memory.ts` — 记忆的准入与留证
+### 5.10 `code-intel.ts` — G-20 的有界语义事实
+
+`CODE_INTEL_VERSION = "tracegraph.code-intel.v1"` 约束 `CodeIntelProjectionSchema`。它是 Graph/LSP/Git 之间的**投影视图**，不是第二份图或原始 Git 状态：
+
+- `GitBaseContextSchema` 只有 `available|unavailable` 两态；available 必须有 full commit、dirty 与 status fingerprint，unavailable 禁止伪造仓库字段；不传 remote、绝对路径、原始 status。
+- `ChangedSymbolSchema` 只接受上述 7 种顶层声明类别、相对路径、行范围与 `added|removed|changed`，每项和列表均严格有界；`CodeIntelUpdatedDataSchema` 区分空变更的 baseline 与必须有两份快照 id 的 post-patch。
+- `CodeIntelStaleBaseSchema` 绑定 expected/actual、检测时间、四种漂移原因与固定 `requires_reapproval:true`；`CodeStaleBaseDetectedDataSchema` 承载 `code.stale_base_detected`。
+- `CodeIntelProjectionSchema` 可选合并 G-12 的 `LspDiagnosticsSummarySchema`，完整诊断、调用图和原始 Git 输出不在此处。
+
+### 5.11 `memory.ts` — 记忆的准入与留证
 
 | 导出 | 关键点 |
 |---|---|
@@ -310,7 +321,7 @@ G-02 又增加了四组契约：
 - **`MemoryRecalledData` 同时记"注入了什么"和"拦下了什么、为什么"**，并强制逐 hit token 之和等于 `injected_tokens` 且不超过预算。
 - `ContextManifest` 又要求 `memory + retrieved` item/node 的 `hit_id/content_hash` 对齐，`retrieval.injected_tokens` 与最终可见 item/node token 完全一致。检索结果因此不是一段无法解释的 prompt 拼接。
 
-### 5.11 `action-wal.ts` — Patch 副作用与恢复尝试
+### 5.12 `action-wal.ts` — Patch 副作用与恢复尝试
 
 - `ActionWalPhaseSchema`：`prepare / applied / committed / verified / aborted`。
 - `ActionWalTargetSchema`：workspace-relative target、是否原先存在、before/after hash，以及既存目标必需的 opaque `backup_ref`；曾不存在的目标反而禁止伪造 backup。
@@ -319,27 +330,27 @@ G-02 又增加了四组契约：
 
 这些契约只描述可持久化事实，不代表任意 Tool 都自动获得恢复能力；当前生产者仅接入 `commit_patch`。
 
-### 5.12 `session.ts` — durable Session 与内部恢复状态
+### 5.13 `session.ts` — durable Session 与内部恢复状态
 
 - `SessionHeaderSchema`：`session_version/session_id/project_id/created_at/title?/parent_session_id?/run_ids[]`。
 - `SessionEventReferenceSchema`：`entry_id/parent_entry_id?` 形成树，只引用 `{event_id, run_id, sequence}`；strict schema 从结构上禁止复制 Event 正文。
 - `SessionListQuery/Response`：项目筛选、标题/ID 搜索、limit/cursor，以及默认 `roots` / 显式 `all` view；普通历史不会把带 `parent_session_id` 的 child Session 混成顶层对话。另有 rename/delete/resume 与 startup recovery report，报告分别列出 reconciled / aborted / diverged Action id。
 - `RunRecoveryStateSchema` 是 v1/v2/v3/v4/v5 判别联合：当前 v5 在 `plan|execute`、推理强度、完整 `effective_policy` 与 orchestration `depth/limits/delegation?` 上，再冻结 G-17 extension API/generation/config digest/active extension 与 Tool 集。child 必须持久化与父 `subagent.started` 相同的冻结 delegation，root 则不能伪造 parent。v1/v2 的 `manual` 只为历史读取并映射为 execute，v3/v4 仍供已有 Run 兼容。`SessionPendingPatchRecoveryStateSchema` 另保存完整绑定的 pending approval 与精确 preview call。Todo/Plan revision 仍从 canonical Ledger 重放，不复制进 recovery Artifact。这些内容只用于内部 `recovery_state` Artifact，不进入 Session JSONL，也不应出现在 Wire Projection。
 
-### 5.13 `projection.ts` — 视图
+### 5.14 `projection.ts` — 视图
 
 `RunStatusSchema`（10）新增 `awaiting_plan_approval`；`plan.ready` 进入该暂停态，不属于终态。
-`RunProjectionSchema`：`schema_version` + `projector_version` 双 literal、可选 `session_id`（只为旧账本兼容）、`last_sequence`、`timeline: WireSessionEvent[]`、`todos`、`input_queue`、`subagents`、`pending_plan`、`pending_approval`、可选 `permission` / `sandbox_report`、`artifact_refs`、`outcome` / `failure_code`。`input_queue` 对旧账本默认 `{pending:[]}`；`subagents` 对旧账本默认空列表，并保留 active count、实际 limits、稳定父子 link、冻结 profile authority、消息/终态证据和有界结果。pending input 必须属于投影 Run；subagent 必须属于投影 parent Run/Session，child result Artifact 必须属于同 project/child Run。`PendingPlan` 绑定 `plan_event_id + todo_ids`；`PendingApprovalSchema` 仍接受 legacy shape 用于重放，但新 Runtime 写入 `BoundPendingApprovalSchema`，强制 tool/action/policy digest。
+`RunProjectionSchema`：`schema_version` + `projector_version` 双 literal、可选 `session_id`（只为旧账本兼容）、`last_sequence`、`timeline: WireSessionEvent[]`、`todos`、`input_queue`、`subagents`、`pending_plan`、`pending_approval`、可选 `permission` / `sandbox_report` / `code_intel`、`artifact_refs`、`outcome` / `failure_code`。`input_queue` 对旧账本默认 `{pending:[]}`；`subagents` 对旧账本默认空列表，并保留 active count、实际 limits、稳定父子 link、冻结 profile authority、消息/终态证据和有界结果。`code_intel` 对旧账本保持 absent，收到 `code.intel_updated` 后由 Projection 重放产生，随后 LSP 摘要或 stale-base 事实只会更新这一受限字段。pending input 必须属于投影 Run；subagent 必须属于投影 parent Run/Session，child result Artifact 必须属于同 project/child Run。`PendingPlan` 绑定 `plan_event_id + todo_ids`；`PendingApprovalSchema` 仍接受 legacy shape 用于重放，但新 Runtime 写入 `BoundPendingApprovalSchema`，强制 tool/action/policy digest。
 
 `timeline` 用的是 **wire** 事件而非 canonical——视图层拿不到 hash 链。
 
-### 5.14 `live-event.ts` / `model-stream.ts` — 展示层
+### 5.15 `live-event.ts` / `model-stream.ts` — 展示层
 
 `LivePublicActivity`：`activity_id`、`source_event_id`、`source_event_type`、`sequence`、`kind`（`run`/`context`/`model`/`tool`）、`status`（`started`/`completed`/`failed`/`cancelled`/`info`）、`summary`（max 800）、可选的 `turn_id`/`model_call_id`/`operation_id`/`action_id`。**只带 `source_event_id` 引用，不带任何内容**。
 
 `ModelSurfaceEvent`：`type ∈ {public_plan_snapshot, thinking_snapshot(废弃), answer_snapshot}`、`status ∈ {streaming, completed, failed, cancelled}`、`cursor`、`text`（max 8 000）。`thinking_snapshot` 的注释是明确的废弃标记：*"never render provider-private reasoning"*。
 
-### 5.15 `credentials.ts` — 引用与公开元数据
+### 5.16 `credentials.ts` — 引用与公开元数据
 
 凭据契约把“可持久化/可传输的指针”和“只能留在 Host 信任边界内的值”分开：
 
@@ -355,7 +366,7 @@ G-02 又增加了四组契约：
 
 `PublicModelConfigResponseSchema` 还有交叉校验：`has_key === (credential !== undefined)`。因此“声称有 Key 却不给来源元数据”或“声称没有 Key 却附带凭据元数据”的响应都会失败。
 
-### 5.16 `sandbox.ts` — 请求模式与实际 enforcement 分账
+### 5.17 `sandbox.ts` — 请求模式与实际 enforcement 分账
 
 `SandboxModeSchema` 固定三档：`read-only / workspace-write / danger-full-access`；`SandboxEnforcementSchema` 是 `full / partial / none`，平台只接受 `darwin / linux / win32`。两组值刻意分开：请求了受限模式不代表平台已经执行了它。
 
@@ -368,7 +379,7 @@ G-02 又增加了四组契约：
 
 三个 lifecycle payload 也各自 strict：`sandbox.configured` 只记录 Host 请求的 mode/platform；`sandbox.enforced` 只能承载 `full/partial`；`sandbox.disabled` 只能承载 `none`，并区分显式 `danger-full-access` 与受限后端不可用。浏览器命令契约没有 sandbox 字段，所以选择权留在本机 composition root，而不是不可信客户端。
 
-### 5.17 `permission.ts` — 权限预设、解释性策略与审批绑定
+### 5.18 `permission.ts` — 权限预设、解释性策略与审批绑定
 
 三种 built-in preset 是不可拆的组合；`custom` 只允许作为 Host 已解析快照的键，不是浏览器可提交选项：
 
@@ -384,7 +395,7 @@ G-02 又增加了四组契约：
 - `PermissionSettingsResponseSchema` 只公开 active preset、sandbox/approval pair、digest、ceiling、最多三个 available presets、source/locked/reason；`PermissionPresetUpdateRequestSchema` 只允许 `command_id + preset_key`，结构上排除 rules、path、token 与本机路径。
 - `ApprovalTokenSchema` 绑定 `approval_id/project_id/run_id/action_id/action_digest/policy_digest/scope/issued_at/expires_at/single_use:true`，仅供最终 policy 为 `ask` 的一次性批准路径使用；policy `allow` 不制造 token。`ApprovalRequested/Granted/Denied/ExpiredDataSchema` 为新写入提供 strict payload；legacy action/pending approval 兼容只用于读取。
 
-### 5.18 `todo.ts` — Plan revision 与结构化 Todo
+### 5.19 `todo.ts` — Plan revision 与结构化 Todo
 
 - `TodoItemSchema` 固定 `todo_id/title/detail?/state/depends_on/evidence_event_ids/created_by`，依赖和证据 id 都唯一、有界，并拒绝自依赖。
 - `TodoReadInputSchema` 用 `{offset:0..500=0, limit:1..100=25}` 做 item 分页；完整 Host Todo 投影仍由 `TodoListSchema` 表达。Core 为模型读取另设 512 KiB content / 640 KiB result envelope、4,000 UTF-8-byte excerpt 与完整页 Artifact，不靠一个无限大响应。
@@ -393,7 +404,7 @@ G-02 又增加了四组契约：
 - `TodoCompletedDataSchema` 在契约层要求模型完成时至少有一个证据 id；是否为同 Run、早于 mutation 且属于 eligible 独立成功执行事实，由 Core 在 live write 与 replay 共用的 fail-closed predicate 校验。用户勾选本身就是对该 Todo 的持久确认，不需伪造 Tool 事件，但 Todo Event 不能作为另一个模型完成的独立证据。`updated_by` 与 item 上不可变的 `created_by` 分开。
 - `PlanReadyDataSchema` 保存唯一 Todo id 集与自洽 count；`PlanApprovedDataSchema` 绑定确切 `plan_event_id`、当时 Todo ids 与 `approved_by:"user"`。
 
-### 5.19 `steering.ts` — 运行中输入与 inbox
+### 5.20 `steering.ts` — 运行中输入与 inbox
 
 - `UserInputKindSchema` 固定为 `message|cancel|approve_hint`；正文最多 8,000 字符，message/hint 不能为空，消费字段 `consumed_at + consumed_at_step` 必须成对出现，step 只允许 1..1,000,000。
 - `SubmitUserInputRequestSchema` 是 Browser→Host 的 strict body，只接收 `command_id/input_id/kind/body`，仍不能夹带 actor；`SubmitUserInputCommandSchema` 才由可信 Host/Core 绑定 `project_id/run_id/actor`。actor 现为 `user|parent_agent`，后者仅供父 Runtime 向 direct child 的内部 mailbox 发送消息/取消。
@@ -401,7 +412,7 @@ G-02 又增加了四组契约：
 - Runtime 在 queued fact 顶层写 `_internal_command_digest` 与 `_internal_input_digest`，分别保护 command-id 和 input-id 重用冲突；它们参与 canonical Event hash/replay，但 `toWireEvent()` 会删除全部顶层 `_internal_*`，浏览器拿不到 digest。
 - `SubmitUserInputResultSchema` 用 `queued|duplicate` 表达新入队与幂等回放；新 queued 结果不能伪装成已经消费。`InputQueueProjectionSchema` 要求 pending id 唯一，且 `last_consumed` 不能同时仍在 pending。
 
-### 5.20 `subagent.ts` — 可信委派，而不是模型自授权限
+### 5.21 `subagent.ts` — 可信委派，而不是模型自授权限
 
 - `SpawnSubagentInputSchema` 只允许 `profile_name/task_packet/context_scope/budget?`；provider key、role prompt/hash、tool allowlist、depth 与父 scope 均不在模型输入中。
 - `SubagentProfileSchema` 是 Host 注册表的可信配置；`SubagentSpecSchema` 是实际启动时冻结的 authority，包含 provider key、role prompt version/hash、effective tool allowlist、depth、context scope 与 step/token budget。
@@ -410,7 +421,7 @@ G-02 又增加了四组契约：
 - `SubagentFailedDataSchema` 区分 launch 与 execution：launch 失败没有伪造 child terminal proof；execution failure（含 `budget_exceeded`）必须携带 child terminal Event id/hash。completed/interrupted 也必须携带 proof。
 - `SubagentOrchestrationRecoverySchema` 固化 depth/limits/delegation；默认 `max_parallel_subagents=2`、`max_depth=1`。`SubagentListProjectionSchema` 对 active count、唯一 child ids、并发上限与终态字段做交叉校验。
 
-### 5.21 `telemetry.ts` — 只读健康状态，不是配置或事实账本
+### 5.22 `telemetry.ts` — 只读健康状态，不是配置或事实账本
 
 `TelemetryStatusSchema` 是 `.strict()` 的独立 wire schema：
 
@@ -461,6 +472,9 @@ G-02 又增加了四组契约：
 | `TokenCalibrationFileSchema` | provider/model 唯一；版本/revision/sample 比例有界 |
 | `GraphSnapshotSchema` | 节点/边 id 唯一；边的两端必须存在于节点集 |
 | `GraphNodeDelta/EdgeDelta` | `added`/`removed`/`changed` 的 `before`/`after` 组合合法；`before.id === after.id` |
+| `GitBaseContextSchema` | available 必须带 commit/dirty/fingerprint；unavailable 不能夹带仓库状态或 remote/path/raw status |
+| `CodeIntelUpdatedDataSchema` | baseline 只能为空变更；post-patch 必须同时绑定 base/result snapshot；文件与 symbol id 各自唯一且有界 |
+| `CodeIntelStaleBaseSchema` | expected/actual 是严格 Git context，固定 `requires_reapproval:true`，仅允许定义好的漂移原因 |
 | `MemoryScopeSchema` | `project`/`run` ⇒ 必须有 `project_id`；`run` ⇒ 还必须有 `run_id` |
 | `MemoryRecordSchema` | `source_refs.min(1)` |
 | `MemoryRecalledDataSchema` | completed/degraded 与 failure code 成对；hit/token 不得超过预算；逐 hit token 和必须等于总注入量 |
@@ -474,7 +488,7 @@ G-02 又增加了四组契约：
 
 ## 7. 测试证据
 
-`contracts.test.ts` 覆盖 G-03 的 estimate/report/calibration 正反例、G-04 rollback request/command 边界，以及 G-19 的 `${secret:NAME}` 解析、迁移 marker、公开凭据元数据、`has_key` 一致性和 `api_key` 回显拒绝。`action-wal.test.ts` 单独覆盖 target/backup、phase evidence 与 recovery attempt 的交叉约束。G-05 的 `tool-g05.test.ts` 覆盖模型字段白名单、JSON Schema 边界、旧单调用兼容、batch 数量/互斥/action id/order/count、标准 failure/event/tool 枚举。G-06 的 `permission-g06.test.ts` 覆盖 built-in pair、规则/解释/分层、公开设置防夹带、token claims、legacy/new action/pending approval 与旧 recovery。G-07 的 `subagent-g07.test.ts` 覆盖 spawn authority 防夹带、可信 profile/spec、budget/terminal proof、4 个控制工具、当时 73 个事件、`parent_agent` 内部 actor、旧投影默认、Session root/all 与 recovery v4；Core `projection-g07.test.ts` 再覆盖双 child 6-event、launch failure 特例、链接/并发/终态与 payload fail-closed。G-08 的 `team-g08.test.ts` 覆盖 roster/mailbox/task strict shape、authority 字段排除、13 个 Event/90-event 全集、projector v8、member-loss 原子 reopen、sweep receipt 与 recovery 仍为 v5；Core Team 用例再覆盖幂等、权限、重启重放与并发 claim。G-09 的 `todo-g09.test.ts` 覆盖 Todo strict/上限/唯一/依赖、契约层模型/用户完成差异、分页入参、Plan count/revision、browser scope smuggling 与 legacy mode 迁移；`core/src/todo.test.ts` 再覆盖 evidence eligibility、保持 done 不得清空证据、最大合法单项与 replay fail-closed。G-13 的 `sandbox-g13.test.ts` 覆盖三档 vocabulary、full/partial/none 正反例、strict/version/size/unique 边界、lifecycle payload 与旧 Projection 兼容。G-14 的 `steering-g14.test.ts` 覆盖 Browser scope/actor smuggling、正文/队列/step 上限、消费原子字段、strict payload、幂等 result、队列唯一性与旧 Projection 空队列默认；Core `projection.test.ts` 再覆盖冲突 digest、未知/重复消费、scope、step 顺序与 Wire 剥离。G-15 的 `telemetry-g15.test.ts` 覆盖合法状态、四种 sink/三种 state、默认 noop，以及 endpoint/header/credential/source path/pending payload 的 strict 拒绝。G-18 的 attachment 契约正反例覆盖 MIME、5 MiB/8 个、delivery、拒绝码、PDF 抽取、offload locator、base64 与当时 76-event 枚举；Core `attachment.test.ts` 再覆盖 durable staging/claim。G-17 的 `extension-g17.test.ts` 覆盖 API/config/status/command/error/recovery v5 与当时 77-event 集；Core `extension.test.ts` 覆盖生命周期、六个 seam、错误隔离、可逆卸载与 lease/reload 竞态。G-23 的 `replay-g23.test.ts` 覆盖强制 Run 坐标、sequence bound、snapshot scope/anchor、authority 与 canonical state 分离，以及 diff direction/shape；Core `replay.test.ts` 再验证 hash chain 与确定性投影。G-21 的 `memory-g21.test.ts` 覆盖 strict candidate/事件 payload、query hash、预算、hit/item/node provenance 一致性、degraded recall 与三个新增 Event type。精确用例数以 `pnpm --filter @tracegraph/contracts test:unit` 当次输出为准。
+`contracts.test.ts` 覆盖 G-03 的 estimate/report/calibration 正反例、G-04 rollback request/command 边界，以及 G-19 的 `${secret:NAME}` 解析、迁移 marker、公开凭据元数据、`has_key` 一致性和 `api_key` 回显拒绝。`action-wal.test.ts` 单独覆盖 target/backup、phase evidence 与 recovery attempt 的交叉约束。G-05 的 `tool-g05.test.ts` 覆盖模型字段白名单、JSON Schema 边界、旧单调用兼容、batch 数量/互斥/action id/order/count、标准 failure/event/tool 枚举。G-06 的 `permission-g06.test.ts` 覆盖 built-in pair、规则/解释/分层、公开设置防夹带、token claims、legacy/new action/pending approval 与旧 recovery。G-07 的 `subagent-g07.test.ts` 覆盖 spawn authority 防夹带、可信 profile/spec、budget/terminal proof、4 个控制工具、当时 73 个事件、`parent_agent` 内部 actor、旧投影默认、Session root/all 与 recovery v4；Core `projection-g07.test.ts` 再覆盖双 child 6-event、launch failure 特例、链接/并发/终态与 payload fail-closed。G-08 的 `team-g08.test.ts` 覆盖 roster/mailbox/task strict shape、authority 字段排除、13 个 Event/90-event 全集、projector v8、member-loss 原子 reopen、sweep receipt 与 recovery 仍为 v5；Core Team 用例再覆盖幂等、权限、重启重放与并发 claim。G-09 的 `todo-g09.test.ts` 覆盖 Todo strict/上限/唯一/依赖、契约层模型/用户完成差异、分页入参、Plan count/revision、browser scope smuggling 与 legacy mode 迁移；`core/src/todo.test.ts` 再覆盖 evidence eligibility、保持 done 不得清空证据、最大合法单项与 replay fail-closed。G-13 的 `sandbox-g13.test.ts` 覆盖三档 vocabulary、full/partial/none 正反例、strict/version/size/unique 边界、lifecycle payload 与旧 Projection 兼容。G-14 的 `steering-g14.test.ts` 覆盖 Browser scope/actor smuggling、正文/队列/step 上限、消费原子字段、strict payload、幂等 result、队列唯一性与旧 Projection 空队列默认；Core `projection.test.ts` 再覆盖冲突 digest、未知/重复消费、scope、step 顺序与 Wire 剥离。G-15 的 `telemetry-g15.test.ts` 覆盖合法状态、四种 sink/三种 state、默认 noop，以及 endpoint/header/credential/source path/pending payload 的 strict 拒绝。G-18 的 attachment 契约正反例覆盖 MIME、5 MiB/8 个、delivery、拒绝码、PDF 抽取、offload locator、base64 与当时 76-event 枚举；Core `attachment.test.ts` 再覆盖 durable staging/claim。G-17 的 `extension-g17.test.ts` 覆盖 API/config/status/command/error/recovery v5 与当时 77-event 集；Core `extension.test.ts` 覆盖生命周期、六个 seam、错误隔离、可逆卸载与 lease/reload 竞态。G-23 的 `replay-g23.test.ts` 覆盖强制 Run 坐标、sequence bound、snapshot scope/anchor、authority 与 canonical state 分离，以及 diff direction/shape；Core `replay.test.ts` 再验证 hash chain 与确定性投影。G-21 的 `memory-g21.test.ts` 覆盖 strict candidate/事件 payload、query hash、预算、hit/item/node provenance 一致性、degraded recall 与三个新增 Event type。G-20 的 `code-intel-g20.test.ts` 覆盖 available/unavailable Git context、symbol/contains、baseline/post-patch 交叉约束与 append-only event；`runtime.code-intel.test.ts` 覆盖 stale-base 作废旧审批、重新审批和最终 v9 projection。精确用例数以 `pnpm --filter @tracegraph/contracts test:unit` 当次输出为准。
 
 G-08 的后续对抗用例还单独锁定 `team_read` section/offset/limit/snapshot pin 分页、保留 command namespace 与同 Run 原子批次；分页不会改变 Host/SDK 的完整 `TeamReadResponseSchema`。
 
@@ -489,17 +503,17 @@ G-08 的后续对抗用例还单独锁定 `team_read` section/offset/limit/snaps
 2. **`MemoryAdmissionSchema.decision` 有 5 个取值，实现只产出 4 个**——`superseded` 目前不可能出现。细节见模块 08。
 
 3. **事件判别联合是"宽而扁"的。**
-`eventVariants` 由同一个 `EventBaseShape` 对 100 个 type 各 `extend` 一次生成，因此**所有事件都拥有全部可选关联字段**。好处是统一、向后兼容；代价是"`context.built` 必须带 `context_manifest_ref`"这类约束**无法在类型层表达**，只能靠运行时约定。G-05 batch、G-07 subagent、G-08 team、G-09 Todo/Plan、G-14 steering、G-18 attachment、G-21 Memory、G-17 extension error 与 G-12 LSP 为自己的 payload 额外导出 strict schema，但通用联合仍然宽。
+`eventVariants` 由同一个 `EventBaseShape` 对 102 个 type 各 `extend` 一次生成，因此**所有事件都拥有全部可选关联字段**。好处是统一、向后兼容；代价是"`context.built` 必须带 `context_manifest_ref`"这类约束**无法在类型层表达**，只能靠运行时约定。G-05 batch、G-07 subagent、G-08 team、G-09 Todo/Plan、G-14 steering、G-18 attachment、G-21 Memory、G-17 extension error、G-12 LSP 与 G-20 CodeIntel 为自己的 payload 额外导出 strict schema，但通用联合仍然宽。
 
 4. **`SessionEvent.data` 仍是 `z.record(z.string(), z.unknown())`**，所以通用事件联合没有逐 type 自动收窄 payload。G-05 batch、G-07 `subagent.*`、G-09 Todo/Plan 与 G-14 `user.input_*` 是局部改进：它们有独立 strict data schema，Runtime append 前强制 parse；G-07/G-14 投影重放时还会再次 strict parse 并 fail-closed。其它事件的内容仍依赖生产者与投影层约定。
 
 5. **`artifact_refs` 在 canonical 与 wire 上的默认值语义不同**：`SessionEvent` 里是 `.default([])`，`WireSessionEvent` 里是必填。出站时必须显式给出，这个差异是有意的，但容易在新增出站路径时被忽略。
 
-6. **`projection.git` / `graph` 相关字段缺席**：`RunProjection` 没有承载图快照与 Delta 的直接引用，只能通过 `timeline` 里的 `graph_delta_id` 反查。
+6. **`code_intel` 不是全图索引。** Projection 承载的只是最新有界 Git/changed symbol/LSP summary/stale-base 视图；完整 snapshot/delta 仍通过 timeline 的 artifact/id 关联，且不含调用图、DI、路由或跨语言解析。
 
 7. **无 `examples/failing-typescript-repo` 之外的契约夹具**：`SourceRefSchema.source_type` 有 `fixture` 取值、`MemoryRecord.origin` 也有 `fixture`，说明测试夹具是设计考虑过的路径，但契约没有对应的测试专用严格模式。
 
-8. **事件枚举扩展但 schema literal 仍为 v1。** G-03 追加 usage、G-04 追加 action/rollback、G-05 追加 batch lifecycle、G-13 追加 sandbox lifecycle、G-06 追加 permission/policy、G-09 追加 plan/todo、G-14 追加两个 user input、G-21 追加三个 Memory/Retrieval、G-07 追加五个 subagent lifecycle、G-18 追加三个 attachment lifecycle、G-17 追加 `extension.error`、G-08 追加十三个 team lifecycle、G-10 追加三个 skill lifecycle、G-11 追加五个 MCP lifecycle/call、G-12 追加两个 LSP lifecycle；它们没有修改既有 Event 字段语义，因此项目保持 `tracegraph.session-event.v1`。把 v1 type 集合硬编码为旧枚举的第三方 strict consumer 会拒绝新事件，必须升级到 100 种枚举后再读取新账本；投影消费者还必须接受 projector v8、可选 `team`、`attachments`、`subagents`、`input_queue`、`awaiting_plan_approval`、`needs_manual_review`、Todo/PendingPlan、`diagnostics_summary` 与可选 `permission` / `sandbox_report`。
+8. **事件枚举扩展但 schema literal 仍为 v1。** G-03 追加 usage、G-04 追加 action/rollback、G-05 追加 batch lifecycle、G-13 追加 sandbox lifecycle、G-06 追加 permission/policy、G-09 追加 plan/todo、G-14 追加两个 user input、G-21 追加三个 Memory/Retrieval、G-07 追加五个 subagent lifecycle、G-18 追加三个 attachment lifecycle、G-17 追加 `extension.error`、G-08 追加十三个 team lifecycle、G-10 追加三个 skill lifecycle、G-11 追加五个 MCP lifecycle/call、G-12 追加两个 LSP lifecycle、G-20 追加两个 CodeIntel lifecycle；它们没有修改既有 Event 字段语义，因此项目保持 `tracegraph.session-event.v1`。把 v1 type 集合硬编码为旧枚举的第三方 strict consumer 会拒绝新事件，必须升级到 102 种枚举后再读取新账本；投影消费者还必须接受 projector v9、可选 `team`、`code_intel`、`attachments`、`subagents`、`input_queue`、`awaiting_plan_approval`、`needs_manual_review`、Todo/PendingPlan、`diagnostics_summary` 与可选 `permission` / `sandbox_report`。
 
 9. **Telemetry status 不是 durable schema。** 它只报告当前进程内 sink 状态；错误计数与最后错误时间重启即丢，且不能替代 Ledger。配置 `<dataDir>/telemetry.json`、endpoint 环境变量、G-19 authorization reference 与 buffered payload 均不属于公开 Contract。
 

@@ -14,7 +14,9 @@ export const SCHEMA_VERSION = "tracegraph.session-event.v1" as const;
 // G-08 adds the optional ledger-derived Agent Team roster, mailbox, and shared
 // task board. The SessionEvent envelope and private recovery artifact remain
 // unchanged because every team fact is replayable from the root Run ledger.
-export const PROJECTOR_VERSION = "tracegraph.projector.v8" as const;
+// G-20 adds the optional semantic CodeGraph/Git baseline projection. Existing
+// event envelopes remain append-compatible, while clients need the new view.
+export const PROJECTOR_VERSION = "tracegraph.projector.v9" as const;
 
 export const NonEmptyStringSchema = z.string().trim().min(1);
 export const IdentifierSchema = z.string().trim().min(1).max(160);

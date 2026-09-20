@@ -15,10 +15,13 @@ import {
   AttachmentAddedDataSchema,
   ArtifactRefSchema,
   ContextManifestSchema,
+  CodeIntelUpdatedDataSchema,
+  CodeStaleBaseDetectedDataSchema,
   DEFAULT_SUBAGENT_LIMITS,
   DecisionSchema,
   GraphDeltaSchema,
   GraphSnapshotSchema,
+  GitBaseContextSchema,
   IdentifierSchema,
   LivePublicActivitySchema,
   LspDiagnosticsRequestSchema,
@@ -26,6 +29,8 @@ import {
   LspServerUnavailableDataSchema,
   ModelCapabilitiesSchema,
   MAX_PENDING_USER_INPUTS,
+  MAX_CODE_INTEL_CHANGED_FILES,
+  MAX_CODE_INTEL_CHANGED_SYMBOLS,
   MAX_USER_INPUT_BODY_CHARS,
   MAX_TOOL_CALLS_PER_DECISION,
   ModelUsageReportSchema,
@@ -111,8 +116,11 @@ import {
   type AttachmentAddedData,
   type ContextCompression,
   type ContextPolicy,
+  type ChangedSymbol,
+  type GitBaseContext,
   type Decision,
   type GraphSnapshot,
+  type GraphDelta,
   type LivePublicActivity,
   type ModelSurfaceEvent,
   type ModelImageInput,
@@ -123,6 +131,7 @@ import {
   type MemoryRememberResult,
   type Observation,
   type PatchPreview,
+  type BoundPendingApproval,
   type PendingApproval,
   type EffectivePermissionPolicy,
   type ExtensionRunSnapshot,
@@ -591,6 +600,8 @@ interface RunState extends SessionScopedState {
   /** Durable cancel input whose terminal transition is waiting for a safe boundary. */
   cancelInputId?: string;
   baseGraph?: GraphSnapshot;
+  /** Last durable Git base captured for CodeGraph approval fencing. */
+  codeIntelGitContext?: GitBaseContext;
   lastPatchEventId?: string;
   stopped: boolean;
   abortController: AbortController;
@@ -2171,6 +2182,10 @@ class AgentRuntimeImpl implements AgentRuntime {
       });
     }
 
+    if (await this.#requeueApprovalForStaleCodeBase(state, pending, boundPending.data)) {
+      return this.getProjection(state.runId);
+    }
+
     const patchInput = PatchInputSchema.parse(pending.previewCall.arguments);
     const commitCall: ToolCall = {
       action_id: preview.action_id,
@@ -2412,6 +2427,21 @@ class AgentRuntimeImpl implements AgentRuntime {
             result_snapshot_id: delta.result_snapshot_id,
           },
         });
+        const gitContext = await this.#captureCodeIntelGitContext(state);
+        await this.#appendCodeIntelUpdated(state, {
+          phase: "post_patch",
+          gitContext,
+          baseSnapshotId: state.baseGraph.snapshot_id,
+          resultSnapshotId: resultGraph.snapshot_id,
+          changedFiles: preview.scope,
+          changedSymbols: changedSymbolsFromGraphDelta(delta),
+          patchEventId: patchEvent.event_id,
+          graphDeltaId: delta.graph_delta_id,
+        });
+        // The Runtime's own approved patch is now part of the comparison
+        // point for the next approval. Only subsequent external Git changes
+        // can invalidate that replacement baseline.
+        state.codeIntelGitContext = gitContext;
         state.baseGraph = resultGraph;
       } catch (error) {
         if (!state.stopped) {
@@ -3168,6 +3198,28 @@ class AgentRuntimeImpl implements AgentRuntime {
           previewCall: pendingRecovery.preview_call,
         },
       });
+      // Recovery always reissues approval. Re-capture the static baseline so a
+      // later approved patch still yields a graph/code-intel delta instead of
+      // comparing against an in-memory snapshot that disappeared at restart.
+      // Semantic enrichment is best-effort here: it must not turn the durable
+      // no-tool recovery path into a failed Run.
+      if (this.#codeGraph !== undefined && state.workspace.capabilities.index) {
+        try {
+          const gitContext = await this.#captureCodeIntelGitContext(state);
+          state.baseGraph = await this.#captureGraphSnapshot(state, "Recovered baseline graph snapshot created");
+          await this.#appendCodeIntelUpdated(state, {
+            phase: "baseline",
+            gitContext,
+            baseSnapshotId: state.baseGraph.snapshot_id,
+            changedFiles: [],
+            changedSymbols: [],
+          });
+          state.codeIntelGitContext = gitContext;
+        } catch {
+          // The reissued approval remains valid under the durable recovery
+          // rules; a later commit still has its original file-hash fence.
+        }
+      }
       const recoveredCommitCall: ToolCall = {
         action_id: renewedPreview.action_id,
         tool_name: "commit_patch",
@@ -4326,10 +4378,19 @@ class AgentRuntimeImpl implements AgentRuntime {
     if (state.stopped) return;
     if (this.#codeGraph !== undefined && state.workspace.capabilities.index) {
       try {
+        const gitContext = await this.#captureCodeIntelGitContext(state);
         state.baseGraph = await this.#captureGraphSnapshot(
           state,
           "Baseline graph snapshot created",
         );
+        await this.#appendCodeIntelUpdated(state, {
+          phase: "baseline",
+          gitContext,
+          baseSnapshotId: state.baseGraph.snapshot_id,
+          changedFiles: [],
+          changedSymbols: [],
+        });
+        state.codeIntelGitContext = gitContext;
       } catch (error) {
         if (!state.stopped) {
           await this.#fail(state, "indexing_failed", publicError(error));
@@ -6616,6 +6677,167 @@ class AgentRuntimeImpl implements AgentRuntime {
     await this.#actionCommitFaultInjector(point);
   }
 
+  /**
+   * Git is a Host/composition concern. A missing probe is explicitly durable
+   * as unavailable rather than being silently treated as a clean repository.
+   */
+  async #captureCodeIntelGitContext(state: RunState): Promise<GitBaseContext> {
+    const capturedAt = this.#now().toISOString();
+    if (this.#codeGraph?.captureGitContext === undefined) {
+      return GitBaseContextSchema.parse({
+        status: "unavailable",
+        captured_at: capturedAt,
+        reason: "git_probe_not_configured",
+      });
+    }
+    try {
+      return GitBaseContextSchema.parse(await abortable(
+        this.#codeGraph.captureGitContext({
+          workspaceRoot: state.workspace.real_root,
+          signal: state.abortController.signal,
+        }),
+        state.abortController.signal,
+      ));
+    } catch (error) {
+      if (state.abortController.signal.aborted) throw error;
+      return GitBaseContextSchema.parse({
+        status: "unavailable",
+        captured_at: capturedAt,
+        reason: "git_probe_failed",
+      });
+    }
+  }
+
+  async #appendCodeIntelUpdated(
+    state: RunState,
+    input: {
+      phase: "baseline" | "post_patch";
+      gitContext: GitBaseContext;
+      baseSnapshotId?: string;
+      resultSnapshotId?: string;
+      changedFiles: readonly string[];
+      changedSymbols: readonly ChangedSymbol[];
+      patchEventId?: string;
+      graphDeltaId?: string;
+    },
+  ): Promise<void> {
+    const changedFiles = [...new Set(input.changedFiles)].sort((left, right) => left.localeCompare(right));
+    const changedSymbols = [...input.changedSymbols]
+      .sort((left, right) => (
+        left.file_path.localeCompare(right.file_path)
+        || left.line - right.line
+        || left.symbol_id.localeCompare(right.symbol_id)
+      ));
+    const data = CodeIntelUpdatedDataSchema.parse({
+      project_id: state.projectId,
+      phase: input.phase,
+      git_context: input.gitContext,
+      ...(input.baseSnapshotId === undefined ? {} : { base_snapshot_id: input.baseSnapshotId }),
+      ...(input.resultSnapshotId === undefined ? {} : { result_snapshot_id: input.resultSnapshotId }),
+      changed_files: changedFiles.slice(0, MAX_CODE_INTEL_CHANGED_FILES),
+      changed_files_truncated: changedFiles.length > MAX_CODE_INTEL_CHANGED_FILES,
+      changed_symbols: changedSymbols.slice(0, MAX_CODE_INTEL_CHANGED_SYMBOLS),
+      changed_symbols_truncated: changedSymbols.length > MAX_CODE_INTEL_CHANGED_SYMBOLS,
+    });
+    await this.#append(state, {
+      type: "code.intel_updated",
+      summary: input.phase === "baseline"
+        ? "Semantic CodeGraph baseline captured"
+        : "Semantic CodeGraph updated after patch",
+      ...(input.patchEventId === undefined ? {} : { patch_event_id: input.patchEventId }),
+      ...(input.graphDeltaId === undefined ? {} : { graph_delta_id: input.graphDeltaId }),
+      data,
+    });
+  }
+
+  /**
+   * A Git base drift is distinct from the target-file hash race handled by
+   * commit_patch. The old approval has not issued a token yet, so invalidate
+   * it and publish a fresh, durable approval instead of executing or failing
+   * the Run. A later user click is the required reapproval.
+   */
+  async #requeueApprovalForStaleCodeBase(
+    state: RunState,
+    pending: PendingPatch,
+    boundPending: BoundPendingApproval,
+  ): Promise<boolean> {
+    const expected = state.codeIntelGitContext;
+    if (expected === undefined || expected.status !== "available") return false;
+    const actual = await this.#captureCodeIntelGitContext(state);
+    const reason = gitBaseDifference(expected, actual);
+    if (reason === undefined) return false;
+
+    const renewedPreview = PatchPreviewSchema.parse({
+      ...boundPending.preview,
+      expires_at: new Date(this.#now().getTime() + 5 * 60_000).toISOString(),
+    });
+    const replacement = BoundPendingApprovalSchema.parse({
+      ...boundPending,
+      approval_id: this.#idFactory("approval"),
+      preview: renewedPreview,
+    });
+    let requeued = false;
+    await this.#withRunControl(state.runId, async () => {
+      this.#assertControlMutationAllowedLocked(state, await this.#ledger.list(state.runId));
+      // Another control operation may have changed the pending request while
+      // the fixed Git probe ran. In that case caller will re-read its state.
+      if (state.pendingPatch?.pendingApproval.approval_id !== boundPending.approval_id) return;
+      const recoveryArtifact = await this.#artifacts.put({
+        projectId: state.projectId,
+        runId: state.runId,
+        kind: "recovery_state",
+        mimeType: "application/json",
+        content: JSON.stringify(SessionPendingPatchRecoveryStateSchema.parse({
+          version: 1,
+          kind: "pending_patch_recovery_state",
+          pending_approval: replacement,
+          preview_call: ToolCallSchema.parse(pending.previewCall),
+        })),
+      });
+      const staleBase = {
+        expected,
+        actual,
+        detected_at: this.#now().toISOString(),
+        reason,
+        requires_reapproval: true as const,
+      };
+      await this.#append(state, {
+        type: "code.stale_base_detected",
+        summary: "Git base changed after patch approval was requested; reapproval is required",
+        action_id: boundPending.action_id,
+        data: CodeStaleBaseDetectedDataSchema.parse({
+          project_id: state.projectId,
+          stale_base: staleBase,
+        }),
+      });
+      await this.#appendApprovalDenied(state, {
+        pending: boundPending,
+        reason: "stale_base",
+        explanation: "The repository base changed after the patch preview was approved",
+      });
+      state.pendingPatch = { pendingApproval: replacement, previewCall: pending.previewCall };
+      await this.#append(state, {
+        type: "approval.requested",
+        summary: `Reapproval required to modify ${renewedPreview.path} after Git base drift`,
+        action_id: replacement.action_id,
+        artifact_refs: renewedPreview.artifact_ref === undefined ? [] : [renewedPreview.artifact_ref],
+        data: {
+          pending_approval: replacement,
+          approval_id: replacement.approval_id,
+          action_id: replacement.action_id,
+          tool_name: replacement.tool_name,
+          action_digest: replacement.action_digest,
+          policy_digest: replacement.policy_digest,
+          expires_at: renewedPreview.expires_at,
+          _internal_recovery_artifact: recoveryArtifact,
+        },
+      });
+      state.codeIntelGitContext = actual;
+      requeued = true;
+    });
+    return requeued;
+  }
+
   async #captureGraphSnapshot(state: RunState, summary: string): Promise<GraphSnapshot> {
     if (this.#codeGraph === undefined) throw new Error("CodeGraph provider is unavailable");
     const snapshot = GraphSnapshotSchema.parse(await abortable(
@@ -7312,6 +7534,9 @@ class AgentRuntimeImpl implements AgentRuntime {
             cancelInputId: projection.input_queue.pending.find((item) => item.kind === "cancel")!.input_id,
           }),
       ...(lastPatchEventId === undefined ? {} : { lastPatchEventId }),
+      ...(projection.code_intel === undefined
+        ? {}
+        : { codeIntelGitContext: projection.code_intel.git_context }),
       stopped: false,
       abortController: new AbortController(),
       commandQueue: Promise.resolve(),
@@ -9619,6 +9844,47 @@ function commandEventKey(
   phase: "run.created" | "run.started" | "plan.approved",
 ): string {
   return `command:${sha256(commandId)}:${phase}`;
+}
+
+function changedSymbolsFromGraphDelta(delta: GraphDelta): ChangedSymbol[] {
+  const symbols: ChangedSymbol[] = [];
+  for (const change of delta.node_changes) {
+    const node = change.after ?? change.before;
+    if (
+      node?.kind !== "symbol"
+      || node.symbol_name === undefined
+      || node.declaration_kind === undefined
+      || node.file_path === undefined
+      || node.line === undefined
+    ) continue;
+    const kind = change.change === "added"
+      ? "added"
+      : change.change === "removed"
+        ? "removed"
+        : "changed";
+    symbols.push({
+      symbol_id: node.id,
+      name: node.symbol_name,
+      kind: node.declaration_kind,
+      file_path: node.file_path,
+      line: node.line,
+      ...(node.end_line === undefined ? {} : { end_line: node.end_line }),
+      change: kind,
+    });
+  }
+  return symbols;
+}
+
+function gitBaseDifference(
+  expected: GitBaseContext,
+  actual: GitBaseContext,
+): "base_commit_changed" | "branch_changed" | "worktree_changed" | "git_context_unavailable" | undefined {
+  if (expected.status !== "available") return undefined;
+  if (actual.status !== "available") return "git_context_unavailable";
+  if (expected.base_commit !== actual.base_commit) return "base_commit_changed";
+  if (expected.branch !== actual.branch) return "branch_changed";
+  if (expected.worktree_fingerprint !== actual.worktree_fingerprint) return "worktree_changed";
+  return undefined;
 }
 
 function unavailableSandboxReport(

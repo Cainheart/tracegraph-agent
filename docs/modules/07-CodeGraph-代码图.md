@@ -1,6 +1,6 @@
 # 模块 07：CodeGraph 代码图
 
-> 定位：把工作区变成一个**确定性、可复算、内容可寻址**的模块依赖图，用于回答"这次改动影响了谁"。
+> 定位：把工作区变成一个**确定性、可复算、内容可寻址**的静态代码图；它保留模块依赖拓扑，并产出顶层声明级的受限语义节点，供 Run 的变更诊断与审查使用。
 > 代码：`packages/codegraph/src/`（`analyze.ts` 929 行、`diff.ts` 132 行、`impact.ts` 77 行、`hash.ts` 26 行、`path.ts` 40 行、`types.ts` 102 行、`index.ts` 26 行）
 > 包名：`@tracegraph/codegraph@0.1.0-alpha.0`（private），依赖 `@tracegraph/contracts` + `typescript`
 > 契约：`packages/contracts/src/graph.ts`（`GraphSnapshot` / `GraphNode` / `GraphEdge` / `GraphDelta`）
@@ -25,13 +25,13 @@ export { getImpactNeighborhood } from "./impact.js";
 | `diffGraphSnapshots` | 比较两个快照 | 两个 `GraphSnapshot` → `GraphDelta` |
 | `getImpactNeighborhood` | 邻域影响面 | `GraphSnapshot` + 节点 id → `ImpactNeighborhood` |
 
-注意：**本包不实现 core 的 `CodeGraphProvider` 接口**。适配在 CLI 侧完成（见 §2）。
+注意：**本包不实现 core 的 `CodeGraphProvider` 接口**。具体适配在 CLI composition 侧完成（见 §2）；`packages/host` 保持传入式、provider-neutral。
 
 ---
 
 ## 2. 装配位置（关键事实）
 
-`CodeGraphProvider` 的唯一适配器在 **`apps/cli/src/composition.ts`**：
+`CodeGraphProvider` 的具体适配器在 **`apps/cli/src/composition.ts`**，并由 `apps/cli/src/index.ts` 在创建 `AgentRuntime` 时注入：
 
 ```4:23:apps/cli/src/composition.ts
 export function createCodeGraphProvider(): CodeGraphProvider {
@@ -51,11 +51,17 @@ export function createCodeGraphProvider(): CodeGraphProvider {
         ...(patchEventId === undefined ? {} : { patch_event_id: patchEventId }),
       });
     },
+    async captureGitContext({ workspaceRoot, signal }) {
+      // 固定、只读的 git argv；只返回 base/branch/dirty/fingerprint。
+      ...
+    },
   };
 }
 ```
 
-全仓检索 `codeGraph` 的结果：只有 `apps/cli`（`composition.ts` / `index.ts` / 测试）使用它。**`packages/host` 与 `packages/sdk` 都不装配 CodeGraph**。因此 `AgentRuntimeOptions.codeGraph` 在 Web 路径下恒为 `undefined`，运行时跳过 `#bootstrapRun` 的基线快照与 `approve` 后的 delta，永远不产生 `graph.snapshot_created` / `graph.delta_created`。**代码图目前是 CLI 独有能力。**
+`packages/host` 与 `packages/sdk` **不自行构造** CodeGraph，这是刻意的依赖倒置：它们只传输 `RunProjection` 与 SSE 中的 canonical 事件，不能从浏览器参数推导本机扫描器或 Git 命令。标准 `tracegraph serve` 走的正是 CLI composition，因此 Web 获得的是已经注入 Runtime、再经 Host/SDK 传出的图快照、delta 与 `code_intel` 投影；并不存在“Web 另造一个 provider”的路径。
+
+嵌入式 Host 若绕过 CLI composition 创建 Runtime，仍须显式注入 `codeGraph` 才会得到图/CodeIntel。未注入时 Runtime 把 Git 上下文记为 `unavailable`，但不会伪造图、符号或 Git 基线保证。
 
 ---
 
@@ -137,6 +143,7 @@ const DEFAULT_EXCLUDED_DIRECTORIES = new Set([
 | `file` | `file:<workspacePath>`（超 160 字符则 `file:sha256(path)`） | `content_hash = sha256(文件内容)`，`line: 1` |
 | `directory` | `directory:<workspacePath>` | 总是包含根目录 `.`，并为每个文件补齐全部祖先目录 |
 | `module` | `module:sha256(scope)` | `scope = moduleName` 或 `<sourcePath>:<moduleName>` |
+| `symbol` | `symbol:sha256(filePath\0declarationKind\0name\0ordinal)` | JS/TS 顶层声明；带 `symbol_name`、`declaration_kind`、起止行与声明文本 hash |
 
 ### 5.2 边的抽取（AST 遍历）
 
@@ -152,6 +159,12 @@ const DEFAULT_EXCLUDED_DIRECTORIES = new Set([
 | `import(...)` 动态导入 | 跳过 → `dynamic_import_unsupported`（info） |
 
 边 id 为 `edge:sha256(kind\0source\0target)`——即**按 (类型, 源, 目标) 去重**，同一模块被 import 多次只留一条，保留**行号最小**的那条。
+
+### 5.2.1 顶层声明语义（G-20）
+
+在同一份 TypeScript AST 中，分析器还读取每个 source file 的**顶层** `class`、`enum`、`function`、`interface`、`namespace`、`type` 与具名 `variable` 声明。每个声明产生一个 `symbol` 节点，并从所属 `file` 节点产生一条高置信、resolved 的 `contains` 边。节点 identity 使用相对文件、声明类别、名称与同名 ordinal；格式化不改变 identity，但声明范围或声明文本变化会进入节点内容，从而在 `GraphDelta` 中成为 `changed`。
+
+这不是调用图：不会声称解析方法、匿名函数、动态调用、反射、依赖注入、路由注册或跨语言符号。模块 import/export 边仍是静态关系；symbol 只表示有限的 AST 声明位置。
 
 ### 5.3 目标解析与置信度
 
@@ -277,7 +290,21 @@ export function getImpactNeighborhood(
 
 ---
 
-## 8. 哈希与路径工具
+## 8. Run 语义投影、LSP 摘要与 Git 基线（G-20）
+
+启用 provider 的 Run 在启动时先产生 `graph.snapshot_created`，再追加 `code.intel_updated { phase:"baseline" }`。成功提交 Patch 后，Runtime 产生结果快照与 `graph.delta_created`，将受影响文件和 delta 中的 `symbol` 节点压缩为有界 `changed_files` / `changed_symbols`，最后追加 `code.intel_updated { phase:"post_patch" }`。每组最多 128 项，超出会显式标记 truncated；这两个事件是可重放的事实，不依赖 Web 内存。
+
+`RunProjection.code_intel` 使用 `CODE_INTEL_VERSION = "tracegraph.code-intel.v1"` 的 `CodeIntelProjectionSchema`，保存最新的 Git 上下文、快照 identity、受影响文件/符号及截断标记。若当前 Run 已有 G-12 `lsp.diagnostics_received` 摘要，投影会把同一份有界 `diagnostics_summary` 合并到 `code_intel`；不会自动启动 LSP、自动扫描诊断，完整诊断也不会进入投影。
+
+CLI provider 的 Git probe 只运行固定的、`shell:false` 的只读 argv：工作树判定、`HEAD`、当前 branch 与包含 untracked 文件的 porcelain status。公开事实只含 full base commit、可选 branch、dirty、status SHA-256 fingerprint 与时间，**不含**远程、绝对路径、原始 status 或仓库提供的命令。probe 不可用时写 `git_context.status:"unavailable"`，这保留审计事实但不提供 stale-base 保护。
+
+在 Patch ask 审批真正进入 `commit_patch` 前，Runtime 会重新探测一个先前可用的 Git 基线。若 commit、branch、worktree fingerprint 变化，或新的 probe 变为 unavailable，就追加 `code.stale_base_detected`，以 `approval.denied { reason:"stale_base" }` 作废旧审批，并生成新的 `approval.requested`；不会借旧 token 写盘。文件 `base_hash` 的原子提交校验仍是最后一道单目标写入保护，二者不能互相替代。
+
+Web Changes 视图消费同一 Run/SSE 投影，显示受影响文件、声明、LSP 摘要和需要重新审批的 Git 漂移。查看历史 timeline 时，它只关联所选 Patch/CodeIntel 事件的事实，不把 Run head 的较新 `code_intel` 倒灌到旧事件。
+
+---
+
+## 9. 哈希与路径工具
 
 ```3:5:packages/codegraph/src/hash.ts
 export function sha256(value: string): string {
@@ -291,13 +318,13 @@ export function sha256(value: string): string {
 
 ---
 
-## 9. 已知缺口
+## 10. 已知缺口
 
-1. **除 CLI 外无人装配。** Host / SDK 都不创建 provider，Web 用户永远看不到代码图；`AgentRuntimeOptions.codeGraph` 在 Web 路径下恒为 `undefined`。这是本模块最大的能力缺口——能力已实现，但没接到主产品面上。
+1. **嵌入式 composition 仍须显式注入。** `packages/host` 不会偷偷创建 scanner/Git adapter；标准 CLI/Web 路径已经注入，但自定义 Host composition 忘记传 `codeGraph` 时没有图、符号或 Git stale-base 保证。
 
 2. **没有增量分析。** 每次 `createSnapshot` 都是全量目录扫描 + 全量 TypeScript program 加载 + 全量 AST 遍历。而 Runtime 在每次补丁后都会抓一次结果快照，于是"改一行"要付全仓分析的代价（上限 30 s / 64 MiB）。没有缓存、没有脏文件集、没有 mtime 复用。
 
-3. **快照里的诊断被削平。** 写入 `GraphSnapshot` 时只保留 `{ file_path?, message }`：
+3. **CodeGraph 自身的诊断仍被削平。** 写入 `GraphSnapshot` 时只保留 `{ file_path?, message }`：
 
 ```339:342:packages/codegraph/src/analyze.ts
     diagnostics: diagnostics.map(({ file_path, message }) => ({
@@ -306,11 +333,11 @@ export function sha256(value: string): string {
     })),
 ```
 
-`code` 与 `severity` 只存在于 `CodeGraphAnalysis.diagnostics`。而 Runtime 只用 `.snapshot`（见 §2 的适配器），**coverage 与完整诊断实际上被丢弃**，不会进入事件、工件或 UI。
+`code` 与 `severity` 只存在于 `CodeGraphAnalysis.diagnostics`。G-20 合并的是独立 G-12 LSP 的有界诊断摘要，不会把这些 CodeGraph analysis diagnostics 冒充成 LSP 语义诊断；coverage 与完整分析诊断仍不进入 Projection/UI。
 
 4. **符号链接被静默跳过。** 目录与文件都 `continue`，不产生任何诊断、也不影响 `coverage`。用 symlink 组织包的 monorepo 会**缺失整块图却显示 coverage 正常**。
 
-5. **粒度只到文件。** 节点类型是 `file` / `directory` / `module`，没有函数、类、方法或调用边。所以这是**模块图而非调用图**，"影响面"也只能到文件级，无法回答"哪个函数调用了被改的函数"。
+5. **语义粒度仍受限。** 当前有顶层 `symbol` 节点和 `file → contains → symbol`，但没有方法/匿名函数/局部声明、调用边、动态调用、DI、路由、反射或跨语言解析。因此它仍不是全语义调用图，不能回答“哪个函数在运行时调用了被改函数”。
 
 6. **`getImpactNeighborhood` 零调用方。** 已实现、已测试，但没有任何产品路径使用它。
 
@@ -328,7 +355,7 @@ export function sha256(value: string): string {
 
 ---
 
-## 10. 相关文档
+## 11. 相关文档
 
 - 模块 01（契约层）：`GraphSnapshot` / `GraphDelta` / `GraphNode` / `GraphEdge` 字段
 - 模块 02（Runtime）：`#bootstrapRun` 的基线快照、`approve` 后的 delta 与四字段交叉校验、`indexing_failed` / `graph_delta_failed`

@@ -128,6 +128,14 @@ describe("TraceGraph vertical slice", () => {
     const pending = await waitForClientStatus(client, started.run_id, "awaiting_approval");
     expect(pending.status).toBe("awaiting_approval");
     expect(pending.pending_approval).toBeDefined();
+    // This disposable fixture is intentionally not a Git repository. The
+    // SDK still transports a durable explicit unavailable state instead of
+    // silently claiming a clean/stale-base guarantee.
+    expect(pending.code_intel).toMatchObject({
+      git_context: { status: "unavailable" },
+      changed_files: [],
+      changed_symbols: [],
+    });
     expect(await readFile(join(fixture.handle.real_root, "src/add.ts"), "utf8")).toBe(before);
 
     const approval = pending.pending_approval;
@@ -153,13 +161,32 @@ describe("TraceGraph vertical slice", () => {
         "patch.applied",
         "test.completed",
         "graph.delta_created",
+        "code.intel_updated",
         "run.completed",
       ]),
     );
     const patchEvent = completed.timeline.find((event) => event.type === "patch.applied");
     const graphEvent = completed.timeline.find((event) => event.type === "graph.delta_created");
+    const codeIntelEvent = completed.timeline.find((event) => (
+      event.type === "code.intel_updated" && event.patch_event_id !== undefined
+    ));
     const testEvent = completed.timeline.find((event) => event.type === "test.completed");
     expect(graphEvent?.patch_event_id).toBe(patchEvent?.event_id);
+    expect(codeIntelEvent?.patch_event_id).toBe(patchEvent?.event_id);
+    expect(codeIntelEvent?.data).toMatchObject({
+      phase: "post_patch",
+      changed_files: ["src/add.ts"],
+      changed_symbols: [expect.objectContaining({
+        name: "add",
+        kind: "function",
+        file_path: "src/add.ts",
+        change: "changed",
+      })],
+    });
+    expect(completed.code_intel).toMatchObject({
+      changed_files: ["src/add.ts"],
+      changed_symbols: [expect.objectContaining({ name: "add", change: "changed" })],
+    });
     expect(testEvent?.patch_event_id).toBe(patchEvent?.event_id);
     expect(completed.timeline.filter((event) => event.type.startsWith("run.") && [
       "run.completed",

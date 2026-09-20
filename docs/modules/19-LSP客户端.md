@@ -11,7 +11,7 @@ G-12 把语言服务器作为 Core 的语义能力 seam 接入现有 Tool/Receip
 - 生命周期：`stopped → spawning → initializing → ready → unavailable`；server 不存在或初始化失败时 `get_diagnostics` 返回 `status: "unavailable"`，不把失败伪装成空诊断。
 - 工具：`get_diagnostics(paths?, max_items?, severity?)` 返回严格、分页前有界的诊断；完整诊断只作为当前 Tool observation 返回，Ledger 只保存摘要、计数、sample 和 hash。
 - 语义位置：`LspManager.definition()` 与 `references()` 暴露经过 Workspace containment 和相对路径校验的 `LspLocation`，供可信 Host/Core 集成，不把任意 URI 直接传到 Web。
-- 事件：`lsp.diagnostics_received` 与 `lsp.server_unavailable` 追加到 canonical `EventTypeSchema`；`RunProjection.diagnostics_summary` 只保存最新的有界摘要。当前 canonical Event 共 100 种，`PROJECTOR_VERSION = "tracegraph.projector.v8"` 保持不变。
+- 事件：`lsp.diagnostics_received` 与 `lsp.server_unavailable` 追加到 canonical `EventTypeSchema`；`RunProjection.diagnostics_summary` 保存最新的有界摘要。G-20 还会在已有 `code_intel` 时复用同一摘要作为 `code_intel.diagnostics_summary`，不复制完整诊断。当前 canonical Event 共 102 种，`PROJECTOR_VERSION = "tracegraph.projector.v9"`。
 
 ## 2. Core 客户端与 Manager
 
@@ -35,9 +35,9 @@ G-12 把语言服务器作为 Core 的语义能力 seam 接入现有 Tool/Receip
 
 LSP 诊断不是第二份日志，也不是静态 CodeGraph 的替代品。
 
-- CodeGraph 继续负责静态导入/导出拓扑；LSP 负责语言服务器已经确认的语义诊断和位置查询。
+- CodeGraph 继续负责静态导入/导出拓扑和 G-20 的有限顶层声明节点；LSP 负责语言服务器已经确认的语义诊断和位置查询。
 - `lsp.diagnostics_received` 的 payload 不含完整消息列表之外的大对象，Projection 只更新 `diagnostics_summary`；完整列表只有当前 Tool observation 可见。
-- 当前实现没有自动把诊断注入每轮 Context，也没有“改动后自动诊断”后台任务。调用方必须显式调用 `get_diagnostics`，后续可由 G-20 的 `code_intel` 视图按预算接入。
+- 当前实现没有自动把诊断注入每轮 Context，也没有“改动后自动诊断”后台任务。调用方仍须显式调用 `get_diagnostics`；G-20 仅将已经 durable 的有界摘要投影到 `code_intel`，不改变调用时机或预算。
 - 诊断路径必须是 workspace-relative；URI、绝对路径、越界 symlink 和不匹配扩展均不会成为公开位置。
 
 ## 4. Host / SDK / CLI / Web
@@ -61,4 +61,4 @@ LSP 诊断不是第二份日志，也不是静态 CodeGraph 的替代品。
 
 ## 6. 明确限制
 
-这是原生 stdio LSP client，不是完整 IDE language platform：没有 HTTP/SSE server、远程 registry、跨 Host session、完整 workspace indexing、自动 Context 注入、G-20 `code_intel` 合并视图或 PTC。真实 `typescript-language-server`/`pyright` 是否安装仍由 Host 环境决定；没有可用 server 时系统保持可用并给出可审计的 unavailable 结果。LSP child 也不自动获得 G-13 OS sandbox、G-04 Action WAL 或外部副作用恢复能力。
+这是原生 stdio LSP client，不是完整 IDE language platform：没有 HTTP/SSE server、远程 registry、跨 Host session、完整 workspace indexing、自动 Context 注入或 PTC。G-20 的 `code_intel` 只是有界摘要/静态 symbol 合并视图，不等于全量 LSP index、调用层级或自动诊断。真实 `typescript-language-server`/`pyright` 是否安装仍由 Host 环境决定；没有可用 server 时系统保持可用并给出可审计的 unavailable 结果。LSP child 也不自动获得 G-13 OS sandbox、G-04 Action WAL 或外部副作用恢复能力。

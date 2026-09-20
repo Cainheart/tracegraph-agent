@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { graphForVersion, type ChangedFile, type DiffLine, type EvidenceSlot, type EvidenceSnapshot, type GraphEdge, type GraphNode } from "../model";
+import { graphForVersion, type ChangedFile, type CodeIntelSnapshot, type DiffLine, type EvidenceSlot, type EvidenceSnapshot, type GraphEdge, type GraphNode } from "../model";
 import { useI18n } from "../i18n";
 import { Icon } from "./Icon";
 import { IconButton } from "./Primitives";
@@ -95,7 +95,7 @@ function ArchitectureGraph({ nodes, edges, onOpenDetails, slot }: { nodes: reado
             return (
               <g className={`graph-edge edge-${edge.state}`} key={edge.id}>
                 <line x1={from.x + 31} y1={from.y + 24} x2={to.x + 31} y2={to.y} markerEnd={edge.state === "added" ? "url(#arrow-added)" : "url(#arrow-default)"} />
-                <text x={(from.x + to.x) / 2 + 36} y={(from.y + to.y) / 2 + 7}>{edge.label}</text>
+                <text x={(from.x + to.x) / 2 + 36} y={(from.y + to.y) / 2 + 7}>{t(edge.label)}</text>
               </g>
             );
           })}
@@ -128,6 +128,89 @@ function ArchitectureGraph({ nodes, edges, onOpenDetails, slot }: { nodes: reado
   );
 }
 
+/**
+ * The semantic view is intentionally derived only from the bounded code_intel
+ * projection/event evidence. It does not attempt to infer dynamic calls,
+ * unresolved symbols, or diagnostics that were not recorded for this point in
+ * the timeline.
+ */
+function CodeIntelPanel({ codeIntel, onSelectFile }: { codeIntel: CodeIntelSnapshot | undefined; onSelectFile: (path: string) => void }) {
+  const { t } = useI18n();
+  const diagnostics = codeIntel?.diagnosticsSummary;
+  const files = codeIntel?.changedFiles ?? [];
+  const symbols = codeIntel?.changedSymbols ?? [];
+  const stale = codeIntel?.staleBase;
+  const hasData = codeIntel !== undefined;
+
+  return (
+    <section className={`code-intel-panel ${stale ? "is-stale" : ""}`} aria-label={t("Semantic impact")}>
+      <details open={hasData}>
+        <summary>
+          <span className="code-intel-title"><Icon name="graph" size={15} /><strong>{t("Semantic impact")}</strong><small>{t("Static declaration analysis")}</small></span>
+          <span className="code-intel-badges">
+            <i className="code-intel-file-count">{files.length} {t("files")}</i>
+            <i className="code-intel-symbol-count">{symbols.length} {t("symbols")}</i>
+            {diagnostics && <i className={`code-intel-diagnostic-count ${diagnostics.error_count > 0 ? "has-errors" : ""}`}>{diagnostics.error_count} {t("errors")} · {diagnostics.warning_count} {t("warnings")}</i>}
+            {stale && <i className="code-intel-stale-count">{t("Reapproval required")}</i>}
+            <Icon name="chevron" size={13} />
+          </span>
+        </summary>
+        {!hasData ? (
+          <p className="code-intel-empty">{t("No semantic evidence recorded for this event.")}</p>
+        ) : (
+          <div className="code-intel-content">
+            {stale && (
+              <div className="code-intel-stale">
+                <Icon name="alert" size={15} />
+                <div><strong>{t("Git base changed — approval reissued")}</strong><span>{t("The previous patch approval was not executed. Review the replacement approval before writing.")}</span></div>
+              </div>
+            )}
+            <div className="code-intel-column semantic-files">
+              <header><span>{t("Affected files")}</span><small>{files.length}{codeIntel.changedFilesTruncated ? "+" : ""}</small></header>
+              {files.length === 0 ? <p>{t("No affected source file was recorded.")}</p> : (
+                <ul>
+                  {files.slice(0, 12).map((path) => (
+                    <li key={path}><button onClick={() => onSelectFile(path)} title={path} type="button"><code>{path}</code></button></li>
+                  ))}
+                </ul>
+              )}
+              {(files.length > 12 || codeIntel.changedFilesTruncated) && <p className="code-intel-truncated">{t("Additional affected files are omitted from this bounded view.")}</p>}
+            </div>
+            <div className="code-intel-column semantic-symbols">
+              <header><span>{t("Changed symbols")}</span><small>{symbols.length}{codeIntel.changedSymbolsTruncated ? "+" : ""}</small></header>
+              {symbols.length === 0 ? <p>{t("No static declaration change was recorded.")}</p> : (
+                <ul>
+                  {symbols.slice(0, 12).map((symbol) => (
+                    <li key={symbol.symbol_id}>
+                      <button onClick={() => onSelectFile(symbol.file_path)} type="button" title={`${symbol.file_path}:${symbol.line}`}>
+                        <i className={`symbol-change symbol-change-${symbol.change}`}>{symbol.change === "added" ? "+" : symbol.change === "removed" ? "−" : "~"}</i>
+                        <span><strong>{symbol.name}</strong><small>{symbol.kind} · {symbol.file_path}:{symbol.line}</small></span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {codeIntel.changedSymbolsTruncated && <p className="code-intel-truncated">{t("Additional changed symbols are omitted from this bounded record.")}</p>}
+            </div>
+            <div className="code-intel-column diagnostic-summary">
+              <header><span>{t("Diagnostic summary")}</span><small>{diagnostics?.server_name ?? t("Not recorded")}</small></header>
+              {!diagnostics ? <p>{t("No LSP diagnostic summary was recorded for this event.")}</p> : (
+                <>
+                  <div className="diagnostic-counts"><span className={diagnostics.error_count > 0 ? "has-errors" : ""}>{diagnostics.error_count} {t("errors")}</span><span>{diagnostics.warning_count} {t("warnings")}</span><span>{diagnostics.information_count} {t("information")}</span></div>
+                  {diagnostics.sample.length > 0 && <ul className="diagnostic-sample">
+                    {diagnostics.sample.slice(0, 3).map((diagnostic, index) => <li key={`${diagnostic.path}:${diagnostic.range.start.line}:${index}`} className={`diagnostic-${diagnostic.severity}`}><strong>{diagnostic.path}:{diagnostic.range.start.line + 1}</strong><span>{diagnostic.message}</span></li>)}
+                  </ul>}
+                  {diagnostics.truncated && <p className="code-intel-truncated">{t("Diagnostic samples are truncated by the recorded safety limit.")}</p>}
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </details>
+    </section>
+  );
+}
+
 export function ChangesView({
   files,
   diffs,
@@ -138,6 +221,7 @@ export function ChangesView({
   verified,
   evidence,
   patchId,
+  codeIntel,
 }: {
   files: readonly ChangedFile[];
   diffs: Readonly<Record<string, readonly DiffLine[]>>;
@@ -148,6 +232,7 @@ export function ChangesView({
   verified: boolean;
   evidence: EvidenceSnapshot;
   patchId: string | undefined;
+  codeIntel?: CodeIntelSnapshot;
 }) {
   const { language, t } = useI18n();
   const [selectedPath, setSelectedPath] = useState(files[0]?.path ?? "");
@@ -180,6 +265,7 @@ export function ChangesView({
         <DiffViewer lines={lines} onOpenDetails={onOpenDetails} patchId={patchId} path={selectedPath || t("No verified file")} slot={evidence.diff} />
         <ArchitectureGraph edges={edges} nodes={nodes} onOpenDetails={onOpenDetails} slot={evidence.graph} />
       </div>
+      <CodeIntelPanel codeIntel={codeIntel} onSelectFile={setSelectedPath} />
       <div className={`verification-bar ${verified ? "is-verified" : "is-pending"}`}>
         <div className="verification-result">
           <span><Icon name={verified ? "check" : "clock"} size={15} /></span>

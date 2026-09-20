@@ -3,6 +3,9 @@ import {
   AttachmentListProjectionSchema,
   AttachmentOffloadedDataSchema,
   AttachmentRejectedDataSchema,
+  CODE_INTEL_VERSION,
+  CodeIntelUpdatedDataSchema,
+  CodeStaleBaseDetectedDataSchema,
   LspDiagnosticsReceivedDataSchema,
   PROJECTOR_VERSION,
   MAX_PENDING_USER_INPUTS,
@@ -66,6 +69,7 @@ export function projectRun(events: readonly SessionEvent[]): RunProjection {
   let sandboxReport: RunProjection["sandbox_report"];
   let permission: RunProjection["permission"];
   let diagnosticsSummary: RunProjection["diagnostics_summary"];
+  let codeIntel: RunProjection["code_intel"];
   const inputQueue = projectInputQueue(events);
   const subagents = projectSubagents(events);
   const attachments = projectAttachments(events);
@@ -186,7 +190,53 @@ export function projectRun(events: readonly SessionEvent[]): RunProjection {
             sample: parsed.data.sample,
             diagnostics_hash: parsed.data.diagnostics_hash,
           };
+          if (codeIntel !== undefined) {
+            codeIntel = { ...codeIntel, diagnostics_summary: diagnosticsSummary };
+          }
         }
+        break;
+      }
+      case "code.intel_updated": {
+        const parsed = CodeIntelUpdatedDataSchema.safeParse(event.data);
+        if (!parsed.success || parsed.data.project_id !== first.project_id) {
+          throw new ProjectionError(`invalid code.intel_updated payload at sequence ${event.sequence}`);
+        }
+        codeIntel = {
+          version: CODE_INTEL_VERSION,
+          git_context: parsed.data.git_context,
+          ...(parsed.data.base_snapshot_id === undefined
+            ? {}
+            : { base_snapshot_id: parsed.data.base_snapshot_id }),
+          ...(parsed.data.result_snapshot_id === undefined
+            ? {}
+            : { result_snapshot_id: parsed.data.result_snapshot_id }),
+          changed_files: parsed.data.changed_files,
+          changed_files_truncated: parsed.data.changed_files_truncated,
+          changed_symbols: parsed.data.changed_symbols,
+          changed_symbols_truncated: parsed.data.changed_symbols_truncated,
+          ...(diagnosticsSummary === undefined ? {} : { diagnostics_summary: diagnosticsSummary }),
+        };
+        break;
+      }
+      case "code.stale_base_detected": {
+        const parsed = CodeStaleBaseDetectedDataSchema.safeParse(event.data);
+        if (!parsed.success || parsed.data.project_id !== first.project_id) {
+          throw new ProjectionError(`invalid code.stale_base_detected payload at sequence ${event.sequence}`);
+        }
+        const prior = codeIntel;
+        const latestDiagnostics = diagnosticsSummary ?? prior?.diagnostics_summary;
+        codeIntel = {
+          version: CODE_INTEL_VERSION,
+          git_context: parsed.data.stale_base.actual,
+          ...(prior?.base_snapshot_id === undefined ? {} : { base_snapshot_id: prior.base_snapshot_id }),
+          ...(prior?.result_snapshot_id === undefined ? {} : { result_snapshot_id: prior.result_snapshot_id }),
+          changed_files: prior?.changed_files ?? [],
+          changed_files_truncated: prior?.changed_files_truncated ?? false,
+          changed_symbols: prior?.changed_symbols ?? [],
+          changed_symbols_truncated: prior?.changed_symbols_truncated ?? false,
+          ...(latestDiagnostics === undefined ? {} : { diagnostics_summary: latestDiagnostics }),
+          stale_base: parsed.data.stale_base,
+        };
         break;
       }
       default:
@@ -223,6 +273,7 @@ export function projectRun(events: readonly SessionEvent[]): RunProjection {
     ...(sandboxReport === undefined ? {} : { sandbox_report: sandboxReport }),
     ...(permission === undefined ? {} : { permission }),
     ...(diagnosticsSummary === undefined ? {} : { diagnostics_summary: diagnosticsSummary }),
+    ...(codeIntel === undefined ? {} : { code_intel: codeIntel }),
     artifact_refs: [...artifactMap.values()],
     ...(outcome === undefined ? {} : { outcome }),
     ...(failureCode === undefined ? {} : { failure_code: failureCode }),

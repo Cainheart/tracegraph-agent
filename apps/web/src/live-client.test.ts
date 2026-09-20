@@ -1,4 +1,5 @@
 import {
+  CodeStaleBaseDetectedDataSchema,
   PROJECTOR_VERSION,
   SCHEMA_VERSION,
   type ArtifactRef,
@@ -2089,7 +2090,18 @@ describe("LiveTraceGraphClient", () => {
           change: "added",
           after: { id: "node_index", kind: "file", label: "index.ts", file_path: "src/index.ts" },
         }],
-        edge_changes: [],
+        edge_changes: [{
+          change: "added",
+          after: {
+            id: "edge_contains_index_symbol",
+            kind: "contains",
+            source_node_id: "node_index",
+            target_node_id: "node_symbol",
+            file_path: "src/index.ts",
+            confidence: "high",
+            resolution: "resolved",
+          },
+        }],
       }),
     });
     sdk.artifacts.set(testRef.artifact_id, {
@@ -2108,7 +2120,8 @@ describe("LiveTraceGraphClient", () => {
     expect(snapshot.run?.events[1]).toMatchObject({ kind: "decision", risk: "medium", rationale: "Bounded by the Host policy" });
     expect(snapshot.contextSources).toEqual([expect.objectContaining({ name: "Repository evidence", action: "truncated", tokens: 320 })]);
     expect(snapshot.changedFiles).toEqual([expect.objectContaining({ path: "src/index.ts", additions: 1, deletions: 1 })]);
-    expect(snapshot.graphNodes).toEqual([expect.objectContaining({ after: { label: "index.ts", path: "src/index.ts" }, state: "added" })]);
+    expect(snapshot.graphNodes).toEqual(expect.arrayContaining([expect.objectContaining({ after: { label: "index.ts", path: "src/index.ts" }, state: "added" })]));
+    expect(snapshot.graphEdges).toEqual(expect.arrayContaining([expect.objectContaining({ after: expect.objectContaining({ label: "contains" }) })]));
     expect(snapshot.evidence.test).toMatchObject({ status: "available", content: "PASS src/index.test.ts\n1 test passed" });
   });
 
@@ -2296,6 +2309,187 @@ describe("LiveTraceGraphClient", () => {
     });
     expect(snapshot.eventEvidence.test_event_old?.evidence.diff.content).toContain("old-after");
     expect(snapshot.eventEvidence.test_event_old?.evidence.test.content).toBe("OLD TEST RECEIPT · PASS");
+  });
+
+  it("keeps selected patch semantic evidence time-bounded instead of reusing the latest code intel", async () => {
+    const unavailableGit = {
+      status: "unavailable" as const,
+      captured_at: occurredAt,
+      reason: "git_probe_not_configured",
+    };
+    const oldSummary = {
+      server_name: "typescript" as const,
+      files_scanned: 1,
+      diagnostic_count: 1,
+      error_count: 1,
+      warning_count: 0,
+      information_count: 0,
+      hint_count: 0,
+      truncated: false,
+      diagnostics_hash: hash,
+      sample: [{
+        path: "src/old.ts",
+        range: { start: { line: 1, character: 0 }, end: { line: 1, character: 4 } },
+        severity: "error" as const,
+        message: "Old recorded error",
+      }],
+    };
+    const newestSummary = {
+      ...oldSummary,
+      sample: [{
+        path: "src/new.ts",
+        range: { start: { line: 4, character: 0 }, end: { line: 4, character: 4 } },
+        severity: "warning" as const,
+        message: "Newer diagnostic must not leak",
+      }],
+      error_count: 0,
+      warning_count: 1,
+    };
+    const timeline = [
+      event(1, "patch.applied", { event_id: "patch_semantic_old" }),
+      event(2, "lsp.diagnostics_received", { data: { project_id: fixtureProject.project_id, ...oldSummary } }),
+      event(3, "code.intel_updated", {
+        event_id: "code_old",
+        patch_event_id: "patch_semantic_old",
+        data: {
+          project_id: fixtureProject.project_id,
+          phase: "post_patch",
+          git_context: unavailableGit,
+          base_snapshot_id: "graph:old-before",
+          result_snapshot_id: "graph:old-after",
+          changed_files: ["src/old.ts"],
+          changed_files_truncated: false,
+          changed_symbols: [{
+            symbol_id: "symbol:old",
+            name: "oldFunction",
+            kind: "function",
+            file_path: "src/old.ts",
+            line: 2,
+            change: "changed",
+          }],
+          changed_symbols_truncated: false,
+        },
+      }),
+      event(4, "patch.applied", { event_id: "patch_semantic_new" }),
+      event(5, "lsp.diagnostics_received", { data: { project_id: fixtureProject.project_id, ...newestSummary } }),
+      event(6, "code.intel_updated", {
+        event_id: "code_new",
+        patch_event_id: "patch_semantic_new",
+        data: {
+          project_id: fixtureProject.project_id,
+          phase: "post_patch",
+          git_context: unavailableGit,
+          base_snapshot_id: "graph:new-before",
+          result_snapshot_id: "graph:new-after",
+          changed_files: ["src/new.ts"],
+          changed_files_truncated: false,
+          changed_symbols: [{
+            symbol_id: "symbol:new",
+            name: "newFunction",
+            kind: "function",
+            file_path: "src/new.ts",
+            line: 5,
+            change: "changed",
+          }],
+          changed_symbols_truncated: false,
+        },
+      }),
+      event(7, "run.completed"),
+    ];
+    const latest: NonNullable<RunProjection["code_intel"]> = {
+      version: "tracegraph.code-intel.v1",
+      git_context: unavailableGit,
+      base_snapshot_id: "graph:new-before",
+      result_snapshot_id: "graph:new-after",
+      changed_files: ["src/new.ts"],
+      changed_files_truncated: false,
+      changed_symbols: [{
+        symbol_id: "symbol:new",
+        name: "newFunction",
+        kind: "function",
+        file_path: "src/new.ts",
+        line: 5,
+        change: "changed",
+      }],
+      changed_symbols_truncated: false,
+      diagnostics_summary: newestSummary,
+    };
+    const client = new LiveTraceGraphClient({ sdk: new FakeSdk({
+      ...projection("completed", [], timeline),
+      code_intel: latest,
+    }) });
+
+    await client.initialize();
+    await client.chooseProject("disposable_fixture");
+    await client.startRun("Inspect historical semantic evidence", "plan");
+
+    const snapshot = client.getSnapshot();
+    expect(snapshot.run?.codeIntel).toMatchObject({
+      changedSymbols: [expect.objectContaining({ name: "newFunction" })],
+      diagnosticsSummary: expect.objectContaining({ warning_count: 1 }),
+    });
+    expect(snapshot.eventEvidence.patch_semantic_old?.codeIntel).toMatchObject({
+      changedFiles: ["src/old.ts"],
+      changedSymbols: [expect.objectContaining({ name: "oldFunction" })],
+      diagnosticsSummary: expect.objectContaining({
+        error_count: 1,
+        sample: [expect.objectContaining({ message: "Old recorded error" })],
+      }),
+    });
+    expect(snapshot.eventEvidence.patch_semantic_old?.codeIntel?.diagnosticsSummary?.sample[0]?.message)
+      .not.toContain("Newer diagnostic");
+  });
+
+  it("shows the stale-base warning on its replacement approval without attaching it to the old preview", async () => {
+    const expected = {
+      status: "available" as const,
+      base_commit: "a".repeat(40),
+      branch: "main",
+      dirty: false,
+      worktree_fingerprint: hash,
+      captured_at: occurredAt,
+    };
+    const actual = { ...expected, base_commit: "b".repeat(40) };
+    const timeline = [
+      event(1, "patch.preview_created", { event_id: "preview_before_drift", action_id: "action:drift" }),
+      event(2, "code.stale_base_detected", {
+        event_id: "stale_drift",
+        action_id: "action:drift",
+        data: {
+          project_id: fixtureProject.project_id,
+          stale_base: {
+            expected,
+            actual,
+            detected_at: occurredAt,
+            reason: "base_commit_changed",
+            requires_reapproval: true,
+          },
+        },
+      }),
+      event(3, "approval.requested", { event_id: "approval_after_drift", action_id: "action:drift" }),
+    ];
+    const client = new LiveTraceGraphClient({ sdk: new FakeSdk(projection("awaiting_approval", [], timeline)) });
+
+    await client.initialize();
+    await client.chooseProject("disposable_fixture");
+    await client.startRun("Inspect reapproval evidence", "plan");
+    // An awaiting approval Run starts its durable stream immediately. Let its
+    // same-sequence refresh finish hydrating evidence before checking it.
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+
+    const evidence = client.getSnapshot().eventEvidence;
+    expect(CodeStaleBaseDetectedDataSchema.safeParse(timeline[1]?.data).success).toBe(true);
+    expect(timeline[2]?.action_id).toBe("action:drift");
+    expect(timeline[1]?.action_id).toBe("action:drift");
+    expect(evidence.stale_drift).toBeDefined();
+    expect(evidence.stale_drift?.codeIntel).toBeDefined();
+    expect(evidence.preview_before_drift?.codeIntel).toBeUndefined();
+    expect(evidence.approval_after_drift).toMatchObject({
+      codeIntel: expect.objectContaining({ staleBase: expect.objectContaining({
+      reason: "base_commit_changed",
+      requires_reapproval: true,
+      }) }),
+    });
   });
 
   it("enables approval only after the complete PatchPreview Artifact is verified", async () => {

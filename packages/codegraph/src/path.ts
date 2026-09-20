@@ -32,6 +32,21 @@ export function moduleNodeId(moduleName: string, sourcePath?: string): string {
   return `module:${sha256(scope)}`;
 }
 
+/**
+ * Declaration identities intentionally use a lexical ordinal rather than a
+ * source position: formatting-only line shifts must not look like a removed
+ * and added symbol in a graph delta.
+ */
+export function symbolNodeId(
+  workspacePath: string,
+  declarationKind: string,
+  symbolName: string,
+  ordinal: number,
+): string {
+  const scope = `${normalizeWorkspacePath(workspacePath)}:${declarationKind}:${symbolName}:${ordinal}`;
+  return `symbol:${sha256(scope)}`;
+}
+
 function pathNodeId(kind: "file" | "directory", workspacePath: string): string {
   const normalized = normalizeWorkspacePath(workspacePath);
   const readable = `${kind}:${normalized}`;

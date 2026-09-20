@@ -14,7 +14,7 @@ Web 是整条链路的**末端消费者**，三条硬边界：
 
 | 边界 | 具体表现 | 代码位置 |
 | --- | --- | --- |
-| **不装配能力** | Web 侧不存在 `CodeGraphProvider`、模型 provider、工具执行器等任何 provider 的装配代码；装配只发生在 CLI 的 composition | 全仓 `codeGraph` 仅出现在 `apps/cli/src/composition.ts` |
+| **不装配能力** | Web 侧不存在 `CodeGraphProvider`、模型 provider、工具执行器等任何 provider 的装配代码；具体 CodeGraph/Git adapter 只在 CLI composition 注入 Runtime | Web 只消费 `RunProjection.code_intel` 与 canonical Run/SSE 事件 |
 | **不执行副作用** | 打开 durable Session 只加载最后一个 Run 的投影；显式 Resume 也不会自动重跑工具，待审批恢复后仍需用户使用新 approval | `apps/web/src/live-client.ts`、`App.tsx` |
 | **不持有真相** | 唯一状态是 `WorkbenchSnapshot`；组件通过 `useSyncExternalStore` 订阅，没有本地业务状态机 | `apps/web/src/App.tsx:37:43` |
 
@@ -536,7 +536,7 @@ function useSnapshot(client: WorkbenchClient) {
 
           {run && view === "changes" && (
             <main className="changes-workbench">
-              <ChangesView diffs={selectedEvidence.diffs} edges={selectedEvidence.graphEdges} evidence={selectedEvidence.evidence} files={selectedEvidence.changedFiles} nodes={selectedEvidence.graphNodes} onJumpToPatch={jumpToPatch} onOpenDetails={() => setDetailsOpen(true)} patchId={selectedEvidence.patchEventId} verified={["available", "demo"].includes(selectedEvidence.evidence.test.status)} />
+              <ChangesView codeIntel={selectedEvent ? selectedEvidence.codeIntel : run?.codeIntel} diffs={selectedEvidence.diffs} edges={selectedEvidence.graphEdges} evidence={selectedEvidence.evidence} files={selectedEvidence.changedFiles} nodes={selectedEvidence.graphNodes} onJumpToPatch={jumpToPatch} onOpenDetails={() => setDetailsOpen(true)} patchId={selectedEvidence.patchEventId} verified={["available", "demo"].includes(selectedEvidence.evidence.test.status)} />
             </main>
           )}
 ```
@@ -545,6 +545,7 @@ function useSnapshot(client: WorkbenchClient) {
 - 状态页与工作台页互斥：无项目无 Run → `NoProject`（236）；有项目无 Run → `ProjectReady`（237）；有 Run → 工作台（239）。
 - **Inspector 有两种挂载方式**：常驻右栏（281:283，`view !== "changes"` 时）与抽屉（293:295，窄屏 / Changes 视图下复用同一份 `scope`）；测试日志用独立的底部抽屉（296:298）。同一份 `selectedEvidence` 既喂 Inspector 也喂 ChangesView，**证据投影只有一份**。
 - **ChangesView 的 `verified` prop 直接来自测试证据槽位状态**（`["available","demo"].includes(...)`），验证标记不是本地布尔量。
+- **G-20 CodeIntel 也走同一份选择证据**：实时/未选事件时展示 Run head；选择历史事件时 `live-client` 只找该 `code.intel_updated` 或与该 Patch 相连的 semantic event，绝不把后续 Run head 倒灌到过去。它显示有界 changed files/顶层 declarations、LSP 摘要、Git stale-base 重新审批提示，而不显示原始 Git/LSP 内容。
 - Chat / Trajectory 二选一在同一 `<main className="main-workbench">` 内切换（242:259），其中 `Trajectory` 的"回到尾部"由 `setTailFollowing(true); setSelectedId(null)` 两个动作共同表达（259）。
 
 ### 6.2 输入区：G-14 排队模式与审批控制面并存
@@ -570,7 +571,7 @@ composer 明示“将在下一步发送”，展示 canonical pending 队列和�
 | --- | --- | --- |
 | `WorkbenchStates.tsx` | 354 | `NoProject` / `ProjectReady` / `ChatView` / `ChatTurn` / `PublicModelSurface` / `ContextBudgetStrip` |
 | `MarkdownContent.tsx` | 293 | 回答渲染：代码块、表格、列表，` ```mermaid ` 块渲染为图形（`MarkdownContent.tsx:44`，懒加载后在主题切换时重绘） |
-| `ChangesView.tsx` | 195 | 变更视图：diff、架构增量、验证证据 |
+| `ChangesView.tsx` | — | 变更视图：diff、架构增量、验证证据与 G-20 有界 CodeIntel 摘要 |
 | `Inspector.tsx` | 170 | 事件详情（按 §3.4 推导出的标签页） |
 | `SettingsPanel.tsx` | — | 主题、模型配置、G-19 凭据安全状态、G-06 权限 preset/ceiling/source/lock、G-15 sink 健康，以及 G-17 扩展状态/reload |
 | `Sidebar.tsx` | 133 | 项目列表、状态预览切换、返回首页 |
@@ -836,7 +837,7 @@ import { ChatView } from "./WorkbenchStates";
 
 ## 10. 已知缺口
 
-1. **Web 不装配任何 provider**：`codeGraph` 全仓仅出现在 `apps/cli/src/composition.ts`，`packages/host/src` 零引用。走 Web / 一体部署路径时，Architecture Delta 只能来自 Host 已装配的投影；若 Host 未装配 `CodeGraphProvider`，界面上这一块没有数据来源（详见模块 07、模块 11）。
+1. **Web 不装配任何 provider**：标准 CLI composition 已为一体 Web 路径注入 CodeGraph/Git adapter，Web 只传输/渲染投影；但自定义 Host composition 未显式注入 `CodeGraphProvider` 时，Architecture Delta 与 CodeIntel 都没有数据来源（详见模块 07、模块 11）。
 2. **每条持久事件后都做一次全量 `getRun`**（`live-client.ts:497:499`）：事件密集时是 O(N) 次投影往返，没有合并或去抖。这是本模块最明显的性能债。
 3. **浏览器仍无本地持久化**：`conversations` / `liveActivities` / `modelSurface` 在内存 Map，刷新即丢；Host 的 durable Session 能恢复列表、最后一个 Run 投影和特定的待审批状态，但不会替 Web 自动重建跨多个 Run 的完整 conversation transcript。瞬时活动/模型面也不会被 Session JSONL 复制。
 4. **`previewState` 语义双关**：demo 下是"切换原型状态"（并**硬编码选中 `evt_012`**，`App.tsx:156:160`），live 下只等价于"立即重试 SSE"（`live-client.ts:366:372`）。同名方法承载两套语义，对读代码的人是负担。

@@ -5,13 +5,20 @@ import { performance } from "node:perf_hooks";
 import { GraphSnapshotSchema } from "@tracegraph/contracts";
 import {
   isCallExpression,
+  isClassDeclaration,
+  isEnumDeclaration,
   isExportDeclaration,
   isExternalModuleReference,
+  isFunctionDeclaration,
   isImportDeclaration,
   isImportEqualsDeclaration,
   isImportExpression,
   isIdentifier,
+  isInterfaceDeclaration,
+  isModuleDeclaration,
   isStringLiteralLikeNode,
+  isTypeAliasDeclaration,
+  isVariableStatement,
   type Node,
   type SourceFile,
 } from "typescript/unstable/ast";
@@ -24,6 +31,7 @@ import {
   isInsideWorkspace,
   moduleNodeId,
   normalizeWorkspacePath,
+  symbolNodeId,
   toWorkspacePath,
 } from "./path.js";
 import type {
@@ -91,6 +99,17 @@ interface StaticReference {
   readonly specifier: string;
   readonly line: number;
   readonly conservative?: boolean;
+}
+
+type DeclarationKind = "class" | "enum" | "function" | "interface" | "namespace" | "type" | "variable";
+
+interface DeclarationSymbol {
+  readonly id: string;
+  readonly name: string;
+  readonly declarationKind: DeclarationKind;
+  readonly line: number;
+  readonly endLine: number;
+  readonly contentHash: string;
 }
 
 interface ResolvedTarget {
@@ -219,6 +238,33 @@ export async function analyzeCodeGraph(
         parsedFileCount += 1;
 
         const scan = scanStaticReferences(sourceFile);
+        const declarations = scanDeclarationSymbols(sourceFile, record.workspacePath);
+        const sourceNodeId = fileNodeId(record.workspacePath);
+        for (const declaration of declarations) {
+          const symbolNode: GraphNode = {
+            id: declaration.id,
+            kind: "symbol",
+            label: declaration.name,
+            file_path: record.workspacePath,
+            line: declaration.line,
+            end_line: declaration.endLine,
+            symbol_name: declaration.name,
+            declaration_kind: declaration.declarationKind,
+            content_hash: declaration.contentHash,
+          };
+          nodes.set(symbolNode.id, symbolNode);
+          const containsEdge: GraphEdge = {
+            id: graphEdgeId("contains", sourceNodeId, symbolNode.id),
+            kind: "contains",
+            source_node_id: sourceNodeId,
+            target_node_id: symbolNode.id,
+            file_path: record.workspacePath,
+            line: declaration.line,
+            confidence: "high",
+            resolution: "resolved",
+          };
+          edges.set(containsEdge.id, containsEdge);
+        }
         skippedDynamicImportCount += scan.dynamicImportLines.length;
         skippedCommonJsRequireCount += scan.unsupportedRequireLines.length;
         for (const line of scan.dynamicImportLines) {
@@ -257,7 +303,6 @@ export async function analyzeCodeGraph(
             partialStaticEdgeCount += 1;
           }
 
-          const sourceNodeId = fileNodeId(record.workspacePath);
           const edgeId = graphEdgeId(
             reference.kind,
             sourceNodeId,
@@ -756,6 +801,56 @@ function scanStaticReferences(sourceFile: SourceFile): {
 
   visit(sourceFile);
   return { references, dynamicImportLines, unsupportedRequireLines };
+}
+
+/**
+ * G-20 deliberately indexes declarations, not a speculative call graph.
+ * It stays at SourceFile statement scope so dynamic dispatch, dependency
+ * injection, routes and runtime closures cannot be misrepresented as facts.
+ */
+function scanDeclarationSymbols(
+  sourceFile: SourceFile,
+  workspacePath: string,
+): DeclarationSymbol[] {
+  const declarations: DeclarationSymbol[] = [];
+  const occurrences = new Map<string, number>();
+
+  const add = (node: Node, declarationKind: DeclarationKind, name: string): void => {
+    const key = `${declarationKind}:${name}`;
+    const ordinal = occurrences.get(key) ?? 0;
+    occurrences.set(key, ordinal + 1);
+    const start = node.getStart(sourceFile);
+    const end = node.getEnd();
+    declarations.push({
+      id: symbolNodeId(workspacePath, declarationKind, name, ordinal),
+      name,
+      declarationKind,
+      line: sourceFile.getLineAndCharacterOfPosition(start).line + 1,
+      endLine: sourceFile.getLineAndCharacterOfPosition(Math.max(start, end - 1)).line + 1,
+      contentHash: sha256(node.getText(sourceFile)),
+    });
+  };
+
+  for (const statement of sourceFile.statements) {
+    if (isFunctionDeclaration(statement) && statement.name !== undefined) {
+      add(statement, "function", statement.name.text);
+    } else if (isClassDeclaration(statement) && statement.name !== undefined) {
+      add(statement, "class", statement.name.text);
+    } else if (isInterfaceDeclaration(statement) && statement.name !== undefined) {
+      add(statement, "interface", statement.name.text);
+    } else if (isTypeAliasDeclaration(statement) && statement.name !== undefined) {
+      add(statement, "type", statement.name.text);
+    } else if (isEnumDeclaration(statement) && statement.name !== undefined) {
+      add(statement, "enum", statement.name.text);
+    } else if (isModuleDeclaration(statement) && isIdentifier(statement.name)) {
+      add(statement, "namespace", statement.name.text);
+    } else if (isVariableStatement(statement)) {
+      for (const declaration of statement.declarationList.declarations) {
+        if (isIdentifier(declaration.name)) add(declaration, "variable", declaration.name.text);
+      }
+    }
+  }
+  return declarations;
 }
 
 function resolveTarget(input: {

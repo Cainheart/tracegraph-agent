@@ -111,6 +111,8 @@ export const EventTypeSchema = z.enum([
   "mcp.tool_called",
   "lsp.diagnostics_received",
   "lsp.server_unavailable",
+  "code.intel_updated",
+  "code.stale_base_detected",
 ]);
 export type EventType = z.infer<typeof EventTypeSchema>;
 

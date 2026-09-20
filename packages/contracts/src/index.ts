@@ -3,6 +3,7 @@ export * from "./action-wal.js";
 export * from "./attachment.js";
 export * from "./commands.js";
 export * from "./common.js";
+export * from "./code-intel.js";
 export * from "./context.js";
 export * from "./credentials.js";
 export * from "./event.js";

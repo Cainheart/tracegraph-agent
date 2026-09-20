@@ -134,6 +134,26 @@ const IDENTIFIER_FACTS = [
     ],
     implementation: "packages/codegraph/src/analyze.ts",
   },
+  {
+    identifier: "CODE_INTEL_VERSION",
+    documentation: ["docs/modules/01-契约层-contracts.md", "docs/modules/07-CodeGraph-代码图.md", ROADMAP],
+    implementation: "packages/contracts/src/code-intel.ts",
+  },
+  {
+    identifier: "CodeIntelProjectionSchema",
+    documentation: ["docs/modules/01-契约层-contracts.md", "docs/modules/07-CodeGraph-代码图.md"],
+    implementation: "packages/contracts/src/code-intel.ts",
+  },
+  {
+    identifier: "captureGitContext",
+    documentation: ["docs/modules/07-CodeGraph-代码图.md", "docs/modules/11-CLI-与装配.md"],
+    implementation: "apps/cli/src/composition.ts",
+  },
+  {
+    identifier: "ChangesView",
+    documentation: ["docs/modules/10-Web-工作台.md"],
+    implementation: "apps/web/src/components/ChangesView.tsx",
+  },
 ] as const;
 
 const VERSION_FACTS = [
@@ -199,6 +219,8 @@ const EVENT_FACTS = [
   { event: "mcp.tool_called", documentation: "docs/modules/18-MCP客户端.md" },
   { event: "lsp.diagnostics_received", documentation: "docs/modules/19-LSP客户端.md" },
   { event: "lsp.server_unavailable", documentation: "docs/modules/19-LSP客户端.md" },
+  { event: "code.intel_updated", documentation: "docs/modules/07-CodeGraph-代码图.md" },
+  { event: "code.stale_base_detected", documentation: "docs/modules/07-CodeGraph-代码图.md" },
 ] as const;
 
 const ROUTE_FACTS = [
@@ -440,7 +462,7 @@ describe("G16 documentation consistency", () => {
     }
   });
 
-  it("pins the current G08/G10/G11/G12 rollout to 100 events, projector v8, 20 built-in tools, and recovery v5", async () => {
+  it("pins the current G20 rollout to 102 events, projector v9, 20 built-in tools, and recovery v5", async () => {
     const commonContract = await readRepositoryFile("packages/contracts/src/common.ts");
     const eventContract = await readRepositoryFile("packages/contracts/src/event.ts");
     const actionContract = await readRepositoryFile("packages/contracts/src/action.ts");
@@ -451,14 +473,15 @@ describe("G16 documentation consistency", () => {
     const runtime = await readRepositoryFile("packages/core/src/runtime.ts");
     const ledgerModule = await readRepositoryFile("docs/modules/05-证据链-账本投影工件.md");
     const teamModule = await readRepositoryFile("docs/modules/16-Agent-Team.md");
-    const g08ProjectorVersion = "tracegraph.projector.v8";
+    const g20ProjectorVersion = "tracegraph.projector.v9";
     const eventTypes = assignedStringArray(eventContract, "EventTypeSchema");
 
-    expect(assignedConstantLiteral(commonContract, "PROJECTOR_VERSION")).toBe(g08ProjectorVersion);
-    expect(eventTypes).toHaveLength(100);
+    expect(assignedConstantLiteral(commonContract, "PROJECTOR_VERSION")).toBe(g20ProjectorVersion);
+    expect(eventTypes).toHaveLength(102);
     expect(eventTypes.filter((event) => event.startsWith("team."))).toHaveLength(13);
     expect(eventTypes.filter((event) => event.startsWith("skill."))).toHaveLength(3);
     expect(eventTypes.filter((event) => event.startsWith("lsp."))).toHaveLength(2);
+    expect(eventTypes.filter((event) => event.startsWith("code."))).toHaveLength(2);
     expect(assignedStringArray(actionContract, "BUILTIN_TOOL_NAMES")).toHaveLength(20);
     expect(assignedConstantLiteral(teamContract, "DEFAULT_TEAM_READ_PAGE_ITEMS")).toBe("25");
     expect(assignedConstantLiteral(teamContract, "MAX_TEAM_READ_PAGE_ITEMS")).toBe("100");
@@ -473,7 +496,7 @@ describe("G16 documentation consistency", () => {
     expect(recoveryContract.slice(recoveryV5Start, recoveryV5Start + 500))
       .toMatch(/version:\s*z\.literal\(5\)/u);
 
-    expect(teamModule).toMatch(/canonical Event 当前共 100 种/u);
+    expect(teamModule).toMatch(/canonical Event 当前共 102 种/u);
     expect(teamModule).toMatch(/Run recovery 仍为 v5/u);
     expect(teamModule).toMatch(/内置 Tool 总数从 14 增到 19/u);
     expect(teamModule).toContain("team_snapshot_changed");
@@ -493,8 +516,8 @@ describe("G16 documentation consistency", () => {
       const documentation = await readRepositoryFile(documentationPath);
       expect(
         hasIdentifier(documentation, "PROJECTOR_VERSION")
-          && documentation.includes(g08ProjectorVersion),
-        `${documentationPath} does not bind PROJECTOR_VERSION to the G08 value ${g08ProjectorVersion}`,
+          && documentation.includes(g20ProjectorVersion),
+        `${documentationPath} does not bind PROJECTOR_VERSION to the G20 value ${g20ProjectorVersion}`,
       ).toBe(true);
     }
   });

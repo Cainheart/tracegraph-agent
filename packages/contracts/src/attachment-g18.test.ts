@@ -90,13 +90,13 @@ describe("G18 attachment contracts", () => {
     expect(EventTypeSchema.parse("attachment.added")).toBe("attachment.added");
     expect(EventTypeSchema.parse("attachment.rejected")).toBe("attachment.rejected");
     expect(EventTypeSchema.parse("attachment.offloaded")).toBe("attachment.offloaded");
-    expect(EventTypeSchema.options).toHaveLength(100);
+    expect(EventTypeSchema.options).toHaveLength(102);
   });
 
   it("defaults old projection payloads to an empty attachment list", () => {
     const projection = RunProjectionSchema.parse({
       schema_version: "tracegraph.session-event.v1",
-      projector_version: "tracegraph.projector.v8",
+      projector_version: "tracegraph.projector.v9",
       project_id: "project:test",
       run_id: "run:test",
       task: "Legacy replay",

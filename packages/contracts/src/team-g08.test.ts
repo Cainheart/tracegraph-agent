@@ -375,7 +375,7 @@ describe("G-08 Agent Team contracts", () => {
     })).toThrow("cannot remain owned by a lost member");
   });
 
-  it("adds 13 append-compatible events, advances only the projector, and keeps recovery v5", () => {
+  it("keeps its 13 append-compatible events contiguous while later facts advance the projector", () => {
     const teamEvents = [
       "team.created",
       "team.member_joined",
@@ -392,12 +392,12 @@ describe("G-08 Agent Team contracts", () => {
       "team.sweep_completed",
     ] as const;
     for (const eventType of teamEvents) expect(EventTypeSchema.parse(eventType)).toBe(eventType);
-    expect(EventTypeSchema.options).toHaveLength(100);
+    expect(EventTypeSchema.options).toHaveLength(102);
     const teamStart = EventTypeSchema.options.indexOf(teamEvents[0]);
     expect(teamStart).toBeGreaterThanOrEqual(0);
     expect(EventTypeSchema.options.slice(teamStart, teamStart + teamEvents.length)).toEqual(teamEvents);
     expect(SCHEMA_VERSION).toBe("tracegraph.session-event.v1");
-    expect(PROJECTOR_VERSION).toBe("tracegraph.projector.v8");
+    expect(PROJECTOR_VERSION).toBe("tracegraph.projector.v9");
     expect(BUILTIN_TOOL_NAMES).toHaveLength(20);
     for (const toolName of [
       "team_read",

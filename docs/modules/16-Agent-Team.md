@@ -2,7 +2,7 @@
 
 > 定位：在 G-07 有界父子 Run 委派之上，增加可重放的 team roster、mailbox、共享任务板与显式存活回收。
 > 代码：`packages/contracts/src/team.ts`、`packages/core/src/team.ts`、`packages/core/src/runtime.ts`、`packages/core/src/tool-registry.ts`、`packages/{host,sdk}/src/index.ts`、`apps/cli/src/team-command.ts`、`apps/web/src/components/TeamPanel.tsx`
-> 实现状态：**已实现**；G-08 定向行为 eval、文档一致性 eval 与 eval typecheck 已通过，最终整体验证计数以全仓门禁为准；G-08 后经 G-10 追加 Skill、G-11 追加 MCP、G-12 追加 LSP 事件，canonical Event 当前共 100 种，`PROJECTOR_VERSION = "tracegraph.projector.v8"`，内部 Run recovery 仍为 v5
+> 实现状态：**已实现**；G-08 定向行为 eval、文档一致性 eval 与 eval typecheck 已通过，最终整体验证计数以全仓门禁为准；G-08 后经 G-10 追加 Skill、G-11 追加 MCP、G-12 追加 LSP、G-20 追加 CodeIntel 事件，canonical Event 当前共 102 种，`PROJECTOR_VERSION = "tracegraph.projector.v9"`，内部 Run recovery 仍为 v5
 
 ---
 
@@ -36,7 +36,7 @@ RunProjection.team
 - child 自己的执行轨迹仍留在 child Ledger；root Ledger 只保存 G-07 link 与 team 协调事实，不复制 child 的模型/工具事件。
 - Session JSONL 仍只是 Ledger Event 引用索引，内部 recovery Artifact 仍为 v5。G-08 不另存不可重放的私有 team 状态，所以没有为了 team 人为升级 recovery 格式。
 
-版本边界：G-08 追加 13 种 `team.*` Event，随后 G-10 追加 3 种 `skill.*`、G-11 追加 5 种 `mcp.*`、G-12 追加 2 种 `lsp.*`，当前总数为 100；既有事件信封语义未变，因此 `SCHEMA_VERSION` 仍是 `tracegraph.session-event.v1`。新的 `RunProjection.team` 派生形状把 `PROJECTOR_VERSION` 从 v7 升到 `tracegraph.projector.v8`，LSP 的 `diagnostics_summary` 是兼容旧账本的可选派生字段。
+版本边界：G-08 追加 13 种 `team.*` Event，随后 G-10 追加 3 种 `skill.*`、G-11 追加 5 种 `mcp.*`、G-12 追加 2 种 `lsp.*`、G-20 追加 2 种 `code.*`，当前总数为 102；既有事件信封语义未变，因此 `SCHEMA_VERSION` 仍是 `tracegraph.session-event.v1`。新的 `RunProjection.team` 派生形状把 `PROJECTOR_VERSION` 从 v7 升到 v8，G-20 可选 `code_intel` 再升到 `tracegraph.projector.v9`；LSP 的 `diagnostics_summary` 是兼容旧账本的可选派生字段。
 
 完整追加集合为：`team.created`、`team.member_joined`、`team.heartbeat`、`team.member_lost`、`team.sweep_completed`、`team.mailbox_delivered`、`team.mailbox_claimed`、`team.task_created`、`team.task_claimed`、`team.task_completed`、`team.task_blocked`、`team.task_cancelled`、`team.task_reopened`。
 

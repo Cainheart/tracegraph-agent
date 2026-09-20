@@ -12,6 +12,7 @@ import { AttachmentListProjectionSchema } from "./attachment.js";
 import { TeamProjectionSchema } from "./team.js";
 import { WorkspaceKindSchema } from "./workspace.js";
 import { LspDiagnosticsSummarySchema } from "./lsp.js";
+import { CodeIntelProjectionSchema } from "./code-intel.js";
 
 export const PendingPlanSchema = z.object({
   plan_event_id: IdentifierSchema,
@@ -92,6 +93,8 @@ export const RunProjectionSchema = z.object({
   permission: PermissionSnapshotSchema.optional(),
   /** Latest bounded semantic diagnostics summary; raw LSP output is never projected. */
   diagnostics_summary: LspDiagnosticsSummarySchema.optional(),
+  /** G-20's bounded semantic/static code view; absent for historical ledgers. */
+  code_intel: CodeIntelProjectionSchema.optional(),
   artifact_refs: z.array(ArtifactRefSchema),
   outcome: z.string().optional(),
   failure_code: z.string().optional(),

@@ -122,7 +122,7 @@ G-21 使用四种相关事件，其中后三种是本阶段新增 Event type：
 | `memory.recalled` | completed/degraded、query hash、预算、visible/blocked attribution 与 token 总量 |
 | `retrieval.index_updated` | 可重建索引已完成一次 ingest；缺少该事件意味着不能声称索引已同步 |
 
-G-21 当时把 Event 总数增至 68；它只追加事件枚举和 strict payload，没有改变 canonical Event 信封或当时的 Projection 字段语义，所以 projector 当时仍是 v5。后续 G-07 追加 5 种 `subagent.*` Event 并增加 `RunProjection.subagents`，G-18 再追加 3 种 `attachment.*` Event 与 `RunProjection.attachments`，G-17 再追加 `extension.error`，G-08 最后追加 13 种 `team.*` Event 与可选 `RunProjection.team`，G-10/G-11/G-12 又追加 Skill/MCP/LSP 事件，因此当前总数为 100，`SCHEMA_VERSION` 仍是 `tracegraph.session-event.v1`，`PROJECTOR_VERSION` 已是 `tracegraph.projector.v8`。Memory 当前没有独立 Projection 列表；事实主要从 Ledger timeline、canonical JSONL 与 Context Manifest 检查。
+G-21 当时把 Event 总数增至 68；它只追加事件枚举和 strict payload，没有改变 canonical Event 信封或当时的 Projection 字段语义，所以 projector 当时仍是 v5。后续 G-07 追加 5 种 `subagent.*` Event 并增加 `RunProjection.subagents`，G-18 再追加 3 种 `attachment.*` Event 与 `RunProjection.attachments`，G-17 再追加 `extension.error`，G-08 最后追加 13 种 `team.*` Event 与可选 `RunProjection.team`，G-10/G-11/G-12 又追加 Skill/MCP/LSP 事件，G-20 再追加两个 `code.*` Event 与可选 `RunProjection.code_intel`，因此当前总数为 102，`SCHEMA_VERSION` 仍是 `tracegraph.session-event.v1`，`PROJECTOR_VERSION` 已是 `tracegraph.projector.v9`。Memory 当前没有独立 Projection 列表；事实主要从 Ledger timeline、canonical JSONL 与 Context Manifest 检查。
 
 ---
 
@@ -152,7 +152,7 @@ G-21 当时把 Event 总数增至 68；它只追加事件枚举和 strict payloa
 
 ## 10. 相关文档
 
-- 模块 01：Memory/Retrieval strict contracts、G-21 当时的 68 种事件与当前 100 种全集
+- 模块 01：Memory/Retrieval strict contracts、G-21 当时的 68 种事件与当前 102 种全集
 - 模块 02：Runtime `remember/recall` 与每轮自动检索时序
 - 模块 03：`memory/retrieved` Context surface、预算与 provenance
 - 模块 11：CLI 本地 backend、远端 client 与安全降级

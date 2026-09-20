@@ -5,6 +5,7 @@ import type {
   Decision,
   GraphDelta,
   GraphSnapshot,
+  GitBaseContext,
   ModelUsageReport,
   ModelCapabilities,
   ModelImageInput,
@@ -301,6 +302,15 @@ export interface CodeGraphProvider {
     patchEventId?: string;
     signal?: AbortSignal;
   }): Promise<GraphDelta>;
+  /**
+   * Host/composition-owned read-only Git probe. It is deliberately optional
+   * for legacy embeddings; Runtime records an explicit unavailable context
+   * instead of treating absence as a clean working tree.
+   */
+  captureGitContext?(input: {
+    workspaceRoot: string;
+    signal?: AbortSignal;
+  }): Promise<GitBaseContext>;
 }
 
 export interface AgentRuntimeHooks {
