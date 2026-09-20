@@ -255,6 +255,10 @@ describe("TraceGraph vertical slice", () => {
       dataDir: data.path,
       sessionStore: firstStore,
       codeGraph: createCodeGraphProvider(),
+      // Same portability reason as the slice above: this suite proves recovery
+      // and approval reissue, not OS isolation. Without this the post-approval
+      // run_test fails closed on any host that cannot prove isolation (Linux).
+      sandboxMode: "danger-full-access",
     });
     const firstHost = await createTraceGraphHost({
       runtime: firstRuntime,
@@ -289,6 +293,9 @@ describe("TraceGraph vertical slice", () => {
       dataDir: data.path,
       sessionStore: restartedStore,
       codeGraph: createCodeGraphProvider(),
+      // The resumed Run must keep the same permission preset as the Run it
+      // recovers, so the restored sandbox report still matches its mode.
+      sandboxMode: "danger-full-access",
     });
     const restartedHost = await createTraceGraphHost({
       runtime: restartedRuntime,
