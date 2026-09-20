@@ -11,8 +11,9 @@ import {
   ActionWal,
   ToolRegistry,
   JsonlSessionStore,
-  createAgentRuntime,
+  createAgentRuntime as createAgentRuntimeWithNativeSandbox,
   createDefaultToolRegistry,
+  createFixtureSandboxRunner,
   registerSecretForRedaction,
   sha256,
   type AgentRuntime,
@@ -25,6 +26,18 @@ import {
   createSequentialIdFactory,
   createTemporaryDataDir,
 } from "./index.js";
+
+/**
+ * run_test fails closed unless the host proves full OS isolation, which Linux
+ * (unlike macOS seatbelt) never does. These suites cover approval, WAL and
+ * crash recovery semantics rather than isolation, so every Runtime they build
+ * gets a fixture sandbox boundary -- see createFixtureSandboxRunner.
+ */
+const createAgentRuntime: typeof createAgentRuntimeWithNativeSandbox = (options) =>
+  createAgentRuntimeWithNativeSandbox({
+    ...options,
+    sandboxRunner: createFixtureSandboxRunner(),
+  });
 
 const cleanups: Array<() => Promise<void>> = [];
 
