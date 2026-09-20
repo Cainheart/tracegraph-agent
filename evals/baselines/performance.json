@@ -1,0 +1,38 @@
+{
+  "schema_version": "tracegraph.eval-performance-baseline.v1",
+  "scenario": "offline-representative-run.v1",
+  "metrics": {
+    "context.built.input_tokens": {
+      "name": "context.built.input_tokens",
+      "value": 1470,
+      "unit": "tokens",
+      "scenario": "compacted-context",
+      "max": 1470,
+      "rationale": "Exact deterministic compacted Context size; increases require review."
+    },
+    "run.model_calls": {
+      "name": "run.model_calls",
+      "value": 1,
+      "unit": "calls",
+      "scenario": "direct-answer-run",
+      "max": 1,
+      "rationale": "Direct-answer representative Run must remain one model call."
+    },
+    "tool.call.p95_ms": {
+      "name": "tool.call.p95_ms",
+      "value": 0.33,
+      "unit": "ms",
+      "scenario": "bounded-read-file",
+      "max": 500,
+      "rationale": "Local bounded read_file P95 with wide CI scheduling headroom."
+    },
+    "sse.first_byte_ms": {
+      "name": "sse.first_byte_ms",
+      "value": 12.95,
+      "unit": "ms",
+      "scenario": "loopback-ledger-stream",
+      "max": 1500,
+      "rationale": "Loopback Host SSE first-byte latency with wide CI startup and scheduling headroom."
+    }
+  }
+}

@@ -1,0 +1,113 @@
+name: TraceGraph CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tracegraph-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: "true"
+  CODEBUDDY_SAFE_DELETE_ENABLED: "0"
+
+jobs:
+  typecheck:
+    name: Typecheck and release shape
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout immutable source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned pnpm and Node
+        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+        with:
+          version: 11.19.0
+          runtime: node@22.19.0
+          cache: true
+          install: false
+      - run: node scripts/verify-lockfile.mjs --skip-frozen
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm verify:lockfile
+      - run: pnpm typecheck
+      - run: pnpm release:check
+
+  test:
+    name: Tests, coverage, and supply chain
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout immutable source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned pnpm and Node
+        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+        with:
+          version: 11.19.0
+          runtime: node@22.19.0
+          cache: true
+          install: false
+      - run: node scripts/verify-lockfile.mjs --skip-frozen
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm supply-chain:check
+      - run: pnpm test
+      - run: pnpm test:e2e
+      - run: pnpm coverage
+      - name: Upload bounded coverage evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: tracegraph-coverage
+          path: coverage/
+          if-no-files-found: error
+          retention-days: 14
+          include-hidden-files: false
+
+  evals:
+    name: Offline evaluations
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      OPENAI_API_KEY: ""
+      ANTHROPIC_API_KEY: ""
+      DEEPSEEK_API_KEY: ""
+      GLM_API_KEY: ""
+      QWEN_API_KEY: ""
+      MINIMAX_API_KEY: ""
+      TRACEGRAPH_MODEL_API_KEY: ""
+      OTEL_EXPORTER_OTLP_ENDPOINT: ""
+    steps:
+      - name: Checkout immutable source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install pinned pnpm and Node
+        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+        with:
+          version: 11.19.0
+          runtime: node@22.19.0
+          cache: true
+          install: false
+      - run: node scripts/verify-lockfile.mjs --skip-frozen
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm verify:lockfile
+      - run: pnpm evals
+      - name: Upload bounded eval report
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: tracegraph-eval-report
+          path: _tmp_evals/reports/latest.json
+          if-no-files-found: error
+          retention-days: 14
+          include-hidden-files: false

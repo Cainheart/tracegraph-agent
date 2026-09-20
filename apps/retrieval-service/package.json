@@ -1,0 +1,38 @@
+{
+  "name": "@tracegraph/retrieval-service",
+  "version": "0.1.0-alpha.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "bin": {
+    "tracegraph-retrieval": "./dist/dev.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.test.json --noEmit",
+    "test:unit": "vitest run tests",
+    "test:watch": "vitest tests",
+    "dev": "tsx src/dev.ts",
+    "serve": "node dist/dev.js"
+  },
+  "dependencies": {
+    "@tracegraph/retrieval": "workspace:*",
+    "fastify": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

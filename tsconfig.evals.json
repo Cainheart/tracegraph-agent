@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "paths": {
+      "@tracegraph/codegraph": ["./packages/codegraph/src/index.ts"],
+      "@tracegraph/contracts": ["./packages/contracts/src/index.ts"],
+      "@tracegraph/core": ["./packages/core/src/index.ts"],
+      "@tracegraph/host": ["./packages/host/src/index.ts"],
+      "@tracegraph/sdk": ["./packages/sdk/src/index.ts"],
+      "@tracegraph/telemetry": ["./packages/telemetry/src/index.ts"],
+      "@tracegraph/test-support": ["./packages/test-support/src/index.ts"]
+    },
+    "types": ["node", "vitest/globals"]
+  },
+  "include": [
+    "vitest.coverage.config.ts",
+    "vitest.evals.config.ts",
+    "evals/**/*.ts"
+  ]
+}

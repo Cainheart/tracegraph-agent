@@ -1,0 +1,34 @@
+{
+  "name": "@tracegraph/cli",
+  "version": "0.1.0-alpha.0",
+  "private": true,
+  "type": "module",
+  "bin": {
+    "tracegraph": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "dev": "tsx src/index.ts serve",
+    "serve": "tsx src/index.ts serve",
+    "test:e2e": "vitest run src/e2e.test.ts",
+    "test:unit": "vitest run src --exclude src/e2e.test.ts"
+  },
+  "dependencies": {
+    "@tracegraph/codegraph": "workspace:*",
+    "@tracegraph/contracts": "workspace:*",
+    "@tracegraph/core": "workspace:*",
+    "@tracegraph/host": "workspace:*",
+    "@tracegraph/retrieval": "workspace:*",
+    "@tracegraph/retrieval-service": "workspace:*",
+    "@tracegraph/sdk": "workspace:*",
+    "@tracegraph/telemetry": "workspace:*",
+    "@tracegraph/test-support": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

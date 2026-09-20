@@ -1,0 +1,33 @@
+{
+  "name": "@tracegraph/host",
+  "version": "0.1.0-alpha.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test:unit": "vitest run src",
+    "test:watch": "vitest",
+    "dev": "tsx src/dev.ts"
+  },
+  "dependencies": {
+    "@fastify/cors": "catalog:",
+    "@tracegraph/contracts": "workspace:*",
+    "@tracegraph/core": "workspace:*",
+    "fastify": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "name": "tracegraph-agent",
+  "version": "0.1.0-alpha.0",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "packageManager": "pnpm@11.19.0",
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "scripts": {
+    "clean:dist": "node scripts/clean-dist.mjs",
+    "build": "pnpm run clean:dist && pnpm -r --if-present build",
+    "typecheck": "pnpm run build && pnpm -r --if-present typecheck && pnpm run typecheck:evals",
+    "typecheck:evals": "tsc -p tsconfig.evals.json --noEmit",
+    "test": "pnpm run build && pnpm -r --if-present test:unit && pnpm run test:engineering",
+    "test:engineering": "node --test scripts/clean-dist.test.mjs scripts/verify-lockfile.test.mjs scripts/verify-release.test.mjs && vitest run scripts/check-coverage.test.ts",
+    "test:e2e": "pnpm run build && pnpm --filter @tracegraph/cli test:e2e",
+    "test:watch": "pnpm -r --parallel --if-present test:watch",
+    "coverage": "pnpm run build && vitest run --config vitest.coverage.config.ts && node scripts/check-coverage.mjs",
+    "evals": "pnpm run build && vitest run --config vitest.evals.config.ts",
+    "evals:update": "pnpm run evals -- --update",
+    "retrieval:serve": "pnpm run build && pnpm --filter @tracegraph/retrieval-service serve",
+    "verify:lockfile": "node scripts/verify-lockfile.mjs",
+    "verify:manifests": "node scripts/verify-lockfile.mjs --skip-frozen",
+    "supply-chain:check": "pnpm run verify:lockfile && pnpm audit --audit-level=high --registry=https://registry.npmjs.org/",
+    "release:check": "node scripts/verify-release.mjs --check",
+    "release:bundle": "node scripts/verify-release.mjs --write-manifest",
+    "dev": "pnpm run build && pnpm --parallel --filter @tracegraph/cli --filter @tracegraph/web dev",
+    "serve": "pnpm run build && pnpm --filter @tracegraph/cli serve"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.3",
+    "@vitest/coverage-v8": "5.0.1",
+    "tsx": "4.23.13",
+    "typescript": "7.0.2",
+    "vitest": "5.0.1"
+  }
+}
