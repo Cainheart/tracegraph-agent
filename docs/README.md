@@ -34,9 +34,9 @@
 
 ## English index
 
-- [English README](../README.en.md): five-minute setup, verification commands,
-  release boundary, and safety summary.
-- [Chinese full README](../README.md): detailed capabilities and architecture.
+- [English README](../README.en.md): positioning, capabilities, five-minute
+  setup, verification commands, and boundaries.
+- [Chinese README](../README.md): the same content in Chinese.
 - [Known limitations](../KNOWN_LIMITATIONS.md): authoritative current boundaries.
 - [Repository map](../DIRECTORY.md): responsibility of source/configuration files.
 - [Capability roadmap](12-能力差距对标与补强路线图.md): G-01 through G-23.
