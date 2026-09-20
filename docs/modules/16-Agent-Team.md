@@ -102,7 +102,7 @@ heartbeat 是显式操作，不是后台线程猜测 worker 是否存活：activ
 
 ## 5. 五个模型工具与 authority 绑定
 
-G-08 在内置 run-state 扩展中新增五个 Tool，使默认内置 Tool 总数从 14 增到 19：
+G-08 在内置 run-state 扩展中新增以下五个 Tool（内置 Tool 面的当前规模不在本文复述，以 `packages/contracts/src/action.ts` 的 `BUILTIN_TOOL_NAMES` 为唯一事实源）：
 
 | Tool | 用途 | authority 边界 |
 |---|---|---|

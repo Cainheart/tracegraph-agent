@@ -482,7 +482,8 @@ describe("G16 documentation consistency", () => {
     expect(eventTypes.filter((event) => event.startsWith("skill."))).toHaveLength(3);
     expect(eventTypes.filter((event) => event.startsWith("lsp."))).toHaveLength(2);
     expect(eventTypes.filter((event) => event.startsWith("code."))).toHaveLength(2);
-    expect(assignedStringArray(actionContract, "BUILTIN_TOOL_NAMES")).toHaveLength(20);
+    const builtinToolNames = assignedStringArray(actionContract, "BUILTIN_TOOL_NAMES");
+    expect(builtinToolNames).toHaveLength(20);
     expect(assignedConstantLiteral(teamContract, "DEFAULT_TEAM_READ_PAGE_ITEMS")).toBe("25");
     expect(assignedConstantLiteral(teamContract, "MAX_TEAM_READ_PAGE_ITEMS")).toBe("100");
     expect(teamContract).toContain("expected_last_sequence");
@@ -498,7 +499,11 @@ describe("G16 documentation consistency", () => {
 
     expect(teamModule).toMatch(/canonical Event 当前共 102 种/u);
     expect(teamModule).toMatch(/Run recovery 仍为 v5/u);
-    expect(teamModule).toMatch(/内置 Tool 总数从 14 增到 19/u);
+    expect(teamModule).toMatch(/内置 run-state 扩展中新增以下五个 Tool/u);
+    expect(teamModule).not.toMatch(/内置 Tool 总数从 \d+ 增到 \d+/u);
+    for (const teamTool of ["team_read", "team_task_write", "team_mailbox_send", "team_mailbox_claim", "team_heartbeat"]) {
+      expect(builtinToolNames).toContain(teamTool);
+    }
     expect(teamModule).toContain("team_snapshot_changed");
     expect(teamModule).toContain("spilled_tool_output");
     expect(teamModule).toContain("read_artifact");
