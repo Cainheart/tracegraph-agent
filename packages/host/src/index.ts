@@ -225,8 +225,10 @@ export interface RegisteredProject {
 
 export interface TraceGraphHost {
   app: FastifyInstance;
-  token: string;
-  expiresAt: string;
+  /** The currently issued loopback capability. It can rotate after its TTL. */
+  readonly token: string;
+  /** The current loopback capability expiry. It advances with a safe renewal. */
+  readonly expiresAt: string;
   listen(options?: { port?: number; host?: "127.0.0.1" | "::1" }): Promise<string>;
   close(): Promise<void>;
 }
@@ -257,10 +259,21 @@ export async function createTraceGraphHost(
   options: TraceGraphHostOptions,
 ): Promise<TraceGraphHost> {
   const now = options.now ?? (() => new Date());
-  const token = options.capabilityToken ?? randomBytes(32).toString("base64url");
   const tokenTtlMs = options.tokenTtlMs ?? 8 * 60 * 60 * 1_000;
-  const expiresAtMs = now().getTime() + tokenTtlMs;
-  const expiresAt = new Date(expiresAtMs).toISOString();
+  let token = options.capabilityToken ?? randomBytes(32).toString("base64url");
+  let expiresAtMs = now().getTime() + tokenTtlMs;
+  let expiresAt = new Date(expiresAtMs).toISOString();
+  // A browser uses bootstrap only from the allowed loopback origin.  When its
+  // live bearer has expired, renew it there so the SDK's established
+  // 401 -> bootstrap -> retry path can recover without ever involving model
+  // credentials.  Do not rotate a still-valid bearer: separate tabs may be
+  // using it concurrently.
+  const renewLiveCapabilityIfExpired = (): void => {
+    if (now().getTime() < expiresAtMs) return;
+    token = randomBytes(32).toString("base64url");
+    expiresAtMs = now().getTime() + tokenTtlMs;
+    expiresAt = new Date(expiresAtMs).toISOString();
+  };
   const replayTokenTtlMs = options.replayTokenTtlMs ?? DEFAULT_REPLAY_TOKEN_TTL_MS;
   const maxReplayCapabilities = options.maxReplayCapabilities ?? DEFAULT_MAX_REPLAY_CAPABILITIES;
   if (!Number.isSafeInteger(replayTokenTtlMs) || replayTokenTtlMs <= 0) {
@@ -538,6 +551,7 @@ export async function createTraceGraphHost(
   app.get("/api/bootstrap", async (request, reply) => {
     assertLoopback(request);
     assertOrigin(request, allowedOrigins);
+    renewLiveCapabilityIfExpired();
     reply.header("cache-control", "no-store");
     return { token, expiresAt, recovery };
   });
@@ -2040,8 +2054,12 @@ export async function createTraceGraphHost(
 
   return {
     app,
-    token,
-    expiresAt,
+    get token() {
+      return token;
+    },
+    get expiresAt() {
+      return expiresAt;
+    },
     async listen(listenOptions = {}) {
       return app.listen({
         port: listenOptions.port ?? 4311,

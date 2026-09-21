@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import type { RunStatus, WorkbenchSnapshot, WorkspaceKind } from "../model";
 import { useI18n } from "../i18n";
 import { Icon } from "./Icon";
@@ -18,6 +18,14 @@ const previewStates: readonly { value: RunStatus; label: string }[] = [
   { value: "historical", label: "Historical run" },
   { value: "reconnecting", label: "Reconnecting" },
 ];
+
+type ConfirmationRequest = {
+  kind: "project" | "session";
+  id: string;
+  title: string;
+  message: string;
+  confirmLabel: string;
+};
 
 export function Sidebar({
   snapshot,
@@ -58,9 +66,64 @@ export function Sidebar({
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [openingLocal, setOpeningLocal] = useState(false);
   const [localOpenError, setLocalOpenError] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState<ConfirmationRequest | null>(null);
+  const [confirmationPending, setConfirmationPending] = useState(false);
+  const confirmationTriggerRef = useRef<HTMLButtonElement | null>(null);
   const currentStatus = project ? (run?.status ?? "ready") : "empty";
   const localAvailable = snapshot.availableProjects.some((candidate) => candidate.workspaceKind === "readonly_local");
   const managedAvailable = snapshot.availableProjects.some((candidate) => candidate.workspaceKind === "managed_local");
+
+  const restoreConfirmationTrigger = () => {
+    const trigger = confirmationTriggerRef.current;
+    window.setTimeout(() => {
+      if (trigger?.isConnected) {
+        trigger.focus();
+        return;
+      }
+      document.querySelector<HTMLButtonElement>(".sidebar-new-chat")?.focus();
+    }, 0);
+  };
+
+  const closeConfirmation = () => {
+    if (confirmationPending) return;
+    setConfirmation(null);
+    restoreConfirmationTrigger();
+  };
+
+  const requestConfirmation = (request: ConfirmationRequest, trigger: HTMLButtonElement) => {
+    if (confirmationPending) return;
+    confirmationTriggerRef.current = trigger;
+    setConfirmation(request);
+  };
+
+  const confirmPendingAction = () => {
+    if (!confirmation || confirmationPending) return;
+    const pending = confirmation;
+    setConfirmationPending(true);
+    if (pending.kind === "project") {
+      setRemoveError(null);
+      setRemovingProjectId(pending.id);
+      void Promise.resolve().then(() => onRemoveProject(pending.id)).catch((error: unknown) => {
+        setRemoveError(error instanceof Error ? error.message : String(error));
+      }).finally(() => {
+        setRemovingProjectId(null);
+        setConfirmationPending(false);
+        setConfirmation(null);
+        restoreConfirmationTrigger();
+      });
+      return;
+    }
+    setSessionError(null);
+    setSessionBusyId(pending.id);
+    void Promise.resolve().then(() => onDeleteSession(pending.id)).catch((error: unknown) => {
+      setSessionError(error instanceof Error ? error.message : String(error));
+    }).finally(() => {
+      setSessionBusyId(null);
+      setConfirmationPending(false);
+      setConfirmation(null);
+      restoreConfirmationTrigger();
+    });
+  };
 
   return (
     <aside className="sidebar" aria-label={t("Project and run navigation")}>
@@ -133,17 +196,16 @@ export function Sidebar({
               aria-label={`${t("Remove project")}: ${candidate.name}`}
               className="workspace-option-remove"
               disabled={readOnly || removingProjectId === candidate.id}
-              onClick={() => {
-                if (removingProjectId !== null) return;
-                const confirmation = candidate.location?.kind === "managed_storage"
-                  ? t("Delete this managed project? Its TraceGraph-managed files will be deleted.")
-                  : t("Remove this project registration? The folder and files will not be deleted.");
-                if (!window.confirm(confirmation)) return;
-                setRemoveError(null);
-                setRemovingProjectId(candidate.id);
-                void onRemoveProject(candidate.id).catch((error: unknown) => {
-                  setRemoveError(error instanceof Error ? error.message : String(error));
-                }).finally(() => setRemovingProjectId(null));
+              onClick={(event) => {
+                if (removingProjectId !== null || confirmationPending) return;
+                const managed = candidate.location?.kind === "managed_storage";
+                requestConfirmation({
+                  kind: "project",
+                  id: candidate.id,
+                  title: t(managed ? "Delete managed project" : "Remove project registration"),
+                  message: t(managed ? "Delete this managed project? Its TraceGraph-managed files will be deleted." : "Remove this project registration? The folder and files will not be deleted."),
+                  confirmLabel: t(managed ? "Delete managed project" : "Remove project"),
+                }, event.currentTarget);
               }}
               title={t(candidate.location?.kind === "managed_storage" ? "Delete managed project" : "Remove project registration")}
               type="button"
@@ -216,13 +278,15 @@ export function Sidebar({
                 aria-label={`${t("Delete session")}: ${session.title ?? session.session_id}`}
                 className="session-action delete"
                 disabled={readOnly || sessionBusyId !== null}
-                onClick={() => {
-                  if (!window.confirm(t("Move this session to TraceGraph trash?"))) return;
-                  setSessionError(null);
-                  setSessionBusyId(session.session_id);
-                  void onDeleteSession(session.session_id).catch((error: unknown) => {
-                    setSessionError(error instanceof Error ? error.message : String(error));
-                  }).finally(() => setSessionBusyId(null));
+                onClick={(event) => {
+                  if (confirmationPending) return;
+                  requestConfirmation({
+                    kind: "session",
+                    id: session.session_id,
+                    title: t("Delete session"),
+                    message: t("Move this session to TraceGraph trash?"),
+                    confirmLabel: t("Move to trash"),
+                  }, event.currentTarget);
                 }}
                 title={t("Delete session")}
                 type="button"
@@ -237,13 +301,13 @@ export function Sidebar({
         <SectionLabel>{t("Current run")}</SectionLabel>
 
         {run ? (
-          <button className="run-card is-current" type="button">
+          <div className="run-card is-current" style={{ cursor: "default" }}>
             <span className={`run-indicator tone-${run.status}`}><Icon name="activity" size={15} /></span>
             <span className="run-card-copy compact-hide">
               <strong>{run.task}</strong>
               <span><StatusPill status={run.status} small /></span>
             </span>
-          </button>
+          </div>
         ) : (
           <div className="no-run compact-hide">
             <span className="empty-ring" />
@@ -259,10 +323,10 @@ export function Sidebar({
         )}
 
         {(run?.status === "completed" || run?.status === "historical") && (
-          <button className="previous-run compact-hide" type="button">
+          <div className="previous-run compact-hide" style={{ cursor: "default" }}>
             <Icon name="check" size={14} />
             <span>{t("Current projection")}</span>{run.elapsed && <small>{run.elapsed}</small>}
-          </button>
+          </div>
         )}
       </div>
 
@@ -293,7 +357,72 @@ export function Sidebar({
           <Icon className="sidebar-account-chevron compact-hide" name="chevron" size={14} />
         </button>
       </div>
+      {confirmation && <ConfirmationDialog confirmation={confirmation} onCancel={closeConfirmation} onConfirm={confirmPendingAction} pending={confirmationPending} />}
     </aside>
+  );
+}
+
+function ConfirmationDialog({ confirmation, onCancel, onConfirm, pending }: { confirmation: ConfirmationRequest; onCancel: () => void; onConfirm: () => void; pending: boolean }) {
+  const { t } = useI18n();
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    const focusTimer = window.setTimeout(() => cancelRef.current?.focus(), 0);
+    return () => window.clearTimeout(focusTimer);
+  }, []);
+
+  const trapFocus = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      if (!pending) onCancel();
+      return;
+    }
+    if (event.key !== "Tab") return;
+    const focusable = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>(
+      "button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex='-1'])",
+    ) ?? []);
+    if (focusable.length === 0) {
+      event.preventDefault();
+      return;
+    }
+    const first = focusable[0]!;
+    const last = focusable[focusable.length - 1]!;
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last?.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
+  };
+
+  return (
+    <div className="confirm-dialog-backdrop" role="presentation">
+      <div
+        aria-describedby="tracegraph-confirm-message"
+        aria-labelledby="tracegraph-confirm-title"
+        aria-modal="true"
+        aria-busy={pending}
+        className="confirm-dialog"
+        onKeyDown={trapFocus}
+        ref={dialogRef}
+        role="dialog"
+        tabIndex={-1}
+      >
+        <div className="confirm-dialog-heading">
+          <span className="confirm-dialog-icon"><Icon name={confirmation.kind === "session" ? "close" : "folder"} size={16} /></span>
+          <div>
+            <strong id="tracegraph-confirm-title">{confirmation.title}</strong>
+            <p id="tracegraph-confirm-message">{confirmation.message}</p>
+          </div>
+        </div>
+        <div className="confirm-dialog-actions">
+          <button className="button subtle" disabled={pending} onClick={onCancel} ref={cancelRef} type="button">{t("Cancel")}</button>
+          <button className="button danger" disabled={pending} onClick={onConfirm} type="button">{pending ? t("Working on your request") : confirmation.confirmLabel}</button>
+        </div>
+      </div>
+    </div>
   );
 }
 

@@ -233,6 +233,9 @@ class FakeSdk implements TraceGraphSdkPort {
   resumedSessionIds: string[] = [];
   deletedSessionIds: string[] = [];
   recoveryReport: SessionRecoveryReport | null = null;
+  bootstrapError: Error | null = null;
+  bootstrapCalls = 0;
+  listProjectsError: Error | null = null;
   telemetryStatus: TelemetryStatus = {
     schema_version: "tracegraph.telemetry-status.v1",
     sink: "noop",
@@ -254,8 +257,15 @@ class FakeSdk implements TraceGraphSdkPort {
     this.projects = projects;
   }
 
-  async bootstrap() { return { token: "browser-token", expiresAt: occurredAt, ...(this.recoveryReport === null ? {} : { recovery: this.recoveryReport }) }; }
-  async listProjects() { return this.projects; }
+  async bootstrap() {
+    this.bootstrapCalls += 1;
+    if (this.bootstrapError !== null) throw this.bootstrapError;
+    return { token: "browser-token", expiresAt: occurredAt, ...(this.recoveryReport === null ? {} : { recovery: this.recoveryReport }) };
+  }
+  async listProjects() {
+    if (this.listProjectsError !== null) throw this.listProjectsError;
+    return this.projects;
+  }
   async listSessions(input: SessionListQuery = { limit: 50, view: "roots" }) {
     this.sessionQueries.push(input);
     return { sessions: this.sessionSummaries };
@@ -636,6 +646,46 @@ function deferred<T>() {
 }
 
 describe("LiveTraceGraphClient", () => {
+  it("recovers from an expired local capability through an explicit reconnect", async () => {
+    const sdk = new FakeSdk();
+    // Bootstrap itself is public; the expired browser bearer is encountered by
+    // the first authenticated request that follows it.
+    sdk.listProjectsError = new Error("Capability token expired");
+    const client = new LiveTraceGraphClient({ sdk });
+
+    await client.initialize();
+
+    expect(client.getSnapshot().connection).toEqual({
+      state: "offline",
+      message: "The local Host connection expired. Reconnect to continue.",
+      lastSequence: 0,
+    });
+    expect(sdk.bootstrapCalls).toBe(1);
+
+    sdk.listProjectsError = null;
+    await client.reconnect();
+
+    expect(sdk.bootstrapCalls).toBe(2);
+    expect(client.getSnapshot().connection).toMatchObject({
+      state: "live",
+      message: "Connected to the local Host",
+    });
+    expect(client.getSnapshot().availableProjects).toHaveLength(2);
+  });
+
+  it("reports a failed explicit reconnect and blocks writes while the Host is offline", async () => {
+    const sdk = new FakeSdk();
+    sdk.listProjectsError = new Error("Capability token expired");
+    const client = new LiveTraceGraphClient({ sdk });
+
+    await client.initialize();
+    await expect(client.reconnect()).rejects.toThrow("The local Host connection expired. Reconnect to continue.");
+    await expect(client.startChat("Do not send while offline")).rejects.toThrow("The local Host is unavailable. Reconnect before trying again.");
+
+    expect(sdk.bootstrapCalls).toBe(2);
+    expect(sdk.chatInputs).toEqual([]);
+  });
+
   it("projects only the strict read-only telemetry status exposed by the SDK", async () => {
     const sdk = new FakeSdk();
     sdk.telemetryStatus = {

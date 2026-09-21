@@ -175,6 +175,7 @@ function Workbench({ client }: { client: WorkbenchClient }) {
   const [reasoningEffort, setReasoningEffort] = useState<ReasoningEffort>(initialReasoningEffort);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [approvalBusy, setApprovalBusy] = useState(false);
+  const [approvalError, setApprovalError] = useState<string | null>(null);
   const [planApprovalBusy, setPlanApprovalBusy] = useState(false);
   const [planApprovalError, setPlanApprovalError] = useState<string | null>(null);
   const [busyTodoId, setBusyTodoId] = useState<string | null>(null);
@@ -219,6 +220,7 @@ function Workbench({ client }: { client: WorkbenchClient }) {
   const listSkills = useCallback(() => client.listSkills(), [client]);
   const getMcpStatus = useCallback(() => client.getMcpStatus(), [client]);
   const getLspStatus = useCallback(() => client.getLspStatus(), [client]);
+  const reconnect = useCallback(() => client.reconnect(), [client]);
 
   useEffect(() => {
     window.localStorage.setItem(THEME_STORAGE_KEY, theme);
@@ -246,6 +248,7 @@ function Workbench({ client }: { client: WorkbenchClient }) {
 
   useEffect(() => {
     setTodoError(null);
+    setApprovalError(null);
     setPlanApprovalError(null);
     setSteeringError(null);
   }, [run?.id, run?.pendingPlan?.eventId]);
@@ -327,20 +330,28 @@ function Workbench({ client }: { client: WorkbenchClient }) {
   };
   const approve = async () => {
     if (!run?.approval) return;
+    setApprovalError(null);
     setApprovalBusy(true);
     try {
       await client.approve(run.approval.id);
       setView("changes");
       const nextEvents = client.getSnapshot().run?.events ?? [];
       setSelectedId([...nextEvents].reverse().find((event) => event.patchRef)?.id ?? nextEvents.at(-1)?.id ?? null);
+    } catch {
+      setApprovalError(t("The local Host could not complete this request."));
     } finally {
       setApprovalBusy(false);
     }
   };
   const reject = async () => {
     if (!run?.approval) return;
+    setApprovalError(null);
     setApprovalBusy(true);
-    try { await client.reject(run.approval.id); } finally { setApprovalBusy(false); }
+    try {
+      await client.reject(run.approval.id);
+    } catch {
+      setApprovalError(t("The local Host could not complete this request."));
+    } finally { setApprovalBusy(false); }
   };
   const approvePlan = async () => {
     if (!run?.pendingPlan) return;
@@ -487,7 +498,7 @@ function Workbench({ client }: { client: WorkbenchClient }) {
         <div className={`workspace ${view === "changes" ? "workspace-changes" : ""} ${view === "chat" ? "workspace-chat" : ""}`}>
           <Sidebar onChooseProject={chooseProject} onDeleteSession={(sessionId) => client.deleteSession(sessionId)} onOpenLocal={(access) => client.openLocalProject(access)} onOpenSettings={() => setSettingsOpen(true)} onPreviewState={previewState} onRemoveProject={async (projectId) => { await client.removeProject(projectId); }} onResumeSession={resumeSession} onReturnHome={() => void client.returnHome()} onSearchSessions={(query) => client.searchSessions(query)} onSelectProject={(projectId) => void client.chooseProjectById(projectId)} onSelectSession={openSession} readOnly={replayReadOnly} snapshot={snapshot} />
 
-          {!snapshot.project && !run && <NoProject onReasoningEffortChange={setReasoningEffort} onStartChat={startChat} reasoningEffort={reasoningEffort} />}
+          {!snapshot.project && !run && <NoProject connection={snapshot.connection} onReasoningEffortChange={setReasoningEffort} onReconnect={reconnect} onStartChat={startChat} reasoningEffort={reasoningEffort} />}
           {snapshot.project && !run && <ProjectReady key={snapshot.project.id} onReasoningEffortChange={setReasoningEffort} onStart={startRun} readonly={!projectCanExecute} reasoningEffort={reasoningEffort} />}
 
           {run && view !== "changes" && (
@@ -582,7 +593,7 @@ function Workbench({ client }: { client: WorkbenchClient }) {
                 )}
               </footer>}
               {run.approval && (
-                <ApprovalStrip approval={run.approval} busy={approvalBusy} disabled={replayReadOnly} onApprove={() => void approve()} onReject={() => void reject()} onViewDiff={reviewPendingPatch} />
+                <ApprovalStrip approval={run.approval} busy={approvalBusy} disabled={replayReadOnly} error={approvalError} onApprove={() => void approve()} onReject={() => void reject()} onViewDiff={reviewPendingPatch} />
               )}
             </main>
           )}
@@ -593,7 +604,7 @@ function Workbench({ client }: { client: WorkbenchClient }) {
 
           {run && view === "changes" && (
             <main className="changes-workbench">
-              <ChangesView {...((selectedEvent ? selectedEvidence.codeIntel : run?.codeIntel) === undefined ? {} : { codeIntel: selectedEvent ? selectedEvidence.codeIntel : run?.codeIntel })} diffs={selectedEvidence.diffs} edges={selectedEvidence.graphEdges} evidence={selectedEvidence.evidence} files={selectedEvidence.changedFiles} nodes={selectedEvidence.graphNodes} onJumpToPatch={jumpToPatch} onOpenDetails={() => setDetailsOpen(true)} patchId={selectedEvidence.patchEventId} verified={["available", "demo"].includes(selectedEvidence.evidence.test.status)} />
+              <ChangesView {...((selectedEvent ? selectedEvidence.codeIntel : run?.codeIntel) === undefined ? {} : { codeIntel: selectedEvent ? selectedEvidence.codeIntel : run?.codeIntel })} diffs={selectedEvidence.diffs} edges={selectedEvidence.graphEdges} evidence={selectedEvidence.evidence} files={selectedEvidence.changedFiles} nodes={selectedEvidence.graphNodes} onJumpToPatch={jumpToPatch} patchId={selectedEvidence.patchEventId} verified={["available", "demo"].includes(selectedEvidence.evidence.test.status)} />
             </main>
           )}
 
@@ -619,6 +630,7 @@ function Workbench({ client }: { client: WorkbenchClient }) {
         onListSkills={listSkills}
         onGetMcpStatus={getMcpStatus}
         onGetLspStatus={getLspStatus}
+        onReconnect={reconnect}
         onThemeChange={setTheme}
         open={settingsOpen && !replayReadOnly}
         theme={theme}

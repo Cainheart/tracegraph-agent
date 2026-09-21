@@ -964,6 +964,76 @@ describe("parseSseData", () => {
     expect(authorizations).toEqual(["Bearer expired-token", null, "Bearer fresh-token"]);
   });
 
+  it("refreshes an expired live capability and preserves a configured DeepSeek model snapshot", async () => {
+    const authorizations: Array<string | null> = [];
+    let bootstrapCalls = 0;
+    const client = new TraceGraphClient({
+      token: "expired-live-token",
+      fetch: async (input, init) => {
+        const url = String(input);
+        const authorization = new Headers(init?.headers).get("authorization");
+        authorizations.push(authorization);
+        if (url.endsWith("/api/bootstrap")) {
+          bootstrapCalls += 1;
+          return Response.json({ token: "renewed-live-token", expiresAt: "2026-09-17T12:00:00.000Z" });
+        }
+        if (authorization === "Bearer expired-live-token") {
+          return Response.json(
+            { error: "capability_expired", message: "Capability token expired" },
+            { status: 401 },
+          );
+        }
+        return Response.json({
+          provider: "deepseek",
+          protocol: "openai-chat-completions",
+          configured: true,
+          base_url: "https://api.deepseek.com",
+          model: "deepseek-v4-flash",
+          has_key: true,
+          credential: {
+            name: "TRACEGRAPH_DEEPSEEK_KEY",
+            backend: "macos_keychain",
+            writable: true,
+            last_updated_at: "2026-09-17T00:00:00.000Z",
+          },
+        });
+      },
+    });
+
+    await expect(client.getModelConfig()).resolves.toMatchObject({
+      provider: "deepseek",
+      configured: true,
+      has_key: true,
+      credential: { name: "TRACEGRAPH_DEEPSEEK_KEY", backend: "macos_keychain" },
+    });
+    expect(bootstrapCalls).toBe(1);
+    expect(authorizations).toEqual(["Bearer expired-live-token", null, "Bearer renewed-live-token"]);
+  });
+
+  it("does not retry model configuration indefinitely after a refreshed bearer is rejected", async () => {
+    const authorizations: Array<string | null> = [];
+    let bootstrapCalls = 0;
+    const client = new TraceGraphClient({
+      token: "expired-live-token",
+      fetch: async (input, init) => {
+        const url = String(input);
+        authorizations.push(new Headers(init?.headers).get("authorization"));
+        if (url.endsWith("/api/bootstrap")) {
+          bootstrapCalls += 1;
+          return Response.json({ token: "still-rejected-token", expiresAt: "2026-09-17T12:00:00.000Z" });
+        }
+        return Response.json(
+          { error: "capability_expired", message: "Capability token expired" },
+          { status: 401 },
+        );
+      },
+    });
+
+    await expect(client.getModelConfig()).rejects.toMatchObject({ status: 401 });
+    expect(bootstrapCalls).toBe(1);
+    expect(authorizations).toEqual(["Bearer expired-live-token", null, "Bearer still-rejected-token"]);
+  });
+
   it("keeps a command id stable when retrying after capability refresh", async () => {
     const commandIds: string[] = [];
     const client = new TraceGraphClient({

@@ -91,10 +91,7 @@ export function Inspector({
     <aside className={`inspector ${drawer ? "inspector-drawer" : ""}`} aria-label={t("Event inspector")}>
       <header className="inspector-header">
         <div><span className="eyebrow">{t("Selected event")}</span><strong>{t("Inspector")}</strong></div>
-        <div className="inspector-header-actions">
-          <IconButton icon="more" label={t("Inspector options")} />
-          {onClose && <IconButton icon="close" label={t("Close inspector")} onClick={onClose} />}
-        </div>
+        {onClose && <div className="inspector-header-actions"><IconButton icon="close" label={t("Close inspector")} onClick={onClose} /></div>}
       </header>
       {!event ? (
         <div className="inspector-empty">
@@ -163,7 +160,11 @@ export function Inspector({
             )}
             {activeTab === "evidence" && (
               <div className="inspector-section-stack evidence-list">
-                {(event.evidenceRefs ?? []).map((ref) => <button key={ref} type="button"><Icon name="external" size={13} /><code>{ref}</code></button>)}
+                {(event.evidenceRefs ?? []).length > 0 && (
+                  <div className="link-chain evidence-reference-list">
+                    {(event.evidenceRefs ?? []).map((ref) => <div key={ref}><Icon name="external" size={13} /><span>{t("Evidence")}</span><code>{ref}</code></div>)}
+                  </div>
+                )}
                 {scope.testReceiptId && <div className="test-receipt"><span><Icon name={scope.evidence.test.status === "available" || scope.evidence.test.status === "demo" ? "check" : "alert"} size={15} /></span><div><strong>{t("Test receipt recorded")}</strong><code>{scope.testReceiptId} · artifact {scope.evidence.test.status}</code></div></div>}
               </div>
             )}

@@ -315,11 +315,26 @@ export class LiveTraceGraphClient implements WorkbenchClient {
   }>();
   private readonly pendingTeamAttempts = new Map<string, string>();
   private plainChatActive = false;
+  private readonly visibilityHandler: (() => void) | null;
 
   constructor(options: LiveTraceGraphClientOptions = {}) {
     this.sdk = options.sdk ?? new SdkTraceGraphClient({ baseUrl: options.baseUrl ?? "" });
     this.minRetryMs = options.minRetryMs ?? 300;
     this.maxRetryMs = options.maxRetryMs ?? 2_500;
+    // Browsers may throttle or suspend an SSE reader while a tab is hidden.
+    // Runs themselves execute on the Host, so reconnect on resume and let the
+    // durable projection/model-surface cursors catch the UI up idempotently.
+    if (typeof document !== "undefined") {
+      this.visibilityHandler = () => {
+        if (document.visibilityState !== "visible") return;
+        const run = this.projection;
+        if (this.snapshot.replay !== undefined || run === null || isStreamSettled(run)) return;
+        this.startStream(run.run_id, run.last_sequence);
+      };
+      document.addEventListener("visibilitychange", this.visibilityHandler);
+    } else {
+      this.visibilityHandler = null;
+    }
   }
 
   getSnapshot(): WorkbenchSnapshot {
@@ -334,8 +349,41 @@ export class LiveTraceGraphClient implements WorkbenchClient {
 
   initialize(): Promise<void> {
     if (this.initialization) return this.initialization;
-    this.initialization = this.bootstrap();
+    this.initialization = this.bootstrap().then(() => undefined);
     return this.initialization;
+  }
+
+  async reconnect(): Promise<void> {
+    // `initialize()` deliberately retains its completed Promise so ordinary
+    // actions do not bootstrap repeatedly. An initial failed bootstrap used to
+    // make that cached offline state permanent, including after the Host had
+    // rotated an expired capability. Replacing it here is an explicit user
+    // recovery action, rather than silently retrying every request.
+    if (this.snapshot.connection.state === "live") return;
+    if (this.snapshot.connection.state === "connecting" && this.initialization !== null) {
+      await this.initialization;
+      const recoveredConnection = this.getSnapshot().connection;
+      if (recoveredConnection.state !== "live") {
+        throw new Error(recoveredConnection.message);
+      }
+      return;
+    }
+
+    this.stopStream();
+    this.commit({
+      ...this.snapshot,
+      connection: {
+        state: "connecting",
+        message: "Reconnecting to the local Host",
+        lastSequence: this.snapshot.connection.lastSequence,
+      },
+    });
+    const attempt = this.bootstrap();
+    this.initialization = attempt.then(() => undefined);
+    const connected = await attempt;
+    if (!connected) {
+      throw new Error(this.snapshot.connection.message);
+    }
   }
 
   async chooseProject(kind: WorkspaceKind): Promise<void> {
@@ -1255,7 +1303,7 @@ export class LiveTraceGraphClient implements WorkbenchClient {
     if (!isStreamSettled(projection)) this.startStream(projection.run_id, projection.last_sequence);
   }
 
-  private async bootstrap(): Promise<void> {
+  private async bootstrap(): Promise<boolean> {
     try {
       const bootstrap = await this.sdk.bootstrap();
       this.recovery = bootstrap.recovery ?? null;
@@ -1277,11 +1325,13 @@ export class LiveTraceGraphClient implements WorkbenchClient {
         sessionViewState: null,
         recovery: this.recovery,
       });
+      return true;
     } catch (error) {
       this.commit({
         ...this.snapshot,
         connection: { state: "offline", message: publicMessage(error), lastSequence: this.snapshot.connection.lastSequence },
       });
+      return false;
     }
   }
 
@@ -1584,6 +1634,17 @@ export class LiveTraceGraphClient implements WorkbenchClient {
   }
 
   private assertLiveWritable(action: string): void {
+    // Selecting a previously cached project is local navigation, not a Host
+    // write. Keep it available so a disconnected workbench can still move
+    // between its recorded views; every command that changes Host state stays
+    // blocked below.
+    const isLocalProjectNavigation = action === "Project navigation";
+    if (!isLocalProjectNavigation && this.snapshot.run?.status === "reconnecting") {
+      throw new Error(`${action} is unavailable while reconnecting to the Host`);
+    }
+    if (!isLocalProjectNavigation && this.snapshot.connection.state !== "live") {
+      throw new Error("The local Host is unavailable. Reconnect before trying again.");
+    }
     if (this.snapshot.replay !== undefined) {
       throw new Error(`${action} is unavailable while viewing a read-only replay snapshot`);
     }
@@ -3248,7 +3309,14 @@ function inputId(): string {
 }
 
 function publicMessage(error: unknown): string {
-  return error instanceof Error ? error.message : "The local Host is unavailable";
+  const message = error instanceof Error ? error.message : "";
+  // This is the browser-to-Host bearer, not the configured model-provider
+  // credential. Keeping that distinction in the public copy prevents an
+  // expired local capability from being presented as a DeepSeek API-key error.
+  if (/capability token expired/iu.test(message)) {
+    return "The local Host connection expired. Reconnect to continue.";
+  }
+  return message || "The local Host is unavailable";
 }
 
 function isTerminal(projection: RunProjection): boolean {

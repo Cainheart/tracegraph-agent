@@ -23,4 +23,20 @@ describe("ApprovalStrip", () => {
     expect(html).toContain("Allow once");
     expect(html).toContain("View diff");
   });
+
+  it("renders a visible error when a one-time approval cannot be submitted", () => {
+    const html = renderToStaticMarkup(
+      <ApprovalStrip
+        approval={approval}
+        busy={false}
+        error="The local Host could not complete this request."
+        onApprove={vi.fn()}
+        onReject={vi.fn()}
+        onViewDiff={vi.fn()}
+      />,
+    );
+
+    expect(html).toContain('role="alert"');
+    expect(html).toContain("The local Host could not complete this request.");
+  });
 });

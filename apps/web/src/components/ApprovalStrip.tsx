@@ -8,6 +8,7 @@ export function ApprovalStrip({
   onViewDiff,
   onReject,
   onApprove,
+  error = null,
   disabled = false,
 }: {
   approval: ApprovalRequest;
@@ -15,6 +16,7 @@ export function ApprovalStrip({
   onViewDiff: () => void;
   onReject: () => void;
   onApprove: () => void;
+  error?: string | null;
   disabled?: boolean;
 }) {
   const { t } = useI18n();
@@ -25,6 +27,7 @@ export function ApprovalStrip({
         <div><span className={`risk risk-${approval.risk}`}>{t(approval.risk)} {t("risk")}</span><strong>{t(approval.action)}</strong><code>{approval.id}</code></div>
         <p>{approval.files} {t("files")} · <i>+{approval.additions}</i> <b>−{approval.deletions}</b> · {approval.target} · {t(approval.rollbackAvailable ? "rollback available" : "no rollback")}</p>
         <p className={approval.reviewReady ? "approval-evidence-ready" : "approval-evidence-blocked"}>{t(approval.reviewMessage)}</p>
+        {error && <p className="approval-error" role="alert">{error}</p>}
       </div>
       <span className="approval-expiry"><Icon name="clock" size={14} /> {approval.expiresAt}</span>
       <div className="approval-actions">

@@ -26,6 +26,8 @@ import type { AttachmentPreviewContent, ContextArchiveLoadResult, PendingAttachm
 export interface WorkbenchClient {
   getSnapshot(): WorkbenchSnapshot;
   subscribe(listener: (snapshot: WorkbenchSnapshot) => void): () => void;
+  /** Re-establish the browser's authenticated connection to the local Host. */
+  reconnect(): Promise<void>;
   chooseProject(kind: WorkspaceKind): Promise<void>;
   chooseProjectById(projectId: string): Promise<void>;
   openLocalProject(access?: "read_write" | "read_only"): Promise<void>;
@@ -123,6 +125,20 @@ export class DemoTraceGraphClient implements WorkbenchClient {
   subscribe(listener: (snapshot: WorkbenchSnapshot) => void): () => void {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  }
+
+  async reconnect(): Promise<void> {
+    // Keep the demo adapter conformant with the production connection contract.
+    // Its transport is always local and live, so reconnecting is intentionally
+    // a harmless state refresh rather than a simulated failure.
+    this.commit({
+      ...this.snapshot,
+      connection: {
+        ...this.snapshot.connection,
+        state: "live",
+        message: "Deterministic browser demo",
+      },
+    });
   }
 
   async chooseProject(kind: WorkspaceKind): Promise<void> {

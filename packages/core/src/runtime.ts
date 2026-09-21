@@ -4366,12 +4366,33 @@ class AgentRuntimeImpl implements AgentRuntime {
     return result;
   }
 
-  #effectiveToolAllowlist(state: RunState): ReadonlySet<ToolName> | undefined {
+  #effectiveToolAllowlist(state: RunState): ReadonlySet<ToolName> {
+    // Project capabilities are part of the Host authority boundary, so they
+    // must shape the model-visible catalog as well as the later policy check.
+    // Previously a no-capability plain-chat workspace still advertised
+    // `list_dir`/`read_file`; a provider could then choose one and the Run
+    // failed with a capability denial before it ever produced an answer.
+    const workspace = new Set<ToolName>();
+    for (const definition of this.#toolRegistry.list()) {
+      if (
+        toolBypassesWorkspaceCapabilities(definition.name)
+        || state.workspace.capabilities[definition.capability]
+      ) workspace.add(definition.name);
+    }
+
     const parent = state.toolAllowlist;
     const skill = state.skillToolAllowlist;
-    if (parent === undefined) return skill;
-    if (skill === undefined) return parent;
-    return new Set([...parent].filter((toolName) => skill.has(toolName)));
+    if (parent !== undefined) {
+      for (const toolName of [...workspace]) {
+        if (!parent.has(toolName)) workspace.delete(toolName);
+      }
+    }
+    if (skill !== undefined) {
+      for (const toolName of [...workspace]) {
+        if (!skill.has(toolName)) workspace.delete(toolName);
+      }
+    }
+    return workspace;
   }
 
   async #bootstrapRun(state: RunState): Promise<void> {
@@ -4814,7 +4835,17 @@ class AgentRuntimeImpl implements AgentRuntime {
       // A public preview becomes complete only after the complete Decision has
       // passed both schema and credential checks. Before this point it remains
       // an untrusted, volatile preview rather than a completed answer.
-      this.#flushModelSurfaceForCall(state.runId, modelCallId, "completed");
+      // Replace the volatile provider preview with a short, safe public plan
+      // once the full Decision is validated. Providers sometimes echo the
+      // answer into `public_reason`; keeping that text would make the UI look
+      // as if it were exposing model chain-of-thought. The durable activity
+      // and the final model surface use the same normalized summary.
+      this.#flushModelSurfaceForCall(
+        state.runId,
+        modelCallId,
+        "completed",
+        publicPlanForDecision(decision),
+      );
       const publicDecision = publicDecisionActivity(decision);
       await this.#append(state, {
         type: "model.decision",
@@ -7986,7 +8017,24 @@ class AgentRuntimeImpl implements AgentRuntime {
     runId: string,
     modelCallId: string,
     status: "completed" | "failed" | "cancelled",
+    publicPlanOverride?: string,
   ): void {
+    const state = this.#runs.get(runId);
+    const key = `${runId}:${modelCallId}:public_plan_snapshot`;
+    if (publicPlanOverride !== undefined && state !== undefined) {
+      const existing = this.#pendingModelSurface.get(key);
+      const pending = existing ?? {
+        runId,
+        projectId: state.projectId,
+        modelCallId,
+        type: "public_plan_snapshot",
+        text: "",
+      } satisfies PendingModelSurface;
+      if (pending.timer !== undefined) clearTimeout(pending.timer);
+      delete pending.timer;
+      pending.text = publicPlanOverride.slice(0, 360);
+      this.#pendingModelSurface.set(key, pending);
+    }
     for (const [key, pending] of this.#pendingModelSurface) {
       if (pending.runId === runId && pending.modelCallId === modelCallId) {
         this.#flushModelSurface(key, status);
@@ -9003,8 +9051,8 @@ function publicDecisionActivity(decision: Decision): {
   summary: string;
   data: Record<string, unknown>;
 } {
-  const candidatePlan = redactSensitiveText(decision.public_reason).replace(/\s+/gu, " ").trim().slice(0, 360);
-  const publicPlan = isSafePublicPlan(candidatePlan) ? candidatePlan : "";
+  const candidatePlan = publicPlanCandidate(decision);
+  const publicPlan = candidatePlan;
   const data: Record<string, unknown> = {
     decision_kind: decision.kind,
     risk: decision.risk,
@@ -9047,6 +9095,61 @@ function publicDecisionActivity(decision: Decision): {
     summary: publicPlan || `Selected ${actionLabel}`,
     data: toolName === undefined ? data : { ...data, tool_name: toolName },
   };
+}
+
+/**
+ * The model's native reasoning channel is intentionally private. This helper
+ * exposes only an explicit, short public decision summary and rejects the
+ * common failure mode where a provider copies the final answer into
+ * `public_reason`. The fallback describes the observable action instead.
+ */
+function publicPlanForDecision(decision: Decision): string {
+  const candidate = publicPlanCandidate(decision);
+  if (candidate.length > 0) return candidate;
+  if (decision.kind === "finish") return "Prepared a direct response";
+  const calls = decisionToolCalls(decision);
+  if (calls.length > 1) return `Selected ${calls.length} checked actions`;
+  const toolName = calls[0]?.tool_name;
+  const actionLabel = toolName === "read_file"
+    ? "a repository file read"
+    : toolName === "read_artifact"
+      ? "an archived Context source read"
+      : toolName === "list_dir"
+        ? "the repository structure"
+        : toolName === "search"
+          ? "a repository search"
+          : toolName === "preview_patch"
+            ? "a patch preview"
+            : toolName === "commit_patch"
+              ? "an approved patch application"
+              : toolName === "run_test"
+                ? "a project test"
+                : "the next checked action";
+  return `Selected ${actionLabel}`;
+}
+
+function publicPlanCandidate(decision: Decision): string {
+  const candidate = redactSensitiveText(decision.public_reason).replace(/\s+/gu, " ").trim().slice(0, 360);
+  if (!isSafePublicPlan(candidate)) return "";
+  const planComparable = publicPlanComparable(candidate);
+  const answerComparable = publicPlanComparable(decision.final_answer);
+  // A public plan should explain the next observable decision, not repeat a
+  // whole answer. Compare normalized text so Markdown punctuation does not
+  // defeat the guard, while allowing a short plan such as "Answer directly".
+  if (candidate.length > 240 || (planComparable.length > 24 && answerComparable.length > 24 && (
+    planComparable === answerComparable
+    || answerComparable.includes(planComparable)
+    || planComparable.includes(answerComparable)
+  ))) return "";
+  return candidate;
+}
+
+function publicPlanComparable(value: string | undefined): string {
+  return (value ?? "")
+    .toLocaleLowerCase()
+    .replace(/[`*_>#\[\]().,:;!?/\\-]/gu, "")
+    .replace(/\s+/gu, "")
+    .slice(0, 800);
 }
 
 function decisionToolCalls(decision: Decision): readonly ToolCall[] {

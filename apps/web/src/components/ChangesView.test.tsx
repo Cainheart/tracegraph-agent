@@ -19,7 +19,6 @@ function render(nodes: readonly GraphNode[], codeIntel?: CodeIntelSnapshot): str
       files={[]}
       nodes={nodes}
       onJumpToPatch={vi.fn()}
-      onOpenDetails={vi.fn()}
       patchId={undefined}
       verified={false}
       {...(codeIntel === undefined ? {} : { codeIntel })}
@@ -96,5 +95,20 @@ describe("ChangesView architecture versions", () => {
     expect(html).toContain("parseInput");
     expect(html).toContain("Expected string");
     expect(html).toContain("1 errors");
+  });
+
+  it("does not promise a details inspector from the changes workspace", () => {
+    const html = render([{
+      id: "node_changed",
+      state: "changed",
+      after: { label: "parser.ts", path: "src/parser.ts" },
+      x: 20,
+      y: 40,
+    }]);
+
+    expect(html).not.toContain("Open details");
+    expect(html).not.toContain("View impact");
+    expect(html).not.toContain("Diff options");
+    expect(html).not.toContain("Files (0)");
   });
 });

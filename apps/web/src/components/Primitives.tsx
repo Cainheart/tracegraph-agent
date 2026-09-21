@@ -41,6 +41,7 @@ export function IconButton({
     <button
       aria-label={label}
       className={`icon-button ${active ? "is-active" : ""} ${className}`}
+      data-tooltip={label}
       disabled={disabled}
       onClick={onClick}
       title={label}

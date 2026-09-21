@@ -14,6 +14,33 @@ afterEach(async () => {
 });
 
 describe("runtime provider usage accounting", () => {
+  it("does not advertise workspace tools to a capability-free plain chat Run", async () => {
+    const harness = await createHarness();
+    let visibleTools: readonly string[] = [];
+    const model: ModelAdapter = {
+      name: "plain-chat-catalog-adapter",
+      async decide(input) {
+        visibleTools = input.toolSchemas.map(({ name }) => name);
+        return finishDecision("plain-chat-catalog");
+      },
+    };
+    const runtime = await createAgentRuntime({ dataDir: harness.dataDir, model });
+
+    const started = await runtime.startRun(startInput(harness.workspace, "command:plain-chat-catalog"));
+    const completed = await waitForTerminal(runtime, started.run_id);
+
+    expect(completed.status).toBe("completed");
+    expect(visibleTools).not.toEqual(expect.arrayContaining([
+      "read_file",
+      "list_dir",
+      "search",
+      "run_command",
+      "preview_patch",
+      "commit_patch",
+      "run_test",
+    ]));
+  });
+
   it("persists initial and repair usage before the decision and emits an estimate anomaly", async () => {
     const harness = await createHarness();
     let manifestInputTokens = 0;

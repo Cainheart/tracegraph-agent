@@ -43,7 +43,7 @@ export function MarkdownContent({ content }: { content: string }) {
           );
         }
         if (block.language.toLowerCase() === "mermaid") return <MermaidFlow key={index} source={block.value} />;
-        return <pre className="markdown-code" key={index}><code>{block.value}</code></pre>;
+        return <pre className="markdown-code" key={index}><code>{highlightCode(block.value, block.language)}</code></pre>;
       })}
     </div>
   );
@@ -193,6 +193,113 @@ function inlineMarkdown(value: string): ReactNode[] {
   });
 }
 
+const CODE_KEYWORDS = new Set([
+  "as", "async", "await", "break", "case", "catch", "class", "const", "continue", "def", "delete", "do",
+  "else", "export", "extends", "finally", "for", "from", "function", "if", "import", "in", "interface",
+  "let", "new", "of", "return", "switch", "throw", "try", "type", "var", "while", "with", "yield",
+  "and", "elif", "except", "False", "finally", "global", "lambda", "None", "nonlocal", "not", "or", "pass",
+  "raise", "True", "with", "def", "self",
+]);
+const CODE_TYPES = new Set([
+  "Array", "Boolean", "Date", "Error", "Map", "Object", "Promise", "Record", "Set", "String", "Type", "Unknown",
+  "any", "bool", "boolean", "dict", "float", "int", "list", "number", "str", "string", "tuple", "void",
+]);
+const CODE_CONSTANTS = new Set(["true", "false", "null", "undefined", "None", "True", "False", "NaN", "Infinity"]);
+
+/**
+ * A deliberately small, dependency-free code highlighter. The model output is
+ * untrusted text, so this returns React nodes instead of injecting HTML. It is
+ * not intended to replace a compiler; it gives the common language constructs
+ * enough visual hierarchy to make generated examples readable offline.
+ */
+export function highlightCode(value: string, language = ""): ReactNode[] {
+  const normalizedLanguage = language.toLowerCase();
+  const pythonLike = normalizedLanguage === "py" || normalizedLanguage === "python";
+  const tokens: ReactNode[] = [];
+  let index = 0;
+  let tokenIndex = 0;
+  const push = (text: string, kind?: string) => {
+    if (!text) return;
+    tokens.push(kind === undefined
+      ? <Fragment key={tokenIndex++}>{text}</Fragment>
+      : <span className={`token token-${kind}`} key={tokenIndex++}>{text}</span>);
+  };
+  const isIdentifierStart = (character: string) => /[A-Za-z_$\u0080-\uffff]/u.test(character);
+  const isIdentifierPart = (character: string) => /[A-Za-z0-9_$\u0080-\uffff]/u.test(character);
+  while (index < value.length) {
+    const character = value[index] ?? "";
+    const next = value[index + 1] ?? "";
+    if ((!pythonLike && character === "/" && next === "/") || (character === "#" && (pythonLike || normalizedLanguage === "shell" || normalizedLanguage === "bash" || normalizedLanguage === "yaml" || normalizedLanguage === "yml"))) {
+      const lineEnd = value.indexOf("\n", index);
+      const end = lineEnd < 0 ? value.length : lineEnd;
+      push(value.slice(index, end), "comment");
+      index = end;
+      continue;
+    }
+    if (!pythonLike && character === "/" && next === "*") {
+      const endIndex = value.indexOf("*/", index + 2);
+      const end = endIndex < 0 ? value.length : endIndex + 2;
+      push(value.slice(index, end), "comment");
+      index = end;
+      continue;
+    }
+    if (character === "'" || character === '"' || character === "`") {
+      const quote = character;
+      let end = index + 1;
+      let escaped = false;
+      while (end < value.length) {
+        const current = value[end] ?? "";
+        if (!escaped && current === quote) {
+          end += 1;
+          break;
+        }
+        if (!escaped && current === "\\") escaped = true;
+        else escaped = false;
+        end += 1;
+      }
+      push(value.slice(index, end), "string");
+      index = end;
+      continue;
+    }
+    if (/\d/u.test(character) && (index === 0 || !isIdentifierPart(value[index - 1] ?? ""))) {
+      const number = value.slice(index).match(/^(?:0[xob][\da-f]+|(?:\d[\d_]*\.?[\d_]*|\.\d[\d_]*)(?:e[+-]?\d+)?)/iu)?.[0];
+      if (number) {
+        push(number, "number");
+        index += number.length;
+        continue;
+      }
+    }
+    if (isIdentifierStart(character)) {
+      let end = index + 1;
+      while (end < value.length && isIdentifierPart(value[end] ?? "")) end += 1;
+      const identifier = value.slice(index, end);
+      let lookahead = end;
+      while (/\s/u.test(value[lookahead] ?? "")) lookahead += 1;
+      const previous = value[index - 1] ?? "";
+      const kind = CODE_CONSTANTS.has(identifier)
+        ? "constant"
+        : CODE_KEYWORDS.has(identifier)
+          ? "keyword"
+          : CODE_TYPES.has(identifier) || /^[A-Z][A-Za-z0-9_$]*$/u.test(identifier)
+            ? "type"
+            : value[lookahead] === "(" ? "function" : previous === "." ? "property" : undefined;
+      push(identifier, kind);
+      index = end;
+      continue;
+    }
+    if (/[=+\-*\/!<>?:|&%^~]/u.test(character)) {
+      let end = index + 1;
+      while (/[=+\-*\/!<>?:|&%^~]/u.test(value[end] ?? "")) end += 1;
+      push(value.slice(index, end), "operator");
+      index = end;
+      continue;
+    }
+    push(character);
+    index += 1;
+  }
+  return tokens;
+}
+
 function safeLinkTarget(value: string): string | null {
   if (value.startsWith("#")) return value;
   try {
@@ -206,7 +313,7 @@ function safeLinkTarget(value: string): string | null {
 function MermaidFlow({ source }: { source: string }) {
   const reactId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [rendered, setRendered] = useState<{ svg?: string; error?: string }>({});
+  const [rendered, setRendered] = useState<{ svg?: string; error?: string; source?: string }>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -235,12 +342,28 @@ function MermaidFlow({ source }: { source: string }) {
             useMaxWidth: true,
           },
         });
-        const diagramId = `tracegraph-mermaid-${reactId.replace(/[^a-zA-Z0-9_-]/gu, "")}-${thisGeneration}`;
-        const { svg } = await mermaid.render(diagramId, source);
-        if (!cancelled && thisGeneration === generation) setRendered({ svg });
+        const candidates = [...new Set([source, normalizeMermaidSource(source)].filter(Boolean))];
+        let lastError = "";
+        for (const [attempt, candidate] of candidates.entries()) {
+          try {
+            const diagramId = `tracegraph-mermaid-${reactId.replace(/[^a-zA-Z0-9_-]/gu, "")}-${thisGeneration}-${attempt}`;
+            const { svg } = await mermaid.render(diagramId, candidate);
+            if (!cancelled && thisGeneration === generation) setRendered({ svg });
+            return;
+          } catch (error) {
+            lastError = error instanceof Error ? error.message : String(error);
+            // Mermaid lazy-loads several diagram bundles. A first render can
+            // race that import (especially after Vite/HMR starts); give the
+            // loader one short turn before trying the normalized source.
+            if (attempt < candidates.length - 1) await new Promise((resolve) => window.setTimeout(resolve, 80));
+          }
+        }
+        if (!cancelled && thisGeneration === generation) {
+          setRendered({ error: lastError || "Mermaid source could not be parsed", source: normalizeMermaidSource(source) });
+        }
       } catch (error) {
         if (!cancelled && thisGeneration === generation) {
-          setRendered({ error: error instanceof Error ? error.message : String(error) });
+          setRendered({ error: error instanceof Error ? error.message : String(error), source: normalizeMermaidSource(source) });
         }
       }
     };
@@ -259,12 +382,27 @@ function MermaidFlow({ source }: { source: string }) {
         {rendered.svg
           ? <div className="mermaid-svg" dangerouslySetInnerHTML={{ __html: rendered.svg }} />
           : rendered.error
-            ? <div className="mermaid-error"><strong>Diagram could not be rendered</strong><span>{rendered.error}</span></div>
+            ? <div className="mermaid-error"><strong>图表已切换为源码视图</strong><span>当前 Mermaid 语法无法解析，但完整内容仍可查看。</span></div>
             : <div className="mermaid-loading"><span /><span /><span /></div>}
       </div>
-      {rendered.error && <details className="mermaid-source"><summary>Show Mermaid source</summary><pre className="markdown-code"><code>{source}</code></pre></details>}
+      {rendered.error && <details className="mermaid-source" open><summary>查看 Mermaid 源码</summary><pre className="markdown-code"><code>{highlightCode(rendered.source ?? source, "mermaid")}</code></pre></details>}
     </figure>
   );
+}
+
+/** Normalize common model-generated Mermaid mistakes before giving up. */
+export function normalizeMermaidSource(source: string): string {
+  let normalized = source.replace(/^\uFEFF/u, "").replace(/```(?:mermaid)?/giu, "").trim();
+  const lines = normalized.split(/\r?\n/u);
+  const firstDiagramLine = lines.findIndex((line) => /^\s*(?:flowchart|graph|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie)\b/iu.test(line));
+  if (firstDiagramLine > 0) normalized = lines.slice(firstDiagramLine).join("\n");
+  normalized = normalized.replace(/^\s*graph\s+(TD|TB|BT|RL|LR)\b/imu, "flowchart $1");
+  // Mermaid reserves keywords such as `graph` and `end` as grammar tokens.
+  // Models often use them as node ids (`graph[State]`), which makes the first
+  // diagram fail while a later one appears to work. Rename only id-shaped
+  // occurrences, leaving labels and subgraph delimiters intact.
+  normalized = normalized.replace(/\b(graph|flowchart|end|classDef|style)\s*(?=[[(])/giu, "tg_$1");
+  return normalized.trim();
 }
 
 function mermaidTheme(node: HTMLElement) {

@@ -425,6 +425,86 @@ describe("TraceGraph Host", () => {
     await host.close();
   });
 
+  it("rotates an expired live capability through bootstrap without changing model credential state", async () => {
+    let clock = now;
+    const host = await createTraceGraphHost({
+      runtime: fakeRuntime(),
+      projects: [{ label: "Read-only demo", workspace: startInput.workspace }],
+      capabilityToken: token,
+      tokenTtlMs: 1_000,
+      now: () => clock,
+      modelSettings: {
+        get: async () => ({
+          provider: "deepseek",
+          protocol: "openai-chat-completions",
+          configured: true,
+          base_url: "https://api.deepseek.com",
+          model: "deepseek-v4-flash",
+          has_key: true,
+          credential: {
+            name: "TRACEGRAPH_DEEPSEEK_KEY",
+            backend: "macos_keychain" as const,
+            writable: true,
+            last_updated_at: now.toISOString(),
+          },
+        }),
+        configure: () => undefined,
+      },
+    });
+
+    const initialBootstrap = await host.app.inject({
+      method: "GET",
+      url: "/api/bootstrap",
+      headers: { origin },
+    });
+    expect(initialBootstrap.statusCode).toBe(200);
+    const initialToken = (initialBootstrap.json() as { token: string }).token;
+    expect(initialToken).toBe(token);
+
+    clock = new Date(now.getTime() + 1_001);
+    const expired = await host.app.inject({
+      method: "GET",
+      url: "/api/model-config",
+      headers: { authorization: `Bearer ${initialToken}` },
+    });
+    expect(expired.statusCode).toBe(401);
+    expect(expired.json()).toMatchObject({ error: "capability_expired" });
+
+    const [renewedBootstrap, secondBootstrap] = await Promise.all([
+      host.app.inject({ method: "GET", url: "/api/bootstrap", headers: { origin } }),
+      host.app.inject({ method: "GET", url: "/api/bootstrap", headers: { origin } }),
+    ]);
+    const renewedToken = (renewedBootstrap.json() as { token: string; expiresAt: string }).token;
+    expect(renewedBootstrap.statusCode).toBe(200);
+    expect(secondBootstrap.statusCode).toBe(200);
+    expect(renewedToken).not.toBe(initialToken);
+    expect((secondBootstrap.json() as { token: string }).token).toBe(renewedToken);
+    expect(host.token).toBe(renewedToken);
+    expect(new Date(host.expiresAt).getTime()).toBeGreaterThan(clock.getTime());
+
+    const recovered = await host.app.inject({
+      method: "GET",
+      url: "/api/model-config",
+      headers: { authorization: `Bearer ${renewedToken}` },
+    });
+    expect(recovered.statusCode).toBe(200);
+    expect(recovered.json()).toMatchObject({
+      provider: "deepseek",
+      configured: true,
+      has_key: true,
+      credential: { name: "TRACEGRAPH_DEEPSEEK_KEY", backend: "macos_keychain" },
+    });
+    expect(recovered.json()).not.toHaveProperty("api_key");
+
+    const stale = await host.app.inject({
+      method: "GET",
+      url: "/api/model-config",
+      headers: { authorization: `Bearer ${initialToken}` },
+    });
+    expect(stale.statusCode).toBe(401);
+    await host.close();
+  });
+
   it("exposes read-only telemetry status with a noop default and no configuration route", async () => {
     const defaultHost = await createTraceGraphHost({
       runtime: fakeRuntime(),

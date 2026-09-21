@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import { graphForVersion, type ChangedFile, type CodeIntelSnapshot, type DiffLine, type EvidenceSlot, type EvidenceSnapshot, type GraphEdge, type GraphNode } from "../model";
 import { useI18n } from "../i18n";
 import { Icon } from "./Icon";
-import { IconButton } from "./Primitives";
 
 function FileStatus({ status }: { status: ChangedFile["status"] }) {
   return <span className={`file-status file-status-${status}`}>{status === "modified" ? "M" : status === "added" ? "A" : "D"}</span>;
@@ -33,7 +32,7 @@ function ChangedFiles({ files, selected, onSelect, slot }: { files: readonly Cha
   );
 }
 
-function DiffViewer({ path, lines, onOpenDetails, slot, patchId }: { path: string; lines: readonly DiffLine[]; onOpenDetails: () => void; slot: EvidenceSlot; patchId: string | undefined }) {
+function DiffViewer({ path, lines, slot, patchId }: { path: string; lines: readonly DiffLine[]; slot: EvidenceSlot; patchId: string | undefined }) {
   const { t } = useI18n();
   const additions = lines.filter((line) => line.type === "added").length;
   const deletions = lines.filter((line) => line.type === "removed").length;
@@ -41,24 +40,24 @@ function DiffViewer({ path, lines, onOpenDetails, slot, patchId }: { path: strin
     <section className="review-pane diff-pane">
       <header className="review-pane-header diff-header">
         <div><Icon name="file" size={14} /><code>{path}</code></div>
-        <div>{lines.length > 0 && <><span className="diff-add">+{additions}</span><span className="diff-remove">−{deletions}</span></>}<IconButton icon="more" label={t("Diff options")} /></div>
+        <div>{lines.length > 0 && <><span className="diff-add">+{additions}</span><span className="diff-remove">−{deletions}</span></>}</div>
       </header>
       <div className="diff-code" role="table" aria-label={`Diff for ${path}`}>
         {lines.length === 0 && <EvidencePlaceholder label="Diff" slot={slot} />}
         {lines.map((line, index) => (
-          <button className={`diff-line diff-line-${line.type}`} key={`${line.number ?? "meta"}-${index}`} onClick={onOpenDetails} type="button">
+          <div aria-readonly="true" className={`diff-line diff-line-${line.type}`} key={`${line.number ?? "meta"}-${index}`} role="row" style={{ cursor: "default" }}>
             <span className="line-number">{line.number ?? ""}</span>
             <span className="line-marker">{line.type === "added" ? "+" : line.type === "removed" ? "−" : ""}</span>
             <code>{line.content.replace(/^[+-]/, "")}</code>
-          </button>
+          </div>
         ))}
       </div>
-      <footer className="diff-footer"><span><Icon name="diff" size={14} />{t(lines.length > 0 ? "Selected hunk" : "No hunk selected")}</span><code>{patchId ?? slot.artifactId ?? t("unavailable")}</code></footer>
+      <footer className="diff-footer"><span><Icon name="diff" size={14} />{t("Diff")}</span><code>{patchId ?? slot.artifactId ?? t("unavailable")}</code></footer>
     </section>
   );
 }
 
-function ArchitectureGraph({ nodes, edges, onOpenDetails, slot }: { nodes: readonly GraphNode[]; edges: readonly GraphEdge[]; onOpenDetails: () => void; slot: EvidenceSlot }) {
+function ArchitectureGraph({ nodes, edges, slot }: { nodes: readonly GraphNode[]; edges: readonly GraphEdge[]; slot: EvidenceSlot }) {
   const { language, t } = useI18n();
   const [version, setVersion] = useState<"before" | "after">("after");
   const graph = useMemo(() => graphForVersion(nodes, edges, version), [edges, nodes, version]);
@@ -101,17 +100,16 @@ function ArchitectureGraph({ nodes, edges, onOpenDetails, slot }: { nodes: reado
           })}
         </svg>
         {graph.nodes.map((node) => (
-            <button
+            <div
+              aria-label={node.path}
               className={`graph-node node-${node.state}`}
               key={node.id}
-              onClick={onOpenDetails}
               title={node.path}
-              style={{ left: node.x, top: node.y }}
-              type="button"
+              style={{ left: node.x, top: node.y, cursor: "default" }}
             >
               <span>{node.state === "added" ? "+" : node.state === "removed" ? "−" : node.state === "changed" ? "~" : node.state === "partial" ? "?" : ""}</span>
               <strong>{node.label}</strong>
-            </button>
+            </div>
         ))}
         <div className="graph-legend">
           <span><i className="legend-added">+</i>{t("Added")}</span>
@@ -122,7 +120,6 @@ function ArchitectureGraph({ nodes, edges, onOpenDetails, slot }: { nodes: reado
       </div>
       <footer className="graph-summary">
         <div><strong>{nodes.filter((node) => node.state === "added").length}</strong><span>{t("added")}</span></div><div><strong>{graph.edges.length}</strong><span>{t(version === "before" ? "Before" : "After + delta")} · {t("edges")}</span></div><div><strong>{nodes.filter((node) => node.state === "changed").length}</strong><span>{t("changed")}</span></div>
-        <button onClick={onOpenDetails} type="button">{t("View impact")} <Icon name="chevron" size={13} /></button>
       </footer>
     </section>
   );
@@ -217,7 +214,6 @@ export function ChangesView({
   nodes,
   edges,
   onJumpToPatch,
-  onOpenDetails,
   verified,
   evidence,
   patchId,
@@ -228,7 +224,6 @@ export function ChangesView({
   nodes: readonly GraphNode[];
   edges: readonly GraphEdge[];
   onJumpToPatch: () => void;
-  onOpenDetails: () => void;
   verified: boolean;
   evidence: EvidenceSnapshot;
   patchId: string | undefined;
@@ -251,19 +246,17 @@ export function ChangesView({
           <h2>{t("Architecture-aware changes")}</h2>
         </div>
         <div className="changes-toolbar-actions">
-          <button className="button subtle file-drawer-trigger" type="button"><Icon name="folder" size={14} /> {t("Files")} ({files.length})</button>
           <div className="segmented mobile-review-tabs">
             <button className={mobilePanel === "diff" ? "active" : ""} onClick={() => setMobilePanel("diff")} type="button">{t("Diff")}</button>
             <button className={mobilePanel === "graph" ? "active" : ""} onClick={() => setMobilePanel("graph")} type="button">{t("Architecture")}</button>
           </div>
           <button className="button subtle" disabled={!patchId} onClick={onJumpToPatch} type="button"><Icon name="arrow-left" size={14} /> {t(patchId ? "Source event" : "Source unavailable")}</button>
-          <button className="button" onClick={onOpenDetails} type="button">{t("Open details")} <Icon name="external" size={14} /></button>
         </div>
       </div>
       <div className={`review-workspace mobile-panel-${mobilePanel}`}>
         <ChangedFiles files={files} onSelect={setSelectedPath} selected={selectedPath} slot={evidence.diff} />
-        <DiffViewer lines={lines} onOpenDetails={onOpenDetails} patchId={patchId} path={selectedPath || t("No verified file")} slot={evidence.diff} />
-        <ArchitectureGraph edges={edges} nodes={nodes} onOpenDetails={onOpenDetails} slot={evidence.graph} />
+        <DiffViewer lines={lines} patchId={patchId} path={selectedPath || t("No verified file")} slot={evidence.diff} />
+        <ArchitectureGraph edges={edges} nodes={nodes} slot={evidence.graph} />
       </div>
       <CodeIntelPanel codeIntel={codeIntel} onSelectFile={setSelectedPath} />
       <div className={`verification-bar ${verified ? "is-verified" : "is-pending"}`}>

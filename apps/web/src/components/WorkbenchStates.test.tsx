@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { LanguageProvider } from "../i18n";
 import type { ContextBudgetSnapshot, EvidenceSnapshot, TraceEvent } from "../model";
 import { ReasoningEffortPicker } from "./ReasoningEffortPicker";
-import { ChatView, ProjectReady } from "./WorkbenchStates";
+import { ChatView, ProjectReady, shouldUseProgressiveAnswer } from "./WorkbenchStates";
 
 const emptyEvidence: EvidenceSnapshot = {
   context: { status: "not_present", message: "none" },
@@ -13,6 +13,12 @@ const emptyEvidence: EvidenceSnapshot = {
 };
 
 describe("Chat workbench", () => {
+  it("does not replay a persisted answer when returning to Chat from Trajectory", () => {
+    expect(shouldUseProgressiveAnswer("completed", true)).toBe(false);
+    expect(shouldUseProgressiveAnswer("failed", true)).toBe(false);
+    expect(shouldUseProgressiveAnswer("running", true)).toBe(true);
+  });
+
   it("keeps execute unavailable for a read-only project while leaving Plan selectable", () => {
     const html = renderToStaticMarkup(<LanguageProvider><ProjectReady
       onReasoningEffortChange={vi.fn()}
@@ -48,10 +54,10 @@ describe("Chat workbench", () => {
       toolName: "read_file",
     }];
     const html = renderToStaticMarkup(<LanguageProvider><ChatView changedFiles={[]} conversation={[]} dataSource="live" events={events} evidence={emptyEvidence} outcome="Done" status="completed" task="Introduce the project" /></LanguageProvider>);
-    expect(html).toContain("Public execution");
-    expect(html).toContain("Actual execution events · 2");
+    expect(html).toContain("Reasoning process");
+    expect(html).toContain("public-progress-item is-event is-running");
     expect(html).toContain("apps/web/src/App.tsx");
-    expect(html).toContain("private provider reasoning is hidden");
+    expect(html).toContain("Only explicit public plans and observed tool facts are shown");
     expect(html).not.toContain("I have read apps/web/src/App.tsx");
   });
 
@@ -150,12 +156,69 @@ describe("Chat workbench", () => {
     /></LanguageProvider>);
     expect(html).toContain("Searching the repository for ContextBuilder");
     expect(html).toContain("streaming");
-    expect(html).toContain("I will inspect the context implementation before answering.");
+    expect(html).toContain("public-progress-item is-plan is-streaming");
     expect(html).not.toContain("I found the context boundary and will verify its budget calculation.");
-    expect(html).toContain("## Context");
+    expect(html).toContain("<h2>Context</h2>");
     expect(html).toContain("chat-live-answer");
-    expect(html).toContain("private provider reasoning is hidden");
+    expect(html).toContain("Only explicit public plans and observed tool facts are shown");
     expect(html).not.toContain("I am first understanding your question");
+  });
+
+  it("renders multiple public plans as an inline progress timeline", () => {
+    const html = renderToStaticMarkup(<LanguageProvider><ChatView
+      changedFiles={[]}
+      conversation={[]}
+      dataSource="live"
+      events={[{
+        id: "decision-1",
+        sequence: 1,
+        kind: "decision",
+        title: "Model decision",
+        summary: "Inspect the repository structure",
+        rationale: "Inspect the repository structure",
+        timestamp: "04:12:03",
+        state: "succeeded",
+        operationId: "model-call-1",
+      }, {
+        id: "tool-1",
+        sequence: 2,
+        kind: "tool",
+        title: "Tool completed",
+        summary: "Read 24 lines",
+        timestamp: "04:12:04",
+        state: "succeeded",
+        operationId: "operation-read",
+      }, {
+        id: "decision-2",
+        sequence: 3,
+        kind: "decision",
+        title: "Model decision",
+        summary: "Validate the answer against the source",
+        rationale: "Validate the answer against the source",
+        timestamp: "04:12:05",
+        state: "succeeded",
+        operationId: "model-call-2",
+      }]}
+      evidence={emptyEvidence}
+      modelSurface={[{
+        id: "surface:2",
+        modelCallId: "model-call-2",
+        cursor: 2,
+        timestamp: "04:12:05",
+        type: "public_plan_snapshot",
+        status: "completed",
+        text: "Validate the answer against the source",
+      }]}
+      outcome="Done"
+      status="completed"
+      task="Inspect the context implementation"
+    /></LanguageProvider>);
+
+    expect(html.match(/class="public-progress-item is-plan is-completed"/gu)).toHaveLength(2);
+    expect(html).toContain("Inspect the repository structure");
+    expect(html).toContain("Validate the answer against the source");
+    expect(html).toContain("Read 24 lines");
+    expect(html).not.toContain('class="chat-process');
   });
 
   it("keeps calibrated budget estimates distinct from provider-reported usage", () => {

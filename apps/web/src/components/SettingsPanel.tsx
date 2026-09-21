@@ -22,6 +22,24 @@ import { IconButton } from "./Primitives";
 export type Theme = "light" | "dark";
 
 type SettingsSection = "general" | "models" | "appearance" | "tools" | "usage";
+type SettingsFeedback = { tone: "success" | "error"; text: string };
+type ModelFeedback = SettingsFeedback;
+
+/**
+ * Host exceptions are diagnostic data, not localized interface copy. Convert
+ * them to a small, stable set of user-facing states so a Chinese workbench
+ * never leaks arbitrary English transport errors.
+ */
+export function publicHostErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  return message === "Capability token expired"
+    ? "The local Host connection expired. Reconnect and try again."
+    : /failed to fetch|network(?:error| request failed)/i.test(message)
+      ? "The local Host could not be reached. Reconnect and try again."
+      : /does not support|unavailable in browser demo mode/i.test(message)
+        ? "This local Host does not support this feature."
+        : "The local Host could not complete this request.";
+}
 
 const SETTINGS_SECTIONS: readonly { id: SettingsSection; label: string; description: string; icon: "settings" | "layers" | "moon" | "spark" | "activity" | "terminal" | "code" }[] = [
   { id: "general", label: "General", description: "Language, permissions, and telemetry", icon: "settings" },
@@ -145,7 +163,7 @@ export function PermissionSettingsSection({
   snapshot: PermissionConfigSnapshot | null;
   supported: boolean;
   saving: boolean;
-  message: string;
+  message: SettingsFeedback | null;
   onSelect: (presetKey: BuiltinPermissionPresetKey) => void;
 }) {
   const { t } = useI18n();
@@ -189,12 +207,12 @@ export function PermissionSettingsSection({
               ? "Full write disables sandbox isolation and does not prompt before writes. Use it only for a trusted workspace."
               : "This preset disables sandbox isolation. Use it only for a trusted workspace.")}</small>
           )}
-          {snapshot.lock_reason && <small className="settings-readonly-message">{t(snapshot.lock_reason)}</small>}
+          {snapshot.lock_reason && <small className="settings-readonly-message">{t("This setting is managed by the local Host.")}</small>}
         </>
       ) : (
         <small>{t(supported ? "Loading permission presets…" : "Permission configuration is unavailable on this Host.")}</small>
       )}
-      {message && <small className="settings-message">{t(message)}</small>}
+      {message && <small className={`settings-message is-${message.tone}`} role={message.tone === "error" ? "alert" : "status"}>{t(message.text)}</small>}
       <small>{t("The browser submits only a preset key; the Host owns rules, paths, sandboxing, and approvals.")}</small>
       <small>{t("Changes apply only to new runs; active and historical runs keep their recorded policy.")}</small>
     </section>
@@ -223,7 +241,7 @@ export function TelemetrySettingsSection({
 }: {
   snapshot: TelemetryStatusSnapshot | null;
   supported: boolean;
-  message: string;
+  message: SettingsFeedback | null;
 }) {
   const { t } = useI18n();
   return (
@@ -253,7 +271,7 @@ export function TelemetrySettingsSection({
       ) : (
         <small>{t(supported ? "Loading telemetry status…" : "Telemetry status is unavailable on this Host.")}</small>
       )}
-      {message && <small className="settings-message">{message}</small>}
+      {message && <small className={`settings-message is-${message.tone}`} role={message.tone === "error" ? "alert" : "status"}>{t(message.text)}</small>}
       <small>{t("The browser cannot configure telemetry destinations or authorization data.")}</small>
     </section>
   );
@@ -269,7 +287,7 @@ export function ExtensionSettingsSection({
   statuses: readonly ExtensionStatusSnapshot[] | null;
   supported: boolean;
   reloading: string | null;
-  message: string;
+  message: SettingsFeedback | null;
   onReload: (name: string) => void;
 }) {
   const { t } = useI18n();
@@ -286,7 +304,7 @@ export function ExtensionSettingsSection({
               <div>
                 <strong><code>{status.name}</code></strong>
                 <small>{t(status.state)} · {t("Generation")} {status.generation} · {t("Contributions")} {status.registration_count}</small>
-                {status.error_message && <small className="settings-readonly-message">{status.error_code}: {status.error_message}</small>}
+                {status.error_message && <small className="settings-readonly-message">{t("The local Host reported a technical issue.")}{status.error_code && <> <code>{status.error_code}</code></>}</small>}
               </div>
               <button
                 className="button subtle"
@@ -300,7 +318,7 @@ export function ExtensionSettingsSection({
       ) : (
         <small>{t(supported ? "Loading extensions…" : "Extension management is unavailable on this Host.")}</small>
       )}
-      {message && <small className="settings-message">{message}</small>}
+      {message && <small className={`settings-message is-${message.tone}`} role={message.tone === "error" ? "alert" : "status"}>{t(message.text)}</small>}
       <small>{t("Extension configuration is data-only and owned by the local Host.")}</small>
     </section>
   );
@@ -313,7 +331,7 @@ export function SkillSettingsSection({
 }: {
   inspections: readonly SkillProjectInspectionSnapshot[] | null;
   supported: boolean;
-  message: string;
+  message: SettingsFeedback | null;
 }) {
   const { t } = useI18n();
   return (
@@ -341,7 +359,7 @@ export function SkillSettingsSection({
       ) : (
         <small>{t(supported ? "Loading Skills…" : "Skill inspection is unavailable on this Host.")}</small>
       )}
-      {message && <small className="settings-message">{message}</small>}
+      {message && <small className={`settings-message is-${message.tone}`} role={message.tone === "error" ? "alert" : "status"}>{t(message.text)}</small>}
       <small>{t("Only SKILL.md metadata is shown here; Skill bodies are disclosed to the model only through load_skill.")}</small>
     </section>
   );
@@ -354,7 +372,7 @@ export function McpSettingsSection({
 }: {
   snapshot: McpStatusSnapshotView | null;
   supported: boolean;
-  message: string;
+  message: SettingsFeedback | null;
 }) {
   const { t } = useI18n();
   return (
@@ -373,7 +391,7 @@ export function McpSettingsSection({
                 <strong><code>{server.name}</code></strong>
             <small>{t(server.state)} · {server.tool_count} {t("tools")} · {server.required ? t("required") : t("optional")}</small>
                 {server.state === "degraded" && (
-                  <small className="settings-message">{t("Degraded: the Host continued without this MCP server.")} {server.error_message ?? server.error_code}</small>
+                  <small className="settings-message">{t("Degraded: the Host continued without this MCP server.")}{server.error_code && <> <code>{server.error_code}</code></>}</small>
                 )}
                 {server.state === "ready" && server.tools.length > 0 && (
                   <small>{server.tools.map((tool) => tool.qualified_name).join(", ")}</small>
@@ -385,7 +403,7 @@ export function McpSettingsSection({
       ) : (
         <small>{t(supported ? "Loading MCP status…" : "MCP management is unavailable on this Host.")}</small>
       )}
-      {message && <small className="settings-message">{message}</small>}
+      {message && <small className={`settings-message is-${message.tone}`} role={message.tone === "error" ? "alert" : "status"}>{t(message.text)}</small>}
       <small>{t("MCP configuration and credentials remain owned by the local Host; the browser only sees bounded status.")}</small>
     </section>
   );
@@ -398,7 +416,7 @@ export function LspSettingsSection({
 }: {
   snapshot: LspStatusSnapshotView | null;
   supported: boolean;
-  message: string;
+  message: SettingsFeedback | null;
 }) {
   const { t } = useI18n();
   return (
@@ -416,7 +434,7 @@ export function LspSettingsSection({
               <div>
                 <strong><code>{server.name}</code></strong>
                 <small>{t(server.state)} · {server.diagnostics_count} {t("diagnostics")} · {server.file_extensions.join(", ")}</small>
-                {server.error_message && <small className="settings-message">{server.error_code}: {server.error_message}</small>}
+                {server.error_message && <small className="settings-message">{t("The local Host reported a technical issue.")}{server.error_code && <> <code>{server.error_code}</code></>}</small>}
               </div>
             </article>
           ))}
@@ -424,7 +442,7 @@ export function LspSettingsSection({
       ) : (
         <small>{t(supported ? "Loading LSP status…" : "LSP management is unavailable on this Host.")}</small>
       )}
-      {message && <small className="settings-message">{message}</small>}
+      {message && <small className={`settings-message is-${message.tone}`} role={message.tone === "error" ? "alert" : "status"}>{t(message.text)}</small>}
       <small>{t("LSP commands and workspace access remain owned by the local Host; the browser sees bounded status only.")}</small>
     </section>
   );
@@ -446,6 +464,7 @@ export function SettingsPanel({
   onListSkills,
   onGetMcpStatus,
   onGetLspStatus,
+  onReconnect,
 }: {
   open: boolean;
   theme: Theme;
@@ -462,6 +481,7 @@ export function SettingsPanel({
   onListSkills?: () => Promise<readonly SkillProjectInspectionSnapshot[]>;
   onGetMcpStatus?: () => Promise<McpStatusSnapshotView>;
   onGetLspStatus?: () => Promise<LspStatusSnapshotView>;
+  onReconnect?: () => Promise<void>;
 }) {
   const { language, setLanguage, t } = useI18n();
   const [provider, setProvider] = useState<ModelProvider>("openai");
@@ -471,124 +491,139 @@ export function SettingsPanel({
   const [apiKey, setApiKey] = useState("");
   const [permissionSnapshot, setPermissionSnapshot] = useState<PermissionConfigSnapshot | null>(null);
   const [permissionSaving, setPermissionSaving] = useState(false);
-  const [permissionMessage, setPermissionMessage] = useState("");
+  const [permissionMessage, setPermissionMessage] = useState<SettingsFeedback | null>(null);
   const [modelSnapshot, setModelSnapshot] = useState<ModelConfigSnapshot | null>(null);
   const [telemetrySnapshot, setTelemetrySnapshot] = useState<TelemetryStatusSnapshot | null>(null);
-  const [telemetryMessage, setTelemetryMessage] = useState("");
+  const [telemetryMessage, setTelemetryMessage] = useState<SettingsFeedback | null>(null);
   const [usageSnapshot, setUsageSnapshot] = useState<UsageSnapshotSnapshot | null>(null);
   const [usageLoading, setUsageLoading] = useState(false);
-  const [usageMessage, setUsageMessage] = useState("");
+  const [usageMessage, setUsageMessage] = useState<SettingsFeedback | null>(null);
   const [extensionStatuses, setExtensionStatuses] = useState<readonly ExtensionStatusSnapshot[] | null>(null);
-  const [extensionMessage, setExtensionMessage] = useState("");
+  const [extensionMessage, setExtensionMessage] = useState<SettingsFeedback | null>(null);
   const [reloadingExtension, setReloadingExtension] = useState<string | null>(null);
   const [skillInspections, setSkillInspections] = useState<readonly SkillProjectInspectionSnapshot[] | null>(null);
-  const [skillMessage, setSkillMessage] = useState("");
+  const [skillMessage, setSkillMessage] = useState<SettingsFeedback | null>(null);
   const [mcpSnapshot, setMcpSnapshot] = useState<McpStatusSnapshotView | null>(null);
-  const [mcpMessage, setMcpMessage] = useState("");
+  const [mcpMessage, setMcpMessage] = useState<SettingsFeedback | null>(null);
   const [lspSnapshot, setLspSnapshot] = useState<LspStatusSnapshotView | null>(null);
-  const [lspMessage, setLspMessage] = useState("");
+  const [lspMessage, setLspMessage] = useState<SettingsFeedback | null>(null);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState("");
+  const [modelFeedback, setModelFeedback] = useState<ModelFeedback | null>(null);
+  const [modelLoading, setModelLoading] = useState(false);
+  const [modelRefreshVersion, setModelRefreshVersion] = useState(0);
   const [activeSection, setActiveSection] = useState<SettingsSection>("general");
   const [languageMessage, setLanguageMessage] = useState("");
   useEffect(() => {
-    if (!open || !onGetModelConfig) return;
+    if (!open || activeSection !== "models" || !onGetModelConfig) return;
+    let current = true;
+    // A model credential snapshot is only trustworthy while it came from the
+    // current Host connection. Never leave an older success visible after a
+    // newer fetch fails.
+    setModelSnapshot(null);
+    setApiKey("");
+    setModelFeedback(null);
+    setModelLoading(true);
     void onGetModelConfig().then((value) => {
+      if (!current) return;
       setProvider(value.provider);
       setProtocol(value.protocol);
       setBaseUrl(value.base_url);
       setModel(value.model);
       setModelSnapshot(value);
-      setApiKey("");
-    }).catch((error: unknown) => setMessage(error instanceof Error ? error.message : String(error)));
-  }, [open, onGetModelConfig]);
+    }).catch((error: unknown) => {
+      if (current) setModelFeedback({ tone: "error", text: publicHostErrorMessage(error) });
+    }).finally(() => {
+      if (current) setModelLoading(false);
+    });
+    return () => { current = false; };
+  }, [activeSection, modelRefreshVersion, onGetModelConfig, open]);
   useEffect(() => {
-    if (!open || !onGetPermissionConfig) return;
+    if (!open || activeSection !== "general" || !onGetPermissionConfig) return;
     let current = true;
-    setPermissionMessage("");
+    setPermissionMessage(null);
     void onGetPermissionConfig().then((value) => {
       if (current) setPermissionSnapshot(value);
     }).catch((error: unknown) => {
-      if (current) setPermissionMessage(error instanceof Error ? error.message : String(error));
+      if (current) setPermissionMessage({ tone: "error", text: publicHostErrorMessage(error) });
     });
     return () => { current = false; };
-  }, [open, onGetPermissionConfig]);
+  }, [activeSection, open, onGetPermissionConfig]);
   useEffect(() => {
-    if (!open || !onGetTelemetryStatus) return;
+    if (!open || activeSection !== "general" || !onGetTelemetryStatus) return;
     let current = true;
     // Never present a previous fetch as the current process-local status.
     setTelemetrySnapshot(null);
-    setTelemetryMessage("");
+    setTelemetryMessage(null);
     void onGetTelemetryStatus().then((value) => {
       if (current) setTelemetrySnapshot(value);
     }).catch((error: unknown) => {
-      if (current) setTelemetryMessage(error instanceof Error ? error.message : String(error));
+      if (current) setTelemetryMessage({ tone: "error", text: publicHostErrorMessage(error) });
     });
     return () => { current = false; };
-  }, [open, onGetTelemetryStatus]);
+  }, [activeSection, open, onGetTelemetryStatus]);
   useEffect(() => {
     if (!open || activeSection !== "usage" || !onGetUsage) return;
     let current = true;
     setUsageSnapshot(null);
     setUsageLoading(true);
-    setUsageMessage("");
+    setUsageMessage(null);
     void onGetUsage().then((value) => {
       if (current) setUsageSnapshot(value);
     }).catch((error: unknown) => {
-      if (current) setUsageMessage(error instanceof Error ? error.message : String(error));
+      if (current) setUsageMessage({ tone: "error", text: publicHostErrorMessage(error) });
     }).finally(() => {
       if (current) setUsageLoading(false);
     });
     return () => { current = false; };
   }, [activeSection, onGetUsage, open]);
   useEffect(() => {
-    if (!open || !onListExtensions) return;
+    if (!open || activeSection !== "tools" || !onListExtensions) return;
     let current = true;
     setExtensionStatuses(null);
-    setExtensionMessage("");
+    setExtensionMessage(null);
     void onListExtensions().then((value) => {
       if (current) setExtensionStatuses(value);
     }).catch((error: unknown) => {
-      if (current) setExtensionMessage(error instanceof Error ? error.message : String(error));
+      if (current) setExtensionMessage({ tone: "error", text: publicHostErrorMessage(error) });
     });
     return () => { current = false; };
-  }, [open, onListExtensions]);
+  }, [activeSection, open, onListExtensions]);
   useEffect(() => {
-    if (!open || !onListSkills) return;
+    if (!open || activeSection !== "tools" || !onListSkills) return;
     let current = true;
     setSkillInspections(null);
-    setSkillMessage("");
+    setSkillMessage(null);
     void onListSkills().then((value) => {
       if (current) setSkillInspections(value);
     }).catch((error: unknown) => {
-      if (current) setSkillMessage(error instanceof Error ? error.message : String(error));
+      if (current) setSkillMessage({ tone: "error", text: publicHostErrorMessage(error) });
     });
     return () => { current = false; };
-  }, [open, onListSkills]);
+  }, [activeSection, open, onListSkills]);
   useEffect(() => {
-    if (!open || !onGetMcpStatus) return;
+    if (!open || activeSection !== "tools" || !onGetMcpStatus) return;
     let current = true;
     setMcpSnapshot(null);
-    setMcpMessage("");
+    setMcpMessage(null);
     void onGetMcpStatus().then((value) => {
       if (current) setMcpSnapshot(value);
     }).catch((error: unknown) => {
-      if (current) setMcpMessage(error instanceof Error ? error.message : String(error));
+      if (current) setMcpMessage({ tone: "error", text: publicHostErrorMessage(error) });
     });
     return () => { current = false; };
-  }, [open, onGetMcpStatus]);
+  }, [activeSection, open, onGetMcpStatus]);
   useEffect(() => {
-    if (!open || !onGetLspStatus) return;
+    if (!open || activeSection !== "tools" || !onGetLspStatus) return;
     let current = true;
     setLspSnapshot(null);
-    setLspMessage("");
+    setLspMessage(null);
     void onGetLspStatus().then((value) => {
       if (current) setLspSnapshot(value);
     }).catch((error: unknown) => {
-      if (current) setLspMessage(error instanceof Error ? error.message : String(error));
+      if (current) setLspMessage({ tone: "error", text: publicHostErrorMessage(error) });
     });
     return () => { current = false; };
-  }, [open, onGetLspStatus]);
+  }, [activeSection, open, onGetLspStatus]);
   if (!open) return null;
 
   const credentialStatus = credentialStatusForProvider(modelSnapshot, provider);
@@ -598,7 +633,7 @@ export function SettingsPanel({
 
   const save = async () => {
     if (!onConfigureModel || credentialReadOnly) return;
-    setSaving(true); setMessage("");
+    setSaving(true); setModelFeedback(null);
     try {
       const value = await onConfigureModel({
         provider,
@@ -613,20 +648,35 @@ export function SettingsPanel({
       setModel(value.model);
       setModelSnapshot(value);
       setApiKey("");
-      setMessage(t("Model configuration saved on this computer."));
-    } catch (error) { setMessage(error instanceof Error ? error.message : String(error)); }
+      setModelFeedback({ tone: "success", text: "Model configuration saved on this computer." });
+    } catch (error) { setModelFeedback({ tone: "error", text: publicHostErrorMessage(error) }); }
     finally { setSaving(false); }
+  };
+  const retryModelConnection = async () => {
+    setModelFeedback(null);
+    setModelSnapshot(null);
+    if (onReconnect) {
+      setModelLoading(true);
+      try {
+        await onReconnect();
+      } catch (error) {
+        setModelLoading(false);
+        setModelFeedback({ tone: "error", text: publicHostErrorMessage(error) });
+        return;
+      }
+    }
+    setModelRefreshVersion((version) => version + 1);
   };
   const selectPermissionPreset = async (presetKey: BuiltinPermissionPresetKey) => {
     if (!onConfigurePermissionPreset || permissionSnapshot?.locked || permissionSnapshot?.active_preset === presetKey) return;
     setPermissionSaving(true);
-    setPermissionMessage("");
+    setPermissionMessage(null);
     try {
       const value = await onConfigurePermissionPreset({ preset_key: presetKey });
       setPermissionSnapshot(value);
-      setPermissionMessage("Permission preset saved on this computer.");
+      setPermissionMessage({ tone: "success", text: "Permission preset saved on this computer." });
     } catch (error) {
-      setPermissionMessage(error instanceof Error ? error.message : String(error));
+      setPermissionMessage({ tone: "error", text: publicHostErrorMessage(error) });
     } finally {
       setPermissionSaving(false);
     }
@@ -634,15 +684,15 @@ export function SettingsPanel({
   const reloadExtension = async (extensionName: string) => {
     if (!onReloadExtension) return;
     setReloadingExtension(extensionName);
-    setExtensionMessage("");
+    setExtensionMessage(null);
     try {
       const updated = await onReloadExtension(extensionName);
       setExtensionStatuses((current) => current?.map((status) => (
         status.name === updated.name ? updated : status
       )) ?? [updated]);
-      setExtensionMessage(t("Extension reloaded."));
+      setExtensionMessage({ tone: "success", text: "Extension reloaded." });
     } catch (error) {
-      setExtensionMessage(error instanceof Error ? error.message : String(error));
+      setExtensionMessage({ tone: "error", text: publicHostErrorMessage(error) });
     } finally {
       setReloadingExtension(null);
     }
@@ -654,7 +704,7 @@ export function SettingsPanel({
     setBaseUrl(preset.baseUrl);
     setModel(preset.models[0]?.value ?? "");
     setApiKey("");
-    setMessage("");
+    setModelFeedback(null);
   };
   const modelOptions = MODEL_PROVIDER_PRESETS[provider].models;
   const selectedModel = modelOptions.some((option) => option.value === model) ? model : CUSTOM_MODEL;
@@ -668,7 +718,6 @@ export function SettingsPanel({
           <aside className="settings-sidebar">
             <button className="settings-back-link" onClick={onClose} type="button"><Icon name="arrow-left" size={16} />{t("Back to workbench")}</button>
             <div className="settings-sidebar-brand"><span className="settings-icon"><Icon name="settings" size={16} /></span><span><strong>{t("Settings")}</strong><small>{t("Interface preferences")}</small></span></div>
-            <label className="settings-search"><Icon name="search" size={14} /><input aria-label={t("Search settings")} placeholder={t("Search settings")} type="search" /></label>
             <nav aria-label={t("Settings navigation")} className="settings-nav">
               {SETTINGS_SECTIONS.map((section) => <button aria-current={activeSection === section.id ? "page" : undefined} className={activeSection === section.id ? "active" : ""} key={section.id} onClick={() => setActiveSection(section.id)} type="button"><Icon name={section.icon} size={15} /><span><strong>{t(section.label)}</strong><small>{t(section.description)}</small></span></button>)}
             </nav>
@@ -737,7 +786,7 @@ export function SettingsPanel({
 
           <div className={settingsSectionClass("models")}>
           <section className="settings-section settings-model-section">
-            <div className="settings-section-copy"><strong>{t("Model provider")}</strong><span>{t(credentialStatus.configured ? "Configured · ready for real project tasks" : "Not configured · choose a provider to run tasks")}</span></div>
+            <div className="settings-section-copy"><strong>{t("Model provider")}</strong><span>{t(modelLoading ? "Checking model configuration…" : credentialStatus.configured ? "Configured · ready for real project tasks" : "Not configured · choose a provider to run tasks")}</span></div>
             <label><span>{t("Provider")}</span><select onChange={(event) => changeProvider(event.target.value as ModelProvider)} value={provider}>{Object.entries(MODEL_PROVIDER_PRESETS).map(([id, preset]) => <option key={id} value={id}>{preset.label}</option>)}</select></label>
             {provider === "custom" && <label><span>{t("API protocol")}</span><select onChange={(event) => setProtocol(event.target.value as ModelProtocol)} value={protocol}><option value="openai-chat-completions">OpenAI Chat Completions</option><option value="anthropic-messages">Anthropic Messages</option></select></label>}
             <label><span>{t("Base URL")}</span><input onChange={(event) => setBaseUrl(event.target.value)} value={baseUrl} /></label>
@@ -751,7 +800,8 @@ export function SettingsPanel({
             )}
             <label><span>{t("API Key")}</span><input autoComplete="new-password" disabled={credentialReadOnly} onChange={(event) => setApiKey(event.target.value)} placeholder={credentialStatus.hasKey ? t("Enter a new key to replace the current one") : "sk-…"} spellCheck={false} type="password" value={apiKey} /></label>
             <button className="button primary" disabled={credentialReadOnly || saving || (!credentialStatus.hasKey && !apiKey.trim()) || !baseUrl.trim() || !model.trim()} onClick={() => void save()} type="button">{t(saving ? "Saving…" : "Save model configuration")}</button>
-            {message && <small className="settings-message">{message}</small>}
+            {modelFeedback && <small className={`settings-message is-${modelFeedback.tone}`} role={modelFeedback.tone === "error" ? "alert" : "status"}>{t(modelFeedback.text)}</small>}
+            {modelFeedback?.tone === "error" && <div className="settings-model-recovery"><small>{t("Model configuration cannot be verified until the local Host reconnects.")}</small><button className="button subtle" disabled={modelLoading} onClick={() => void retryModelConnection()} type="button"><Icon name="refresh" size={13} />{t(modelLoading ? "Reconnecting…" : "Retry connection")}</button></div>}
             <small>{t("The API Key is write-only: it is sent to the loopback Host and is never returned to the browser.")}</small>
           </section>
           </div>
@@ -778,13 +828,13 @@ export function SettingsPanel({
             <section className="settings-section settings-info-section">
               <div className="settings-section-copy"><strong>{t("Usage and costs")}</strong><span>{t("A local, inspectable view of TraceGraph activity")}</span></div>
               {usageLoading && <small className="settings-inline-status">{t("Loading usage…")}</small>}
-              {usageMessage && <small className="settings-message">{usageMessage}</small>}
+              {usageMessage && <small className={`settings-message is-${usageMessage.tone}`}>{t(usageMessage.text)}</small>}
               <div className="settings-info-grid">
-                <article><span>{t("Runs in ledger")}</span><strong>{usageSnapshot ? usageSnapshot.run_count.toLocaleString() : "—"}</strong><small>{t(usageSnapshot?.source === "ledger" ? "Read from the canonical event ledger" : "No ledger data is available")}</small></article>
-                <article><span>{t("Total tokens")}</span><strong>{usageSnapshot ? usageSnapshot.total_tokens.toLocaleString() : "—"}</strong><small>{usageSnapshot ? `${t("Input")} ${usageSnapshot.input_tokens.toLocaleString()} · ${t("Output")} ${usageSnapshot.output_tokens.toLocaleString()}` : t("Waiting for Host usage")}</small></article>
+                <article><span>{t("Runs in ledger")}</span><strong>{usageSnapshot ? usageSnapshot.run_count.toLocaleString(language) : "—"}</strong><small>{t(usageSnapshot?.source === "ledger" ? "Read from the canonical event ledger" : "No ledger data is available")}</small></article>
+                <article><span>{t("Total tokens")}</span><strong>{usageSnapshot ? usageSnapshot.total_tokens.toLocaleString(language) : "—"}</strong><small>{usageSnapshot ? `${t("Input")} ${usageSnapshot.input_tokens.toLocaleString(language)} · ${t("Output")} ${usageSnapshot.output_tokens.toLocaleString(language)}` : t("Waiting for Host usage")}</small></article>
                 <article><span>{t("Reported costs")}</span><strong>{usageSnapshot?.costs.length ? usageSnapshot.costs.map(({ amount, currency }) => `${amount.toFixed(4)} ${currency}`).join(" · ") : "—"}</strong><small>{t("Only provider-reported costs are included")}</small></article>
               </div>
-              {usageSnapshot && <small className="settings-muted-note">{t("Cached input")} {usageSnapshot.cached_input_tokens.toLocaleString()} · {t("Reasoning output")} {usageSnapshot.reasoning_output_tokens.toLocaleString()} · {new Date(usageSnapshot.generated_at).toLocaleString()}</small>}
+              {usageSnapshot && <small className="settings-muted-note">{t("Cached input")} {usageSnapshot.cached_input_tokens.toLocaleString(language)} · {t("Reasoning output")} {usageSnapshot.reasoning_output_tokens.toLocaleString(language)} · {new Date(usageSnapshot.generated_at).toLocaleString(language)}</small>}
             </section>
           </div>
 

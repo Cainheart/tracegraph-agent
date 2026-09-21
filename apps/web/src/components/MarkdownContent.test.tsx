@@ -1,6 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
-import { MarkdownContent } from "./MarkdownContent";
+import { highlightCode, MarkdownContent, normalizeMermaidSource } from "./MarkdownContent";
 
 describe("MarkdownContent", () => {
   it("renders headings, lists, inline code, and paragraphs instead of raw markers", () => {
@@ -40,5 +40,18 @@ describe("MarkdownContent", () => {
     expect(html).toContain('href="https://example.com/docs"');
     expect(html).not.toContain('href="javascript:');
     expect(html).toContain("[危险链接](javascript:alert(1))");
+  });
+
+  it("adds safe editor-style token classes to generated code", () => {
+    const html = renderToStaticMarkup(<MarkdownContent content={"```python\ndef greet(name: str) -> str:\n    # comment\n    return f'Hello {name}'\n```"} />);
+    expect(html).toContain('class="token token-keyword"');
+    expect(html).toContain('class="token token-function"');
+    expect(html).toContain('class="token token-comment"');
+    expect(html).toContain('class="token token-string"');
+  });
+
+  it("normalizes common reserved Mermaid ids before the retry", () => {
+    expect(normalizeMermaidSource("Here is the chart:\n\ngraph TD\ngraph[State] --> end[Done]")).toBe("flowchart TD\ntg_graph[State] --> tg_end[Done]");
+    expect(highlightCode("const value = 1", "ts").length).toBeGreaterThan(1);
   });
 });

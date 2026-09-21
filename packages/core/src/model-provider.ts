@@ -916,25 +916,35 @@ interface PublicFieldProgress {
  * The parser never evaluates or forwards raw JSON, tool calls, provider
  * thinking, or arguments. It emits actual model characters, not frontend
  * narration; Runtime later coalesces them into safe snapshots for the UI.
- * A field is not published until its closing quote arrives. This prevents an
- * opaque registered secret from being reconstructed in the browser when the
- * provider splits it across multiple transport chunks.
+ * Partial values are published only at safe token boundaries. An opaque
+ * registered secret can therefore remain buffered while a normal sentence is
+ * streamed; the final flush validates the complete field and applies the
+ * registered-secret redactor before the last fragment is emitted.
  */
 function createPublicReasonProgress(input: ModelInput): PublicFieldProgress {
-  const emitted = new Map<"public_reason" | "final_answer", string>();
-  const publish = (field: "public_reason" | "final_answer", content: string): void => {
-    const value = completeJsonStringField(content, field);
-    if (value === undefined) return;
-    const previous = emitted.get(field) ?? "";
+  const emittedRaw = new Map<"public_reason" | "final_answer", string>();
+  const emittedVisible = new Map<"public_reason" | "final_answer", string>();
+  const publish = (field: "public_reason" | "final_answer", content: string, flush: boolean): void => {
+    const parsed = jsonStringFieldPrefix(content, field);
+    if (parsed === undefined) return;
+    const previousRaw = emittedRaw.get(field) ?? "";
+    const previousVisible = emittedVisible.get(field) ?? "";
     // A parser prefix must only grow. If a malformed/escaped fragment would
     // rewrite earlier characters, wait for a later complete snapshot instead
     // of leaking a speculative or inconsistent display value.
-    if (!value.startsWith(previous) || value.length <= previous.length) return;
+    if (!parsed.value.startsWith(previousRaw)) return;
+    const value = parsed.complete || flush ? parsed.value : streamingSafePrefix(parsed.value);
+    if (value.length <= previousRaw.length) return;
     const limit = field === "public_reason" ? 360 : 8_000;
-    if (previous.length >= limit) return;
-    const delta = safePublicProgress(value.slice(previous.length), limit - previous.length);
+    if (previousRaw.length >= limit) return;
+    emittedRaw.set(field, value);
+    const safeValue = safePublicProgress(value, limit);
+    // Redaction can replace a complete sensitive token with a marker. Never
+    // emit a replacement that would rewrite already-visible characters.
+    if (!safeValue.startsWith(previousVisible)) return;
+    const delta = safeValue.slice(previousVisible.length);
     if (!delta) return;
-    emitted.set(field, previous + delta);
+    emittedVisible.set(field, safeValue);
     input.onPublicProgress?.({
       kind: field === "public_reason" ? "public_reason_delta" : "final_answer_delta",
       text: delta,
@@ -942,18 +952,23 @@ function createPublicReasonProgress(input: ModelInput): PublicFieldProgress {
   };
   return {
     update(content) {
-      publish("public_reason", content);
-      publish("final_answer", content);
+      publish("public_reason", content, false);
+      publish("final_answer", content, false);
     },
     flush(content) {
-      publish("public_reason", content);
-      publish("final_answer", content);
+      publish("public_reason", content, true);
+      publish("final_answer", content, true);
     },
   };
 }
 
-/** Return a decoded JSON string property only after the closing quote arrives. */
-function completeJsonStringField(content: string, field: "public_reason" | "final_answer"): string | undefined {
+interface JsonStringFieldPrefix {
+  value: string;
+  complete: boolean;
+}
+
+/** Return the decoded prefix of a JSON string property without evaluating JSON. */
+function jsonStringFieldPrefix(content: string, field: "public_reason" | "final_answer"): JsonStringFieldPrefix | undefined {
   const property = `"${field}"`;
   const propertyIndex = content.indexOf(property);
   if (propertyIndex < 0) return undefined;
@@ -977,7 +992,32 @@ function completeJsonStringField(content: string, field: "public_reason" | "fina
     if (escaping) escaping = false;
     else if (character === "\\") escaping = true;
   }
-  return complete ? decodeJsonStringPrefix(raw) : undefined;
+  return { value: decodeJsonStringPrefix(raw), complete };
+}
+
+/**
+ * Keep the trailing printable-ASCII token buffered. This makes a credential
+ * split across one-character provider chunks impossible to reconstruct in a
+ * public snapshot, while CJK text (which has no spaces) can still advance one
+ * character at a time.
+ */
+function streamingSafePrefix(value: string): string {
+  const characters = Array.from(value);
+  const isPrintableAscii = (character: string): boolean => character >= "!" && character <= "~";
+  let end = characters.length;
+  while (end > 0 && isPrintableAscii(characters[end - 1]!)) end -= 1;
+  if (end < characters.length) return characters.slice(0, end).join("");
+  // Also hold an ASCII token immediately before a CJK/non-ASCII suffix. A
+  // credential followed by Chinese punctuation/text must not be exposed just
+  // because the last code point itself is not ASCII.
+  let suffixStart = characters.length;
+  while (suffixStart > 0 && !isPrintableAscii(characters[suffixStart - 1]!)) suffixStart -= 1;
+  if (suffixStart > 0 && suffixStart < characters.length) {
+    let tokenStart = suffixStart;
+    while (tokenStart > 0 && isPrintableAscii(characters[tokenStart - 1]!)) tokenStart -= 1;
+    if (tokenStart < suffixStart) return characters.slice(0, tokenStart).join("");
+  }
+  return characters.slice(0, Math.max(0, characters.length - 1)).join("");
 }
 
 function decodeJsonStringPrefix(raw: string): string {
@@ -1346,7 +1386,7 @@ Conversation and presentation rules:
 - Accompany a diagram with a short explanation of its main path, component responsibilities, and important boundary or assumption. Do not present an inferred design as inspected repository fact.
 
 Public reasoning and tool-trace rules:
-- public_reason is a concise, user-visible decision or action summary. It may say what will be checked and why, but it must not contain hidden chain-of-thought, private scratchpad reasoning, or provider reasoning content.
+- public_reason is one short, user-visible decision or action summary (ideally one sentence and at most 240 characters). It may say what will be checked and why, but it must not contain hidden chain-of-thought, private scratchpad reasoning, the final answer, or provider reasoning content.
 - evidence_refs must remain an array of full TraceGraph SourceRef objects; normally return [] because the runtime attaches validated evidence. Never put observation IDs or bare strings in evidence_refs.
 - Emit public_reason as the first property in the JSON object. It is streamed to the user as your public execution note, so make it concrete, truthful, and concise. Do not narrate actions that have not happened; tools are displayed separately only after they actually run.
 - action_id is only a provider correlation hint. The TraceGraph runtime owns the canonical per-run action identity and will repair a collision if a provider repeats an id for a different call. Use a fresh opaque action_id for every call, including every item in tool_calls; never repeat one within or across turns intentionally.

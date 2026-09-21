@@ -9,6 +9,7 @@ import {
   MODEL_PROVIDER_PRESETS,
   ModelCredentialStatus,
   PermissionSettingsSection,
+  publicHostErrorMessage,
   SettingsPanel,
   TelemetrySettingsSection,
 } from "./SettingsPanel";
@@ -29,6 +30,12 @@ const permissionConfig: PermissionConfigSnapshot = {
 };
 
 describe("SettingsPanel", () => {
+  it("maps transport failures to stable, localizable Host states", () => {
+    expect(publicHostErrorMessage(new Error("Capability token expired"))).toBe("The local Host connection expired. Reconnect and try again.");
+    expect(publicHostErrorMessage(new Error("Failed to fetch"))).toBe("The local Host could not be reached. Reconnect and try again.");
+    expect(publicHostErrorMessage(new Error("unexpected private diagnostic"))).toBe("The local Host could not complete this request.");
+  });
+
   it("groups language and appearance under one extensible settings entry", () => {
     const html = renderToStaticMarkup(
       <SettingsPanel
@@ -65,7 +72,7 @@ describe("SettingsPanel", () => {
   it("shows only Host-advertised permission presets and warns for full write", () => {
     const html = renderToStaticMarkup(
       <PermissionSettingsSection
-        message=""
+        message={null}
         onSelect={vi.fn()}
         saving={false}
         snapshot={permissionConfig}
@@ -87,7 +94,7 @@ describe("SettingsPanel", () => {
   it("disables preset changes when the Host locks permission settings", () => {
     const html = renderToStaticMarkup(
       <PermissionSettingsSection
-        message=""
+        message={null}
         onSelect={vi.fn()}
         saving={false}
         snapshot={{ ...permissionConfig, locked: true, lock_reason: "Controlled by TRACEGRAPH_PERMISSION_PRESET" }}
@@ -96,7 +103,8 @@ describe("SettingsPanel", () => {
     );
 
     expect(html.match(/disabled=""/g)).toHaveLength(3);
-    expect(html).toContain("Controlled by TRACEGRAPH_PERMISSION_PRESET");
+    expect(html).toContain("This setting is managed by the local Host.");
+    expect(html).not.toContain("TRACEGRAPH_PERMISSION_PRESET");
   });
 
   it("renders telemetry status and error counts as a strictly read-only surface", () => {
@@ -108,7 +116,7 @@ describe("SettingsPanel", () => {
       last_error_at: "2026-09-19T06:00:00.000Z",
     };
     const html = renderToStaticMarkup(
-      <TelemetrySettingsSection message="" snapshot={snapshot} supported />,
+      <TelemetrySettingsSection message={null} snapshot={snapshot} supported />,
     );
 
     expect(html).toContain("Telemetry");
@@ -145,7 +153,7 @@ describe("SettingsPanel", () => {
     }];
     const html = renderToStaticMarkup(
       <ExtensionSettingsSection
-        message=""
+        message={null}
         onReload={vi.fn()}
         reloading={null}
         statuses={statuses}
@@ -157,7 +165,8 @@ describe("SettingsPanel", () => {
     expect(html).toContain("Generation 4");
     expect(html).toContain("Contributions 2");
     expect(html).toContain("extension_activate_failed");
-    expect(html).toContain("Activation failed safely");
+    expect(html).toContain("The local Host reported a technical issue.");
+    expect(html).not.toContain("Activation failed safely");
     expect(html).toContain("Reload");
     expect(html).not.toContain("module");
   });

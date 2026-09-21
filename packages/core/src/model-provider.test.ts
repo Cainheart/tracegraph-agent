@@ -481,7 +481,9 @@ describe("ConfigurableModelAdapter", () => {
     });
     expect(progress.filter((update) => update.kind === "public_reason_delta").map((update) => update.text).join(""))
       .toBe("I will inspect the repository overview before answering.");
-    expect(progress.filter((update) => update.kind === "final_answer_delta").map((update) => update.text).join(""))
+    const finalAnswerProgress = progress.filter((update) => update.kind === "final_answer_delta");
+    expect(finalAnswerProgress.length).toBeGreaterThan(1);
+    expect(finalAnswerProgress.map((update) => update.text).join(""))
       .toBe("The answer was produced from the model's public response field.");
     expect(progress.filter((update) => update.kind === "thinking_delta")).toHaveLength(0);
     expect(result).toMatchObject({
@@ -494,12 +496,12 @@ describe("ConfigurableModelAdapter", () => {
   it("does not reconstruct a registered credential from character-split public stream chunks", async () => {
     const secret = "opaque-\"stream\\credential-42";
     const decision = JSON.stringify({
-      public_reason: `Unsafe echo: ${secret}`,
+      public_reason: `Unsafe echo: ${secret}，继续说明`,
       decision_id: "decision:split-secret",
       kind: "finish",
       evidence_refs: [],
       risk: "none",
-      final_answer: `Also unsafe: ${secret}`,
+      final_answer: `Also unsafe: ${secret}，继续说明`,
     });
     let requestBody: Record<string, unknown> | undefined;
     vi.stubGlobal("fetch", vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
