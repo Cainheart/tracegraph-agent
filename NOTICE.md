@@ -1,7 +1,7 @@
 # Notice
 
-TraceGraph Agent 是独立实现的学习型开源项目。
+TraceGraph Agent 是独立实现的开源项目，本仓库源码采用 MIT License（见 [LICENSE](LICENSE)）。
 
-设计参考了公开 Coding Agent、Agent Harness 和可观测系统的架构思想，但项目不复制 DeepSeek Harness、Claude Code、Codex、Pi 或其他产品的源码、商标、图标与品牌界面。
+仓库内的代码、文档、图标与界面均由本项目自行编写，不使用任何第三方产品的商标、图标或品牌界面。
 
-本仓库源码采用 MIT License。第三方依赖继续受各自许可证约束，正式发布前应由锁文件生成依赖许可证清单并复核；项目名称与 `@tracegraph/*` 包名也仍需做公开仓库与 npm 查重。
+第三方依赖继续受各自许可证约束，正式发布前应由锁文件生成依赖许可证清单并复核；项目名称与 `@tracegraph/*` 包名也仍需做公开仓库与 npm 查重。

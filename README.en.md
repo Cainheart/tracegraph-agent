@@ -218,6 +218,4 @@ executable commands is in
 
 ## License
 
-MIT. This project is an independent implementation; it does not copy source
-code or branded UI from DeepSeek Harness, Claude Code, Codex, Pi, or any other
-product. See [NOTICE.md](NOTICE.md).
+MIT — see [LICENSE](LICENSE).

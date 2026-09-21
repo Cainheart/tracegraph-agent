@@ -31,7 +31,7 @@ tracegraph-agent/
 ├── README.en.md                 英文入口：五分钟启动、验证、私有发布与安全边界
 ├── CHANGELOG.md                 双语版本变更记录；发布校验要求当前版本有带日期条目
 ├── KNOWN_LIMITATIONS.md         已知限制的唯一事实源（Runtime/Context/Evals/Host/Web）
-├── NOTICE.md                    独立实现声明：不复制 DeepSeek Harness/Claude Code/Codex/Pi 源码与品牌
+├── NOTICE.md                    独立实现声明与第三方依赖许可提示
 ├── LICENSE                       MIT 许可证
 ├── DIRECTORY.md                  本文件：目录与文件职责说明
 ├── package.json                  根脚本：clean build、typecheck、unit/E2E/evals、coverage、供应链校验、私有 release bundle、dev/serve 与可选 retrieval:serve；Node ^22.19

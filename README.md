@@ -132,4 +132,4 @@ CI 由三个独立 job 组成（`typecheck` / `test` / `evals`），另设覆盖
 
 ## License
 
-MIT。本项目是独立实现，不复制 DeepSeek Harness、Claude Code、Codex、Pi 或其他产品的源码与品牌界面，见 [NOTICE.md](NOTICE.md)。
+MIT，见 [LICENSE](LICENSE)。
