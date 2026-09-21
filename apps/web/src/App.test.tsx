@@ -15,41 +15,41 @@ function staticClient(status: RunStatus, workspaceKind: WorkspaceKind = "disposa
 
 describe("G14 runtime composer", () => {
   it.each(["running", "indexing", "awaiting_plan_approval", "needs_approval"] as const)(
-    "keeps queue-mode input available while the Run is %s",
+    "keeps the trajectory surface free of chat controls while the Run is %s",
     (status) => {
       const html = renderToStaticMarkup(<App client={staticClient(status)} />);
-      expect(html).toContain('aria-label="Steer this run"');
-      expect(html).toContain("Will be sent at the next step");
-      expect(html).not.toMatch(/aria-label="Steer this run" disabled=""/u);
+      expect(html).not.toContain('aria-label="Steer this run"');
+      expect(html).not.toContain('aria-label="New task"');
+      expect(html).not.toContain("Attach image or PDF");
     },
   );
 
-  it("allows steering for a read-only project because the input mutates only the Run ledger", () => {
+  it("keeps the trajectory surface free of chat controls for a read-only project", () => {
     const html = renderToStaticMarkup(<App client={staticClient("running", "readonly_local")} />);
-    expect(html).toContain('aria-label="Steer this run"');
-    expect(html).not.toMatch(/aria-label="Steer this run" disabled=""/u);
+    expect(html).not.toContain('aria-label="Steer this run"');
+    expect(html).not.toContain('aria-label="New task"');
   });
 
   it.each(["interrupted", "needs_manual_review"] as const)(
-    "keeps recovered queue state visible but disables steering while the Run is %s",
+    "keeps recovered trajectory free of chat controls while the Run is %s",
     (status) => {
       const html = renderToStaticMarkup(<App client={staticClient(status)} />);
-      expect(html).toContain('aria-label="Steer this run" disabled=""');
+      expect(html).not.toContain('aria-label="Steer this run"');
     },
   );
 
-  it("disables both composer steering and the header stop action while reconnecting", () => {
+  it("keeps reconnecting trajectory free of chat controls while disabling the header stop action", () => {
     const html = renderToStaticMarkup(<App client={staticClient("reconnecting")} />);
-    expect(html).toContain('aria-label="Steer this run" disabled=""');
+    expect(html).not.toContain('aria-label="Steer this run"');
     expect(html).toMatch(/class="button subtle stop-button" disabled=""/u);
   });
 
   it.each(["completed", "failed", "cancelled"] as const)(
-    "does not submit steering to a terminal %s Run",
+    "does not render chat controls for a terminal %s Run on the trajectory surface",
     (status) => {
       const html = renderToStaticMarkup(<App client={staticClient(status)} />);
       expect(html).not.toContain('aria-label="Steer this run"');
-      expect(html).toContain('aria-label="New task"');
+      expect(html).not.toContain('aria-label="New task"');
     },
   );
 });
@@ -80,7 +80,7 @@ describe("G23 replay workbench", () => {
     expect(html).toContain("Return to now");
     expect(html).toMatch(/class="button subtle stop-button" disabled=""/u);
     expect(html).toMatch(/class="button danger" disabled=""/u);
-    expect(html).toContain('aria-label="Steer this run" disabled=""');
+    expect(html).not.toContain('aria-label="Steer this run"');
     expect(html).toContain("Replay is read-only. Return to now to make changes.");
   });
 

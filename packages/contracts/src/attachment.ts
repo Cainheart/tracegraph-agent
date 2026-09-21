@@ -7,7 +7,7 @@ import {
 } from "./common.js";
 
 /** Product limit. Transport layers may use a slightly larger hard cap. */
-export const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+export const MAX_ATTACHMENT_BYTES = 30 * 1024 * 1024;
 export const MAX_ATTACHMENTS_PER_RUN = 8;
 
 export const AttachmentMediaTypeSchema = z.enum([

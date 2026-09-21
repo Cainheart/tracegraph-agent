@@ -398,6 +398,10 @@ export interface ConversationTurn {
   readonly status: RunStatus;
   readonly response: string;
   readonly events: readonly TraceEvent[];
+  /** Presentation metrics captured when the turn reached a terminal state. */
+  readonly elapsed?: string;
+  readonly inputTokens?: number;
+  readonly totalTokens?: number;
 }
 
 export type EvidenceStatus = "demo" | "loading" | "available" | "unavailable" | "corrupt" | "not_present";

@@ -2,7 +2,7 @@
 import { randomUUID } from "node:crypto";
 import { mkdir, readdir, readFile, realpath, rm, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { basename, dirname, isAbsolute, relative, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   createAgentRuntime,
@@ -24,6 +24,7 @@ import {
   LspManager,
   readLspConfig,
 } from "@tracegraph/core";
+import { ModelUsageReportSchema, UsageSnapshotSchema, type UsageSnapshot } from "@tracegraph/contracts";
 import { createTraceGraphHost, type RegisteredProject } from "@tracegraph/host";
 import { closeHostAndFlushTelemetry, createCodeGraphProvider } from "./composition.js";
 import { runExtensionsCommand } from "./extension-command.js";
@@ -371,6 +372,9 @@ async function runServer(args: string[]): Promise<void> {
     lsp: {
       get: () => lsp.snapshot(),
     },
+    usage: {
+      get: () => readUsageSnapshot(dataDir),
+    },
     projectFactory: (input) => createManagedProject(managedRoot, input.name),
     localProjectSelector: async ({ access }) => {
       const selectedRoot = await selectLocalDirectory(access);
@@ -410,6 +414,100 @@ async function runServer(args: string[]): Promise<void> {
   };
   process.once("SIGINT", () => void shutdown().finally(() => process.exit(0)));
   process.once("SIGTERM", () => void shutdown().finally(() => process.exit(0)));
+}
+
+/** Build the settings usage view from the same durable event ledger consumed by
+ * replay and recovery. Malformed/unknown lines are ignored so one damaged
+ * historical file cannot make the settings page unavailable. */
+async function readUsageSnapshot(dataDir: string): Promise<UsageSnapshot> {
+  const eventsRoot = join(dataDir, "events");
+  let entries: readonly import("node:fs").Dirent[] = [];
+  try {
+    entries = await readdir(eventsRoot, { withFileTypes: true });
+  } catch {
+    return UsageSnapshotSchema.parse({
+      schema_version: "tracegraph.usage.v1",
+      generated_at: new Date().toISOString(),
+      source: "ledger",
+      run_count: 0,
+      input_tokens: 0,
+      output_tokens: 0,
+      cached_input_tokens: 0,
+      reasoning_output_tokens: 0,
+      total_tokens: 0,
+      costs: [],
+    });
+  }
+
+  const runIds = new Set<string>();
+  let inputTokens = 0;
+  let outputTokens = 0;
+  let cachedInputTokens = 0;
+  let reasoningOutputTokens = 0;
+  let totalTokens = 0;
+  const costs = new Map<string, number>();
+
+  for (const entry of entries) {
+    if (!entry.isFile() || !entry.name.endsWith(".jsonl")) continue;
+    let content: string;
+    try {
+      content = await readFile(join(eventsRoot, entry.name), "utf8");
+    } catch {
+      continue;
+    }
+    for (const line of content.split("\n")) {
+      if (!line.trim()) continue;
+      let event: unknown;
+      try {
+        event = JSON.parse(line);
+      } catch {
+        continue;
+      }
+      if (!event || typeof event !== "object") continue;
+      const record = event as Record<string, unknown>;
+      if (record.type === "run.created" && typeof record.run_id === "string") {
+        runIds.add(record.run_id);
+      }
+      if (record.type !== "model.usage_reported" || !record.data || typeof record.data !== "object") continue;
+      const data = record.data as Record<string, unknown>;
+      const parsed = ModelUsageReportSchema.safeParse({
+        provider: data.provider,
+        model: data.model,
+        input_tokens: data.input_tokens,
+        output_tokens: data.output_tokens,
+        ...(data.cached_input_tokens === undefined ? {} : { cached_input_tokens: data.cached_input_tokens }),
+        ...(data.reasoning_output_tokens === undefined ? {} : { reasoning_output_tokens: data.reasoning_output_tokens }),
+        total_tokens: data.total_tokens,
+        request_kind: data.request_kind,
+        request_sequence: data.request_sequence,
+        ...(data.provider_reported_cost === undefined ? {} : { provider_reported_cost: data.provider_reported_cost }),
+      });
+      if (!parsed.success) continue;
+      const usage = parsed.data;
+      inputTokens += usage.input_tokens;
+      outputTokens += usage.output_tokens;
+      cachedInputTokens += usage.cached_input_tokens ?? 0;
+      reasoningOutputTokens += usage.reasoning_output_tokens ?? 0;
+      totalTokens += usage.total_tokens;
+      if (usage.provider_reported_cost) {
+        const currency = usage.provider_reported_cost.currency;
+        costs.set(currency, (costs.get(currency) ?? 0) + usage.provider_reported_cost.amount);
+      }
+    }
+  }
+
+  return UsageSnapshotSchema.parse({
+    schema_version: "tracegraph.usage.v1",
+    generated_at: new Date().toISOString(),
+    source: "ledger",
+    run_count: runIds.size,
+    input_tokens: inputTokens,
+    output_tokens: outputTokens,
+    cached_input_tokens: cachedInputTokens,
+    reasoning_output_tokens: reasoningOutputTokens,
+    total_tokens: totalTokens,
+    costs: [...costs.entries()].map(([currency, amount]) => ({ currency, amount })),
+  });
 }
 
 /** Remove only a project created inside the Host's managed workspace root. */

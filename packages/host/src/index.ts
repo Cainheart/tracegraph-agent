@@ -44,6 +44,7 @@ import {
   TodoListSchema,
   TodoMutationResultSchema,
   TodoWriteRequestSchema,
+  UsageSnapshotSchema,
   LivePublicActivitySchema,
   MCP_SERVER_NAME_SCHEMA,
   ModelSurfaceEventSchema,
@@ -98,6 +99,7 @@ import {
   type TelemetryStatus,
   type TeamMutationResult,
   type TeamProjection,
+  type UsageSnapshot,
   type WorkspaceHandle,
 } from "@tracegraph/contracts";
 import {
@@ -124,10 +126,10 @@ const DEFAULT_ALLOWED_ORIGINS = [
 // conversation window (160 × 8,000 characters). Keep every other route on
 // Fastify's much smaller global ceiling.
 const MAX_RUN_REQUEST_BODY_BYTES = 8 * 1024 * 1024;
-// The product limit is 5 MiB. Leave a small transport-only margin so Core can
+// The product limit is 30 MiB. Leave a small transport-only margin so Core can
 // durably stage a business-level `too_large` rejection for the next Run,
 // while still bounding unauthenticated parser work and memory use.
-const MAX_ATTACHMENT_TRANSPORT_BYTES = 6 * 1024 * 1024;
+const MAX_ATTACHMENT_TRANSPORT_BYTES = 31 * 1024 * 1024;
 const ATTACHMENT_CONTENT_TYPE = "application/octet-stream";
 
 export interface TraceGraphHostOptions {
@@ -184,6 +186,10 @@ export interface TraceGraphHostOptions {
   /** Host-owned native LSP lifecycle/status control plane. */
   lsp?: {
     get(): LspStatusSnapshot | Promise<LspStatusSnapshot>;
+  };
+  /** Host-owned aggregate usage projection backed by the canonical event ledger. */
+  usage?: {
+    get(): UsageSnapshot | Promise<UsageSnapshot>;
   };
   /**
    * Durable session control is injected by the composition root. The Host
@@ -751,6 +757,17 @@ export async function createTraceGraphHost(
     // Runtime owns the process-local sink and error counter. Reading it
     // directly avoids a second, diverging status source in Host composition.
     return parseTelemetryStatus(options.runtime.getTelemetryStatus());
+  });
+
+  app.get("/api/usage", async (_request, reply) => {
+    reply.header("cache-control", "no-store");
+    if (!options.usage) {
+      return reply.status(501).send({
+        error: "usage_unavailable",
+        message: "This Host does not expose aggregate usage",
+      });
+    }
+    return UsageSnapshotSchema.parse(await options.usage.get());
   });
 
   app.post("/api/permission-config", async (request, reply) => {

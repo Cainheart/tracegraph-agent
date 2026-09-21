@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useId, useRef, useState, type ReactNode } from "react";
+import mermaid from "mermaid";
 
 type MarkdownBlock =
   | { kind: "heading"; level: number; text: string }
@@ -216,7 +217,6 @@ function MermaidFlow({ source }: { source: string }) {
       const thisGeneration = ++generation;
       setRendered({});
       try {
-        const { default: mermaid } = await import("mermaid");
         const theme = mermaidTheme(node);
         mermaid.initialize({
           startOnLoad: false,

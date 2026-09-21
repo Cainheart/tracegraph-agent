@@ -28,7 +28,7 @@ describe("AttachmentComposer", () => {
     expect(pendingAttachmentsFromFiles([file("script.html", "text/html")], []).error)
       .toBe("Only PNG, JPEG, and PDF attachments are supported.");
     expect(pendingAttachmentsFromFiles([file("huge.png", "image/png", MAX_ATTACHMENT_BYTES + 1)], []).error)
-      .toBe("Each attachment must be 5 MiB or smaller.");
+      .toBe("Each attachment must be 30 MiB or smaller.");
   });
 
   it("caps each Run at eight drafts and renders image inline as an explicit opt-in", () => {

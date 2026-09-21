@@ -11,11 +11,13 @@ export function AttachmentComposer({
   disabled = false,
   onChange,
   compact = false,
+  minimal = false,
 }: {
   attachments: readonly PendingAttachment[];
   disabled?: boolean;
   onChange: (attachments: readonly PendingAttachment[]) => void;
   compact?: boolean;
+  minimal?: boolean;
 }) {
   const { t } = useI18n();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -35,7 +37,7 @@ export function AttachmentComposer({
   return (
     <section
       aria-label={t("Attachments for next run")}
-      className={`attachment-composer ${compact ? "is-compact" : ""}`}
+      className={`attachment-composer ${compact ? "is-compact" : ""} ${minimal ? "is-minimal" : ""}`}
       onDragOver={(event) => event.preventDefault()}
       onDrop={drop}
     >
@@ -59,9 +61,9 @@ export function AttachmentComposer({
         type="button"
       >
         <Icon name="file" size={14} />
-        {t("Attach image or PDF")}
+        {minimal ? <span className="sr-only">{t("Attach image or PDF")}</span> : t("Attach image or PDF")}
       </button>
-      <small>{t("PNG, JPEG, or PDF · 5 MiB each · sent with the next new task")}</small>
+      {!minimal && <small>{t("PNG, JPEG, or PDF · 30 MiB each · sent with the next new task")}</small>}
       {attachments.length > 0 && <div className="pending-attachment-list">
         {attachments.map((item) => {
           const image = item.declaredMediaType === "image/png" || item.declaredMediaType === "image/jpeg";
@@ -102,7 +104,7 @@ export function pendingAttachmentsFromFiles(
       return { attachments: next, error: "Empty attachments are not supported." };
     }
     if (file.size > MAX_ATTACHMENT_BYTES) {
-      return { attachments: next, error: "Each attachment must be 5 MiB or smaller." };
+      return { attachments: next, error: "Each attachment must be 30 MiB or smaller." };
     }
     next.push({
       id: attachmentDraftId(),

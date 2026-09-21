@@ -528,6 +528,56 @@ describe("TraceGraph Host", () => {
     await host.close();
   });
 
+  it("exposes aggregate usage only through the authenticated Host projection", async () => {
+    const host = await createTraceGraphHost({
+      runtime: fakeRuntime(),
+      projects: [{ label: "Read-only demo", workspace: startInput.workspace }],
+      capabilityToken: token,
+      now: () => now,
+      usage: {
+        get: () => ({
+          schema_version: "tracegraph.usage.v1",
+          generated_at: now.toISOString(),
+          source: "ledger" as const,
+          run_count: 3,
+          input_tokens: 120,
+          output_tokens: 30,
+          cached_input_tokens: 8,
+          reasoning_output_tokens: 4,
+          total_tokens: 150,
+          costs: [{ currency: "USD", amount: 0.0125 }],
+        }),
+      },
+    });
+
+    const unauthenticated = await host.app.inject({ method: "GET", url: "/api/usage" });
+    expect(unauthenticated.statusCode).toBe(401);
+    const response = await host.app.inject({
+      method: "GET",
+      url: "/api/usage",
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(response.statusCode).toBe(200);
+    expect(response.headers["cache-control"]).toBe("no-store");
+    expect(response.json()).toMatchObject({ run_count: 3, total_tokens: 150, costs: [{ currency: "USD" }] });
+    await host.close();
+
+    const unavailable = await createTraceGraphHost({
+      runtime: fakeRuntime(),
+      projects: [{ label: "Read-only demo", workspace: startInput.workspace }],
+      capabilityToken: token,
+      now: () => now,
+    });
+    const unavailableResponse = await unavailable.app.inject({
+      method: "GET",
+      url: "/api/usage",
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(unavailableResponse.statusCode).toBe(501);
+    expect(unavailableResponse.json()).toMatchObject({ error: "usage_unavailable" });
+    await unavailable.close();
+  });
+
   it("authenticates and strictly bounds permission configuration without Run-level overrides", async () => {
     const runtime = fakeRuntime();
     let activePreset: "read-only" | "workspace-write" = "workspace-write";
@@ -1864,7 +1914,7 @@ describe("TraceGraph Host", () => {
       expires_at: "2026-09-16T00:10:00.000Z",
       declared_media_type: "application/pdf",
       code: "too_large",
-      reason: "Attachment exceeds the 5 MiB product limit",
+      reason: "Attachment exceeds the 30 MiB product limit",
     });
     const host = await createTraceGraphHost({
       runtime,

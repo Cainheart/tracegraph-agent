@@ -15,6 +15,7 @@ import type {
   PublicModelConfigResponse,
   SafeCredentialMetadata,
   TelemetryStatus,
+  UsageSnapshot,
   TaskBoardItem,
   TodoWriteInput,
   UserInputKind,
@@ -62,6 +63,7 @@ export interface WorkbenchClient {
   getModelConfig(): Promise<ModelConfigSnapshot>;
   configureModel(input: ConfigureModelInput): Promise<ModelConfigSnapshot>;
   getTelemetryStatus(): Promise<TelemetryStatusSnapshot>;
+  getUsage(): Promise<UsageSnapshot>;
   listExtensions(): Promise<readonly ExtensionStatusSnapshot[]>;
   reloadExtension(extensionName: string): Promise<ExtensionStatusSnapshot>;
   listSkills(): Promise<readonly SkillProjectInspectionSnapshot[]>;
@@ -75,6 +77,7 @@ export type ConfigurePermissionPresetInput = Pick<PermissionPresetUpdateRequest,
 export type ModelConfigSnapshot = PublicModelConfigResponse;
 export type ConfigureModelInput = ModelConfigUpdateRequest;
 export type TelemetryStatusSnapshot = TelemetryStatus;
+export type UsageSnapshotSnapshot = UsageSnapshot;
 export type ExtensionStatusSnapshot = ExtensionStatus;
 export type SkillProjectInspectionSnapshot = SkillProjectInspection;
 export type McpStatusSnapshotView = McpStatusSnapshot;
@@ -409,6 +412,20 @@ export class DemoTraceGraphClient implements WorkbenchClient {
       sink: "noop",
       state: "disabled",
       error_count: 0,
+    };
+  }
+  async getUsage(): Promise<UsageSnapshotSnapshot> {
+    return {
+      schema_version: "tracegraph.usage.v1",
+      generated_at: new Date().toISOString(),
+      source: "unavailable",
+      run_count: 0,
+      input_tokens: 0,
+      output_tokens: 0,
+      cached_input_tokens: 0,
+      reasoning_output_tokens: 0,
+      total_tokens: 0,
+      costs: [],
     };
   }
   async listExtensions(): Promise<readonly ExtensionStatusSnapshot[]> {

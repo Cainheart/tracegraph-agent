@@ -29,7 +29,9 @@ export function Sidebar({
   onDeleteSession,
   onResumeSession,
   onReturnHome,
+  onOpenLocal,
   onPreviewState,
+  onOpenSettings,
   readOnly = false,
 }: {
   snapshot: WorkbenchSnapshot;
@@ -41,7 +43,9 @@ export function Sidebar({
   onDeleteSession: (sessionId: string) => Promise<void>;
   onResumeSession: (sessionId: string) => Promise<void>;
   onReturnHome: () => void;
+  onOpenLocal?: (access: "read_write" | "read_only") => Promise<void>;
   onPreviewState: (status: RunStatus) => void;
+  onOpenSettings?: () => void;
   readOnly?: boolean;
 }) {
   const { t } = useI18n();
@@ -51,6 +55,9 @@ export function Sidebar({
   const [sessionQuery, setSessionQuery] = useState("");
   const [sessionBusyId, setSessionBusyId] = useState<string | null>(null);
   const [sessionError, setSessionError] = useState<string | null>(null);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [openingLocal, setOpeningLocal] = useState(false);
+  const [localOpenError, setLocalOpenError] = useState<string | null>(null);
   const currentStatus = project ? (run?.status ?? "ready") : "empty";
   const localAvailable = snapshot.availableProjects.some((candidate) => candidate.workspaceKind === "readonly_local");
   const managedAvailable = snapshot.availableProjects.some((candidate) => candidate.workspaceKind === "managed_local");
@@ -58,16 +65,24 @@ export function Sidebar({
   return (
     <aside className="sidebar" aria-label={t("Project and run navigation")}>
       <div className="sidebar-scroll">
-        <SectionLabel trailing={<button className="text-button compact-hide" type="button">{t("P0 scope")}</button>}>
-          {t("Project")}
-        </SectionLabel>
+        <nav aria-label={t("Application navigation")} className="sidebar-app-nav">
+          <button
+            className="sidebar-new-chat"
+            disabled={readOnly || run?.status === "running" || run?.status === "indexing" || run?.status === "reconnecting"}
+            onClick={onReturnHome}
+            type="button"
+          >
+            <Icon name="message" size={15} />
+            <span>{t("New chat")}</span>
+          </button>
+        </nav>
+        <SectionLabel>{t("Project")}</SectionLabel>
 
         {project ? (
           <button className="project-card project-card-button" disabled={readOnly || run?.status === "running" || run?.status === "indexing" || run?.status === "reconnecting"} onClick={onReturnHome} title={t("Choose another project or start a plain chat")} type="button">
             <span className="project-icon"><Icon name="folder" size={17} /></span>
             <div className="project-card-copy compact-hide">
               <strong>{project.name}</strong>
-              <span>{project.pathLabel}</span>
             </div>
             <Icon name="chevron" className="project-chevron compact-hide" size={14} />
           </button>
@@ -90,9 +105,30 @@ export function Sidebar({
           </div>
         )}
 
+        {onOpenLocal && (
+          <div className="sidebar-local-entry compact-hide">
+            <button
+              className="sidebar-open-local"
+              disabled={readOnly || openingLocal || snapshot.connection.state !== "live"}
+              onClick={() => {
+                setLocalOpenError(null);
+                setOpeningLocal(true);
+                void onOpenLocal("read_write").catch((error: unknown) => {
+                  setLocalOpenError(error instanceof Error ? error.message : String(error));
+                }).finally(() => setOpeningLocal(false));
+              }}
+              type="button"
+            >
+              <Icon name="folder" size={15} />
+              <span>{t(openingLocal ? "Opening…" : "Open local folder")}</span>
+            </button>
+            {localOpenError && <div className="sidebar-action-error" role="alert">{localOpenError}</div>}
+          </div>
+        )}
+
         <div className="workspace-options compact-hide">
-          {snapshot.availableProjects.map((candidate) => <div className={candidate.id === project?.id ? "workspace-option-row active" : "workspace-option-row"} key={candidate.id}>
-            <button className={candidate.id === project?.id ? "workspace-option active" : "workspace-option"} disabled={readOnly} onClick={() => onSelectProject(candidate.id)} type="button"><Icon name={candidate.location?.kind === "linked_directory" ? "code" : "folder"} size={15} /><span><strong>{candidate.name}</strong><small>{candidate.pathLabel}</small></span></button>
+          {snapshot.availableProjects.filter((candidate) => candidate.id !== project?.id).map((candidate) => <div className="workspace-option-row" key={candidate.id}>
+            <button className="workspace-option" disabled={readOnly} onClick={() => onSelectProject(candidate.id)} type="button"><Icon name={candidate.location?.kind === "linked_directory" ? "code" : "folder"} size={15} /><span><strong>{candidate.name}</strong></span></button>
             {(candidate.location?.kind === "linked_directory" || candidate.location?.kind === "managed_storage") && <button
               aria-label={`${t("Remove project")}: ${candidate.name}`}
               className="workspace-option-remove"
@@ -242,10 +278,20 @@ export function Sidebar({
             {previewStates.map((state) => <option key={state.value} value={state.value}>{t(state.label)}</option>)}
           </select>
         </label>}
-        <div className="local-status">
-          <span className={`online-dot connection-dot-${snapshot.connection.state}`} />
-          <span className="compact-hide">{snapshot.connection.state === "live" ? t("Local host") : t(snapshot.connection.state)}</span>
-        </div>
+        {accountMenuOpen && (
+          <div className="sidebar-account-menu" role="menu">
+            <div className="sidebar-account-profile">
+              <span className="sidebar-account-avatar">TG</span>
+              <span><strong>TraceGraph</strong><small>{t("Local workspace")}</small></span>
+            </div>
+            <button className="sidebar-account-item" onClick={() => { setAccountMenuOpen(false); onOpenSettings?.(); }} role="menuitem" type="button"><Icon name="settings" size={15} /><span>{t("Settings")}</span><kbd>⌘,</kbd></button>
+          </div>
+        )}
+        <button aria-expanded={accountMenuOpen} aria-haspopup="menu" className={`sidebar-account-trigger ${accountMenuOpen ? "is-open" : ""}`} onClick={() => setAccountMenuOpen((open) => !open)} type="button">
+          <span className="sidebar-account-avatar">TG</span>
+          <span className="sidebar-account-copy compact-hide"><strong>TraceGraph</strong><small>{t("Local workspace")}</small></span>
+          <Icon className="sidebar-account-chevron compact-hide" name="chevron" size={14} />
+        </button>
       </div>
     </aside>
   );

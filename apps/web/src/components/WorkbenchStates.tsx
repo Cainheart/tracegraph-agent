@@ -1,52 +1,28 @@
 import { useEffect, useRef, useState } from "react";
-import { totalDiff, type ChangedFile, type ConnectionSnapshot, type ContextBudgetSnapshot, type ConversationTurn, type EvidenceSnapshot, type ModelSurfaceSnapshot, type PendingAttachment, type ProjectSnapshot, type PublicActivitySnapshot, type ReasoningEffort, type RunMode, type RunStatus, type TraceEvent } from "../model";
+import { totalDiff, type ChangedFile, type ConnectionSnapshot, type ContextBudgetSnapshot, type ConversationTurn, type EvidenceSnapshot, type ModelSurfaceSnapshot, type PendingAttachment, type PublicActivitySnapshot, type ReasoningEffort, type RunMode, type RunStatus, type TraceEvent } from "../model";
 import { useI18n } from "../i18n";
 import { Icon } from "./Icon";
 import { MarkdownContent } from "./MarkdownContent";
 import { ReasoningEffortPicker } from "./ReasoningEffortPicker";
-import { AttachmentComposer } from "./AttachmentComposer";
 
 export function NoProject({
-  onCreate,
-  onOpenLocal,
   onStartChat,
   reasoningEffort,
   onReasoningEffortChange,
-  connection,
 }: {
-  onCreate: (name: string) => Promise<void>;
-  onOpenLocal: (access: "read_write" | "read_only") => Promise<void>;
   onStartChat: (task: string, reasoningEffort: ReasoningEffort, attachments: readonly PendingAttachment[]) => Promise<void>;
   reasoningEffort: ReasoningEffort;
   onReasoningEffortChange: (value: ReasoningEffort) => void;
-  connection: ConnectionSnapshot;
 }) {
   const { t } = useI18n();
-  const [projectName, setProjectName] = useState("");
   const [chatTask, setChatTask] = useState("");
-  const [attachments, setAttachments] = useState<readonly PendingAttachment[]>([]);
-  const [creating, setCreating] = useState(false);
-  const [opening, setOpening] = useState(false);
   const [chatting, setChatting] = useState(false);
   const [actionError, setActionError] = useState("");
-  const create = async () => {
-    setCreating(true); setActionError("");
-    try { await onCreate(projectName.trim()); }
-    catch (error) { setActionError(error instanceof Error ? error.message : String(error)); }
-    finally { setCreating(false); }
-  };
-  const openLocal = async (access: "read_write" | "read_only") => {
-    setOpening(true); setActionError("");
-    try { await onOpenLocal(access); }
-    catch (error) { setActionError(error instanceof Error ? error.message : String(error)); }
-    finally { setOpening(false); }
-  };
   const startChat = async () => {
     if (!chatTask.trim()) return;
     setChatting(true); setActionError("");
     try {
-      await onStartChat(chatTask.trim(), reasoningEffort, attachments);
-      setAttachments([]);
+      await onStartChat(chatTask.trim(), reasoningEffort, []);
     }
     catch (error) { setActionError(error instanceof Error ? error.message : String(error)); }
     finally { setChatting(false); }
@@ -55,44 +31,25 @@ export function NoProject({
     <main className="state-page">
       <div className="state-hero">
         <span className="state-hero-mark"><Icon name="graph" size={28} /></span>
-        <span className="eyebrow">{t("Local-first agent workbench")}</span>
-        <h1>{t("See every decision.")}<br />{t("Trust every change.")}</h1>
-        <p>{t("Start a plain conversation or choose a real local folder. TraceGraph keeps public execution steps, context, architecture changes, and verification evidence inspectable.")}</p>
+        <span className="eyebrow">{t("TraceGraph workspace")}</span>
       </div>
-      <div className="entry-mode-grid">
-        <section className="entry-card plain-chat-card">
-          <div className="create-project-heading"><span className="choice-icon accent"><Icon name="message" size={20} /></span><span><strong>{t("Plain chat")}</strong><small>{t("Ask general questions without granting filesystem access")}</small></span></div>
-          <textarea aria-label={t("Plain chat message")} onChange={(event) => setChatTask(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void startChat(); } }} placeholder={t("Ask anything… Enter to send, Shift+Enter for a new line")} rows={4} value={chatTask} />
-          <AttachmentComposer attachments={attachments} disabled={chatting} onChange={setAttachments} />
-          <div className="entry-card-actions"><ReasoningEffortPicker compact onChange={onReasoningEffortChange} value={reasoningEffort} /><button className="button primary" disabled={chatting || !chatTask.trim()} onClick={() => void startChat()} type="button">{t(chatting ? "Starting…" : "Start chat")}<Icon name="send" size={14} /></button></div>
-          <div className="create-project-boundary"><Icon name="shield" size={13} /><span>{t("No filesystem, search, command, or write capability")}</span></div>
-        </section>
-        <section className="entry-card local-folder-card">
-          <div className="create-project-heading"><span className="choice-icon"><Icon name="folder" size={20} /></span><span><strong>{t("Open a local folder")}</strong><small>{t("The local Host opens the native folder picker; the browser never submits a path")}</small></span></div>
-          <div className="local-folder-actions"><button className="button primary" disabled={opening || connection.state !== "live"} onClick={() => void openLocal("read_write")} type="button"><Icon name="folder" size={14} />{t(opening ? "Opening…" : "Open with gated writes")}</button><button className="button subtle" disabled={opening || connection.state !== "live"} onClick={() => void openLocal("read_only")} type="button">{t("Open read-only")}</button></div>
-          <div className="create-project-boundary"><Icon name="shield" size={13} /><span>{t("Write access is explicit; every patch still requires one-time approval")}</span></div>
-        </section>
+      <div className="plain-chat-composer">
+        <textarea aria-label={t("Plain chat message")} onChange={(event) => setChatTask(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void startChat(); } }} placeholder={t("Ask anything…")} rows={2} value={chatTask} />
+        <div className="plain-chat-composer-footer"><ReasoningEffortPicker compact onChange={onReasoningEffortChange} value={reasoningEffort} /><span className="composer-safety-note"><Icon name="shield" size={12} />{t("Plain chat")}</span><button aria-label={t("Send message")} className="button primary composer-send" disabled={chatting || !chatTask.trim()} onClick={() => void startChat()} type="button"><Icon name="send" size={14} /></button></div>
       </div>
-      <details className="managed-project-disclosure"><summary>{t("Create an empty managed project")}</summary><div className="create-project-card"><div className="create-project-heading"><span className="choice-icon accent"><Icon name="code" size={20} /></span><span><strong>{t("Create a project")}</strong><small>{t("Stored under the Host data directory and shown with its exact location")}</small></span></div><div className="create-project-controls"><input aria-label={t("Project name")} onChange={(event) => setProjectName(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && projectName.trim()) void create(); }} placeholder={t("Project name")} value={projectName} /><button className="button primary" disabled={creating || !projectName.trim()} onClick={() => void create()} type="button">{t(creating ? "Creating…" : "Create")}<Icon name="chevron" size={13} /></button></div><div className="create-project-boundary"><Icon name="shield" size={13} /><span>{t("Persistent workspace · writes require approval")}</span></div></div></details>
       {actionError && <div className="entry-error" role="alert"><Icon name="alert" size={14} />{actionError}</div>}
-      <div className={`connection-callout connection-${connection.state}`}><span className="online-dot" /><strong>{t(connection.state === "live" ? "Live" : connection.state)}</strong><span>{t(connection.message)}</span></div>
-      <div className="boundary-note"><Icon name="shield" size={15} /><span>{t("Only folders explicitly chosen in the native picker are registered. Model credentials stay in the local Host.")}</span></div>
     </main>
   );
 }
 
 export function ProjectReady({
-  project,
   readonly,
   onStart,
-  onReveal,
   reasoningEffort,
   onReasoningEffortChange,
 }: {
-  project: ProjectSnapshot;
   readonly: boolean;
   onStart: (task: string, mode: RunMode, reasoningEffort: ReasoningEffort, attachments: readonly PendingAttachment[]) => Promise<void>;
-  onReveal?: () => Promise<void>;
   reasoningEffort: ReasoningEffort;
   onReasoningEffortChange: (value: ReasoningEffort) => void;
 }) {
@@ -100,13 +57,11 @@ export function ProjectReady({
   const [task, setTask] = useState("");
   const [mode, setMode] = useState<RunMode>(readonly ? "plan" : "execute");
   const [busy, setBusy] = useState(false);
-  const [attachments, setAttachments] = useState<readonly PendingAttachment[]>([]);
 
   const start = async () => {
     setBusy(true);
     try {
-      await onStart(task, mode, reasoningEffort, attachments);
-      setAttachments([]);
+      await onStart(task, mode, reasoningEffort, []);
     } finally {
       setBusy(false);
     }
@@ -115,10 +70,7 @@ export function ProjectReady({
   return (
     <main className="state-page project-ready-page">
       <div className="ready-card">
-        <div className="ready-heading"><span><Icon name="code" size={21} /></span><div><span className="eyebrow">{t("Project ready")}</span><h1>{t("What should the Agent investigate?")}</h1></div></div>
-        <div className="ready-project-location"><div><span>{t("Project location")}</span><code title={project.pathLabel}>{project.pathLabel}</code></div>{onReveal && <button className="button subtle" onClick={() => void onReveal()} type="button"><Icon name="folder" size={14} />{t("Show in Finder")}</button>}</div>
-        <textarea aria-label={t("Task")} onChange={(event) => setTask(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && task.trim()) { event.preventDefault(); void start(); } }} placeholder={t("Describe what you want the Agent to do…")} rows={5} value={task} />
-        <AttachmentComposer attachments={attachments} disabled={busy} onChange={setAttachments} />
+        <textarea aria-label={t("Task")} onChange={(event) => setTask(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && task.trim()) { event.preventDefault(); void start(); } }} placeholder={t("Describe what you want the Agent to do…")} rows={2} value={task} />
         <div className="ready-options">
           <div className="ready-control-row">
             <div className="mode-picker" role="group" aria-label={t("Run mode")}>
@@ -128,10 +80,6 @@ export function ProjectReady({
             <ReasoningEffortPicker onChange={onReasoningEffortChange} value={reasoningEffort} />
           </div>
           <button className="button primary start-run" disabled={busy || task.trim().length === 0} onClick={() => void start()} type="button">{t(busy ? "Starting…" : "Start run")}<Icon name="send" size={14} /></button>
-        </div>
-        <div className={`capability-banner ${readonly ? "readonly" : "fixture"}`}>
-          <Icon name="shield" size={16} />
-          <div><strong>{t(readonly ? "Read-only local repository" : "Writable project workspace")}</strong><span>{t(readonly ? "Execution remains bounded by the read-only workspace capability; filesystem writes stay unavailable." : "The Agent may inspect and preview file changes. Every patch commit still requires a one-time approval.")}</span></div>
         </div>
       </div>
       <div className="ready-facts"><span><Icon name="graph" size={14} />{t("Static module graph")}</span><span><Icon name="layers" size={14} />{t("Inspectable context")}</span><span><Icon name="activity" size={14} />{t("Durable trajectory")}</span></div>
@@ -153,6 +101,10 @@ export function ChatView({
   turnLimit,
   publicActivities,
   modelSurface,
+  elapsed,
+  inputTokens,
+  totalTokens,
+  progressive = false,
 }: {
   conversation: readonly ConversationTurn[];
   events: readonly TraceEvent[];
@@ -167,6 +119,10 @@ export function ChatView({
   turnLimit?: number;
   publicActivities?: readonly PublicActivitySnapshot[];
   modelSurface?: readonly ModelSurfaceSnapshot[];
+  elapsed?: string;
+  inputTokens?: number;
+  totalTokens?: number;
+  progressive?: boolean;
 }) {
   const { language, t } = useI18n();
   const endRef = useRef<HTMLDivElement>(null);
@@ -184,18 +140,18 @@ export function ChatView({
         : language === "zh-CN" ? "Agent 正在处理任务。请通过持久化轨迹查看最新的规范进度。" : "The Agent is processing the task. Follow the durable trajectory for the latest canonical progress.";
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
-  }, [conversation.length, events.length, outcome, publicActivities?.length, status]);
+  }, [conversation.length, events.length, outcome, publicActivities?.length, status, modelSurface?.length]);
   return (
     <section className="chat-view">
       <div className="chat-date"><span />{t("Today")}<span /></div>
-      {conversation.map((turn) => <ChatTurn dataSource={dataSource} events={turn.events} key={turn.runId} response={turn.response} status={turn.status} task={turn.task} />)}
-      <ChatTurn changedFiles={changedFiles} dataSource={dataSource} events={events} evidence={evidence} response={response} status={status} task={task} {...(contextBudget === undefined ? {} : { contextBudget })} {...(turnsCompleted === undefined ? {} : { turnsCompleted })} {...(turnLimit === undefined ? {} : { turnLimit })} {...(publicActivities === undefined ? {} : { publicActivities })} {...(modelSurface === undefined ? {} : { modelSurface })} />
+      {conversation.map((turn) => <ChatTurn dataSource={dataSource} events={turn.events} key={turn.runId} response={turn.response} status={turn.status} task={turn.task} {...(turn.elapsed === undefined ? {} : { elapsed: turn.elapsed })} {...(turn.inputTokens === undefined ? {} : { inputTokens: turn.inputTokens })} {...(turn.totalTokens === undefined ? {} : { totalTokens: turn.totalTokens })} />)}
+      <ChatTurn changedFiles={changedFiles} dataSource={dataSource} events={events} evidence={evidence} progressive={progressive} response={response} status={status} task={task} {...(elapsed === undefined ? {} : { elapsed })} {...(inputTokens === undefined ? {} : { inputTokens })} {...(totalTokens === undefined ? {} : { totalTokens })} {...(contextBudget === undefined ? {} : { contextBudget })} {...(turnsCompleted === undefined ? {} : { turnsCompleted })} {...(turnLimit === undefined ? {} : { turnLimit })} {...(publicActivities === undefined ? {} : { publicActivities })} {...(modelSurface === undefined ? {} : { modelSurface })} />
       <div ref={endRef} />
     </section>
   );
 }
 
-function ChatTurn({ task, response, status, events, dataSource, changedFiles = [], evidence, contextBudget, turnsCompleted, turnLimit, publicActivities, modelSurface }: {
+function ChatTurn({ task, response, status, events, dataSource, changedFiles = [], evidence, contextBudget, turnsCompleted, turnLimit, publicActivities, modelSurface, elapsed, inputTokens, totalTokens, progressive = false }: {
   task: string;
   response: string;
   status: RunStatus;
@@ -208,6 +164,10 @@ function ChatTurn({ task, response, status, events, dataSource, changedFiles = [
   turnLimit?: number;
   publicActivities?: readonly PublicActivitySnapshot[];
   modelSurface?: readonly ModelSurfaceSnapshot[];
+  elapsed?: string;
+  inputTokens?: number;
+  totalTokens?: number;
+  progressive?: boolean;
 }) {
   const { language, t } = useI18n();
   const process = publicProcess(events, publicActivities);
@@ -232,8 +192,11 @@ function ChatTurn({ task, response, status, events, dataSource, changedFiles = [
   const latestPublicPlan = visibleSurface.filter((item) => item.type === "public_plan_snapshot").at(-1);
   const latestPublicAnswer = visibleSurface.filter((item) => item.type === "answer_snapshot").at(-1);
   const actualOperations = process.filter((event) => ["tool", "patch", "test", "approval"].includes(event.kind));
+  const answerTarget = latestPublicAnswer?.text ?? response;
+  const progressiveResponse = useProgressiveText(answerTarget, progressive);
+  const answerStreaming = latestPublicAnswer?.status === "streaming" || progressiveResponse.length < answerTarget.length;
   return <>
-    <article className="chat-message user-message"><span className="avatar user-avatar">C</span><div><header><strong>{t("You")}</strong><time>{dataSource === "demo" ? "10:02" : t("recorded")}</time></header><p>{task}</p></div></article>
+    <article className="chat-message user-message"><span className="avatar user-avatar">C</span><div><header><strong>{t("You")}</strong><time>{dataSource === "demo" ? "10:02" : t("recorded")}</time>{(elapsed || inputTokens !== undefined || totalTokens !== undefined) && <span className="chat-turn-metrics">{elapsed && <span><Icon name="clock" size={11} />{elapsed}</span>}{inputTokens !== undefined && <span>{language === "zh-CN" ? "输入" : "in"} {formatTokens(inputTokens)}</span>}{totalTokens !== undefined && <span>{language === "zh-CN" ? "总计" : "total"} {formatTokens(totalTokens)}</span>}</span>}</header><p>{task}</p></div></article>
     <article className="chat-message agent-message"><span className="avatar agent-avatar"><Icon name="graph" size={15} /></span><div>
       <header><strong>TraceGraph Agent</strong><time>{dataSource === "demo" ? "10:02" : t(status === "running" || status === "indexing" ? "live" : "recorded")}</time></header>
       {contextBudget && <ContextBudgetStrip budget={contextBudget} language={language} {...(turnsCompleted === undefined ? {} : { turnsCompleted })} {...(turnLimit === undefined ? {} : { turnLimit })} />}
@@ -242,14 +205,45 @@ function ChatTurn({ task, response, status, events, dataSource, changedFiles = [
         <PublicModelSurface active={active} language={language} operations={actualOperations} surface={visibleSurface} />
         <footer><Icon name="shield" size={12} />{language === "zh-CN" ? "实时区只显示模型明确发布的计划和已验证的工具事实；供应商私有思考不会展示。" : "Live progress shows only the model's explicit public plan and verified tool facts; private provider reasoning is hidden."}</footer>
       </details>}
-      {active && latestPublicAnswer?.text
-        ? <div aria-live="polite" className="chat-live-answer"><MarkdownContent content={latestPublicAnswer.text} /><span aria-hidden="true" className="public-model-caret">▍</span></div>
+      {latestPublicAnswer?.text
+        ? <div aria-live="polite" className="chat-live-answer"><MarkdownContent content={progressiveResponse} />{(active || answerStreaming) && <span aria-hidden="true" className="public-model-caret">▍</span>}</div>
         : active
           ? <div aria-live="polite" className="chat-live-response"><span className="event-spinner" /><div><strong>{t("Working on your request")}</strong><p>{latestPublicPlan?.text ?? (language === "zh-CN" ? "正在分析请求并等待下一步公开计划…" : "Analyzing the request and waiting for the next public plan…")}</p></div></div>
-          : <MarkdownContent content={response} />}
+          : <MarkdownContent content={progressiveResponse} />}
       <div className="chat-evidence">{changedFiles.length > 0 && <span><Icon name="diff" size={13} />{changedFiles.length} {t("files")} · +{totalDiff(changedFiles).additions} −{totalDiff(changedFiles).deletions}</span>}{evidence && <span><Icon name="graph" size={13} />{t("Graph")} {evidence.graph.status}</span>}<span><Icon name="shield" size={13} />{t(status)}</span></div>
     </div></article>
   </>;
+}
+
+/**
+ * Keep the public answer readable while the Host catches up with the model
+ * surface stream. The provider stream remains authoritative; this only
+ * controls how quickly an already-safe public snapshot is painted.
+ */
+function useProgressiveText(target: string, enabled: boolean): string {
+  const [visible, setVisible] = useState(enabled ? "" : target);
+
+  useEffect(() => {
+    if (!enabled) {
+      setVisible(target);
+      return;
+    }
+    setVisible((current) => target.startsWith(current) ? current : "");
+  }, [enabled, target]);
+
+  useEffect(() => {
+    if (!enabled || visible.length >= target.length) return;
+    const remaining = target.length - visible.length;
+    const step = Math.max(1, Math.min(28, Math.ceil(remaining / 20)));
+    const timer = window.setTimeout(() => {
+      setVisible((current) => target.startsWith(current)
+        ? target.slice(0, current.length + step)
+        : target.slice(0, step));
+    }, 16);
+    return () => window.clearTimeout(timer);
+  }, [enabled, target, visible]);
+
+  return visible;
 }
 
 function PublicModelSurface({

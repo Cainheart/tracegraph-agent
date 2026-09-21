@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import type { WorkbenchClient } from "./client";
 import { ApprovalStrip } from "./components/ApprovalStrip";
-import { AttachmentComposer } from "./components/AttachmentComposer";
 import { ChangesView } from "./components/ChangesView";
 import { Icon } from "./components/Icon";
 import { Inspector } from "./components/Inspector";
@@ -59,9 +58,12 @@ export function replayTargetForEventSelection(
 }
 
 function initialTheme(): Theme {
-  if (typeof window === "undefined") return "light";
+  // TraceGraph is a long-running workbench: keep the first-run surface close
+  // to the dark, low-glare desktop tools users already expect, while still
+  // respecting an explicit local preference.
+  if (typeof window === "undefined") return "dark";
   const saved = window.localStorage.getItem(THEME_STORAGE_KEY);
-  return saved === "dark" || saved === "light" ? saved : "light";
+  return saved === "dark" || saved === "light" ? saved : "dark";
 }
 
 function initialReasoningEffort(): ReasoningEffort {
@@ -104,7 +106,6 @@ function RunHeader({
   snapshot,
   onViewChange,
   onStop,
-  onOpenSettings,
   onOpenInspector,
   stopDisabled,
   replayReadOnly,
@@ -113,7 +114,6 @@ function RunHeader({
   snapshot: ReturnType<WorkbenchClient["getSnapshot"]>;
   onViewChange: (view: MainView) => void;
   onStop: () => void;
-  onOpenSettings: () => void;
   onOpenInspector: () => void;
   stopDisabled: boolean;
   replayReadOnly: boolean;
@@ -128,8 +128,8 @@ function RunHeader({
         <div className="header-project">
           {project ? <><Icon name="branch" size={14} /><strong>{project.name}</strong>{project.branch && <><span>/</span><code>{project.branch}</code></>}</> : run ? <><Icon name="message" size={14} /><strong>{t("Plain chat")}</strong></> : <span>{t("No project selected")}</span>}
         </div>
-        {run && <div className="header-run-metrics"><StatusPill status={run.status} />{run.permission && <span className={`permission-badge ${run.permission.sandbox_mode === "danger-full-access" ? "permission-danger" : ""}`} title={`${t("Permission preset")}: ${t(run.permission.label)}`}><Icon name="shield" size={12} />{t(run.permission.label)}</span>}{run.sandboxReport && <SandboxBadge report={run.sandboxReport} />}{run.elapsed && <span><Icon name="clock" size={13} />{run.elapsed}</span>}{run.inputTokens !== undefined && <span>{(run.inputTokens / 1000).toFixed(1)}k tok</span>}{snapshot.changedFiles.length > 0 && <span className="diff-stat"><i>+{totals.additions}</i><b>−{totals.deletions}</b></span>}</div>}
-        <div className="header-actions"><span className={`host-chip connection-${snapshot.connection.state}`} title={snapshot.connection.message}><i />{snapshot.connection.state === "live" ? t("Local") : t(snapshot.connection.state)}</span><IconButton disabled={replayReadOnly} icon="settings" label={t("Settings")} onClick={onOpenSettings} /></div>
+        {run && <div className="header-run-metrics"><StatusPill status={run.status} />{run.permission && <span className={`permission-badge ${run.permission.sandbox_mode === "danger-full-access" ? "permission-danger" : ""}`} title={`${t("Permission preset")}: ${t(run.permission.label)}`}><Icon name="shield" size={12} />{t(run.permission.label)}</span>}{run.sandboxReport && <SandboxBadge report={run.sandboxReport} />}{snapshot.changedFiles.length > 0 && <span className="diff-stat"><i>+{totals.additions}</i><b>−{totals.deletions}</b></span>}</div>}
+        <div className="header-actions"><span className={`host-chip connection-${snapshot.connection.state}`} title={snapshot.connection.message}><i />{snapshot.connection.state === "live" ? t("Local") : t(snapshot.connection.state)}</span></div>
       </header>
       {run && (
         <div className="run-nav">
@@ -140,7 +140,7 @@ function RunHeader({
             ))}
           </nav>
           <div className="run-nav-actions">
-            <button className="button subtle responsive-inspector-trigger" onClick={onOpenInspector} type="button"><Icon name="sidebar" size={13} />{t("Inspector")}</button>
+            {view === "trajectory" && <button className="button subtle responsive-inspector-trigger" onClick={onOpenInspector} type="button"><Icon name="sidebar" size={13} />{t("Inspector")}</button>}
             {(run.status === "running" || run.status === "indexing" || run.status === "reconnecting" || run.status === "awaiting_plan_approval" || run.status === "needs_approval") && <button className="button subtle stop-button" disabled={stopDisabled || replayReadOnly} onClick={onStop} type="button"><Icon name="stop" size={13} />{t("Stop")}</button>}
             {run.status === "historical" && <span className="readonly-chip"><Icon name="clock" size={13} />{t("Read-only history")}</span>}
           </div>
@@ -213,6 +213,7 @@ function Workbench({ client }: { client: WorkbenchClient }) {
   const getModelConfig = useCallback(() => client.getModelConfig(), [client]);
   const getPermissionConfig = useCallback(() => client.getPermissionConfig(), [client]);
   const getTelemetryStatus = useCallback(() => client.getTelemetryStatus(), [client]);
+  const getUsage = useCallback(() => client.getUsage(), [client]);
   const listExtensions = useCallback(() => client.listExtensions(), [client]);
   const reloadExtension = useCallback((extensionName: string) => client.reloadExtension(extensionName), [client]);
   const listSkills = useCallback(() => client.listSkills(), [client]);
@@ -481,13 +482,13 @@ function Workbench({ client }: { client: WorkbenchClient }) {
         {run && <StatusPill status={run.status} />}
       </div>
       <div className="desktop-app">
-        <RunHeader onOpenInspector={() => setDetailsOpen(true)} onOpenSettings={() => setSettingsOpen(true)} onStop={() => void cancelRun()} onViewChange={setView} replayReadOnly={replayReadOnly} snapshot={snapshot} stopDisabled={cancelBusy || run?.status === "reconnecting" || run?.inputQueue.pending.some(({ kind }) => kind === "cancel") === true} view={view} />
+        <RunHeader onOpenInspector={() => setDetailsOpen(true)} onStop={() => void cancelRun()} onViewChange={(nextView) => { setView(nextView); if (nextView !== "trajectory") setDetailsOpen(false); if (nextView !== "chat") setLogOpen(false); }} replayReadOnly={replayReadOnly} snapshot={snapshot} stopDisabled={cancelBusy || run?.status === "reconnecting" || run?.inputQueue.pending.some(({ kind }) => kind === "cancel") === true} view={view} />
         {replay && <ReplayBanner error={replayError} onReturnToLive={returnToLive} onStep={(direction) => { setReplayError(null); void client.stepReplay(direction).catch((error: unknown) => setReplayError(error instanceof Error ? error.message : "Replay step failed")); }} replay={replay} />}
-        <div className={`workspace ${view === "changes" ? "workspace-changes" : ""}`}>
-          <Sidebar onChooseProject={chooseProject} onDeleteSession={(sessionId) => client.deleteSession(sessionId)} onPreviewState={previewState} onRemoveProject={async (projectId) => { await client.removeProject(projectId); }} onResumeSession={resumeSession} onReturnHome={() => void client.returnHome()} onSearchSessions={(query) => client.searchSessions(query)} onSelectProject={(projectId) => void client.chooseProjectById(projectId)} onSelectSession={openSession} readOnly={replayReadOnly} snapshot={snapshot} />
+        <div className={`workspace ${view === "changes" ? "workspace-changes" : ""} ${view === "chat" ? "workspace-chat" : ""}`}>
+          <Sidebar onChooseProject={chooseProject} onDeleteSession={(sessionId) => client.deleteSession(sessionId)} onOpenLocal={(access) => client.openLocalProject(access)} onOpenSettings={() => setSettingsOpen(true)} onPreviewState={previewState} onRemoveProject={async (projectId) => { await client.removeProject(projectId); }} onResumeSession={resumeSession} onReturnHome={() => void client.returnHome()} onSearchSessions={(query) => client.searchSessions(query)} onSelectProject={(projectId) => void client.chooseProjectById(projectId)} onSelectSession={openSession} readOnly={replayReadOnly} snapshot={snapshot} />
 
-          {!snapshot.project && !run && <NoProject connection={snapshot.connection} onCreate={(name) => client.createProject(name)} onOpenLocal={(access) => client.openLocalProject(access)} onReasoningEffortChange={setReasoningEffort} onStartChat={startChat} reasoningEffort={reasoningEffort} />}
-          {snapshot.project && !run && <ProjectReady key={snapshot.project.id} onReasoningEffortChange={setReasoningEffort} onStart={startRun} project={snapshot.project} readonly={!projectCanExecute} reasoningEffort={reasoningEffort} {...(snapshot.project.location?.canReveal ? { onReveal: () => client.revealProject(snapshot.project!.id) } : {})} />}
+          {!snapshot.project && !run && <NoProject onReasoningEffortChange={setReasoningEffort} onStartChat={startChat} reasoningEffort={reasoningEffort} />}
+          {snapshot.project && !run && <ProjectReady key={snapshot.project.id} onReasoningEffortChange={setReasoningEffort} onStart={startRun} readonly={!projectCanExecute} reasoningEffort={reasoningEffort} />}
 
           {run && view !== "changes" && (
             <main className="main-workbench">
@@ -505,6 +506,10 @@ function Workbench({ client }: { client: WorkbenchClient }) {
                   {...(run.publicActivities === undefined ? {} : { publicActivities: run.publicActivities })}
                   {...(run.modelSurface === undefined ? {} : { modelSurface: run.modelSurface })}
                   {...(run.outcome === undefined ? {} : { outcome: run.outcome })}
+                  {...(run.elapsed === undefined ? {} : { elapsed: run.elapsed })}
+                  {...(run.inputTokens === undefined ? {} : { inputTokens: run.inputTokens })}
+                  {...(run.contextBudget?.providerUsage?.totalTokens === undefined ? {} : { totalTokens: run.contextBudget.providerUsage.totalTokens })}
+                  progressive
                   status={run.status}
                   task={run.task}
                 />
@@ -538,55 +543,51 @@ function Workbench({ client }: { client: WorkbenchClient }) {
                   todos={run.todos}
                 />
               )}
-              <footer className="composer-shell">
-                  {run.status === "awaiting_plan_approval" && run.pendingPlan && (
-                    <PlanApprovalBanner busy={planApprovalBusy} disabled={replayReadOnly || busyTodoId !== null} error={planApprovalError} eventId={run.pendingPlan.eventId} onApprove={() => void approvePlan()} todos={run.todos} />
-                  )}
-                  {run.mode === "plan" && (run.status === "running" || run.status === "indexing") && (
-                    <div className="plan-mode-banner" role="status"><Icon name="shield" size={16} /><span><strong>{t("Plan mode")}</strong><small>{t("Write tools are disabled while the Agent builds an inspectable Todo plan.")}</small></span></div>
-                  )}
-                  {run.status === "running" || run.status === "indexing" || run.status === "awaiting_plan_approval" || run.status === "needs_approval" || run.status === "reconnecting" || run.status === "interrupted" || run.status === "needs_manual_review" ? (
-                    <SteeringComposer
-                      busy={steeringBusy || approvalBusy || planApprovalBusy || busyTodoId !== null}
-                      cancelBusy={cancelBusy}
-                      disabledReason={replayReadOnly
-                        ? "Replay is read-only. Return to now to make changes."
-                        : run.status === "reconnecting"
-                        ? "Steering is unavailable while reconnecting to the Host."
-                        : run.status === "interrupted"
-                          ? "Steering is unavailable while the Run is interrupted. Resume the Run first."
-                          : run.status === "needs_manual_review"
-                            ? "Steering is unavailable while the Run needs manual review."
-                            : null}
-                      error={steeringError}
-                      kind={steeringKind}
-                      {...(run.inputQueue.lastConsumed === undefined ? {} : { lastConsumed: run.inputQueue.lastConsumed })}
-                      onCancel={() => void cancelRun()}
-                      onKindChange={setSteeringKind}
-                      onSubmit={() => void submitSteering()}
-                      onValueChange={setFollowupTask}
-                      pending={run.inputQueue.pending}
-                      value={followupTask}
-                    />
-                  ) : (
-                    <>
-                      <AttachmentComposer attachments={followupAttachments} compact disabled={replayReadOnly || followupBusy} onChange={setFollowupAttachments} />
-                      <div className="composer-input"><Icon name="message" size={16} /><textarea aria-label={t("New task")} disabled={replayReadOnly} onChange={(event) => setFollowupTask(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void startFollowup(); } }} placeholder={t("Ask a follow-up or create something…")} rows={2} value={followupTask} /><button aria-label={t("Send message")} className="button primary" disabled={replayReadOnly || followupBusy || !followupTask.trim()} onClick={() => void startFollowup()} type="button"><Icon name="send" size={15} /></button></div>
-                    </>
-                  )}
-                  <div className="composer-tools">
-                    <ReasoningEffortPicker compact disabled={replayReadOnly || run.status === "running" || run.status === "indexing" || run.status === "reconnecting" || run.status === "awaiting_plan_approval" || run.status === "needs_approval"} onChange={setReasoningEffort} value={reasoningEffort} />
-                    <button className="composer-tool-button" onClick={() => setLogOpen(true)} type="button"><Icon name="terminal" size={13} />{t("Test / raw log")}</button>
-                    <span className="mode-chip"><Icon name={run.mode === "execute" ? "play" : "search"} size={13} />{t(run.mode === "execute" ? "Execute" : "Plan")}</span>
-                  </div>
-                </footer>
+              {view === "chat" && <footer className="composer-shell">
+                {run.status === "awaiting_plan_approval" && run.pendingPlan && (
+                  <PlanApprovalBanner busy={planApprovalBusy} disabled={replayReadOnly || busyTodoId !== null} error={planApprovalError} eventId={run.pendingPlan.eventId} onApprove={() => void approvePlan()} todos={run.todos} />
+                )}
+                {run.mode === "plan" && (run.status === "running" || run.status === "indexing") && (
+                  <div className="plan-mode-banner" role="status"><Icon name="shield" size={16} /><span><strong>{t("Plan mode")}</strong><small>{t("Write tools are disabled while the Agent builds an inspectable Todo plan.")}</small></span></div>
+                )}
+                <div className="composer-tools">
+                  <ReasoningEffortPicker compact disabled={replayReadOnly || run.status === "running" || run.status === "indexing" || run.status === "reconnecting" || run.status === "awaiting_plan_approval" || run.status === "needs_approval"} onChange={setReasoningEffort} value={reasoningEffort} />
+                  <button className="composer-tool-button" onClick={() => setLogOpen(true)} type="button"><Icon name="terminal" size={13} />{t("Test / raw log")}</button>
+                </div>
+                {run.status === "running" || run.status === "indexing" || run.status === "awaiting_plan_approval" || run.status === "needs_approval" || run.status === "reconnecting" || run.status === "interrupted" || run.status === "needs_manual_review" ? (
+                  <SteeringComposer
+                    busy={steeringBusy || approvalBusy || planApprovalBusy || busyTodoId !== null}
+                    cancelBusy={cancelBusy}
+                    disabledReason={replayReadOnly
+                      ? "Replay is read-only. Return to now to make changes."
+                      : run.status === "reconnecting"
+                      ? "Steering is unavailable while reconnecting to the Host."
+                      : run.status === "interrupted"
+                        ? "Steering is unavailable while the Run is interrupted. Resume the Run first."
+                        : run.status === "needs_manual_review"
+                          ? "Steering is unavailable while the Run needs manual review."
+                          : null}
+                    error={steeringError}
+                    kind={steeringKind}
+                    {...(run.inputQueue.lastConsumed === undefined ? {} : { lastConsumed: run.inputQueue.lastConsumed })}
+                    onCancel={() => void cancelRun()}
+                    onKindChange={setSteeringKind}
+                    onSubmit={() => void submitSteering()}
+                    onValueChange={setFollowupTask}
+                    pending={run.inputQueue.pending}
+                    value={followupTask}
+                  />
+                ) : (
+                  <div className="composer-input"><Icon name="message" size={16} /><textarea aria-label={t("New task")} disabled={replayReadOnly} onChange={(event) => setFollowupTask(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void startFollowup(); } }} placeholder={t("Ask a follow-up or create something…")} rows={2} value={followupTask} /><button aria-label={t("Send message")} className="button primary" disabled={replayReadOnly || followupBusy || !followupTask.trim()} onClick={() => void startFollowup()} type="button"><Icon name="send" size={15} /></button></div>
+                )}
+              </footer>}
               {run.approval && (
                 <ApprovalStrip approval={run.approval} busy={approvalBusy} disabled={replayReadOnly} onApprove={() => void approve()} onReject={() => void reject()} onViewDiff={reviewPendingPatch} />
               )}
             </main>
           )}
 
-          {run && view !== "changes" && (
+          {run && view === "trajectory" && (
             <Inspector event={displayedEvent} onLoadContextArchive={(artifactId) => client.loadContextArchive(run.id, artifactId)} scope={selectedEvidence} />
           )}
 
@@ -598,10 +599,10 @@ function Workbench({ client }: { client: WorkbenchClient }) {
 
         </div>
 
-        {detailsOpen && run && (
+        {detailsOpen && run && view === "trajectory" && (
           <><button aria-label={t("Close details")} className="drawer-backdrop" onClick={() => setDetailsOpen(false)} type="button" /><Inspector drawer event={displayedEvent} onClose={() => setDetailsOpen(false)} onLoadContextArchive={(artifactId) => client.loadContextArchive(run.id, artifactId)} scope={selectedEvidence} /></>
         )}
-        {logOpen && (
+        {logOpen && view === "chat" && (
           <><button aria-label={t("Close log")} className="drawer-backdrop" onClick={() => setLogOpen(false)} type="button" /><section className="bottom-drawer"><header><div><Icon name="terminal" size={15} /><strong>{t("Test / raw log")}</strong><span>{selectedEvidence.evidence.test.artifactId ?? t("unavailable")}</span></div><IconButton icon="close" label={t("Close log")} onClick={() => setLogOpen(false)} /></header><pre>{selectedEvidence.evidence.test.content ?? selectedEvidence.evidence.test.message}</pre></section></>
         )}
       </div>
@@ -612,6 +613,7 @@ function Workbench({ client }: { client: WorkbenchClient }) {
         onGetModelConfig={getModelConfig}
         onGetPermissionConfig={getPermissionConfig}
         onGetTelemetryStatus={getTelemetryStatus}
+        onGetUsage={getUsage}
         onListExtensions={listExtensions}
         onReloadExtension={reloadExtension}
         onListSkills={listSkills}

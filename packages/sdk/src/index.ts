@@ -52,6 +52,7 @@ import {
   TeamSweepLostMembersRequestSchema,
   TeamTaskWriteRequestSchema,
   TelemetryStatusSchema,
+  UsageSnapshotSchema,
   TodoListSchema,
   TodoMutationResultSchema,
   TodoWriteRequestSchema,
@@ -103,6 +104,7 @@ import {
   type TeamSweepLostMembersRequest,
   type TeamTaskWriteRequest,
   type TelemetryStatus,
+  type UsageSnapshot,
   type TodoList,
   type TodoMutationResult,
   type TodoWriteInput,
@@ -363,6 +365,12 @@ export class TraceGraphClient {
   async getTelemetryStatus(): Promise<TelemetryStatusSnapshot> {
     return TelemetryStatusSchema.parse(
       await this.#requestUnknown("/api/telemetry-status"),
+    );
+  }
+
+  async getUsage(): Promise<UsageSnapshot> {
+    return UsageSnapshotSchema.parse(
+      await this.#requestUnknown("/api/usage"),
     );
   }
 

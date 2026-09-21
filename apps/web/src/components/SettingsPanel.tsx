@@ -13,12 +13,23 @@ import type {
   PermissionConfigSnapshot,
   SafeCredentialMetadata,
   TelemetryStatusSnapshot,
+  UsageSnapshotSnapshot,
 } from "../client";
 import { useI18n } from "../i18n";
 import { Icon } from "./Icon";
 import { IconButton } from "./Primitives";
 
 export type Theme = "light" | "dark";
+
+type SettingsSection = "general" | "models" | "appearance" | "tools" | "usage";
+
+const SETTINGS_SECTIONS: readonly { id: SettingsSection; label: string; description: string; icon: "settings" | "layers" | "moon" | "spark" | "activity" | "terminal" | "code" }[] = [
+  { id: "general", label: "General", description: "Language, permissions, and telemetry", icon: "settings" },
+  { id: "models", label: "Models", description: "Providers and credentials", icon: "layers" },
+  { id: "appearance", label: "Appearance", description: "Theme and visual preferences", icon: "moon" },
+  { id: "tools", label: "Agent & tools", description: "Skills, MCP, LSP, and extensions", icon: "spark" },
+  { id: "usage", label: "Usage and costs", description: "Token and cost visibility", icon: "activity" },
+];
 
 type ModelOption = { value: string; label: string };
 type ProviderPreset = { label: string; protocol: ModelProtocol; baseUrl: string; models: readonly ModelOption[] };
@@ -360,7 +371,7 @@ export function McpSettingsSection({
             <article className="settings-extension" key={server.name}>
               <div>
                 <strong><code>{server.name}</code></strong>
-                <small>{server.state} · {server.tool_count} {t("tools")} · {server.required ? t("required") : t("optional")}</small>
+            <small>{t(server.state)} · {server.tool_count} {t("tools")} · {server.required ? t("required") : t("optional")}</small>
                 {server.state === "degraded" && (
                   <small className="settings-message">{t("Degraded: the Host continued without this MCP server.")} {server.error_message ?? server.error_code}</small>
                 )}
@@ -404,7 +415,7 @@ export function LspSettingsSection({
             <article className="settings-extension" key={server.name}>
               <div>
                 <strong><code>{server.name}</code></strong>
-                <small>{server.state} · {server.diagnostics_count} {t("diagnostics")} · {server.file_extensions.join(", ")}</small>
+                <small>{t(server.state)} · {server.diagnostics_count} {t("diagnostics")} · {server.file_extensions.join(", ")}</small>
                 {server.error_message && <small className="settings-message">{server.error_code}: {server.error_message}</small>}
               </div>
             </article>
@@ -429,6 +440,7 @@ export function SettingsPanel({
   onGetModelConfig,
   onConfigureModel,
   onGetTelemetryStatus,
+  onGetUsage,
   onListExtensions,
   onReloadExtension,
   onListSkills,
@@ -444,6 +456,7 @@ export function SettingsPanel({
   onGetModelConfig?: () => Promise<ModelConfigSnapshot>;
   onConfigureModel?: (input: ConfigureModelInput) => Promise<ModelConfigSnapshot>;
   onGetTelemetryStatus?: () => Promise<TelemetryStatusSnapshot>;
+  onGetUsage?: () => Promise<UsageSnapshotSnapshot>;
   onListExtensions?: () => Promise<readonly ExtensionStatusSnapshot[]>;
   onReloadExtension?: (extensionName: string) => Promise<ExtensionStatusSnapshot>;
   onListSkills?: () => Promise<readonly SkillProjectInspectionSnapshot[]>;
@@ -462,6 +475,9 @@ export function SettingsPanel({
   const [modelSnapshot, setModelSnapshot] = useState<ModelConfigSnapshot | null>(null);
   const [telemetrySnapshot, setTelemetrySnapshot] = useState<TelemetryStatusSnapshot | null>(null);
   const [telemetryMessage, setTelemetryMessage] = useState("");
+  const [usageSnapshot, setUsageSnapshot] = useState<UsageSnapshotSnapshot | null>(null);
+  const [usageLoading, setUsageLoading] = useState(false);
+  const [usageMessage, setUsageMessage] = useState("");
   const [extensionStatuses, setExtensionStatuses] = useState<readonly ExtensionStatusSnapshot[] | null>(null);
   const [extensionMessage, setExtensionMessage] = useState("");
   const [reloadingExtension, setReloadingExtension] = useState<string | null>(null);
@@ -473,6 +489,8 @@ export function SettingsPanel({
   const [lspMessage, setLspMessage] = useState("");
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
+  const [activeSection, setActiveSection] = useState<SettingsSection>("general");
+  const [languageMessage, setLanguageMessage] = useState("");
   useEffect(() => {
     if (!open || !onGetModelConfig) return;
     void onGetModelConfig().then((value) => {
@@ -508,6 +526,21 @@ export function SettingsPanel({
     });
     return () => { current = false; };
   }, [open, onGetTelemetryStatus]);
+  useEffect(() => {
+    if (!open || activeSection !== "usage" || !onGetUsage) return;
+    let current = true;
+    setUsageSnapshot(null);
+    setUsageLoading(true);
+    setUsageMessage("");
+    void onGetUsage().then((value) => {
+      if (current) setUsageSnapshot(value);
+    }).catch((error: unknown) => {
+      if (current) setUsageMessage(error instanceof Error ? error.message : String(error));
+    }).finally(() => {
+      if (current) setUsageLoading(false);
+    });
+    return () => { current = false; };
+  }, [activeSection, onGetUsage, open]);
   useEffect(() => {
     if (!open || !onListExtensions) return;
     let current = true;
@@ -560,6 +593,8 @@ export function SettingsPanel({
 
   const credentialStatus = credentialStatusForProvider(modelSnapshot, provider);
   const credentialReadOnly = modelSettingsAreReadOnly(modelSnapshot);
+  const activeSectionLabel = SETTINGS_SECTIONS.find(({ id }) => id === activeSection)?.label ?? "General";
+  const settingsSectionClass = (section: SettingsSection) => `settings-section-group ${activeSection === section ? "is-active" : "is-hidden"}`;
 
   const save = async () => {
     if (!onConfigureModel || credentialReadOnly) return;
@@ -629,18 +664,32 @@ export function SettingsPanel({
     <>
       <button aria-label={t("Close settings")} className="settings-backdrop" onClick={onClose} type="button" />
       <section aria-label={t("Settings")} aria-modal="true" className="settings-panel" role="dialog">
-        <header>
-          <div><span className="settings-icon"><Icon name="settings" size={16} /></span><div><strong>{t("Settings")}</strong><small>{t("Interface preferences")}</small></div></div>
-          <IconButton icon="close" label={t("Close settings")} onClick={onClose} />
-        </header>
+        <div className="settings-shell">
+          <aside className="settings-sidebar">
+            <button className="settings-back-link" onClick={onClose} type="button"><Icon name="arrow-left" size={16} />{t("Back to workbench")}</button>
+            <div className="settings-sidebar-brand"><span className="settings-icon"><Icon name="settings" size={16} /></span><span><strong>{t("Settings")}</strong><small>{t("Interface preferences")}</small></span></div>
+            <label className="settings-search"><Icon name="search" size={14} /><input aria-label={t("Search settings")} placeholder={t("Search settings")} type="search" /></label>
+            <nav aria-label={t("Settings navigation")} className="settings-nav">
+              {SETTINGS_SECTIONS.map((section) => <button aria-current={activeSection === section.id ? "page" : undefined} className={activeSection === section.id ? "active" : ""} key={section.id} onClick={() => setActiveSection(section.id)} type="button"><Icon name={section.icon} size={15} /><span><strong>{t(section.label)}</strong><small>{t(section.description)}</small></span></button>)}
+            </nav>
+            <div className="settings-sidebar-footer"><span className="sidebar-account-avatar">TG</span><span><strong>TraceGraph</strong><small>{t("Local workspace")}</small></span></div>
+          </aside>
 
-        <div className="settings-body">
+          <main className="settings-content">
+            <header>
+              <div><strong>{t(activeSectionLabel)}</strong><small>{t("TraceGraph workspace preferences")}</small></div>
+              <IconButton icon="close" label={t("Close settings")} onClick={onClose} />
+            </header>
+
+            <div className="settings-body">
+          <div className={settingsSectionClass("general")}>
           <section className="settings-section">
             <div className="settings-section-copy"><strong>{t("Language")}</strong><span>{t("Choose the interface language")}</span></div>
             <div aria-label={t("Language")} className="settings-segmented" role="group">
-              <button aria-pressed={language === "zh-CN"} className={language === "zh-CN" ? "active" : ""} onClick={() => setLanguage("zh-CN")} type="button">中文</button>
-              <button aria-pressed={language === "en"} className={language === "en" ? "active" : ""} onClick={() => setLanguage("en")} type="button">English</button>
+              <button aria-pressed={language === "zh-CN"} className={language === "zh-CN" ? "active" : ""} data-language="zh-CN" onClick={() => { setLanguage("zh-CN"); setLanguageMessage("Language preference saved locally."); }} type="button">中文</button>
+              <button aria-pressed={language === "en"} className={language === "en" ? "active" : ""} data-language="en" onClick={() => { setLanguage("en"); setLanguageMessage("Language preference saved locally."); }} type="button">English</button>
             </div>
+            {languageMessage && <small className="settings-inline-status" role="status">{t(languageMessage)}</small>}
           </section>
 
           <PermissionSettingsSection
@@ -656,7 +705,9 @@ export function SettingsPanel({
             snapshot={telemetrySnapshot}
             supported={Boolean(onGetTelemetryStatus)}
           />
+          </div>
 
+          <div className={settingsSectionClass("tools")}>
           <ExtensionSettingsSection
             message={extensionMessage}
             onReload={(name) => void reloadExtension(name)}
@@ -682,7 +733,9 @@ export function SettingsPanel({
             snapshot={lspSnapshot}
             supported={Boolean(onGetLspStatus)}
           />
+          </div>
 
+          <div className={settingsSectionClass("models")}>
           <section className="settings-section settings-model-section">
             <div className="settings-section-copy"><strong>{t("Model provider")}</strong><span>{t(credentialStatus.configured ? "Configured · ready for real project tasks" : "Not configured · choose a provider to run tasks")}</span></div>
             <label><span>{t("Provider")}</span><select onChange={(event) => changeProvider(event.target.value as ModelProvider)} value={provider}>{Object.entries(MODEL_PROVIDER_PRESETS).map(([id, preset]) => <option key={id} value={id}>{preset.label}</option>)}</select></label>
@@ -696,18 +749,14 @@ export function SettingsPanel({
                 {selectedModel === CUSTOM_MODEL && <label><span>{t("Custom model ID")}</span><input onChange={(event) => setModel(event.target.value)} placeholder={t("Enter model ID")} value={model} /></label>}
               </>
             )}
-            <ModelCredentialStatus status={credentialStatus} />
-            {credentialReadOnly && !credentialStatus.credential && (
-              <small className="settings-readonly-message">
-                {t("Model settings are controlled by an environment credential. Change the environment variable and restart TraceGraph to switch providers.")}
-              </small>
-            )}
             <label><span>{t("API Key")}</span><input autoComplete="new-password" disabled={credentialReadOnly} onChange={(event) => setApiKey(event.target.value)} placeholder={credentialStatus.hasKey ? t("Enter a new key to replace the current one") : "sk-…"} spellCheck={false} type="password" value={apiKey} /></label>
             <button className="button primary" disabled={credentialReadOnly || saving || (!credentialStatus.hasKey && !apiKey.trim()) || !baseUrl.trim() || !model.trim()} onClick={() => void save()} type="button">{t(saving ? "Saving…" : "Save model configuration")}</button>
             {message && <small className="settings-message">{message}</small>}
             <small>{t("The API Key is write-only: it is sent to the loopback Host and is never returned to the browser.")}</small>
           </section>
+          </div>
 
+          <div className={settingsSectionClass("appearance")}>
           <section className="settings-section">
             <div className="settings-section-copy"><strong>{t("Appearance")}</strong><span>{t("Choose the workbench color theme")}</span></div>
             <div aria-label={t("Appearance")} className="theme-options" role="group">
@@ -723,9 +772,25 @@ export function SettingsPanel({
               </button>
             </div>
           </section>
-        </div>
+          </div>
 
-        <footer>{t("More workspace settings will appear here as TraceGraph grows.")}</footer>
+          <div className={settingsSectionClass("usage")}>
+            <section className="settings-section settings-info-section">
+              <div className="settings-section-copy"><strong>{t("Usage and costs")}</strong><span>{t("A local, inspectable view of TraceGraph activity")}</span></div>
+              {usageLoading && <small className="settings-inline-status">{t("Loading usage…")}</small>}
+              {usageMessage && <small className="settings-message">{usageMessage}</small>}
+              <div className="settings-info-grid">
+                <article><span>{t("Runs in ledger")}</span><strong>{usageSnapshot ? usageSnapshot.run_count.toLocaleString() : "—"}</strong><small>{t(usageSnapshot?.source === "ledger" ? "Read from the canonical event ledger" : "No ledger data is available")}</small></article>
+                <article><span>{t("Total tokens")}</span><strong>{usageSnapshot ? usageSnapshot.total_tokens.toLocaleString() : "—"}</strong><small>{usageSnapshot ? `${t("Input")} ${usageSnapshot.input_tokens.toLocaleString()} · ${t("Output")} ${usageSnapshot.output_tokens.toLocaleString()}` : t("Waiting for Host usage")}</small></article>
+                <article><span>{t("Reported costs")}</span><strong>{usageSnapshot?.costs.length ? usageSnapshot.costs.map(({ amount, currency }) => `${amount.toFixed(4)} ${currency}`).join(" · ") : "—"}</strong><small>{t("Only provider-reported costs are included")}</small></article>
+              </div>
+              {usageSnapshot && <small className="settings-muted-note">{t("Cached input")} {usageSnapshot.cached_input_tokens.toLocaleString()} · {t("Reasoning output")} {usageSnapshot.reasoning_output_tokens.toLocaleString()} · {new Date(usageSnapshot.generated_at).toLocaleString()}</small>}
+            </section>
+          </div>
+
+            </div>
+          </main>
+        </div>
       </section>
     </>
   );

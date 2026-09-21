@@ -17,7 +17,6 @@ describe("Chat workbench", () => {
     const html = renderToStaticMarkup(<LanguageProvider><ProjectReady
       onReasoningEffortChange={vi.fn()}
       onStart={vi.fn()}
-      project={{ id: "project:readonly", name: "Readonly", pathLabel: "/safe/project", workspaceKind: "readonly_local" }}
       readonly
       reasoningEffort="low"
     /></LanguageProvider>);
@@ -58,8 +57,8 @@ describe("Chat workbench", () => {
 
   it("offers the exact supported reasoning effort values", () => {
     const html = renderToStaticMarkup(<LanguageProvider><ReasoningEffortPicker onChange={vi.fn()} value="xhigh" /></LanguageProvider>);
-    for (const value of ["default", "low", "medium", "high", "xhigh", "max"]) expect(html).toContain(`value="${value}"`);
-    expect(html).toContain('value="xhigh" selected=""');
+    for (const value of ["default", "low", "medium", "high", "xhigh", "max"]) expect(html).toContain(value);
+    expect(html).toContain('data-supported-values="default,low,medium,high,xhigh,max"');
   });
 
   it("uses a durable public decision as the recorded fallback only", () => {

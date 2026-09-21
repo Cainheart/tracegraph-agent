@@ -21,6 +21,7 @@ import {
   TodoListSchema,
   TodoWriteInputSchema,
   TokenEstimateSchema,
+  UsageSnapshotSchema,
   UserInputConsumedDataSchema,
   UserInputQueuedDataSchema,
   WireSessionEventSchema,
@@ -59,6 +60,7 @@ import {
   type TeamMutationResult,
   type TeamTaskWriteRequest,
   type TelemetryStatus,
+  type UsageSnapshot,
   type UserInputKind,
   type WireSessionEvent,
 } from "@tracegraph/contracts";
@@ -131,6 +133,7 @@ export interface TraceGraphSdkPort {
   getPermissionConfig?(): Promise<PermissionSettingsResponse>;
   configurePermissionPreset?(input: Omit<PermissionPresetUpdateRequest, "command_id"> & { command_id?: string }): Promise<PermissionSettingsResponse>;
   getTelemetryStatus?(): Promise<TelemetryStatus>;
+  getUsage?(): Promise<UsageSnapshot>;
   listExtensions?(): Promise<readonly ExtensionStatus[]>;
   reloadExtension?(extensionName: string): Promise<ExtensionStatus>;
   listSkills?(): Promise<readonly SkillProjectInspection[]>;
@@ -691,6 +694,14 @@ export class LiveTraceGraphClient implements WorkbenchClient {
       throw new Error("This Host client does not support telemetry status");
     }
     return TelemetryStatusSchema.parse(await this.sdk.getTelemetryStatus());
+  }
+
+  async getUsage(): Promise<UsageSnapshot> {
+    await this.initialize();
+    if (!this.sdk.getUsage) {
+      throw new Error("This Host client does not support aggregate usage");
+    }
+    return UsageSnapshotSchema.parse(await this.sdk.getUsage());
   }
 
   async listExtensions(): Promise<readonly ExtensionStatusSnapshot[]> {
@@ -1555,6 +1566,9 @@ export class LiveTraceGraphClient implements WorkbenchClient {
       status: run.status,
       response: run.outcome ?? run.currentStep,
       events: run.events,
+      ...(run.elapsed === undefined ? {} : { elapsed: run.elapsed }),
+      ...(run.inputTokens === undefined ? {} : { inputTokens: run.inputTokens }),
+      ...(run.contextBudget?.providerUsage?.totalTokens === undefined ? {} : { totalTokens: run.contextBudget.providerUsage.totalTokens }),
     }]);
   }
 
