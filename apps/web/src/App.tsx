@@ -561,36 +561,38 @@ function Workbench({ client }: { client: WorkbenchClient }) {
                 {run.mode === "plan" && (run.status === "running" || run.status === "indexing") && (
                   <div className="plan-mode-banner" role="status"><Icon name="shield" size={16} /><span><strong>{t("Plan mode")}</strong><small>{t("Write tools are disabled while the Agent builds an inspectable Todo plan.")}</small></span></div>
                 )}
-                <div className="composer-tools">
-                  <ReasoningEffortPicker compact disabled={replayReadOnly || run.status === "running" || run.status === "indexing" || run.status === "reconnecting" || run.status === "awaiting_plan_approval" || run.status === "needs_approval"} onChange={setReasoningEffort} value={reasoningEffort} />
-                  <button className="composer-tool-button" onClick={() => setLogOpen(true)} type="button"><Icon name="terminal" size={13} />{t("Test / raw log")}</button>
+                <div className="composer-surface" data-composer-surface="run">
+                  <div className="composer-tools">
+                    <ReasoningEffortPicker compact disabled={replayReadOnly || run.status === "running" || run.status === "indexing" || run.status === "reconnecting" || run.status === "awaiting_plan_approval" || run.status === "needs_approval"} onChange={setReasoningEffort} value={reasoningEffort} />
+                    <button className="composer-tool-button" onClick={() => setLogOpen(true)} type="button"><Icon name="terminal" size={13} />{t("Test / raw log")}</button>
+                  </div>
+                  {run.status === "running" || run.status === "indexing" || run.status === "awaiting_plan_approval" || run.status === "needs_approval" || run.status === "reconnecting" || run.status === "interrupted" || run.status === "needs_manual_review" ? (
+                    <SteeringComposer
+                      busy={steeringBusy || approvalBusy || planApprovalBusy || busyTodoId !== null}
+                      cancelBusy={cancelBusy}
+                      disabledReason={replayReadOnly
+                        ? "Replay is read-only. Return to now to make changes."
+                        : run.status === "reconnecting"
+                        ? "Steering is unavailable while reconnecting to the Host."
+                        : run.status === "interrupted"
+                          ? "Steering is unavailable while the Run is interrupted. Resume the Run first."
+                          : run.status === "needs_manual_review"
+                            ? "Steering is unavailable while the Run needs manual review."
+                            : null}
+                      error={steeringError}
+                      kind={steeringKind}
+                      {...(run.inputQueue.lastConsumed === undefined ? {} : { lastConsumed: run.inputQueue.lastConsumed })}
+                      onCancel={() => void cancelRun()}
+                      onKindChange={setSteeringKind}
+                      onSubmit={() => void submitSteering()}
+                      onValueChange={setFollowupTask}
+                      pending={run.inputQueue.pending}
+                      value={followupTask}
+                    />
+                  ) : (
+                    <div className="composer-input"><Icon name="message" size={16} /><textarea aria-label={t("New task")} disabled={replayReadOnly} onChange={(event) => setFollowupTask(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void startFollowup(); } }} placeholder={t("Ask a follow-up or create something…")} rows={2} value={followupTask} /><button aria-label={t("Send message")} className="button primary" disabled={replayReadOnly || followupBusy || !followupTask.trim()} onClick={() => void startFollowup()} type="button"><Icon name="send" size={15} /></button></div>
+                  )}
                 </div>
-                {run.status === "running" || run.status === "indexing" || run.status === "awaiting_plan_approval" || run.status === "needs_approval" || run.status === "reconnecting" || run.status === "interrupted" || run.status === "needs_manual_review" ? (
-                  <SteeringComposer
-                    busy={steeringBusy || approvalBusy || planApprovalBusy || busyTodoId !== null}
-                    cancelBusy={cancelBusy}
-                    disabledReason={replayReadOnly
-                      ? "Replay is read-only. Return to now to make changes."
-                      : run.status === "reconnecting"
-                      ? "Steering is unavailable while reconnecting to the Host."
-                      : run.status === "interrupted"
-                        ? "Steering is unavailable while the Run is interrupted. Resume the Run first."
-                        : run.status === "needs_manual_review"
-                          ? "Steering is unavailable while the Run needs manual review."
-                          : null}
-                    error={steeringError}
-                    kind={steeringKind}
-                    {...(run.inputQueue.lastConsumed === undefined ? {} : { lastConsumed: run.inputQueue.lastConsumed })}
-                    onCancel={() => void cancelRun()}
-                    onKindChange={setSteeringKind}
-                    onSubmit={() => void submitSteering()}
-                    onValueChange={setFollowupTask}
-                    pending={run.inputQueue.pending}
-                    value={followupTask}
-                  />
-                ) : (
-                  <div className="composer-input"><Icon name="message" size={16} /><textarea aria-label={t("New task")} disabled={replayReadOnly} onChange={(event) => setFollowupTask(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void startFollowup(); } }} placeholder={t("Ask a follow-up or create something…")} rows={2} value={followupTask} /><button aria-label={t("Send message")} className="button primary" disabled={replayReadOnly || followupBusy || !followupTask.trim()} onClick={() => void startFollowup()} type="button"><Icon name="send" size={15} /></button></div>
-                )}
               </footer>}
               {run.approval && (
                 <ApprovalStrip approval={run.approval} busy={approvalBusy} disabled={replayReadOnly} error={approvalError} onApprove={() => void approve()} onReject={() => void reject()} onViewDiff={reviewPendingPatch} />

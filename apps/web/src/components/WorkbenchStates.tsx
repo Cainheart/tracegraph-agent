@@ -260,8 +260,8 @@ function ChatTurn({ task, response, status, events, dataSource, changedFiles = [
   const progressiveResponse = useProgressiveText(answerTarget, shouldUseProgressiveAnswer(status, progressive));
   const answerStreaming = latestPublicAnswer?.status === "streaming" || progressiveResponse.length < answerTarget.length;
   return <>
-    <article className="chat-message user-message"><span className="avatar user-avatar">C</span><div><header><strong>{t("You")}</strong><time>{dataSource === "demo" ? "10:02" : t("recorded")}</time>{(elapsed || inputTokens !== undefined || totalTokens !== undefined) && <span className="chat-turn-metrics">{elapsed && <span><Icon name="clock" size={11} />{elapsed}</span>}{inputTokens !== undefined && <span>{language === "zh-CN" ? "输入" : "in"} {formatTokens(inputTokens)}</span>}{totalTokens !== undefined && <span>{language === "zh-CN" ? "总计" : "total"} {formatTokens(totalTokens)}</span>}</span>}</header><p>{task}</p></div></article>
-    <article className="chat-message agent-message"><span className="avatar agent-avatar"><Icon name="graph" size={15} /></span><div>
+    <article className="chat-message user-message" data-chat-role="user"><span className="avatar user-avatar">C</span><div className="chat-turn-body"><header><strong>{t("You")}</strong><time>{dataSource === "demo" ? "10:02" : t("recorded")}</time>{(elapsed || inputTokens !== undefined || totalTokens !== undefined) && <span className="chat-turn-metrics">{elapsed && <span><Icon name="clock" size={11} />{elapsed}</span>}{inputTokens !== undefined && <span>{language === "zh-CN" ? "输入" : "in"} {formatTokens(inputTokens)}</span>}{totalTokens !== undefined && <span>{language === "zh-CN" ? "总计" : "total"} {formatTokens(totalTokens)}</span>}</span>}</header><p>{task}</p></div></article>
+    <article className={`chat-message agent-message ${active ? "is-live" : ""}`} data-chat-role="agent"><span className="avatar agent-avatar"><Icon name="graph" size={15} /></span><div className="chat-turn-body">
       <header><strong>TraceGraph Agent</strong><time>{dataSource === "demo" ? "10:02" : t(status === "running" || status === "indexing" ? "live" : "recorded")}</time></header>
       {contextBudget && <ContextBudgetStrip budget={contextBudget} language={language} {...(turnsCompleted === undefined ? {} : { turnsCompleted })} {...(turnLimit === undefined ? {} : { turnLimit })} />}
       {(visiblePlans.length > 0 || progressEvents.length > 0 || active) && <section aria-label={t("Reasoning process")} className="public-model-process">
@@ -270,11 +270,13 @@ function ChatTurn({ task, response, status, events, dataSource, changedFiles = [
         </div>
         <PublicModelSurface active={active} events={process} language={language} surface={visiblePlans} />
       </section>}
+      <div className={`chat-answer ${answerStreaming ? "is-streaming" : ""}`}>
       {latestPublicAnswer?.text
         ? <div aria-live="polite" className="chat-live-answer"><MarkdownContent content={progressiveResponse} />{(active || answerStreaming) && <span aria-hidden="true" className="public-model-caret">▍</span>}</div>
         : active
           ? <div aria-live="polite" className="chat-live-response"><span className="event-spinner" /><div><strong>{t("Working on your request")}</strong><p>{language === "zh-CN" ? "正在分析请求并等待下一步公开计划…" : "Analyzing the request and waiting for the next public plan…"}</p></div></div>
           : <MarkdownContent content={progressiveResponse} />}
+      </div>
       <div className="chat-evidence">{changedFiles.length > 0 && <span><Icon name="diff" size={13} />{changedFiles.length} {t("files")} · +{totalDiff(changedFiles).additions} −{totalDiff(changedFiles).deletions}</span>}{evidence && <span><Icon name="graph" size={13} />{t("Graph")} {evidence.graph.status}</span>}<span><Icon name="shield" size={13} />{t(status)}</span></div>
     </div></article>
   </>;
@@ -381,14 +383,23 @@ function PublicModelSurface({
         text: event.summary,
         label: progressEventLabel(event.kind, language),
         streaming: event.state === "running",
+        detail: [event.toolName, event.target].filter((value): value is string => Boolean(value)).join(" · ") || undefined,
       })),
   ].sort((left, right) => left.order - right.order);
 
   return <div aria-live="polite" className="public-model-surface">
-    {timeline.map((item) => <div className={`public-progress-item is-${item.kind} is-${item.status}`} key={item.id}>
-      <div className="public-progress-meta"><span>{item.label}</span><time>{item.timestamp}</time></div>
-      <p>{item.text}{item.streaming && <span aria-hidden="true" className="public-model-caret">▍</span>}</p>
-    </div>)}
+    {timeline.map((item) => {
+      // Keep disclosure summaries phrasing-only.  The same compact content is
+      // used for both expandable tool facts and plain public-plan rows, so a
+      // <details> row remains keyboard- and screen-reader-friendly.
+      const content = <><span className="public-progress-meta"><span>{item.label}</span><time>{item.timestamp}</time></span><span className="public-progress-copy">{item.text}{item.streaming && <span aria-hidden="true" className="public-model-caret">▍</span>}</span></>;
+      return item.kind === "event" && item.detail ? (
+        <details className={`public-progress-item is-${item.kind} is-${item.status} is-disclosure`} key={item.id}>
+          <summary>{content}<Icon aria-hidden="true" className="public-progress-chevron" name="chevron" size={13} /></summary>
+          <div className="public-progress-detail"><code>{item.detail}</code></div>
+        </details>
+      ) : <div className={`public-progress-item is-${item.kind} is-${item.status}`} key={item.id}>{content}</div>;
+    })}
     {active && timeline.length === 0 && <p className="public-model-awaiting">{language === "zh-CN" ? "等待模型提供下一步公开进度…" : "Waiting for the next public model update…"}</p>}
   </div>;
 }

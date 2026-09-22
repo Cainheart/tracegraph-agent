@@ -42,6 +42,8 @@ describe("Chat workbench", () => {
       operationId: "operation-read",
       toolName: "read_file",
       target: "apps/web/src/App.tsx",
+      input: "do-not-render-tool-input",
+      output: "do-not-render-tool-output",
     }, {
       id: "event-read-completed",
       sequence: 5,
@@ -56,7 +58,11 @@ describe("Chat workbench", () => {
     const html = renderToStaticMarkup(<LanguageProvider><ChatView changedFiles={[]} conversation={[]} dataSource="live" events={events} evidence={emptyEvidence} outcome="Done" status="completed" task="Introduce the project" /></LanguageProvider>);
     expect(html).toContain("Reasoning process");
     expect(html).toContain("public-progress-item is-event is-running");
+    expect(html).toContain("<details");
+    expect(html).toContain("public-progress-detail");
     expect(html).toContain("apps/web/src/App.tsx");
+    expect(html).not.toContain("do-not-render-tool-input");
+    expect(html).not.toContain("do-not-render-tool-output");
     expect(html).toContain("Only explicit public plans and observed tool facts are shown");
     expect(html).not.toContain("I have read apps/web/src/App.tsx");
   });

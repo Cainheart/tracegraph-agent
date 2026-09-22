@@ -220,6 +220,7 @@ class FakeSdk implements TraceGraphSdkPort {
   readonly streamSignals: AbortSignal[] = [];
   readonly liveStreamSignals: AbortSignal[] = [];
   readonly modelStreamSignals: AbortSignal[] = [];
+  streamedModelSurface: readonly ModelSurfaceEvent[] = [];
   getRunHandler: ((runId: string) => Promise<RunProjection>) | null = null;
   submitUserInputErrorAfterCommit: Error | null = null;
   stopCalls = 0;
@@ -627,6 +628,7 @@ class FakeSdk implements TraceGraphSdkPort {
     options: Parameters<NonNullable<TraceGraphSdkPort["streamModelSurface"]>>[1],
   ): AsyncGenerator<ModelSurfaceEvent, void, void> {
     if (options.signal) this.modelStreamSignals.push(options.signal);
+    for (const surfaceEvent of this.streamedModelSurface) yield surfaceEvent;
     await new Promise<void>((resolve) => {
       if (options.signal?.aborted) {
         resolve();
@@ -2799,6 +2801,59 @@ describe("LiveTraceGraphClient", () => {
       toolName: "read_file",
       target: "src/index.ts",
     });
+  });
+
+  it("drops provider-private thinking frames while retaining public model presentation", async () => {
+    const sdk = new FakeSdk(projection("running", [], [event(1, "run.started")]));
+    sdk.streamedModelSurface = [{
+      schema_version: SCHEMA_VERSION,
+      surface_event_id: "surface-private",
+      project_id: fixtureProject.project_id,
+      run_id: "run_live",
+      model_call_id: "model-call-1",
+      cursor: 1,
+      occurred_at: occurredAt,
+      type: "thinking_snapshot",
+      status: "streaming",
+      text: "This private provider scratchpad must never reach the workbench.",
+    }, {
+      schema_version: SCHEMA_VERSION,
+      surface_event_id: "surface-plan",
+      project_id: fixtureProject.project_id,
+      run_id: "run_live",
+      model_call_id: "model-call-1",
+      cursor: 2,
+      occurred_at: occurredAt,
+      type: "public_plan_snapshot",
+      status: "streaming",
+      text: "Inspect the source before answering.",
+    }, {
+      schema_version: SCHEMA_VERSION,
+      surface_event_id: "surface-answer",
+      project_id: fixtureProject.project_id,
+      run_id: "run_live",
+      model_call_id: "model-call-1",
+      cursor: 3,
+      occurred_at: occurredAt,
+      type: "answer_snapshot",
+      status: "streaming",
+      text: "A public answer preview.",
+    }];
+    const client = new LiveTraceGraphClient({ sdk, minRetryMs: 60_000, maxRetryMs: 60_000 });
+
+    await client.initialize();
+    await client.chooseProject("disposable_fixture");
+    await client.startRun("Keep model presentation safe", "plan");
+    await new Promise((resolve) => globalThis.setTimeout(resolve, 0));
+
+    expect(client.getSnapshot().run?.modelSurface).toEqual([
+      expect.objectContaining({ type: "public_plan_snapshot", text: "Inspect the source before answering." }),
+      expect.objectContaining({ type: "answer_snapshot", text: "A public answer preview." }),
+    ]);
+    expect(client.getSnapshot().run?.modelSurface?.some((item) => item.type === "thinking_snapshot")).toBe(false);
+    expect(JSON.stringify(client.getSnapshot())).not.toContain("This private provider scratchpad must never reach the workbench.");
+
+    await client.returnHome();
   });
 
   it("renders Tool batch lifecycle events with explicit titles and states", async () => {
