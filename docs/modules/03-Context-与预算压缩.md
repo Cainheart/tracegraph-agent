@@ -273,7 +273,7 @@ sum(token_estimate.per_section)
 | `packages/test-support/src/runtime.integration.test.ts` | summary/Event/usage 整链、invalid/timeout fallback、spill→`read_artifact`→hash、原文不进 Ledger、300K 级连续减量账 |
 | `apps/web/src/components/ContextBudget.test.tsx` | 被压缩原文在明确 disclosure 后展开 |
 
-精确 `it()` 名与边界映射见 `docs/verification-map.md`。
+精确 `it()` 名以对应测试源码和当次测试输出为准。
 
 ---
 
@@ -299,4 +299,4 @@ sum(token_estimate.per_section)
 - 模块 06：OpenAI/Anthropic summary provider 适配
 - 模块 10：Web Context 原文 disclosure
 - 模块 08：G-21 Memory 准入、BM25 检索、来源与 degraded recall
-- `docs/verification-map.md`：G-02 文件到断言映射
+- `../outlive-agent-v2/10-tracegraph-to-outlive-migration.md`：G-02/G-03/G-21 的 V2 去向与迁移边界

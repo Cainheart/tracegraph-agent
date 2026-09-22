@@ -872,6 +872,6 @@ import { ChatView } from "./WorkbenchStates";
 - 模块 06：模型适配与推理强度（`ModelProvider` / `ModelProtocol` 与 Anthropic 路径差异）
 - 模块 03：Context 预算与压缩阈值
 - 模块 11：CLI 与装配（Web 不在该装配路径上；`codeGraph` 仅于此处装配）
-- 根目录 `KNOWN_LIMITATIONS.md`：Telemetry best-effort、进程内状态与外部 Collector 未验证边界
+- `../outlive-agent-v2/10-tracegraph-to-outlive-migration.md`：Telemetry、SSE 恢复和 Web 规模边界的 V2 去向
 - 模块 15：G-17 受信扩展生命周期、配置安全与 Web 控制面边界
 - 模块 16：G-08 root-Ledger Team、Web 三项受限 mutation 与明确调度边界

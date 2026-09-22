@@ -30,7 +30,6 @@ tracegraph-agent/
 ├── README.md                    项目说明：已实现能力、快速运行、项目模式与边界声明
 ├── README.en.md                 英文入口：五分钟启动、验证、私有发布与安全边界
 ├── CHANGELOG.md                 双语版本变更记录；发布校验要求当前版本有带日期条目
-├── KNOWN_LIMITATIONS.md         已知限制的唯一事实源（Runtime/Context/Evals/Host/Web）
 ├── NOTICE.md                    独立实现声明与第三方依赖许可提示
 ├── LICENSE                       MIT 许可证
 ├── DIRECTORY.md                  本文件：目录与文件职责说明
@@ -102,7 +101,7 @@ tracegraph-agent/
 │   │   └── performance.eval.ts  Context token、model call、Tool P95、loopback SSE 首字节四门，含过低门限反例
 │   ├── docs/
 │   │   ├── implementation-consistency.eval.ts  白名单式标识符/版本/Event/Host route/script 审计
-│   │   └── g22-release-consistency.eval.ts     CI pin/order、发布 staging、公开命令与 known-limitations map 一致性审计
+│   │   └── g22-release-consistency.eval.ts     CI pin/order、发布 staging、公开命令、模块索引与 V2 迁移边界审计
 │   ├── baselines/
 │   │   └── performance.json  需显式 update mode 才能改写的已提交性能上限
 │   └── support/               临时路径、清理、凭据清除/非 loopback 拦截、metric/baseline 验证与有界 JSON reporter
@@ -329,10 +328,9 @@ tracegraph-agent/
 │
 └── docs/
     ├── README.md                   中英文文档入口与模块索引
-    ├── modules/                    01–16 模块实现说明；14 为附件与多模态，15 为插件与扩展系统，16 为 G-08 Agent Team
-    ├── supply-chain-policy.md      exact/time-based/24h、manifest/lockfile guard、audit 与例外纪律
-    ├── known-limitations-map.json  显式限制到实现/测试证据的 mapped/unmapped 机器可审计映射
-    └── verification-map.md         已完成 G-xx（含 G-08/G-17/G-22/G-23）的实现文件、自动化断言、命令与明确边界映射
+    ├── modules/                    01–19 当前模块实现说明；随 owning module 的代码与测试维护
+    ├── outlive-agent-v2.md         Outlive Agent V2 产品与架构总入口（proposed）
+    └── outlive-agent-v2/           V2 专题设计、TraceGraph 迁移基线、文档 manifest 与任务 DAG
 ```
 
 ## 2. 按职责定位改动点
@@ -374,14 +372,14 @@ tracegraph-agent/
 
 1. **`.tracegraph/` 与 `~/.tracegraph/` 都是运行时数据不是源码**；前者由仓库 `.gitignore` 排除，后者本来就在仓库外。`.tracegraph/artifacts` 同时保存公开证据、G-02 外置 Context 原文与不进入公开 Wire 的恢复工件；`.tracegraph/wal/backups` 保存 rollback 所需的精确 before-image，`.tracegraph/recovery` 保存恢复尝试；`.tracegraph/memory/records.jsonl` 是 G-21 canonical Memory record，`.tracegraph/retrieval-index` 是可由其重建的 JSONL/BM25 投影。Artifact/WAL 等各自按实现收紧目录/文件权限并做 symlink/hash 校验，但这些运行数据整体仍不是静态加密或跨 Host 锁；Memory record 只在创建时请求 `0600`，当前 append store 不复核已有文件的 owner/mode/symlink，检索索引也只做单进程写队列而没有跨进程 writer lock，因此尤其不要让 CLI 本地镜像与独立 retrieval-service 直接共享同一个索引目录。`.tracegraph/model-config.json` 只含 `${secret:NAME}` 引用；`.tracegraph/token-calibration.json` 只含 provider/model、比例样本与 revision；可选 `.tracegraph/extensions.json` 只允许选择 Host 内置 trusted catalog id，`module` 不是可执行路径；可选 `.tracegraph/telemetry.json` 只应保存 sink 选项、endpoint 环境变量名与 `${secret:NAME}` authorization reference，不能保存明文 endpoint authorization/header。默认 Session 索引在 `~/.tracegraph/sessions`，只存 header + Event 引用，删除移到同级 `sessions-trash`。Session 引用不含 ledger locator，所以一个 Session root 必须固定配对一个 `dataDir`；多数据目录部署必须分别指定 `--session-dir`。macOS 的值在 Keychain；非 macOS 的 `~/.tracegraph/credentials.json` 强制 `0600`，但仍是 plaintext-at-rest。这些运行数据都不要提交或外发。Telemetry 的队列/错误状态也不在这些 durable 数据里；它们只在当前进程内且不参与恢复。
 2. **`apps/cli/.tracegraph/` 是残留空目录**：历史上从 `apps/cli` 作为 cwd 启动过一次 Host 留下的 `artifacts/events/projects` 三个空目录，不是 canonical 数据目录（canonical 是仓库根 `.tracegraph`），可以安全删除。
-3. **模块说明统一在 `docs/modules/01`–`16`**；`docs/` 根目录保留入口、verification map、供应链策略与机器可审计 limitation map。已知限制的唯一人类可读事实源仍是根目录 `KNOWN_LIMITATIONS.md`，不要再创建第二份叙述清单。
+3. **当前模块说明统一在 `docs/modules/01`–`19`**；Outlive 目标设计统一从 `docs/outlive-agent-v2.md` 进入。旧 G-xx 能力、迁移期边界与 V2 去向只在 `docs/outlive-agent-v2/10-tracegraph-to-outlive-migration.md` 汇总，不再建立独立 verification/limitation 文档。
 4. **`examples/failing-typescript-repo` 是刻意失败模板**，其中的 bug 是设计的一部分，不要"顺手修好"；运行时会复制成一次性工作区再打补丁。
 5. **单元测试不逐个列在目录树里**：`apps/web` 与 `packages/{contracts,core,host,sdk,test-support}` 的 `*.test.ts(x)` 与源码同目录（`packages/codegraph` 例外，放在独立 `tests/` 目录）；只有三个跨层套件单列——`apps/cli/src/e2e.test.ts`（纵向 E2E）、`packages/test-support/src/runtime.integration.test.ts`（Runtime 集成）与 `packages/test-support/src/sandbox.integration.test.ts`（G-13 Host/Runtime 整链）。找用例时按这三条路径约定定位。
 6. **G-06（权限预设/策略引擎/审批令牌）已经接入主链**：
    - CLI flag / environment 只确定不可热提升的 Host ceiling；用户/Web 选择持久化后只影响新 Run，项目 `policy.json` 是独立的 ask/deny 收紧层。Runtime 把分层 effective policy 与 digest 固化进 Run/recovery state，恢复时不按当前设置重算。
    - 每次 Tool action 都先过不可被 allow 覆盖的 capability/plan/preset/path hard constraint，再按稳定优先级求值 Host 与 project rules；决策写 `policy.evaluated`，拒绝另写 `policy.denied`。执行前的最终重评若为 deny，会在 `tool.started`、WAL 与 mutation 前终止。最终 `ask` 的 Patch approval 绑定 action/policy digest，并使用进程内单次 token；重启不恢复 token，只能重新签发审批。policy `allow`（包括未被规则收紧的 full-write）不产生 approval request/grant/token，但仍受 canonical digest 与 WAL 约束。
    - 浏览器仅能从 Host 返回的 `available_presets` 中提交 preset key；不能提交规则、路径、sandbox mode、approval policy 或 token。公开设置也不返回 Host/project rules 与本机路径。
-   - 契约、policy engine、token store、CLI 配置、Runtime、Host/SDK 与 Web 均有正反例；验证命令与文件映射见 `docs/verification-map.md`。不要把进程内 token、逻辑 glob 匹配或 `full-write` 误写成远程 RBAC、真实路径防逃逸或 Host 容器隔离。
+   - 契约、policy engine、token store、CLI 配置、Runtime、Host/SDK 与 Web 均有正反例；实现与验证入口由对应模块文档维护。不要把进程内 token、逻辑 glob 匹配或 `full-write` 误写成远程 RBAC、真实路径防逃逸或 Host 容器隔离。
 7. **G-09（Plan Mode / Todo）已经接入主链**：
    - `plan.ready` 是非终态暂停点；审批绑定当前 `plan_event_id`，并在原 `run_id` 继续 execute。等待期 Todo 变更会刷新 revision，旧审批失效。
    - Todo 状态由 canonical Ledger 重放；模型完成必须引用同 Run、早于本次 mutation 的 eligible 独立成功执行事实。成功非 Todo Tool、严格成功 Test Receipt 与 Patch/Graph/Action allowlist 可用；Todo/Plan/Model/Policy/Approval/lifecycle 不能自证。已有证据的 done Todo 保持 done 时不能清空证据。该门只证明 durable execution fact，不是逐 Todo 的语义验收器；用户勾选以 actor-bound Event 确认该 Todo。浏览器 request 不能自选 project/run/actor。

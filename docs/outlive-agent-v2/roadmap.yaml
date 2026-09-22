@@ -1,0 +1,722 @@
+schema_version: 1
+roadmap: outlive-agent-v2
+status: proposed
+last_reviewed: 2026-09-23
+
+execution_rules:
+  one_primary_change_type_per_task: true
+  target_non_mechanical_diff_lines: 500
+  hard_review_threshold_lines: 800
+  require_current_target_separation: true
+  require_negative_gate_test: true
+  require_actual_command_report: true
+  forbid_baseline_refresh_without_explanation: true
+
+phases:
+  - id: P0
+    title: 决策、文档与基线
+    exit_criteria:
+      - V2 名称和产品边界有正式 Note 结论
+      - current truth 与 target design 可从入口定位
+      - 当前架构/测试/性能基线可重跑
+  - id: P1
+    title: 架构与不变量门禁
+    depends_on: [P0]
+    exit_criteria:
+      - 包依赖、关键不变量和文档漂移均可使 CI 失败
+  - id: P2
+    title: core 内部成层
+    depends_on: [P1]
+    exit_criteria:
+      - kernel/domains/seams 依赖方向受守卫
+      - runtime 主循环只保留协调职责
+  - id: P3
+    title: 稳定 family 升包
+    depends_on: [P2]
+    exit_criteria:
+      - 第一批持久/能力边界成为窄 package API
+  - id: P4
+    title: Memory 与 Experience
+    depends_on: [P2]
+    exit_criteria:
+      - 记忆拥有证据、状态、作用域、修订和遗忘生命周期
+  - id: P5
+    title: Runtime 可靠性
+    depends_on: [P2]
+    exit_criteria:
+      - no-progress、cancel、retry、unknown/reconcile 可区分且可证明
+  - id: P6
+    title: 统一协议与 Desktop
+    depends_on: [P3]
+    exit_criteria:
+      - CLI/API/Web/Desktop 共享 Command/Query/Event 语义
+  - id: P7
+    title: 回归、性能、i18n 与文档
+    depends_on: [P4, P5, P6]
+    exit_criteria:
+      - Snapshot、Benchmark、Eval、i18n/docs 门禁可重复运行
+  - id: P8
+    title: 公开证明与发布
+    depends_on: [P7]
+    exit_criteria:
+      - 三条核心演示可独立复现
+      - 外部用户可从零安装并跑通
+
+tasks:
+  - id: OLV-000
+    phase: P0
+    title: 接受或修订产品工作名与 V2 宪章
+    owner: human-maintainer
+    change_type: decision
+    depends_on: []
+    outputs:
+      - .agents/notes/implemented-or-rejected/outlive-agent-v2
+    acceptance:
+      - 九项主设计决策逐项有结论
+      - 公开命名前完成独立命名与商标检查
+
+  - id: GOV-001
+    phase: P0
+    title: 建立 AGENTS、Notes 与 Skills 治理入口
+    owner: repository
+    change_type: governance
+    depends_on: []
+    outputs: [AGENTS.md, .agents/notes/README.md, .agents/skills/README.md]
+    acceptance:
+      - 规则使用薄指针且不复制上级 workspace 工作流
+      - proposed implemented rejected archived 生命周期清楚
+
+  - id: DOC-002
+    phase: P0
+    title: 校验 V2 文档清单和任务 DAG
+    owner: scripts
+    change_type: tooling
+    depends_on: [GOV-001]
+    outputs: [scripts/verify-v2-docs.mjs]
+    acceptance:
+      - 缺失路径、非法状态、重复 task id、依赖环均 exit 1
+      - checker 有最小违规 fixture 测试
+
+  - id: BASE-003
+    phase: P0
+    title: 生成当前仓库可复现基线
+    owner: scripts
+    change_type: tooling
+    depends_on: [DOC-002]
+    outputs: [docs/generated/current-baseline.md]
+    acceptance:
+      - package DAG、LOC、测试/事件数量和关键性能由命令生成
+      - 报告包含 commit、平台和生成时间
+
+  - id: BOUND-004
+    phase: P0
+    title: 对齐 current docs 的明确边界
+    owner: docs
+    change_type: docs
+    depends_on: [BASE-003]
+    outputs: [README.md, docs/modules, docs/outlive-agent-v2/10-tracegraph-to-outlive-migration.md]
+    acceptance:
+      - Desktop 与 Memory V2 明确标为未实现
+      - local-first、sandbox、remote scope 不含糊
+
+  - id: ARCH-010
+    phase: P1
+    title: 建 architecture policy 与 dependency gate
+    owner: scripts
+    change_type: tooling
+    depends_on: [BASE-003]
+    outputs: [architecture-policy.yaml, scripts/verify-boundaries.mjs]
+    acceptance:
+      - 当前依赖图通过
+      - 临时反向依赖和依赖环失败
+
+  - id: ARCH-011
+    phase: P1
+    title: 生成 package/module graph
+    owner: scripts
+    change_type: tooling
+    depends_on: [ARCH-010]
+    outputs: [scripts/gen-module-graph.mjs, docs/generated/module-graph.md]
+    acceptance:
+      - --check 在生成物陈旧时失败
+
+  - id: ARCH-012
+    phase: P1
+    title: 守卫单一 Ledger、wire 隔离与 Projection 纯度
+    owner: scripts
+    change_type: tests
+    depends_on: [ARCH-010]
+    outputs: [scripts/verify-invariants.mjs]
+    acceptance:
+      - 第二 writer、私有字段出 wire、Projection I/O 均被反向 fixture 捕获
+
+  - id: ARCH-013
+    phase: P1
+    title: 引入 legacy/managed 渐进治理
+    owner: architecture
+    change_type: config
+    depends_on: [ARCH-010]
+    outputs: [architecture-policy.yaml]
+    acceptance:
+      - managed 模块强制所有规则
+      - legacy 模块只报告且有迁移 owner
+
+  - id: DOC-014
+    phase: P1
+    title: package README contract gate
+    owner: docs
+    change_type: tooling
+    depends_on: [ARCH-010]
+    outputs: [scripts/verify-package-readmes.mjs]
+    acceptance:
+      - 缺责任、状态、模型影响、验证或限制时失败
+
+  - id: CORE-020
+    phase: P2
+    title: 行为保持地提取 core kernel
+    owner: core
+    change_type: move
+    depends_on: [ARCH-010, ARCH-012]
+    outputs: [packages/core/src/kernel]
+    acceptance:
+      - 公开 API 和 canonical event 不变
+      - kernel 不依赖 domains/seams
+
+  - id: CORE-021
+    phase: P2
+    title: 移动 sandbox/lsp/mcp 到 seams
+    owner: core
+    change_type: move
+    depends_on: [CORE-020]
+    outputs: [packages/core/src/seams]
+    acceptance:
+      - seams 只依赖 kernel/contracts
+      - focused tests 与 snapshot 无意外 diff
+
+  - id: CORE-022
+    phase: P2
+    title: 分离 Tool Definition 与 Executor/Policy
+    owner: tool
+    change_type: refactor
+    depends_on: [CORE-020]
+    outputs: [packages/core/src/kernel/tool, packages/core/src/domains/tools]
+    acceptance:
+      - 所有工具仍通过唯一 executor
+      - 无新增工具或行为变化
+
+  - id: CORE-023
+    phase: P2
+    title: 分离 Extension registration 与 lifecycle
+    owner: extensions
+    change_type: refactor
+    depends_on: [CORE-020]
+    outputs: [packages/core/src/kernel/registration, packages/core/src/domains/extensions]
+    acceptance:
+      - register/dispose/reload 行为不变
+
+  - id: CORE-024
+    phase: P2
+    title: 将 core 平铺文件映射到 domains
+    owner: core
+    change_type: move
+    depends_on: [CORE-021, CORE-022, CORE-023]
+    outputs: [packages/core/src/domains]
+    acceptance:
+      - core/src 顶层仅保留 kernel domains seams index
+      - current module docs 的源码链接同步
+
+  - id: CORE-025
+    phase: P2
+    title: 提取 Run/Turn/Step 状态机
+    owner: runtime
+    change_type: refactor
+    depends_on: [CORE-024]
+    outputs: [packages/core/src/domains/runtime]
+    acceptance:
+      - canonical event 顺序与终态不变
+      - 状态机有 table-driven tests
+
+  - id: CORE-026
+    phase: P2
+    title: 提取 Context/Tool/Evidence façade
+    owner: runtime
+    change_type: refactor
+    depends_on: [CORE-025]
+    outputs: [runtime-service-facades]
+    acceptance:
+      - runtime 不深层 import 各域实现
+
+  - id: CORE-027
+    phase: P2
+    title: 将 feature driver 改为扩展贡献
+    owner: runtime
+    change_type: refactor
+    depends_on: [CORE-026]
+    outputs: [feature-driver-registry]
+    acceptance:
+      - memory/team/todo/attachment 可单独禁用
+      - agent-loop 无 feature-specific branch
+
+  - id: CORE-028
+    phase: P2
+    title: 收敛 runtime.ts 为 loop coordinator
+    owner: runtime
+    change_type: refactor
+    depends_on: [CORE-027]
+    outputs: [small-agent-loop]
+    acceptance:
+      - runtime.ts 行数显著下降且职责可在 README 完整描述
+      - 全部 focused/integration/snapshot 通过
+
+  - id: PKG-030
+    phase: P3
+    title: 升包 Evidence family
+    owner: evidence
+    change_type: move
+    depends_on: [CORE-028]
+    outputs: [packages/evidence]
+    acceptance:
+      - projection 无 I/O
+      - core 只走公开 exports
+
+  - id: PKG-031
+    phase: P3
+    title: 升包 Session family
+    owner: session
+    change_type: move
+    depends_on: [PKG-030]
+    outputs: [packages/session]
+    acceptance:
+      - 当前 generation reader/writer/migration tests 通过
+
+  - id: PKG-032
+    phase: P3
+    title: 升包 MCP 与 LSP seams
+    owner: capabilities
+    change_type: move
+    depends_on: [CORE-028]
+    outputs: [packages/mcp, packages/lsp]
+    acceptance:
+      - 不依赖 core concrete runtime
+
+  - id: PKG-033
+    phase: P3
+    title: 升包 Tool family
+    owner: tool
+    change_type: move
+    depends_on: [PKG-030]
+    outputs: [packages/tool]
+    acceptance:
+      - denial 在 dispatch/WAL/mutation 前发生
+
+  - id: PKG-034
+    phase: P3
+    title: 升包 Context family
+    owner: context
+    change_type: move
+    depends_on: [PKG-030]
+    outputs: [packages/context]
+    acceptance:
+      - model-visible context 可由 manifest 重建
+
+  - id: PKG-035
+    phase: P3
+    title: 提取 Boot 与 Profile loader
+    owner: composition
+    change_type: refactor
+    depends_on: [PKG-031, PKG-033, PKG-034]
+    outputs: [packages/boot, profiles]
+    acceptance:
+      - resolved profile 可 dump/hash
+
+  - id: MEM-040
+    phase: P4
+    title: Memory Contract V2 与迁移
+    owner: memory
+    change_type: protocol
+    depends_on: [CORE-028]
+    outputs: [memory-v2-contract, adjacent-migration]
+    acceptance:
+      - v1 数据无损读取
+      - status/scope/provenance/validity/governance/lineage 有 schema tests
+
+  - id: MEM-041
+    phase: P4
+    title: Memory lifecycle state machine
+    owner: memory
+    change_type: behavior
+    depends_on: [MEM-040]
+    outputs: [memory-lifecycle]
+    acceptance:
+      - 非法转移拒绝且每次转移有 event
+
+  - id: MEM-042
+    phase: P4
+    title: Context provenance 与 Memory 来源统一
+    owner: context-memory
+    change_type: protocol
+    depends_on: [MEM-040, PKG-034]
+    outputs: [context-provenance]
+    acceptance:
+      - recalled context 每项可回到 evidence refs
+
+  - id: MEM-043
+    phase: P4
+    title: Episode extraction 与 consolidation
+    owner: memory
+    change_type: behavior
+    depends_on: [MEM-041, MEM-042]
+    outputs: [memory-background-pipeline]
+    acceptance:
+      - bounded lease/backoff/idempotency
+      - 主 Run settlement 不等待 extraction
+
+  - id: MEM-044
+    phase: P4
+    title: Experience Case schema 与 extractor
+    owner: experience
+    change_type: behavior
+    depends_on: [MEM-043]
+    outputs: [experience-case]
+    acceptance:
+      - success/failure/partial/unknown 与 applicability/counterexample 可表达
+
+  - id: MEM-045
+    phase: P4
+    title: 冲突、过期与使用反馈
+    owner: memory
+    change_type: behavior
+    depends_on: [MEM-041]
+    outputs: [memory-conflict-feedback]
+    acceptance:
+      - unresolved conflict 不静默注入
+
+  - id: MEM-046
+    phase: P4
+    title: Memory review/correct/revoke/delete 领域命令与当前控制面
+    owner: memory-api
+    change_type: feature
+    depends_on: [MEM-045]
+    outputs: [memory-control-contract, memory-control-surface-v1]
+    acceptance:
+      - 全部写入经 Command/Event
+      - revoked/deleted/cross-scope 负测通过
+      - 不依赖未来 Desktop 或 framed RPC
+
+  - id: MEM-047
+    phase: P4
+    title: Legacy Capsule v1
+    owner: memory-export
+    change_type: feature
+    depends_on: [MEM-044, MEM-045, PKG-030]
+    outputs: [legacy-capsule]
+    acceptance:
+      - checksum/redaction/quarantine/diff/explicit-accept 全链通过
+
+  - id: MEM-048
+    phase: P4
+    title: Memory 与 Experience paired eval
+    owner: evals
+    change_type: tests
+    depends_on: [MEM-044, MEM-045]
+    outputs: [evals/memory, evals/experience]
+    acceptance:
+      - 独立验证集报告收益、伤害和置信区间
+
+  - id: RUN-050
+    phase: P5
+    title: No-progress guard
+    owner: runtime
+    change_type: behavior
+    depends_on: [CORE-028]
+    outputs: [progress-fingerprint, no-progress-policy]
+    acceptance:
+      - 重复无进展可停机
+      - 正常多轮迭代负面用例不过度拦截
+
+  - id: RUN-051
+    phase: P5
+    title: Cancellation ownership 与 quiescence
+    owner: runtime
+    change_type: behavior
+    depends_on: [CORE-028]
+    outputs: [cancellation-controller]
+    acceptance:
+      - 取消后零新派发
+      - process group/jobs 在期限内 settled
+
+  - id: RUN-052
+    phase: P5
+    title: 外部 Action reconciliation contract
+    owner: evidence-runtime
+    change_type: protocol
+    depends_on: [PKG-030, RUN-051]
+    outputs: [reconciliation-contract]
+    acceptance:
+      - confirmed/failed/unknown/diverged 纵向演示
+
+  - id: RUN-053
+    phase: P5
+    title: Retry taxonomy
+    owner: runtime
+    change_type: behavior
+    depends_on: [RUN-052]
+    outputs: [retry-policy]
+    acceptance:
+      - model/tool/action retry 分离且有界
+
+  - id: ORCH-054
+    phase: P5
+    title: Subagent capacity/status/message
+    owner: subagent-team
+    change_type: feature
+    depends_on: [CORE-028]
+    outputs: [subagent-control]
+    acceptance:
+      - lineage/budget/loss/recovery 进入 root evidence
+
+  - id: ORCH-055
+    phase: P5
+    title: Workflow 与 Job continuation
+    owner: workflow-jobs
+    change_type: feature
+    depends_on: [RUN-052]
+    outputs: [durable-work-continuation]
+    acceptance:
+      - background task 可恢复且不把 accepted 当 completed
+
+  - id: API-060
+    phase: P6
+    title: 统一 Command/Query/Event vocabulary
+    owner: api
+    change_type: protocol
+    depends_on: [PKG-031, PKG-033]
+    outputs: [packages/sdk/protocol]
+    acceptance:
+      - Web/CLI/SDK schema 同源并生成 fixture
+
+  - id: API-061
+    phase: P6
+    title: Controller 与 transport 分离
+    owner: api
+    change_type: refactor
+    depends_on: [API-060]
+    outputs: [packages/api, packages/host/webserver]
+    acceptance:
+      - controller 可无 HTTP 进程内测试
+
+  - id: API-062
+    phase: P6
+    title: Framed RPC conformance
+    owner: sdk
+    change_type: protocol
+    depends_on: [API-061]
+    outputs: [packages/sdk/client, packages/sdk/server]
+    acceptance:
+      - partial frame/cancel/backpressure/version mismatch tests
+
+  - id: CLI-063
+    phase: P6
+    title: CLI/TUI 改用统一 client/controller
+    owner: cli
+    change_type: refactor
+    depends_on: [API-062]
+    outputs: [apps/cli]
+    acceptance:
+      - JSON stdout 无日志污染
+      - canonical events 与 Web 一致
+
+  - id: DESK-064
+    phase: P6
+    title: Desktop Host 无 GUI smoke
+    owner: desktop
+    change_type: feature
+    depends_on: [API-062, PKG-035]
+    outputs: [apps/desktop-host]
+    acceptance:
+      - exact-version runtime 启停、崩溃恢复和关停测试
+
+  - id: DESK-065
+    phase: P6
+    title: Desktop shell 与共享 UI
+    owner: desktop
+    change_type: feature
+    depends_on: [DESK-064]
+    outputs: [apps/desktop]
+    acceptance:
+      - Renderer 无 Node 权限
+      - 默认不开放网络端口
+
+  - id: DESK-066
+    phase: P6
+    title: 原生目录、打开文件与 credential bridge
+    owner: desktop-host
+    change_type: feature
+    depends_on: [DESK-065]
+    outputs: [desktop-native-adapters]
+    acceptance:
+      - opaque handles 与 authority checks
+
+  - id: API-067
+    phase: P6
+    title: 裁决独立 apps/api
+    owner: architecture
+    change_type: decision
+    depends_on: [API-061, CLI-063]
+    outputs: [agent-note-api-app]
+    acceptance:
+      - 只有 lifecycle 独立时实现，否则明确 rejected
+
+  - id: CLIENT-068
+    phase: P6
+    title: Memory 与 Experience 控制面接入统一协议和共享 UI
+    owner: client-memory
+    change_type: feature
+    depends_on: [API-060, MEM-046, DESK-065]
+    outputs: [shared-memory-control-ui]
+    acceptance:
+      - Web 与 Desktop 对同一命令产生同一 canonical event
+      - inspect/review/correct/revoke/delete 均可追溯且权限一致
+
+  - id: SNAP-070
+    phase: P7
+    title: Recorded-session snapshot harness
+    owner: test-support
+    change_type: tests
+    depends_on: [API-062]
+    outputs: [snapshots, snapshot-runner]
+    acceptance:
+      - replay 无 key
+      - record/refresh 显式且 fixture 脱敏
+
+  - id: SNAP-071
+    phase: P7
+    title: 核心四类 recorded scenarios
+    owner: snapshots
+    change_type: tests
+    depends_on: [SNAP-070, MEM-046, RUN-051, ORCH-054]
+    outputs: [recovery-cancel-memory-subagent-snapshots]
+    acceptance:
+      - events 与 workspace outcome 双重比较
+
+  - id: BENCH-072
+    phase: P7
+    title: Benchmark harness
+    owner: benchmarks
+    change_type: tests
+    depends_on: [PKG-035]
+    outputs: [benchmarks]
+    acceptance:
+      - raw samples、预算和机器元数据可审查
+
+  - id: BENCH-073
+    phase: P7
+    title: 首批八条用户路径基线
+    owner: benchmarks
+    change_type: tests
+    depends_on: [BENCH-072, MEM-045, RUN-051]
+    outputs: [benchmark-baselines]
+    acceptance:
+      - cold start/ledger/replay/context/memory/tool/cancel/recovery 有预算
+
+  - id: EVAL-074
+    phase: P7
+    title: Memory safety 与质量 suite
+    owner: evals
+    change_type: tests
+    depends_on: [MEM-048]
+    outputs: [evals/memory-safety]
+    acceptance:
+      - leak/revoked/stale/conflict/injection 场景覆盖
+
+  - id: I18N-075
+    phase: P7
+    title: Client locale 与术语真源
+    owner: client
+    change_type: feature
+    depends_on: [DESK-065]
+    outputs: [packages/client/locale, docs/i18n/terminology.md]
+    acceptance:
+      - Web/Desktop/TUI key 一致且 fallback 可测
+
+  - id: DOC-076
+    phase: P7
+    title: 双语文档配对与 YAML 校验
+    owner: docs
+    change_type: tooling
+    depends_on: [I18N-075]
+    outputs: [docs/i18n, translation-pair-checker]
+    acceptance:
+      - hash/结构/链接漂移失败
+
+  - id: DOC-077
+    phase: P7
+    title: 生成事件、工具、模块和 profile 目录
+    owner: docs
+    change_type: tooling
+    depends_on: [ARCH-011, PKG-035, API-060]
+    outputs: [docs/generated]
+    acceptance:
+      - --check 检测所有陈旧目录
+
+  - id: DEMO-080
+    phase: P8
+    title: Crash recovery 公开证明
+    owner: release
+    change_type: demo
+    depends_on: [SNAP-071, RUN-052]
+    outputs: [recovery-demo, evidence-bundle]
+    acceptance:
+      - 第三方可按脚本复现
+
+  - id: DEMO-081
+    phase: P8
+    title: Memory lineage 公开证明
+    owner: release
+    change_type: demo
+    depends_on: [SNAP-071, MEM-047]
+    outputs: [memory-lineage-demo]
+    acceptance:
+      - 来源、召回、纠正、撤销、导出全链可见
+
+  - id: DEMO-082
+    phase: P8
+    title: Cancellation quiescence 公开证明
+    owner: release
+    change_type: demo
+    depends_on: [SNAP-071, BENCH-073]
+    outputs: [cancel-demo]
+    acceptance:
+      - 无残留进程且事件解释完整
+
+  - id: REL-083
+    phase: P8
+    title: CLI 与 Desktop preview 发布
+    owner: release
+    change_type: release
+    depends_on: [DEMO-080, DEMO-081, DEMO-082]
+    outputs: [release-bundles, checksums, sbom]
+    acceptance:
+      - clean-machine install smoke
+      - known limitations 随产物交付
+
+  - id: REL-084
+    phase: P8
+    title: 外部用户从零验证
+    owner: community
+    change_type: validation
+    depends_on: [REL-083]
+    outputs: [external-validation-report]
+    acceptance:
+      - 至少一个非维护者按文档独立跑通
+
+  - id: SITE-085
+    phase: P8
+    title: 条件性建立文档站
+    owner: docs
+    change_type: feature
+    depends_on: [DOC-076, DOC-077, REL-083]
+    outputs: [website]
+    acceptance:
+      - 只投影 docs，不复制正文
+      - build 含 dead-link/Mermaid/version checks

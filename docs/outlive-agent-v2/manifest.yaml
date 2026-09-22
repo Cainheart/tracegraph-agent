@@ -1,0 +1,92 @@
+schema_version: 1
+document_set: outlive-agent-v2
+status: proposed
+language: zh-CN
+last_reviewed: 2026-09-23
+
+identity:
+  product_working_name: Outlive Agent
+  previous_product_name: TraceGraph Agent
+  technical_core_name: TraceGraph Engine
+  package_scope_during_migration: "@tracegraph"
+  vision: 让时间带走人的生命，却带不走人曾经留下的记忆与经验。
+  product_promise: 让工作记忆有来源、经验可继承、行动可验证。
+
+canonical_entry: ../outlive-agent-v2.md
+
+truth_sources:
+  current_product:
+    - ../../README.md
+    - ../modules/
+  migration_baseline:
+    - 10-tracegraph-to-outlive-migration.md
+  note: V2 documents are target-state proposals. They never override current capability evidence.
+
+documents:
+  - id: product-charter
+    path: 00-product-charter.md
+    status: proposed
+    owns: [vision, positioning, product-boundaries, naming]
+  - id: system-architecture
+    path: 01-system-architecture.md
+    status: proposed
+    owns: [layers, control-plane, data-plane, flows, invariants]
+  - id: repository-governance
+    path: 02-repository-governance.md
+    status: proposed
+    owns: [agents, notes, skills, docs, scripts, change-workflow]
+  - id: package-topology
+    path: 03-package-topology.md
+    status: proposed
+    owns: [package-families, dependency-direction, extraction-gates]
+  - id: memory-and-experience
+    path: 04-memory-and-experience.md
+    status: proposed
+    owns: [session, episode, memory, experience, legacy, forgetting]
+  - id: runtime-and-capabilities
+    path: 05-runtime-and-capabilities.md
+    status: proposed
+    owns: [agent-loop, tool-pipeline, context, capabilities, orchestration]
+  - id: clients-and-desktop
+    path: 06-clients-protocols-desktop.md
+    status: proposed
+    owns: [cli, api, web, desktop, sdk, rpc]
+  - id: quality-system
+    path: 07-quality-benchmarks-snapshots-i18n.md
+    status: proposed
+    owns: [tests, evals, benchmarks, snapshots, i18n, website]
+  - id: reference-lineage
+    path: 08-reference-lineage.md
+    status: internal-design-input
+    owns: [source-observations, adopted-lessons, rejected-patterns]
+  - id: implementation-roadmap
+    path: 09-implementation-roadmap.md
+    status: proposed
+    owns: [phases, task-order, acceptance, release-slices]
+  - id: tracegraph-migration
+    path: 10-tracegraph-to-outlive-migration.md
+    status: proposed
+    owns: [legacy-capability-disposition, current-boundaries, migration-acceptance]
+
+machine_readable:
+  roadmap: roadmap.yaml
+
+state_vocabulary:
+  document: [proposed, accepted, implemented, superseded, archived]
+  capability: [current, partial, target, deferred, rejected]
+  memory: [candidate, active, disputed, superseded, revoked, expired]
+
+non_goals_v2:
+  - posthumous_persona_impersonation
+  - universal_unstructured_agent_control_plane
+  - remote_workspace_parity
+  - immediate_package_scope_rename
+  - website_as_document_source_of_truth
+  - vector_similarity_as_truth
+
+review_required:
+  - product_working_name
+  - memory_authority_model
+  - package_extraction_thresholds
+  - desktop_shell_choice
+  - legacy_capsule_scope

@@ -5,21 +5,6 @@ import { describe, expect, it } from "vitest";
 
 import { REPOSITORY_ROOT } from "../support/paths.js";
 
-interface LimitationEntry {
-  readonly id: string;
-  readonly status: "mapped" | "unmapped";
-  readonly summary: string;
-  readonly code: readonly string[];
-  readonly tests: readonly string[];
-  readonly commands: readonly string[];
-  readonly roadmap: string;
-}
-
-interface LimitationMap {
-  readonly schema_version: string;
-  readonly entries: readonly LimitationEntry[];
-}
-
 const REQUIRED_CI_JOBS = ["typecheck", "test", "evals"] as const;
 const REQUIRED_SCRIPTS = [
   "coverage",
@@ -77,43 +62,27 @@ describe("G22 engineering and release consistency", () => {
     }
   });
 
-  it("keeps every explicit limitation either executable-mapped or honestly unmapped", async () => {
-    const map = JSON.parse(await read("docs/known-limitations-map.json")) as LimitationMap;
-    const documentation = await read("KNOWN_LIMITATIONS.md");
-    const packageScripts = await readWorkspacePackageScripts();
-    expect(map.schema_version).toBe("tracegraph.known-limitations-map.v1");
-    expect(map.entries.length).toBeGreaterThan(0);
-    expect(map.entries.length).toBeLessThanOrEqual(64);
-    const ids = new Set<string>();
-    for (const entry of map.entries) {
-      expect(["mapped", "unmapped"]).toContain(entry.status);
-      expect(entry.id).toMatch(/^LIM-[A-Z0-9-]+$/u);
-      expect(ids.has(entry.id), `duplicate limitation id ${entry.id}`).toBe(false);
-      ids.add(entry.id);
-      expect(documentation, `${entry.id} is absent from KNOWN_LIMITATIONS.md`).toContain(`\`${entry.id}\``);
-      expect(entry.summary.length).toBeGreaterThan(0);
-      expect(entry.roadmap.length).toBeGreaterThan(0);
-      if (entry.status === "mapped") {
-        expect(entry.code.length, `${entry.id} has no implementation boundary`).toBeGreaterThan(0);
-        expect(entry.tests.length, `${entry.id} has no test boundary`).toBeGreaterThan(0);
-        expect(entry.commands.length, `${entry.id} has no executable command`).toBeGreaterThan(0);
-        for (const path of [...entry.code, ...entry.tests]) {
-          expect(await isRegularFile(path), `${entry.id} points to missing ${path}`).toBe(true);
-        }
-        for (const command of entry.commands) {
-          expect(command).toMatch(/^pnpm\s/u);
-          expect(commandExists(command, packageScripts), `${entry.id} command is not backed by package scripts: ${command}`).toBe(true);
-        }
-      } else {
-        expect(entry.code, `${entry.id} must not pretend an implementation mapping`).toEqual([]);
-        expect(entry.tests, `${entry.id} must not pretend a test mapping`).toEqual([]);
-        expect(entry.commands, `${entry.id} must not pretend an executable mapping`).toEqual([]);
-      }
-    }
-    const documentedIds = [...documentation.matchAll(/`(LIM-[A-Z0-9-]+)`/gu)]
-      .map((match) => match[1])
+  it("keeps every current module indexed and migration boundaries explicit", async () => {
+    const documentationIndex = await read("docs/README.md");
+    const migrationBaseline = await read("docs/outlive-agent-v2/10-tracegraph-to-outlive-migration.md");
+    const moduleEntries = await fs.readdir(nodePath.join(REPOSITORY_ROOT, "docs/modules"), { withFileTypes: true });
+    const moduleFiles = moduleEntries
+      .filter((entry) => entry.isFile() && !entry.isSymbolicLink() && entry.name.endsWith(".md"))
+      .map((entry) => entry.name)
       .sort();
-    expect(documentedIds).toEqual([...ids].sort());
+
+    expect(moduleFiles.length).toBeGreaterThanOrEqual(19);
+    for (const moduleFile of moduleFiles) {
+      expect(documentationIndex, `${moduleFile} is absent from docs/README.md`)
+        .toContain(`(modules/${moduleFile})`);
+    }
+
+    const boundaryIds = [...migrationBaseline.matchAll(/^\| `(LIM-[A-Z0-9-]+)` \|/gmu)]
+      .map((match) => match[1]);
+    expect(boundaryIds.length).toBeGreaterThanOrEqual(20);
+    expect(new Set(boundaryIds).size).toBe(boundaryIds.length);
+    expect(migrationBaseline).toContain("## 3. G-01～G-23 的 V2 去向");
+    expect(migrationBaseline).toContain("## 7. 每个迁移任务的完成定义");
   });
 
   it("keeps the private artifact release boundary explicit and versioned", async () => {
@@ -134,56 +103,4 @@ describe("G22 engineering and release consistency", () => {
 
 async function read(relativePath: string): Promise<string> {
   return fs.readFile(nodePath.join(REPOSITORY_ROOT, relativePath), "utf8");
-}
-
-async function isRegularFile(relativePath: string): Promise<boolean> {
-  try {
-    const info = await fs.lstat(nodePath.join(REPOSITORY_ROOT, relativePath));
-    return info.isFile() && !info.isSymbolicLink();
-  } catch {
-    return false;
-  }
-}
-
-async function readWorkspacePackageScripts(): Promise<Map<string, Set<string>>> {
-  const result = new Map<string, Set<string>>();
-  const rootManifest = JSON.parse(await read("package.json")) as {
-    readonly name?: string;
-    readonly scripts?: Readonly<Record<string, unknown>>;
-  };
-  result.set(rootManifest.name ?? "tracegraph-agent", stringScriptKeys(rootManifest.scripts));
-  for (const scope of ["apps", "packages"] as const) {
-    const entries = await fs.readdir(nodePath.join(REPOSITORY_ROOT, scope), { withFileTypes: true });
-    for (const entry of entries) {
-      if (!entry.isDirectory() || entry.isSymbolicLink()) continue;
-      const source = await read(`${scope}/${entry.name}/package.json`);
-      const manifest = JSON.parse(source) as {
-        readonly name?: string;
-        readonly scripts?: Readonly<Record<string, unknown>>;
-      };
-      if (manifest.name !== undefined) result.set(manifest.name, stringScriptKeys(manifest.scripts));
-    }
-  }
-  return result;
-}
-
-function stringScriptKeys(scripts: Readonly<Record<string, unknown>> | undefined): Set<string> {
-  return new Set(Object.entries(scripts ?? {})
-    .filter(([, value]) => typeof value === "string" && value.length > 0)
-    .map(([key]) => key));
-}
-
-function commandExists(command: string, packageScripts: ReadonlyMap<string, ReadonlySet<string>>): boolean {
-  const filtered = command.match(/^pnpm\s+--filter\s+(\S+)\s+(?:run\s+)?(\S+)$/u);
-  if (filtered !== null) {
-    const packageName = filtered[1];
-    const scriptName = filtered[2];
-    return packageName !== undefined
-      && scriptName !== undefined
-      && packageScripts.get(packageName)?.has(scriptName) === true;
-  }
-  const root = command.match(/^pnpm\s+(?:run\s+)?(\S+)$/u);
-  const scriptName = root?.[1];
-  return scriptName !== undefined
-    && packageScripts.get("tracegraph-agent")?.has(scriptName) === true;
 }

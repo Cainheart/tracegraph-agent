@@ -4,12 +4,20 @@
 
 ## 中文索引
 
+### V2 设计入口（提案）
+
+- [Outlive Agent V2 设计总纲](outlive-agent-v2.md)：产品哲学、目标架构、包家族、Memory/Experience、Desktop、质量体系与迁移边界。
+- [V2 文档清单](outlive-agent-v2/manifest.yaml)：机器可读的文档职责与状态。
+- [V2 实施路线](outlive-agent-v2/09-implementation-roadmap.md)与[任务 DAG](outlive-agent-v2/roadmap.yaml)：按依赖执行的阶段、任务与验收标准。
+- [TraceGraph → Outlive 迁移基线](outlive-agent-v2/10-tracegraph-to-outlive-migration.md)：旧能力、现存边界、不可重做资产及其 V2 去向。
+
+> V2 文档描述目标状态，不代表功能已经实现。迁移完成前，当前事实仍以 README、对应模块文档及其链接的源码/测试为准。
+
 ### 开始使用
 
 - [主 README](../README.md)：产品定位、已实现能力、五分钟启动和项目模式。
-- [已知限制](../KNOWN_LIMITATIONS.md)：当前真实边界及未完成项映射。
 - [目录说明](../DIRECTORY.md)：源码、配置和验证文件职责。
-- [验证映射](verification-map.md)：需求、不变量、实现文件和可执行命令。
+- [当前模块说明](modules/)：每个已实现模块的职责、边界、代码和验证入口。
 
 ### 模块文档
 
@@ -30,15 +38,19 @@
 15. [插件与扩展系统](modules/15-插件与扩展系统.md)
 16. [Agent Team](modules/16-Agent-Team.md)
 17. [Skill 系统](modules/17-Skill系统.md)
+18. [MCP 客户端](modules/18-MCP客户端.md)
+19. [LSP 客户端](modules/19-LSP客户端.md)
 
 ## English index
+
+- [Outlive Agent V2 design entry](outlive-agent-v2.md): proposed target state;
+  it is not evidence that the capabilities have shipped.
 
 - [English README](../README.en.md): positioning, capabilities, five-minute
   setup, verification commands, and boundaries.
 - [Chinese README](../README.md): the same content in Chinese.
-- [Known limitations](../KNOWN_LIMITATIONS.md): authoritative current boundaries.
 - [Repository map](../DIRECTORY.md): responsibility of source/configuration files.
-- [Verification map](verification-map.md): requirement-to-code-to-command evidence.
+- [TraceGraph to Outlive migration baseline](outlive-agent-v2/10-tracegraph-to-outlive-migration.md): retained capabilities, current boundaries, and V2 disposition.
 - [Engineering and release](modules/13-工程化与发布.md): CI, coverage,
   supply-chain, and tag artifact contract.
 - [Attachments and multimodal input](modules/14-附件与多模态.md): durable
@@ -49,6 +61,8 @@
   optimistic task board, heartbeat/loss reconciliation, and bounded worker controls.
 - [Skill system](modules/17-Skill系统.md): local `SKILL.md` discovery,
   progressive disclosure, fail-closed tool narrowing, and registry diagnostics.
+- [MCP client](modules/18-MCP客户端.md): bounded Host-owned stdio lifecycle and tool bridge.
+- [LSP client](modules/19-LSP客户端.md): bounded native stdio diagnostics and semantic locations.
 
 The detailed module documentation is maintained in Chinese so that one
 technical source of truth is reviewed instead of two drifting copies. Public
