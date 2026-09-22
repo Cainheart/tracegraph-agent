@@ -775,7 +775,11 @@ describe("P0 Agent runtime", () => {
     cleanups.push(fixture.cleanup, data.cleanup);
     const model: ModelAdapter = {
       name: "untrusted-public-reason-model",
-      async decide() {
+      async decide(input) {
+        // Exercise the provisional stream path as well as the durable
+        // Decision path. The Runtime must discard this unsafe fragment when
+        // the final public plan fails validation.
+        input.onPublicProgress?.({ kind: "public_reason_delta", text: "PRIVATE_CHAIN_OF_THOUGHT_DO_NOT_SHOW" });
         return {
           decision_id: "decision:untrusted-public-reason",
           kind: "finish",
@@ -795,6 +799,8 @@ describe("P0 Agent runtime", () => {
     expect(decision).toMatchObject({ summary: "Prepared a direct response" });
     expect(JSON.stringify(runtime.listLiveActivities(started.run_id)))
       .not.toContain("PRIVATE_CHAIN_OF_THOUGHT_DO_NOT_SHOW");
+    expect(runtime.listModelSurface(started.run_id).filter((event) => event.type === "public_plan_snapshot"))
+      .toHaveLength(0);
     expect(JSON.stringify(result)).not.toContain("PRIVATE_CHAIN_OF_THOUGHT_DO_NOT_SHOW");
   });
 
@@ -1554,6 +1560,83 @@ describe("P0 Agent runtime", () => {
     expect(listed?.artifact_refs).toEqual([]);
     expect((listed?.data.receipt as { artifact_refs: unknown[] }).artifact_refs).toEqual([]);
     expect((listed?.data.observation as { facts: { artifacts: unknown[] } }).facts.artifacts).toEqual(artifacts);
+  });
+
+  it("reads the current Run Context Manifest returned by list_artifacts", async () => {
+    const fixture = await createFailingTypescriptFixture();
+    const data = await createTemporaryDataDir();
+    cleanups.push(fixture.cleanup, data.cleanup);
+    const model: ModelAdapter = {
+      name: "read-current-context-manifest-model",
+      async decide(input) {
+        const read = [...input.observations].reverse().find(
+          (observation) => typeof observation.facts.artifact_id === "string"
+            && typeof observation.facts.bytes_read === "number",
+        );
+        if (read !== undefined) {
+          return {
+            decision_id: "decision:read-current-context-manifest-finish",
+            kind: "finish",
+            public_reason: "The current Context manifest was read successfully.",
+            evidence_refs: [],
+            risk: "none",
+            final_answer: "Context manifest read.",
+          };
+        }
+        const listed = [...input.observations].reverse().find(
+          (observation) => Array.isArray(observation.facts.artifacts),
+        );
+        const artifacts = listed?.facts.artifacts;
+        if (Array.isArray(artifacts)) {
+          const manifest = artifacts.find((artifact): artifact is Record<string, unknown> => (
+            typeof artifact === "object"
+            && artifact !== null
+            && artifact.kind === "context_manifest"
+            && typeof artifact.locator === "string"
+          ));
+          if (manifest !== undefined) {
+            return {
+              decision_id: "decision:read-current-context-manifest",
+              kind: "tool_call",
+              public_reason: "Read the current Context manifest before answering.",
+              evidence_refs: [],
+              risk: "low",
+              tool_call: {
+                action_id: "action:read-current-context-manifest",
+                tool_name: "read_artifact",
+                arguments: { locator: manifest.locator, offset: 0, limit: 4_000 },
+              },
+            };
+          }
+        }
+        return {
+          decision_id: "decision:list-current-context-manifest",
+          kind: "tool_call",
+          public_reason: "List current Context artifacts before reading one.",
+          evidence_refs: [],
+          risk: "low",
+          tool_call: {
+            action_id: "action:list-current-context-manifest",
+            tool_name: "list_artifacts",
+            arguments: { offset: 0, limit: 100 },
+          },
+        };
+      },
+    };
+    const runtime = await createAgentRuntime({ dataDir: data.path, model });
+
+    const started = await runtime.startRun({ ...startInput(fixture.handle), mode: "execute" });
+    const result = await waitForTerminal(runtime, started.run_id);
+    const readCompleted = result.timeline.find((event) => (
+      event.type === "tool.completed"
+      && event.action_id === "action:read-current-context-manifest"
+    ));
+
+    expect(result.status).toBe("completed");
+    expect(readCompleted).toBeDefined();
+    expect(readCompleted?.artifact_refs).toHaveLength(1);
+    expect(readCompleted?.artifact_refs[0]?.kind).toBe("context_manifest");
+    expect(result.timeline.some((event) => event.type === "run.failed")).toBe(false);
   });
 
   it("runs the observation loop through preview, approval, patch, and test", async () => {

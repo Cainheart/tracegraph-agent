@@ -82,6 +82,7 @@ describe("Chat workbench", () => {
       summary: "Requesting a model decision",
       timestamp: "04:12:03",
       state: "running",
+      sourceType: "model.request_started",
       operationId: "model-call-1",
     }, {
       id: "decision",
@@ -90,8 +91,10 @@ describe("Chat workbench", () => {
       title: "Model decision",
       summary: "Inspect the repository before answering",
       rationale: "Inspect the repository before answering",
+      publicPlan: "Inspect the repository before answering",
       timestamp: "04:12:04",
       state: "succeeded",
+      sourceType: "model.decision",
       operationId: "model-call-1",
     }];
     const html = renderToStaticMarkup(<LanguageProvider><ChatView changedFiles={[]} conversation={[]} dataSource="live" events={events} evidence={emptyEvidence} outcome="Done" status="completed" task="Introduce the project" /></LanguageProvider>);
@@ -182,8 +185,10 @@ describe("Chat workbench", () => {
         title: "Model decision",
         summary: "Inspect the repository structure",
         rationale: "Inspect the repository structure",
+        publicPlan: "Inspect the repository structure",
         timestamp: "04:12:03",
         state: "succeeded",
+        sourceType: "model.decision",
         operationId: "model-call-1",
       }, {
         id: "tool-1",
@@ -201,8 +206,10 @@ describe("Chat workbench", () => {
         title: "Model decision",
         summary: "Validate the answer against the source",
         rationale: "Validate the answer against the source",
+        publicPlan: "Validate the answer against the source",
         timestamp: "04:12:05",
         state: "succeeded",
+        sourceType: "model.decision",
         operationId: "model-call-2",
       }]}
       evidence={emptyEvidence}
@@ -227,7 +234,45 @@ describe("Chat workbench", () => {
     expect(html).not.toContain('class="chat-process');
   });
 
-  it("keeps calibrated budget estimates distinct from provider-reported usage", () => {
+  it("does not turn policy explanations into model plans", () => {
+    const html = renderToStaticMarkup(<LanguageProvider><ChatView
+      changedFiles={[]}
+      conversation={[]}
+      dataSource="live"
+      events={[{
+        id: "policy",
+        sequence: 1,
+        kind: "decision",
+        title: "Policy evaluated",
+        summary: "Permission preset workspace-write allows this Tool action",
+        rationale: "Permission preset workspace-write allows this Tool action",
+        sourceType: "policy.evaluated",
+        timestamp: "04:12:03",
+        state: "succeeded",
+      }, {
+        id: "model",
+        sequence: 2,
+        kind: "decision",
+        title: "Model decision",
+        summary: "Inspect the repository before answering",
+        publicPlan: "Inspect the repository before answering",
+        sourceType: "model.decision",
+        timestamp: "04:12:04",
+        state: "succeeded",
+        operationId: "model-call-1",
+      }]}
+      evidence={emptyEvidence}
+      outcome="Done"
+      status="completed"
+      task="Inspect the project"
+    /></LanguageProvider>);
+
+    expect(html).toContain("Public plan");
+    expect(html).toContain("Policy");
+    expect(html).not.toContain("深度思考");
+  });
+
+  it("renders terminal runtime and context usage as a compact footer", () => {
     const contextBudget: ContextBudgetSnapshot = {
       modelCallId: "model_call_usage",
       windowTokens: 8_192,
@@ -270,19 +315,22 @@ describe("Chat workbench", () => {
       dataSource="live"
       events={[]}
       evidence={emptyEvidence}
+      elapsed="00:05"
       outcome="Done"
       status="completed"
       task="Inspect usage"
     /></LanguageProvider>);
 
-    expect(html).toContain("Budget estimate");
-    expect(html).toContain("Calibrated estimate");
-    expect(html).toContain("heuristic:openai:gpt-test:r3");
-    expect(html).toContain("Provider reported usage");
-    expect(html).toContain("Cached input");
-    expect(html).toContain("Reasoning output");
-    expect(html).toContain("Reported cost");
-    expect(html).toContain("0.0042 USD");
-    expect(html).toContain("Usage anomaly");
+    expect(html).toContain('class="chat-run-summary"');
+    expect(html).toContain("Run 00:05");
+    expect(html).toContain("Context 1K / 7.2K");
+    expect(html).toContain("Healthy");
+    expect(html).not.toContain("context-budget-strip");
+    expect(html).not.toContain("Budget estimate");
+    expect(html).not.toContain("Provider reported usage");
+    expect(html).not.toContain("heuristic:openai:gpt-test:r3");
+    expect(html).not.toContain("Usage anomaly");
+    expect(html.indexOf('class="chat-run-summary"')).toBeGreaterThan(html.indexOf('class="chat-answer"'));
+    expect(html.indexOf('class="chat-run-summary"')).toBeGreaterThan(html.indexOf('class="chat-evidence"'));
   });
 });

@@ -2092,7 +2092,10 @@ describe("LiveTraceGraphClient", () => {
     const timeline = [
       event(1, "context.built", { context_manifest_ref: "manifest_live" }),
       event(2, "model.decision", {
-        data: { decision: { risk: "medium", public_reason: "Bounded by the Host policy" } },
+        data: {
+          public_plan: "Check the Host policy before answering",
+          decision: { risk: "medium", public_reason: "Bounded by the Host policy" },
+        },
       }),
       event(3, "patch.applied", { patch_event_id: "patch_event_live", graph_delta_id: "graph_delta_live" }),
     ];
@@ -2169,7 +2172,13 @@ describe("LiveTraceGraphClient", () => {
 
     const snapshot = client.getSnapshot();
     expect(snapshot.run).toMatchObject({ inputTokens: 320, tokenLimit: 8_192, reservedOutput: 1_024 });
-    expect(snapshot.run?.events[1]).toMatchObject({ kind: "decision", risk: "medium", rationale: "Bounded by the Host policy" });
+    expect(snapshot.run?.events[1]).toMatchObject({
+      kind: "decision",
+      risk: "medium",
+      rationale: "Bounded by the Host policy",
+      sourceType: "model.decision",
+      publicPlan: "Check the Host policy before answering",
+    });
     expect(snapshot.contextSources).toEqual([expect.objectContaining({ name: "Repository evidence", action: "truncated", tokens: 320 })]);
     expect(snapshot.changedFiles).toEqual([expect.objectContaining({ path: "src/index.ts", additions: 1, deletions: 1 })]);
     expect(snapshot.graphNodes).toEqual(expect.arrayContaining([expect.objectContaining({ after: { label: "index.ts", path: "src/index.ts" }, state: "added" })]));

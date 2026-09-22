@@ -943,12 +943,12 @@ function subagentFailureResult(error: unknown): RawToolResult {
 const readArtifactTool: ToolDefinition<z.infer<typeof ReadArtifactInputSchema>> = {
   name: "read_artifact",
   ...rawToolContract("read_artifact", {
-    description: "Read one bounded UTF-8 page from an archived Context Artifact in the current Run.",
+    description: "Read one bounded UTF-8 page from a readable Context Artifact in the current Run.",
     timeoutMs: 5_000,
     concurrencySafe: true,
     sideEffect: "read",
-    callLabel: "Read archived Context",
-    resultLabel: "Archived Context page",
+    callLabel: "Read Context artifact",
+    resultLabel: "Context artifact page",
   }),
   inputSchema: ReadArtifactInputSchema,
   capability: "read",
@@ -974,8 +974,8 @@ const readArtifactTool: ToolDefinition<z.infer<typeof ReadArtifactInputSchema>> 
         status: "success",
         code: "artifact_read",
         summary: artifact.truncated
-          ? `Retrieved archived Context source ${artifact.artifactId} bytes ${artifact.offset}-${artifact.offset + artifact.returnedBytes}; more bytes remain`
-          : `Retrieved archived Context source ${artifact.artifactId} through byte ${artifact.offset + artifact.returnedBytes}`,
+          ? `Retrieved Context artifact ${artifact.artifactId} bytes ${artifact.offset}-${artifact.offset + artifact.returnedBytes}; more bytes remain`
+          : `Retrieved Context artifact ${artifact.artifactId} through byte ${artifact.offset + artifact.returnedBytes}`,
         content: artifact.content,
         mimeType: artifact.mimeType,
         facts: {

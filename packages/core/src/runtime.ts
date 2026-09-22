@@ -4835,11 +4835,11 @@ class AgentRuntimeImpl implements AgentRuntime {
       // A public preview becomes complete only after the complete Decision has
       // passed both schema and credential checks. Before this point it remains
       // an untrusted, volatile preview rather than a completed answer.
-      // Replace the volatile provider preview with a short, safe public plan
-      // once the full Decision is validated. Providers sometimes echo the
-      // answer into `public_reason`; keeping that text would make the UI look
-      // as if it were exposing model chain-of-thought. The durable activity
-      // and the final model surface use the same normalized summary.
+      // Replace the volatile provider preview with the same short, safe public
+      // plan once the full Decision is validated. Providers sometimes echo
+      // the answer into `public_reason`; keeping that text would make the UI
+      // look as if it were exposing model chain-of-thought. Do not synthesize
+      // a plan when the provider did not publish one.
       this.#flushModelSurfaceForCall(
         state.runId,
         modelCallId,
@@ -5546,6 +5546,7 @@ class AgentRuntimeImpl implements AgentRuntime {
     let transportFailed = false;
     let appliedWalRecord: ActionWalRecord | undefined;
     let walTransactionId: string | undefined;
+    let readArtifactRef: ArtifactRef | undefined;
     let refetchedContextArtifact: ArtifactRef | undefined;
     let refetchedContextRange: {
       offset: number;
@@ -5626,15 +5627,18 @@ class AgentRuntimeImpl implements AgentRuntime {
             runId: state.runId,
           });
           if (result.status !== "available") {
-            throw new Error(`Archived Context source is ${result.status}`);
+            throw new Error(`Context artifact is ${result.status}`);
           }
-          if (
-            result.artifact.kind !== "spilled_tool_output"
-            && result.artifact.kind !== "context_source_archive"
-          ) {
-            throw new Error("Artifact locator does not reference an archived Context source");
+          const isArchivedContextSource = result.artifact.kind === "spilled_tool_output"
+            || result.artifact.kind === "context_source_archive";
+          if (!isArchivedContextSource && result.artifact.kind !== "context_manifest") {
+            throw new Error("Artifact locator does not reference a readable Context artifact");
           }
-          refetchedContextArtifact = result.artifact;
+          // A manifest is a readable, current-Run Context artifact, but it is
+          // not a spill archive. Keep it in the tool receipt without emitting
+          // the misleading `context.spill_refetched` event below.
+          readArtifactRef = result.artifact;
+          if (isArchivedContextSource) refetchedContextArtifact = result.artifact;
           const chunk = boundedUtf8Chunk(result.content, offset, limit);
           refetchedContextRange = chunk;
           return {
@@ -5773,27 +5777,25 @@ class AgentRuntimeImpl implements AgentRuntime {
       }
     }
     const completedAt = this.#now();
-    const reusedContextArtifact = call.tool_name === "read_artifact"
+    const readsCanonicalArtifact = call.tool_name === "read_artifact"
       && raw.status === "success"
-      ? refetchedContextArtifact
-      : undefined;
-    const reusesRefetchedContextArtifact = reusedContextArtifact !== undefined;
+      && readArtifactRef !== undefined;
     const listsArtifactMetadata = call.tool_name === "list_artifacts" && raw.status === "success";
     // A read_artifact page is a bounded view over the original run-scoped
     // archive. Reference that archive directly; never duplicate each page as
     // a new tool_output Artifact.
-    const artifactRefs: ArtifactRef[] = reusedContextArtifact === undefined
+    const artifactRefs: ArtifactRef[] = readArtifactRef === undefined
       ? []
-      : [reusedContextArtifact];
+      : [readArtifactRef];
     // list_artifacts is a bounded metadata view over canonical refs. Persisting
     // its JSON response would make each listing appear in the next listing and
     // recursively pollute the run Artifact index.
-    let artifactContent = reusesRefetchedContextArtifact || listsArtifactMetadata
+    let artifactContent = readsCanonicalArtifact || listsArtifactMetadata
       ? undefined
       : raw.content;
     let artifactMimeType = raw.mimeType ?? "text/plain";
     if (
-      !reusesRefetchedContextArtifact
+      !readsCanonicalArtifact
       && !listsArtifactMetadata
       && artifactContent === undefined
       && raw.facts !== undefined
@@ -8021,7 +8023,15 @@ class AgentRuntimeImpl implements AgentRuntime {
   ): void {
     const state = this.#runs.get(runId);
     const key = `${runId}:${modelCallId}:public_plan_snapshot`;
-    if (publicPlanOverride !== undefined && state !== undefined) {
+    if (publicPlanOverride === undefined) {
+      // A provider may have streamed a provisional public_reason before the
+      // final Decision was parsed. If the validated Decision has no safe
+      // public plan (for example, it echoed the answer), discard that
+      // provisional text instead of flushing an unvalidated/fake thought.
+      const pendingPlan = this.#pendingModelSurface.get(key);
+      if (pendingPlan?.timer !== undefined) clearTimeout(pendingPlan.timer);
+      this.#pendingModelSurface.delete(key);
+    } else if (state !== undefined) {
       const existing = this.#pendingModelSurface.get(key);
       const pending = existing ?? {
         runId,
@@ -9079,7 +9089,7 @@ function publicDecisionActivity(decision: Decision): {
   const actionLabel = toolName === "read_file"
     ? "a repository file read"
     : toolName === "read_artifact"
-      ? "an archived Context source read"
+      ? "a Context artifact read"
     : toolName === "list_dir"
       ? "the repository structure"
     : toolName === "search"
@@ -9101,31 +9111,12 @@ function publicDecisionActivity(decision: Decision): {
  * The model's native reasoning channel is intentionally private. This helper
  * exposes only an explicit, short public decision summary and rejects the
  * common failure mode where a provider copies the final answer into
- * `public_reason`. The fallback describes the observable action instead.
+ * `public_reason`. An absent public plan remains absent; durable decisions
+ * and observed tools are rendered separately.
  */
-function publicPlanForDecision(decision: Decision): string {
+function publicPlanForDecision(decision: Decision): string | undefined {
   const candidate = publicPlanCandidate(decision);
-  if (candidate.length > 0) return candidate;
-  if (decision.kind === "finish") return "Prepared a direct response";
-  const calls = decisionToolCalls(decision);
-  if (calls.length > 1) return `Selected ${calls.length} checked actions`;
-  const toolName = calls[0]?.tool_name;
-  const actionLabel = toolName === "read_file"
-    ? "a repository file read"
-    : toolName === "read_artifact"
-      ? "an archived Context source read"
-      : toolName === "list_dir"
-        ? "the repository structure"
-        : toolName === "search"
-          ? "a repository search"
-          : toolName === "preview_patch"
-            ? "a patch preview"
-            : toolName === "commit_patch"
-              ? "an approved patch application"
-              : toolName === "run_test"
-                ? "a project test"
-                : "the next checked action";
-  return `Selected ${actionLabel}`;
+  return candidate.length === 0 ? undefined : candidate;
 }
 
 function publicPlanCandidate(decision: Decision): string {
@@ -9525,7 +9516,7 @@ function publicToolActivity(
       ? record.limit
       : undefined;
     return {
-      summary: locator === undefined ? "Reading an archived Context source" : `Reading ${locator}`,
+      summary: locator === undefined ? "Reading a Context artifact" : `Reading ${locator}`,
       data: {
         tool_name: toolName,
         activity: "read_artifact",

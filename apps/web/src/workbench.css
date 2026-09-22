@@ -250,6 +250,13 @@
 .chat-live-answer { position: relative; }
 .chat-live-answer::after { content: ""; position: absolute; right: -5px; bottom: 0; width: 56px; height: 1.2em; background: linear-gradient(90deg, transparent, var(--tg-canvas)); pointer-events: none; opacity: 0; }
 .chat-answer.is-streaming .chat-live-answer::after { opacity: .68; animation: tg-answer-fade 1.2s ease-in-out infinite; }
+.chat-run-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; max-width: 900px; margin-top: 14px; padding-top: 9px; border-top: 1px solid color-mix(in srgb, var(--tg-border) 78%, transparent); color: var(--faint); font-family: var(--font-mono); font-size: 9px; line-height: 1.4; }
+.chat-run-summary > span { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.chat-run-summary > span + span::before { content: "·"; margin-right: 1px; color: var(--tg-border-strong); }
+.chat-run-summary svg { color: var(--tg-cobalt); }
+.chat-run-summary-status { color: var(--tg-teal); }
+.chat-run-summary-status.is-warning { color: var(--tg-amber); }
+.chat-run-summary-status.is-compressed { color: var(--tg-cobalt); }
 .chat-evidence { flex-wrap: wrap; gap: 7px; margin-top: 16px; }
 .chat-evidence span { border-color: var(--tg-border); border-radius: 999px; padding: 6px 9px; color: var(--muted); background: color-mix(in srgb, var(--tg-surface) 78%, transparent); font-size: 9px; }
 

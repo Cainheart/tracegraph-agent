@@ -185,6 +185,10 @@ export interface TraceEvent {
   readonly permission?: PermissionSnapshot;
   /** Host policy result, including the matched rule explanation when present. */
   readonly policyDecision?: PolicyDecision;
+  /** The wire event type that produced this public activity. */
+  readonly sourceType?: string;
+  /** Explicit, bounded model-authored public plan; never inferred from policy/tool text. */
+  readonly publicPlan?: string;
   readonly rationale?: string;
   /** Public, persisted operation metadata used by the chat activity surface. */
   readonly operationId?: string;
@@ -402,6 +406,8 @@ export interface ConversationTurn {
   readonly elapsed?: string;
   readonly inputTokens?: number;
   readonly totalTokens?: number;
+  /** Compact context usage captured with the terminal Run for replayed turns. */
+  readonly contextBudget?: ContextBudgetSnapshot;
 }
 
 export type EvidenceStatus = "demo" | "loading" | "available" | "unavailable" | "corrupt" | "not_present";

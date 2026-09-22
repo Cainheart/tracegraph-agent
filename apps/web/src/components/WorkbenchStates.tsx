@@ -178,7 +178,7 @@ export function ChatView({
   return (
     <section className="chat-view">
       <div className="chat-date"><span />{t("Today")}<span /></div>
-      {conversation.map((turn) => <ChatTurn dataSource={dataSource} events={turn.events} key={turn.runId} response={turn.response} status={turn.status} task={turn.task} {...(turn.elapsed === undefined ? {} : { elapsed: turn.elapsed })} {...(turn.inputTokens === undefined ? {} : { inputTokens: turn.inputTokens })} {...(turn.totalTokens === undefined ? {} : { totalTokens: turn.totalTokens })} />)}
+      {conversation.map((turn) => <ChatTurn dataSource={dataSource} events={turn.events} key={turn.runId} response={turn.response} status={turn.status} task={turn.task} {...(turn.contextBudget === undefined ? {} : { contextBudget: turn.contextBudget })} {...(turn.elapsed === undefined ? {} : { elapsed: turn.elapsed })} {...(turn.inputTokens === undefined ? {} : { inputTokens: turn.inputTokens })} {...(turn.totalTokens === undefined ? {} : { totalTokens: turn.totalTokens })} />)}
       <ChatTurn changedFiles={changedFiles} dataSource={dataSource} events={events} evidence={evidence} progressive={progressive} response={response} status={status} task={task} {...(elapsed === undefined ? {} : { elapsed })} {...(inputTokens === undefined ? {} : { inputTokens })} {...(totalTokens === undefined ? {} : { totalTokens })} {...(contextBudget === undefined ? {} : { contextBudget })} {...(turnsCompleted === undefined ? {} : { turnsCompleted })} {...(turnLimit === undefined ? {} : { turnLimit })} {...(publicActivities === undefined ? {} : { publicActivities })} {...(modelSurface === undefined ? {} : { modelSurface })} />
       <div ref={endRef} />
     </section>
@@ -207,7 +207,7 @@ function ChatTurn({ task, response, status, events, dataSource, changedFiles = [
   const process = publicProcess(events, publicActivities);
   const active = status === "running" || status === "indexing" || status === "reconnecting";
   const persistedPlans = process
-    .filter((event) => event.kind === "decision" && event.state === "succeeded" && Boolean(event.rationale ?? event.summary))
+    .filter((event) => event.kind === "decision" && event.state === "succeeded" && Boolean(event.publicPlan?.trim()))
     .map((event) => ({
       id: `decision:${event.id}`,
       modelCallId: event.operationId ?? event.id,
@@ -215,7 +215,7 @@ function ChatTurn({ task, response, status, events, dataSource, changedFiles = [
       timestamp: event.timestamp,
       type: "public_plan_snapshot" as const,
       status: "completed" as const,
-      text: event.rationale ?? event.summary,
+      text: event.publicPlan!.trim(),
     }));
   // Older Hosts may still send a `thinking_snapshot` produced from a
   // provider's private reasoning channel.  Treat it as compatibility data,
@@ -258,12 +258,11 @@ function ChatTurn({ task, response, status, events, dataSource, changedFiles = [
   // the entire answer from an empty string. Only live Run states should paint
   // incrementally; terminal states render the persisted answer immediately.
   const progressiveResponse = useProgressiveText(answerTarget, shouldUseProgressiveAnswer(status, progressive));
-  const answerStreaming = latestPublicAnswer?.status === "streaming" || progressiveResponse.length < answerTarget.length;
+  const answerStreaming = (active && latestPublicAnswer?.status === "streaming") || progressiveResponse.length < answerTarget.length;
   return <>
-    <article className="chat-message user-message" data-chat-role="user"><span className="avatar user-avatar">C</span><div className="chat-turn-body"><header><strong>{t("You")}</strong><time>{dataSource === "demo" ? "10:02" : t("recorded")}</time>{(elapsed || inputTokens !== undefined || totalTokens !== undefined) && <span className="chat-turn-metrics">{elapsed && <span><Icon name="clock" size={11} />{elapsed}</span>}{inputTokens !== undefined && <span>{language === "zh-CN" ? "输入" : "in"} {formatTokens(inputTokens)}</span>}{totalTokens !== undefined && <span>{language === "zh-CN" ? "总计" : "total"} {formatTokens(totalTokens)}</span>}</span>}</header><p>{task}</p></div></article>
+    <article className="chat-message user-message" data-chat-role="user"><span className="avatar user-avatar">C</span><div className="chat-turn-body"><header><strong>{t("You")}</strong><time>{dataSource === "demo" ? "10:02" : t("recorded")}</time></header><p>{task}</p></div></article>
     <article className={`chat-message agent-message ${active ? "is-live" : ""}`} data-chat-role="agent"><span className="avatar agent-avatar"><Icon name="graph" size={15} /></span><div className="chat-turn-body">
       <header><strong>TraceGraph Agent</strong><time>{dataSource === "demo" ? "10:02" : t(status === "running" || status === "indexing" ? "live" : "recorded")}</time></header>
-      {contextBudget && <ContextBudgetStrip budget={contextBudget} language={language} {...(turnsCompleted === undefined ? {} : { turnsCompleted })} {...(turnLimit === undefined ? {} : { turnLimit })} />}
       {(visiblePlans.length > 0 || progressEvents.length > 0 || active) && <section aria-label={t("Reasoning process")} className="public-model-process">
         <div className="public-progress-heading" title={language === "zh-CN" ? "仅显示模型明确发布的公开计划和已经发生的工具事实" : "Only explicit public plans and observed tool facts are shown"}>
           <Icon name="activity" size={14} /><span>{t("Reasoning process")}</span>{active && <em><i />{language === "zh-CN" ? "实时" : "live"}</em>}<small>{active ? (language === "zh-CN" ? "流式" : "streaming") : (language === "zh-CN" ? "已记录" : "recorded")}</small>
@@ -273,11 +272,12 @@ function ChatTurn({ task, response, status, events, dataSource, changedFiles = [
       <div className={`chat-answer ${answerStreaming ? "is-streaming" : ""}`}>
       {latestPublicAnswer?.text
         ? <div aria-live="polite" className="chat-live-answer"><MarkdownContent content={progressiveResponse} />{(active || answerStreaming) && <span aria-hidden="true" className="public-model-caret">▍</span>}</div>
-        : active
-          ? <div aria-live="polite" className="chat-live-response"><span className="event-spinner" /><div><strong>{t("Working on your request")}</strong><p>{language === "zh-CN" ? "正在分析请求并等待下一步公开计划…" : "Analyzing the request and waiting for the next public plan…"}</p></div></div>
-          : <MarkdownContent content={progressiveResponse} />}
+          : active
+            ? <div aria-live="polite" className="chat-live-response"><span className="event-spinner" /><div><strong>{t("Working on your request")}</strong><p>{language === "zh-CN" ? "正在分析请求并等待下一步公开计划…" : "Analyzing the request and waiting for the next public plan…"}</p></div></div>
+            : <MarkdownContent content={progressiveResponse} />}
       </div>
       <div className="chat-evidence">{changedFiles.length > 0 && <span><Icon name="diff" size={13} />{changedFiles.length} {t("files")} · +{totalDiff(changedFiles).additions} −{totalDiff(changedFiles).deletions}</span>}{evidence && <span><Icon name="graph" size={13} />{t("Graph")} {evidence.graph.status}</span>}<span><Icon name="shield" size={13} />{t(status)}</span></div>
+      {!active && !answerStreaming && (elapsed || contextBudget) && <ChatRunSummary language={language} {...(contextBudget === undefined ? {} : { contextBudget })} {...(elapsed === undefined ? {} : { elapsed })} />}
     </div></article>
   </>;
 }
@@ -369,7 +369,7 @@ function PublicModelSurface({
       status: item.status,
       timestamp: item.timestamp,
       text: item === latestPlan ? visiblePlanText : item.text,
-      label: language === "zh-CN" ? "深度思考" : "Public plan",
+      label: language === "zh-CN" ? "模型计划" : "Public plan",
       streaming: item.status === "streaming" && active,
     })),
     ...events
@@ -381,7 +381,7 @@ function PublicModelSurface({
         status: event.state,
         timestamp: event.timestamp,
         text: event.summary,
-        label: progressEventLabel(event.kind, language),
+        label: progressEventLabel(event.kind, language, event.sourceType),
         streaming: event.state === "running",
         detail: [event.toolName, event.target].filter((value): value is string => Boolean(value)).join(" · ") || undefined,
       })),
@@ -404,8 +404,12 @@ function PublicModelSurface({
   </div>;
 }
 
-function progressEventLabel(kind: TraceEvent["kind"], language: "zh-CN" | "en"): string {
+function progressEventLabel(kind: TraceEvent["kind"], language: "zh-CN" | "en", sourceType?: string): string {
   if (language !== "zh-CN") {
+    if (sourceType === "policy.evaluated" || sourceType === "policy.denied") return "Policy";
+    if (sourceType === "model.request_started") return "Model request";
+    if (sourceType === "model.decision") return "Model decision";
+    if (sourceType?.startsWith("action.")) return "Validation";
     const labels: Record<string, string> = {
       run: "Run",
       context: "Context",
@@ -418,10 +422,14 @@ function progressEventLabel(kind: TraceEvent["kind"], language: "zh-CN" | "en"):
     };
     return labels[kind] ?? "Progress";
   }
+  if (sourceType === "policy.evaluated" || sourceType === "policy.denied") return "策略";
+  if (sourceType === "model.request_started") return "模型请求";
+  if (sourceType === "model.decision") return "模型决策";
+  if (sourceType?.startsWith("action.")) return "校验";
   const labels: Record<string, string> = {
     run: "运行",
     context: "上下文",
-    decision: "深度思考",
+    decision: "决策",
     tool: "执行",
     approval: "审批",
     patch: "修改",
@@ -464,96 +472,31 @@ function traceFromLiveActivity(activity: PublicActivitySnapshot): TraceEvent {
     summary: activity.summary,
     timestamp: activity.timestamp,
     state,
+    sourceType: activity.sourceEventType,
   };
 }
 
-function ContextBudgetStrip({ budget, language, turnsCompleted, turnLimit }: { budget: ContextBudgetSnapshot; language: "zh-CN" | "en"; turnsCompleted?: number; turnLimit?: number }) {
-  const inputBudget = Math.max(1, budget.inputBudgetTokens);
-  const usagePercent = percentage(budget.usedTokens, inputBudget);
-  const warningPercent = percentage(budget.warningThresholdTokens, inputBudget);
-  const compressionPercent = percentage(budget.compressionThresholdTokens, inputBudget);
-  const status = language === "zh-CN"
-    ? { healthy: "健康", warning: "预警", compressed: "已压缩" }[budget.status]
-    : { healthy: "Healthy", warning: "Warning", compressed: "Compressed" }[budget.status];
+function ChatRunSummary({ contextBudget, elapsed, language }: {
+  contextBudget?: ContextBudgetSnapshot;
+  elapsed?: string;
+  language: "zh-CN" | "en";
+}) {
   const labels = language === "zh-CN"
-    ? { context: "上下文", input: "输入预算", window: "窗口", output: "输出预留", warning: "预警", compression: "压缩", turns: "轮次" }
-    : { context: "Context", input: "input budget", window: "window", output: "output reserved", warning: "warning", compression: "compression", turns: "turns" };
-  return (
-    <section aria-label={`${labels.context}: ${status}`} className={`context-budget-strip context-budget-${budget.status}`}>
-      <div className="context-budget-heading">
-        <span><Icon name="layers" size={13} /><strong>{labels.context}</strong><b>{formatTokens(budget.usedTokens)} / {formatTokens(budget.inputBudgetTokens)}</b><small>{labels.input}</small></span>
-        <em>{status}</em>
-      </div>
-      <div aria-label={`${usagePercent}%`} aria-valuemax={100} aria-valuemin={0} aria-valuenow={usagePercent} className="context-budget-track" role="progressbar">
-        <i style={{ width: `${usagePercent}%` }} />
-        <span className="context-budget-threshold is-warning" style={{ left: `${warningPercent}%` }} />
-        <span className="context-budget-threshold is-compression" style={{ left: `${compressionPercent}%` }} />
-      </div>
-      <footer>
-        <span>{formatTokens(budget.windowTokens)} {labels.window}</span>
-        <span>{formatTokens(budget.reservedOutputTokens)} {labels.output}</span>
-        {turnsCompleted !== undefined && turnLimit !== undefined && <span>{turnsCompleted} / {turnLimit} {labels.turns}</span>}
-        <span>{warningPercent}% {labels.warning}</span>
-        <span>{compressionPercent}% {labels.compression}</span>
-      </footer>
-      <ContextUsageSummary budget={budget} language={language} />
-    </section>
-  );
-}
-
-function ContextUsageSummary({ budget, language }: { budget: ContextBudgetSnapshot; language: "zh-CN" | "en" }) {
-  const { t } = useI18n();
-  const estimate = budget.estimate;
-  const usage = budget.providerUsage;
-  if (!estimate && !usage) return null;
-  const confidence = estimate?.confidence === "calibrated"
-    ? t("Calibrated estimate")
-    : estimate?.confidence === "exact"
-      ? t("Exact tokenizer")
-      : t("Estimated");
-  return <div className="context-usage-summary">
-    {estimate && <section aria-label={t("Budget estimate")} className="context-token-estimate">
-      <header><strong>{t("Budget estimate")}</strong><span>{confidence}</span><code>{estimate.estimatorId}</code></header>
-      <div className="context-token-totals">
-        <span>{t("Input")} <b>{formatTokens(estimate.inputTokens)}</b></span>
-        <span>{t("Estimated output")} <b>{formatTokens(estimate.outputTokens)}</b></span>
-        {estimate.cachedTokens !== undefined && <span>{t("Estimated cached input")} <b>{formatTokens(estimate.cachedTokens)}</b></span>}
-      </div>
-      <div className="context-token-sections">
-        {Object.entries(estimate.perSection).map(([section, tokens]) => <span key={section}>{t(titleCase(section))} <code>{formatTokens(tokens)}</code></span>)}
-      </div>
-    </section>}
-    {usage && <section aria-label={t("Provider reported usage")} className="context-provider-usage">
-      <header><strong>{t("Provider reported usage")}</strong><span>{usage.provider} · {usage.model} · {t(usage.requestKind === "repair" ? "Repair request" : usage.requestKind === "summary" ? "Summary request" : "Initial request")} #{usage.requestSequence}</span></header>
-      <div className="context-token-totals">
-        <span>{t("Input")} <b>{formatTokens(usage.inputTokens)}</b></span>
-        <span>{t("Output")} <b>{formatTokens(usage.outputTokens)}</b></span>
-        {usage.cachedInputTokens !== undefined && <span>{t("Cached input")} <b>{formatTokens(usage.cachedInputTokens)}</b></span>}
-        {usage.reasoningOutputTokens !== undefined && <span>{t("Reasoning output")} <b>{formatTokens(usage.reasoningOutputTokens)}</b></span>}
-        <span>{t("Total")} <b>{formatTokens(usage.totalTokens)}</b></span>
-      </div>
-      <div className="context-usage-cost">{usage.cost.status === "provider_reported"
-        ? <span>{t("Reported cost")} <b>{formatCost(usage.cost.amount, usage.cost.currency, language)}</b></span>
-        : <span>{t("Cost unavailable")}</span>}</div>
-      {usage.anomaly && <div className="context-usage-anomaly" role="alert"><strong>{t("Usage anomaly")}</strong><span>{t("Provider input differs from the preflight estimate")}</span></div>}
-    </section>}
-  </div>;
-}
-
-function percentage(value: number, total: number): number {
-  return Math.max(0, Math.min(100, Math.round((value / total) * 100)));
+    ? { elapsed: "运行", context: "上下文", healthy: "健康", warning: "预警", compressed: "已压缩" }
+    : { elapsed: "Run", context: "Context", healthy: "Healthy", warning: "Warning", compressed: "Compressed" };
+  const contextUsage = contextBudget
+    ? `${formatTokens(contextBudget.usedTokens)} / ${formatTokens(contextBudget.inputBudgetTokens)}`
+    : undefined;
+  const statusLabel = contextBudget ? labels[contextBudget.status] : undefined;
+  return <footer aria-label={language === "zh-CN" ? "运行摘要" : "Run summary"} className="chat-run-summary">
+    {elapsed && <span><Icon name="clock" size={11} />{labels.elapsed} {elapsed}</span>}
+    {contextUsage && <span><Icon name="layers" size={11} />{labels.context} {contextUsage}</span>}
+    {statusLabel && <span className={`chat-run-summary-status is-${contextBudget?.status}`}>{statusLabel}</span>}
+  </footer>;
 }
 
 function formatTokens(value: number): string {
   if (value < 1_000) return value.toLocaleString();
   const thousands = value / 1_000;
   return `${thousands >= 100 || Number.isInteger(thousands) ? thousands.toFixed(0) : thousands.toFixed(1)}K`;
-}
-
-function titleCase(value: string): string {
-  return `${value.slice(0, 1).toUpperCase()}${value.slice(1)}`;
-}
-
-function formatCost(amount: number, currency: string, language: "zh-CN" | "en"): string {
-  return `${amount.toLocaleString(language, { maximumFractionDigits: 8 })} ${currency}`;
 }

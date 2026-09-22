@@ -1616,6 +1616,7 @@ export class LiveTraceGraphClient implements WorkbenchClient {
       status: run.status,
       response: run.outcome ?? run.currentStep,
       events: run.events,
+      ...(run.contextBudget === undefined ? {} : { contextBudget: run.contextBudget }),
       ...(run.elapsed === undefined ? {} : { elapsed: run.elapsed }),
       ...(run.inputTokens === undefined ? {} : { inputTokens: run.inputTokens }),
       ...(run.contextBudget?.providerUsage?.totalTokens === undefined ? {} : { totalTokens: run.contextBudget.providerUsage.totalTokens }),
@@ -2438,6 +2439,12 @@ function mapWireEvent(event: WireSessionEvent, runStatus: RunProjection["status"
   const riskValue = stringValue(decision?.risk) ?? stringValue(pending?.risk);
   const risk = riskValue === "low" || riskValue === "medium" || riskValue === "high" ? riskValue : undefined;
   const rationale = policyDecision?.explanation ?? stringValue(decision?.public_reason);
+  // Only the Runtime's explicit, redacted `public_plan` field is eligible for
+  // the inline reasoning surface. Policy explanations and generic event
+  // summaries are facts, not model-authored plans.
+  const publicPlan = event.type === "model.decision"
+    ? stringValue(event.data.public_plan)
+    : undefined;
   const toolCall = recordValue(decision?.tool_call);
   const toolArguments = recordValue(toolCall?.arguments);
   const observation = recordValue(event.data.observation);
@@ -2479,6 +2486,8 @@ function mapWireEvent(event: WireSessionEvent, runStatus: RunProjection["status"
     ...(sandboxReport === undefined ? {} : { sandboxReport }),
     ...(permission === undefined ? {} : { permission }),
     ...(policyDecision === undefined ? {} : { policyDecision }),
+    sourceType: event.type,
+    ...(publicPlan === undefined ? {} : { publicPlan }),
     ...(rationale === undefined ? {} : { rationale }),
     ...(operationId === undefined ? {} : { operationId }),
     ...(toolName === undefined ? {} : { toolName }),
