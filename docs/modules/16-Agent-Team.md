@@ -185,4 +185,4 @@ pnpm --filter @tracegraph/web test:unit
 pnpm evals
 ```
 
-重点验收由本模块及对应测试维护：mailbox 重启不丢、heartbeat timeout 原子 reopen 且不自动重派、空/部分 sweep 的 durable receipt 与重试修复、late-create running child backfill、并发 claim 单 owner、exact-command result、完成证据与最终 payload 校验、CLI/Host/SDK/Web authority/read-only 边界，以及事件/projector/recovery 版本的文档一致性。V2 去向见 [`../outlive-agent-v2/10-tracegraph-to-outlive-migration.md`](../outlive-agent-v2/10-tracegraph-to-outlive-migration.md)。
+重点验收由本模块及对应测试维护：mailbox 重启不丢、heartbeat timeout 原子 reopen 且不自动重派、空/部分 sweep 的 durable receipt 与重试修复、late-create running child backfill、并发 claim 单 owner、exact-command result、完成证据与最终 payload 校验、CLI/Host/SDK/Web authority/read-only 边界，以及事件/projector/recovery 版本的文档一致性。V2 去向见 [`../outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md`](../outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md)。

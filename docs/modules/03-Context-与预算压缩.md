@@ -299,4 +299,4 @@ sum(token_estimate.per_section)
 - 模块 06：OpenAI/Anthropic summary provider 适配
 - 模块 10：Web Context 原文 disclosure
 - 模块 08：G-21 Memory 准入、BM25 检索、来源与 degraded recall
-- `../outlive-agent-v2/10-tracegraph-to-outlive-migration.md`：G-02/G-03/G-21 的 V2 去向与迁移边界
+- `../outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md`：G-02/G-03/G-21 的 V2 去向与迁移边界

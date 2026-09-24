@@ -1,7 +1,7 @@
 schema_version: 1
 roadmap: outlive-agent-v2
 status: proposed
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-24
 
 execution_rules:
   one_primary_change_type_per_task: true
@@ -34,7 +34,7 @@ phases:
     title: 稳定 family 升包
     depends_on: [P2]
     exit_criteria:
-      - 第一批持久/能力边界成为窄 package API
+      - 达到升包门槛的边界成为窄 package API；其余保留内部 seam 并记录裁决
   - id: P4
     title: Memory 与 Experience
     depends_on: [P2]
@@ -107,6 +107,7 @@ tasks:
     acceptance:
       - package DAG、LOC、测试/事件数量和关键性能由命令生成
       - 报告包含 commit、平台和生成时间
+      - --check 只比较确定性结构数据；环境、时间和耗时样本作为诊断元数据
 
   - id: BOUND-004
     phase: P0
@@ -114,7 +115,7 @@ tasks:
     owner: docs
     change_type: docs
     depends_on: [BASE-003]
-    outputs: [README.md, docs/modules, docs/outlive-agent-v2/10-tracegraph-to-outlive-migration.md]
+    outputs: [README.md, docs/modules, docs/outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md]
     acceptance:
       - Desktop 与 Memory V2 明确标为未实现
       - local-first、sandbox、remote scope 不含糊
@@ -127,8 +128,10 @@ tasks:
     depends_on: [BASE-003]
     outputs: [architecture-policy.yaml, scripts/verify-boundaries.mjs]
     acceptance:
+      - 包升格准则和 architecture-policy.yaml 工作名经 Note 裁决
       - 当前依赖图通过
-      - 临时反向依赖和依赖环失败
+      - 临时反向依赖、deep import 和依赖环失败
+      - 移除 CI 中的检查步骤时连线测试失败
 
   - id: ARCH-011
     phase: P1
@@ -191,7 +194,7 @@ tasks:
     outputs: [packages/core/src/seams]
     acceptance:
       - seams 只依赖 kernel/contracts
-      - focused tests 与 snapshot 无意外 diff
+      - 现有 focused、CLI 纵向 e2e 与 Ledger replay 无意外变化
 
   - id: CORE-022
     phase: P2
@@ -265,8 +268,9 @@ tasks:
     depends_on: [CORE-027]
     outputs: [small-agent-loop]
     acceptance:
-      - runtime.ts 行数显著下降且职责可在 README 完整描述
-      - 全部 focused/integration/snapshot 通过
+      - runtime.ts 职责收敛、行数下降且可在 README 完整描述
+      - focused/integration、CLI 纵向 e2e 与 Ledger replay 通过
+      - canonical event 顺序、审批时点与外部工作区结果不变
 
   - id: PKG-030
     phase: P3
@@ -276,6 +280,7 @@ tasks:
     depends_on: [CORE-028]
     outputs: [packages/evidence]
     acceptance:
+      - 先按 AGENTS 升包门槛裁决；未通过时留在内部模块并记录 Note
       - projection 无 I/O
       - core 只走公开 exports
 
@@ -287,6 +292,7 @@ tasks:
     depends_on: [PKG-030]
     outputs: [packages/session]
     acceptance:
+      - 先按 AGENTS 升包门槛裁决；未通过时保留内部 seam 并记录 Note
       - 当前 generation reader/writer/migration tests 通过
 
   - id: PKG-032
@@ -297,6 +303,7 @@ tasks:
     depends_on: [CORE-028]
     outputs: [packages/mcp, packages/lsp]
     acceptance:
+      - MCP 与 LSP 分别满足升包门槛；未通过者保留内部 seam 并记录 Note
       - 不依赖 core concrete runtime
 
   - id: PKG-033
@@ -307,6 +314,7 @@ tasks:
     depends_on: [PKG-030]
     outputs: [packages/tool]
     acceptance:
+      - 先按 AGENTS 升包门槛裁决；未通过时保留内部 seam 并记录 Note
       - denial 在 dispatch/WAL/mutation 前发生
 
   - id: PKG-034
@@ -317,6 +325,7 @@ tasks:
     depends_on: [PKG-030]
     outputs: [packages/context]
     acceptance:
+      - 先按 AGENTS 升包门槛裁决；未通过时保留内部 seam 并记录 Note
       - model-visible context 可由 manifest 重建
 
   - id: PKG-035
@@ -327,6 +336,7 @@ tasks:
     depends_on: [PKG-031, PKG-033, PKG-034]
     outputs: [packages/boot, profiles]
     acceptance:
+      - boot 物理包通过升包门槛；否则保留组合根内部模块并记录 Note
       - resolved profile 可 dump/hash
 
   - id: MEM-040

@@ -2,7 +2,7 @@ schema_version: 1
 document_set: outlive-agent-v2
 status: proposed
 language: zh-CN
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-24
 
 identity:
   product_working_name: Outlive Agent
@@ -13,60 +13,114 @@ identity:
   product_promise: 让工作记忆有来源、经验可继承、行动可验证。
 
 canonical_entry: ../outlive-agent-v2.md
+design_index: README.md
 
 truth_sources:
   current_product:
     - ../../README.md
     - ../modules/
   migration_baseline:
-    - 10-tracegraph-to-outlive-migration.md
+    - 10-tracegraph-to-outlive-migration/README.md
   note: V2 documents are target-state proposals. They never override current capability evidence.
 
 documents:
   - id: product-charter
-    path: 00-product-charter.md
+    path: 00-product-charter/README.md
     status: proposed
     owns: [vision, positioning, product-boundaries, naming]
+    subdocuments:
+      - 00-product-charter/01-identity-positioning.md
+      - 00-product-charter/02-user-value-boundaries.md
+      - 00-product-charter/03-success-metrics-decisions.md
   - id: system-architecture
-    path: 01-system-architecture.md
+    path: 01-system-architecture/README.md
     status: proposed
     owns: [layers, control-plane, data-plane, flows, invariants]
+    subdocuments:
+      - 01-system-architecture/01-runtime-control-truth-planes.md
+      - 01-system-architecture/02-command-query-event-model.md
+      - 01-system-architecture/03-identity-state-recovery.md
+      - 01-system-architecture/04-profiles-composition.md
   - id: repository-governance
-    path: 02-repository-governance.md
+    path: 02-repository-governance/README.md
     status: proposed
     owns: [agents, notes, skills, docs, scripts, change-workflow]
+    subdocuments:
+      - 02-repository-governance/01-agents-notes-skills.md
+      - 02-repository-governance/02-docs-generation-i18n.md
+      - 02-repository-governance/03-change-gates-release.md
+      - 02-repository-governance/04-engineering-sop.md
   - id: package-topology
-    path: 03-package-topology.md
+    path: 03-package-topology/README.md
     status: proposed
     owns: [package-families, dependency-direction, extraction-gates]
+    subdocuments:
+      - 03-package-topology/01-foundation-evidence-session.md
+      - 03-package-topology/02-runtime-tool-context-llm.md
+      - 03-package-topology/03-memory-execution-integration.md
+      - 03-package-topology/04-orchestration-control-client.md
+      - 03-package-topology/05-profiles-dependency-gates.md
   - id: memory-and-experience
-    path: 04-memory-and-experience.md
+    path: 04-memory-and-experience/README.md
     status: proposed
     owns: [session, episode, memory, experience, legacy, forgetting]
+    subdocuments:
+      - 04-memory-and-experience/01-evidence-episode-pipeline.md
+      - 04-memory-and-experience/02-memory-lifecycle.md
+      - 04-memory-and-experience/03-experience-learning.md
+      - 04-memory-and-experience/04-retrieval-context.md
+      - 04-memory-and-experience/05-legacy-governance.md
   - id: runtime-and-capabilities
-    path: 05-runtime-and-capabilities.md
+    path: 05-runtime-and-capabilities/README.md
     status: proposed
     owns: [agent-loop, tool-pipeline, context, capabilities, orchestration]
+    subdocuments:
+      - 05-runtime-and-capabilities/01-agent-loop-state-machine.md
+      - 05-runtime-and-capabilities/02-tool-policy-receipt.md
+      - 05-runtime-and-capabilities/03-context-compaction.md
+      - 05-runtime-and-capabilities/04-capability-extension-model.md
+      - 05-runtime-and-capabilities/05-orchestration-cancellation-recovery.md
   - id: clients-and-desktop
-    path: 06-clients-protocols-desktop.md
+    path: 06-clients-protocols-desktop/README.md
     status: proposed
     owns: [cli, api, web, desktop, sdk, rpc]
+    subdocuments:
+      - 06-clients-protocols-desktop/01-shared-protocol-controller.md
+      - 06-clients-protocols-desktop/02-cli-api-web.md
+      - 06-clients-protocols-desktop/03-desktop-process-security.md
+      - 06-clients-protocols-desktop/04-client-state-sync.md
   - id: quality-system
-    path: 07-quality-benchmarks-snapshots-i18n.md
+    path: 07-quality-benchmarks-snapshots-i18n/README.md
     status: proposed
     owns: [tests, evals, benchmarks, snapshots, i18n, website]
+    subdocuments:
+      - 07-quality-benchmarks-snapshots-i18n/01-test-eval-strategy.md
+      - 07-quality-benchmarks-snapshots-i18n/02-benchmark-system.md
+      - 07-quality-benchmarks-snapshots-i18n/03-recorded-session-snapshots.md
+      - 07-quality-benchmarks-snapshots-i18n/04-docs-i18n-website.md
   - id: reference-lineage
-    path: 08-reference-lineage.md
+    path: 08-reference-lineage/README.md
     status: internal-design-input
     owns: [source-observations, adopted-lessons, rejected-patterns]
+    subdocuments:
+      - 08-reference-lineage/01-source-observations.md
+      - 08-reference-lineage/02-adopt-reject-matrix.md
   - id: implementation-roadmap
-    path: 09-implementation-roadmap.md
+    path: 09-implementation-roadmap/README.md
     status: proposed
     owns: [phases, task-order, acceptance, release-slices]
+    subdocuments:
+      - 09-implementation-roadmap/01-phase-dependency-map.md
+      - 09-implementation-roadmap/02-task-execution-contract.md
+      - 09-implementation-roadmap/03-review-checkpoints.md
   - id: tracegraph-migration
-    path: 10-tracegraph-to-outlive-migration.md
+    path: 10-tracegraph-to-outlive-migration/README.md
     status: proposed
     owns: [legacy-capability-disposition, current-boundaries, migration-acceptance]
+    subdocuments:
+      - 10-tracegraph-to-outlive-migration/01-capability-disposition.md
+      - 10-tracegraph-to-outlive-migration/02-boundary-disposition.md
+      - 10-tracegraph-to-outlive-migration/03-migration-acceptance.md
 
 machine_readable:
   roadmap: roadmap.yaml

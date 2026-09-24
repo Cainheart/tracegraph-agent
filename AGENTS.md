@@ -1,5 +1,7 @@
 # TraceGraph / Outlive Agent Repository Instructions
 
+[中文对照](AGENTS.zh.md) · English (canonical)
+
 ## Scope and authority
 
 This file governs work inside `tracegraph-agent/`. The parent workspace
@@ -17,7 +19,7 @@ evidence, and verification rules; it does not replace those parent rules.
 - For **repeatable maintenance procedures**, use `.agents/skills/` only after a
   real `SKILL.md` has been accepted. A planned skill name is not an executable
   instruction.
-- `docs/outlive-agent-v2/10-tracegraph-to-outlive-migration.md` records how
+- `docs/outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md` records how
   TraceGraph capabilities and boundaries migrate into V2. It is not proof that
   a V2 capability has shipped.
 

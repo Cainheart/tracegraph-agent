@@ -14,10 +14,11 @@ current_truth_sources:
   - ../README.md
   - modules/
 migration_baseline:
-  - outlive-agent-v2/10-tracegraph-to-outlive-migration.md
+  - outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md
 doc_manifest: outlive-agent-v2/manifest.yaml
+design_index: outlive-agent-v2/README.md
 roadmap_manifest: outlive-agent-v2/roadmap.yaml
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-24
 ---
 
 # Outlive Agent V2 设计总纲
@@ -26,7 +27,7 @@ last_reviewed: 2026-09-23
 >
 > **产品命题：让一次工作不只留下答案，还留下可验证、可修正、可继承的记忆与经验。**
 
-本文是 V2 的主入口。它描述的是**目标架构与迁移顺序**，不是对当前实现的完成度宣称。当前真实能力仍以 [README](../README.md)、既有[模块文档](modules/)及其指向的源码/测试为准；旧 TraceGraph 文档中仍有价值的能力、边界和验收规则已经收敛到 [TraceGraph → Outlive 迁移基线](outlive-agent-v2/10-tracegraph-to-outlive-migration.md)。
+本文是 V2 的主入口。它描述的是**目标架构与迁移顺序**，不是对当前实现的完成度宣称。当前真实能力仍以 [README](../README.md)、既有[模块文档](modules/)及其指向的源码/测试为准；旧 TraceGraph 文档中仍有价值的能力、边界和验收规则已经收敛到 [TraceGraph → Outlive 迁移基线](outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md)。模块目录、子模块位置图与决策文档从[设计文档索引](outlive-agent-v2/README.md)进入；具体一次改动怎样选 owner、验证和门禁，见[工程研发与维护 SOP](outlive-agent-v2/02-repository-governance/04-engineering-sop.md)。
 
 ## 1. 名称裁决
 
@@ -145,7 +146,7 @@ flowchart TB
 - Runtime 依赖能力**定义**，组合层选择具体 Provider；能力实现不得反向依赖 UI 或 Agent Loop。
 - Memory 从已提交证据中产生候选，再以带引用的有限内容回到 Context；不能从模型自述直接写成长期事实。
 
-详细设计见 [系统架构](outlive-agent-v2/01-system-architecture.md)、[包家族](outlive-agent-v2/03-package-topology.md)和[记忆与经验](outlive-agent-v2/04-memory-and-experience.md)。
+详细设计见 [系统架构](outlive-agent-v2/01-system-architecture/README.md)、[包家族](outlive-agent-v2/03-package-topology/README.md)和[记忆与经验](outlive-agent-v2/04-memory-and-experience/README.md)。
 
 ## 6. 目标仓库形态
 
@@ -183,7 +184,7 @@ tracegraph-agent/
 └── website/                       # 延后；仅做 docs 的公开投影
 ```
 
-这是一张**目标地图，不是立即创建 60 个空包的命令**。迁移遵循“先在现有 `core` 内形成可守卫边界，再把满足升包条件的能力抽出”的顺序。升包条件见[包家族设计](outlive-agent-v2/03-package-topology.md)。
+这是一张**目标地图，不是立即创建 60 个空包的命令**。迁移遵循“先在现有 `core` 内形成可守卫边界，再把满足升包条件的能力抽出”的顺序。升包条件见[包家族设计](outlive-agent-v2/03-package-topology/README.md)。
 
 ## 7. 差异化核心：从 Trace 到可继承经验
 
@@ -215,11 +216,11 @@ V2 不把“记住一句话”当成记忆系统的终点。真正需要保存�
 - **以后在什么条件下可复用**：作用域、适用前提、冲突、过期和反例；
 - **谁有权继续使用它**：所有者、敏感级别、同意、保留和撤销策略。
 
-完整生命周期与数据契约见[记忆与经验设计](outlive-agent-v2/04-memory-and-experience.md)。
+完整生命周期与数据契约见[记忆与经验设计](outlive-agent-v2/04-memory-and-experience/README.md)。
 
 ## 8. 与社区诉求的关系
 
-[设计依据](outlive-agent-v2/08-reference-lineage.md#7-社区问题证据)保存可复核的原始讨论链接。V2 不伪造“全 GitHub 热度排名”，只把反复出现的痛点转成可验收能力：
+[设计依据](outlive-agent-v2/08-reference-lineage/README.md#7-社区问题证据)保存可复核的原始讨论链接。V2 不伪造“全 GitHub 热度排名”，只把反复出现的痛点转成可验收能力：
 
 | 社区反复提出的痛点 | V2 回答 | 形成记忆点的演示 |
 |---|---|---|
@@ -237,17 +238,17 @@ V2 的亮点不是“功能最多”，而是把这些可靠性承诺连成一�
 
 | 文档 | 回答的问题 |
 |---|---|
-| [00 产品宪章](outlive-agent-v2/00-product-charter.md) | 愿景如何落到产品边界，哪些诱人方向明确不做 |
-| [01 系统架构](outlive-agent-v2/01-system-architecture.md) | 四入口、控制平面、Runtime、可信数据平面如何交互 |
-| [02 仓库治理](outlive-agent-v2/02-repository-governance.md) | AGENTS、Notes、Skills、scripts、docs 怎么维护大工程 |
-| [03 包家族与依赖](outlive-agent-v2/03-package-topology.md) | 每个 family/subpackage 做什么，何时值得升包 |
-| [04 记忆与经验](outlive-agent-v2/04-memory-and-experience.md) | Session、Episode、Memory、Experience、Legacy 如何区分 |
-| [05 Runtime 与能力](outlive-agent-v2/05-runtime-and-capabilities.md) | Agent Loop、Tool、Context、Workflow、Subagent、MCP 等如何组合 |
-| [06 客户端与 Desktop](outlive-agent-v2/06-clients-protocols-desktop.md) | CLI/API/Web/Desktop 如何共享事实与协议 |
-| [07 质量系统](outlive-agent-v2/07-quality-benchmarks-snapshots-i18n.md) | Benchmarks、Snapshots、Evals、docs/i18n、website 怎么分工 |
-| [08 设计依据](outlive-agent-v2/08-reference-lineage.md) | 哪些外部项目启发了什么，以及明确拒绝复制什么 |
-| [09 实施路线](outlive-agent-v2/09-implementation-roadmap.md) | 先做什么、依赖什么、每个任务如何验收 |
-| [10 迁移基线](outlive-agent-v2/10-tracegraph-to-outlive-migration.md) | TraceGraph 的 G-01～G-23、现存边界和不可重做资产如何进入 V2 |
+| [00 产品宪章](outlive-agent-v2/00-product-charter/README.md) | 愿景如何落到产品边界，哪些诱人方向明确不做 |
+| [01 系统架构](outlive-agent-v2/01-system-architecture/README.md) | 四入口、控制平面、Runtime、可信数据平面如何交互 |
+| [02 仓库治理](outlive-agent-v2/02-repository-governance/README.md) | AGENTS、Notes、Skills、scripts、docs 怎么维护大工程 |
+| [03 包家族与依赖](outlive-agent-v2/03-package-topology/README.md) | 每个 family/subpackage 做什么，何时值得升包 |
+| [04 记忆与经验](outlive-agent-v2/04-memory-and-experience/README.md) | Session、Episode、Memory、Experience、Legacy 如何区分 |
+| [05 Runtime 与能力](outlive-agent-v2/05-runtime-and-capabilities/README.md) | Agent Loop、Tool、Context、Workflow、Subagent、MCP 等如何组合 |
+| [06 客户端与 Desktop](outlive-agent-v2/06-clients-protocols-desktop/README.md) | CLI/API/Web/Desktop 如何共享事实与协议 |
+| [07 质量系统](outlive-agent-v2/07-quality-benchmarks-snapshots-i18n/README.md) | Benchmarks、Snapshots、Evals、docs/i18n、website 怎么分工 |
+| [08 设计依据](outlive-agent-v2/08-reference-lineage/README.md) | 哪些外部项目启发了什么，以及明确拒绝复制什么 |
+| [09 实施路线](outlive-agent-v2/09-implementation-roadmap/README.md) | 先做什么、依赖什么、每个任务如何验收 |
+| [10 迁移基线](outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md) | TraceGraph 的 G-01～G-23、现存边界和不可重做资产如何进入 V2 |
 | [机器清单](outlive-agent-v2/manifest.yaml) | 文档集、状态、输入与输出的 YAML 索引 |
 | [任务清单](outlive-agent-v2/roadmap.yaml) | 可交给 Agent 执行的任务 DAG |
 

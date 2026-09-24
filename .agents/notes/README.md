@@ -7,6 +7,8 @@ last_reviewed: 2026-09-23
 
 # Agent Notes
 
+[中文](README.zh.md) · English
+
 Agent Notes preserve **why** a durable repository decision was proposed,
 accepted, rejected, superseded, or archived. They complement source code and
 tests; they are not runtime instructions.
@@ -35,7 +37,11 @@ and dates so the new location tells the truth.
 - adds a new process boundary, product entrypoint, or runtime profile;
 - changes benchmark/snapshot meaning or accepts a durable limitation.
 
-Use `TEMPLATE.md`. Do not invent alternatives merely to fill the template.
+Use the [English template](TEMPLATE.md) or [Chinese template](TEMPLATE.zh.md).
+Do not invent alternatives merely to fill the template.
+When a Note has a `.zh.md` counterpart, both files represent one decision ID
+and must move through the same lifecycle together. The English file remains
+the source for resolving translation differences until a pairing gate exists.
 
 ## Review rules
 

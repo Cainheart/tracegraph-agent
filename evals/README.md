@@ -1,5 +1,7 @@
 # TraceGraph evaluations
 
+[中文](README.zh.md) · English
+
 The G16 suite is deliberately separate from unit/integration tests:
 
 - `pnpm test` keeps running package tests only.

@@ -524,4 +524,4 @@ G-08 的后续对抗用例还单独锁定 `team_read` section/offset/limit/snaps
 - 模块 05（证据链）：`SessionEvent` 如何变成 hash 链与投影
 - 模块 02（Agent Runtime）：`Decision`、`ValidatedAction`、`Receipt`、`Observation` 的实际生产者
 - 模块 08（记忆）：准入、持久记录、BM25 检索、Context provenance 与降级边界
-- `../outlive-agent-v2/10-tracegraph-to-outlive-migration.md`：跨模块边界及其 V2 去向
+- `../outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md`：跨模块边界及其 V2 去向

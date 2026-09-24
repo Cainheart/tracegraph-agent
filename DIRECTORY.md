@@ -29,7 +29,10 @@ apps/web (React)  --HTTP/SSE-->  apps/cli 组装的 Host (packages/host)
 tracegraph-agent/
 ├── README.md                    项目说明：已实现能力、快速运行、项目模式与边界声明
 ├── README.en.md                 英文入口：五分钟启动、验证、私有发布与安全边界
-├── CHANGELOG.md                 双语版本变更记录；发布校验要求当前版本有带日期条目
+├── AGENTS.md                    仓库级英文规则真源：架构、证据、变更与验证边界
+├── AGENTS.zh.md                 AGENTS.md 的中文阅读对照，不替代英文规则
+├── CHANGELOG.md                 英文版本变更记录；发布校验要求当前版本有带日期条目
+├── CHANGELOG.zh.md              CHANGELOG.md 的中文对照
 ├── NOTICE.md                    独立实现声明与第三方依赖许可提示
 ├── LICENSE                       MIT 许可证
 ├── DIRECTORY.md                  本文件：目录与文件职责说明
@@ -48,6 +51,10 @@ tracegraph-agent/
 ├── .github/workflows/
 │   ├── ci.yml                    三个独立 job：typecheck / test+coverage+supply-chain / offline evals；安装前先校验 manifests
 │   └── release.yml               仅 v* tag：跑完整门禁并上传 checksummed private workspace bundle
+│
+├── .agents/
+│   ├── notes/                    决策理由及 proposed/implemented/rejected/archived 生命周期；README、TEMPLATE 与现有提案有中文对照
+│   └── skills/                   仓库维护流程：7 组独立的 -zh/-en SKILL.md 与双语目录；不是产品运行时 Skill
 │
 ├── scripts/                      G-22 工程门的仓库自有实现与失败注入测试
 │   ├── clean-dist.mjs            只清理 apps/*、packages/* 中 manifest-owned 的非 symlink dist；build 前消除陈旧产物
@@ -86,6 +93,7 @@ tracegraph-agent/
 │
 ├── evals/                      G-07/G-16/G-17/G-18/G-21/G-22/G-23 与 unit/E2E 分离的离线可执行评测
 │   ├── README.md              运行、离线边界、报告、检索质量、性能基线与 Replay 确定性说明
+│   ├── README.zh.md           README.md 的中文对照
 │   ├── runtime/               9 条真实 Runtime 行为路径：approval / compaction / parallel tools / recovery / refusal / G-07 subagent / G-17 extension / G-18 attachment / G-08 Agent Team
 │   │   ├── subagent-delegation.eval.ts  两个 child 的 6 条父账本回执、独立 Session/Ledger 与重放一致性
 │   │   ├── extension-system.eval.ts      G-17 hook 错误隔离、内置扩展卸载后的 Tool surface 与 API mismatch
@@ -320,6 +328,7 @@ tracegraph-agent/
 ├── examples/
 │   └── failing-typescript-repo/  内置「故意有 bug」的不可变 Demo 模板，每次运行会复制成一次性工作区
 │       ├── README.md             说明这是不可变模板、bug 是刻意的
+│       ├── README.zh.md          README.md 的中文对照，同样随模板复制
 │       ├── package.json          仅含 test 脚本（node test/run.mjs）
 │       ├── tsconfig.json         strict + noEmit
 │       ├── src/index.ts          再导出 add
@@ -372,7 +381,7 @@ tracegraph-agent/
 
 1. **`.tracegraph/` 与 `~/.tracegraph/` 都是运行时数据不是源码**；前者由仓库 `.gitignore` 排除，后者本来就在仓库外。`.tracegraph/artifacts` 同时保存公开证据、G-02 外置 Context 原文与不进入公开 Wire 的恢复工件；`.tracegraph/wal/backups` 保存 rollback 所需的精确 before-image，`.tracegraph/recovery` 保存恢复尝试；`.tracegraph/memory/records.jsonl` 是 G-21 canonical Memory record，`.tracegraph/retrieval-index` 是可由其重建的 JSONL/BM25 投影。Artifact/WAL 等各自按实现收紧目录/文件权限并做 symlink/hash 校验，但这些运行数据整体仍不是静态加密或跨 Host 锁；Memory record 只在创建时请求 `0600`，当前 append store 不复核已有文件的 owner/mode/symlink，检索索引也只做单进程写队列而没有跨进程 writer lock，因此尤其不要让 CLI 本地镜像与独立 retrieval-service 直接共享同一个索引目录。`.tracegraph/model-config.json` 只含 `${secret:NAME}` 引用；`.tracegraph/token-calibration.json` 只含 provider/model、比例样本与 revision；可选 `.tracegraph/extensions.json` 只允许选择 Host 内置 trusted catalog id，`module` 不是可执行路径；可选 `.tracegraph/telemetry.json` 只应保存 sink 选项、endpoint 环境变量名与 `${secret:NAME}` authorization reference，不能保存明文 endpoint authorization/header。默认 Session 索引在 `~/.tracegraph/sessions`，只存 header + Event 引用，删除移到同级 `sessions-trash`。Session 引用不含 ledger locator，所以一个 Session root 必须固定配对一个 `dataDir`；多数据目录部署必须分别指定 `--session-dir`。macOS 的值在 Keychain；非 macOS 的 `~/.tracegraph/credentials.json` 强制 `0600`，但仍是 plaintext-at-rest。这些运行数据都不要提交或外发。Telemetry 的队列/错误状态也不在这些 durable 数据里；它们只在当前进程内且不参与恢复。
 2. **`apps/cli/.tracegraph/` 是残留空目录**：历史上从 `apps/cli` 作为 cwd 启动过一次 Host 留下的 `artifacts/events/projects` 三个空目录，不是 canonical 数据目录（canonical 是仓库根 `.tracegraph`），可以安全删除。
-3. **当前模块说明统一在 `docs/modules/01`–`19`**；Outlive 目标设计统一从 `docs/outlive-agent-v2.md` 进入。旧 G-xx 能力、迁移期边界与 V2 去向只在 `docs/outlive-agent-v2/10-tracegraph-to-outlive-migration.md` 汇总，不再建立独立 verification/limitation 文档。
+3. **当前模块说明统一在 `docs/modules/01`–`19`**；Outlive 目标设计统一从 `docs/outlive-agent-v2.md` 进入，再按 `docs/outlive-agent-v2/README.md` 下钻到模块与子模块。旧 G-xx 能力、迁移期边界与 V2 去向只在 `docs/outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md` 汇总，不再建立独立 verification/limitation 文档。
 4. **`examples/failing-typescript-repo` 是刻意失败模板**，其中的 bug 是设计的一部分，不要"顺手修好"；运行时会复制成一次性工作区再打补丁。
 5. **单元测试不逐个列在目录树里**：`apps/web` 与 `packages/{contracts,core,host,sdk,test-support}` 的 `*.test.ts(x)` 与源码同目录（`packages/codegraph` 例外，放在独立 `tests/` 目录）；只有三个跨层套件单列——`apps/cli/src/e2e.test.ts`（纵向 E2E）、`packages/test-support/src/runtime.integration.test.ts`（Runtime 集成）与 `packages/test-support/src/sandbox.integration.test.ts`（G-13 Host/Runtime 整链）。找用例时按这三条路径约定定位。
 6. **G-06（权限预设/策略引擎/审批令牌）已经接入主链**：

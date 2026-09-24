@@ -11,6 +11,8 @@ supersedes: []
 
 # Agent Note: Adopt Outlive Agent V2 as the proposed direction
 
+[中文](2026-09-23-outlive-agent-v2.zh.md) · English
+
 ## Problem
 
 TraceGraph already has useful evidence, replay, Memory, Web, CLI, and evaluation
@@ -29,7 +31,7 @@ Current behavior remains defined by:
 
 The useful TraceGraph capability inventory, unresolved boundaries, and
 migration rules are consolidated in the
-[`TraceGraph → Outlive migration baseline`](../../../docs/outlive-agent-v2/10-tracegraph-to-outlive-migration.md).
+[`TraceGraph → Outlive migration baseline`](../../../docs/outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md).
 
 ## Proposal
 
