@@ -5,7 +5,7 @@ status: proposed
 scope: design-decisions
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
 # 吸收、改造、延后与拒绝矩阵
@@ -29,12 +29,12 @@ flowchart LR
 |---|---|---|---|---|
 | 小而稳定的 Agent Loop | Pi、ZCode、Codex | Adopt | Runtime 只编排 ports | deterministic loop fixtures |
 | 家族包 + profile composition | DeepSeek Harness | Adapt | 先逻辑边界，满足门槛再升包 | import graph + extraction benchmark |
-| Agent Notes / Skills 分工 | DeepSeek Harness | Adopt | 决策理由与操作手册分离 | repo governance eval |
-| App-server/shared protocol | Codex、ZCode、Pi | Adopt | CLI/API/Web/Desktop 同领域协议 | multi-transport conformance |
+| Agent Notes / Skills 分工 | DeepSeek Harness | Adopt | 决策理由与操作手册分离 | local docs/architecture gates |
+| App-server/shared protocol | Codex、ZCode、Pi | Adapt | CLI/Web UI/Desktop 共用内部领域协议，不扩展成独立 API/SDK 产品面 | multi-transport conformance |
 | Recorded session snapshots | DeepSeek Harness、Codex | Adapt | 录制后脱敏、离线回放、业务断言 | snapshot semantic diff |
-| 强 Coding 工具体验 | ZCode、Claw Code、Codex | Adopt | Tool pipeline 叠加 Receipt/Observation | task/evidence eval |
+| 强 Coding 工具体验 | ZCode、Claw Code、Codex | Adopt | Tool pipeline 叠加 Receipt/Observation | local task tests + optional Langfuse quality report |
 | 任意扩展直接进入内核 | 多插件系统常见 | Reject | Definition/Provider/Adapter + policy | malicious extension tests |
-| 向量库即 Memory | 常见 RAG 产品 | Reject | 生命周期、证据、scope、纠错先于索引 | leakage/conflict/delete eval |
+| 向量库即 Memory | 常见 RAG 产品 | Reject | 生命周期、证据、scope、纠错先于索引 | local leakage/conflict/delete tests; retrieval quality may be evaluated in Langfuse |
 | 模型声明“完成”即成功 | agent demo 常见 | Reject | 业务 Receipt/Verifier/Artifact | negative completion cases |
 | 一次拆成大量 package | 大型仓库表象 | Reject | 评分卡和 move-only extraction | build/graph/cognitive cost |
 | 自动人格/逝者模拟 | 数字永生叙事 | Defer/Reject in V2 | Legacy 仅策展与可移植知识 | policy and product review |

@@ -1,4 +1,4 @@
-# TraceGraph Agent
+# Outlive Agent
 
 English · [简体中文](README.md)
 
@@ -14,7 +14,7 @@ Most coding agents leave you with a chat transcript. What changed, why it
 changed, and what the change was based on are scattered across dozens of turns
 and are effectively impossible to audit afterwards.
 
-TraceGraph Agent puts Decisions, Tools, Approvals, Patches, Tests, Context
+Outlive Agent puts Decisions, Tools, Approvals, Patches, Tests, Context
 construction, and code-graph changes on **one auditable trajectory**. Every
 conclusion traces back to the model request, tool execution, and evidence that
 produced it.
@@ -58,7 +58,7 @@ produced it.
   Project, and Linked Local Folder.
 
 The V2 disposition of G-01 through G-23 is in the
-[TraceGraph-to-Outlive migration baseline](docs/outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md).
+[Outlive Agent migration baseline](docs/outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md).
 Current implementation and verification entry points live in the
 [module documentation](docs/modules/); per-file responsibilities are in the
 [repository map](DIRECTORY.md).
@@ -214,7 +214,7 @@ cross-module consistency.
 ## Documentation
 
 - [Outlive Agent V2 design charter](docs/outlive-agent-v2.md) — proposed product philosophy and target architecture; not evidence of shipped capabilities
-- [TraceGraph-to-Outlive migration baseline](docs/outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md) — retained capabilities, current boundaries, and V2 disposition
+- [Outlive Agent migration baseline](docs/outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md) — retained capabilities, current boundaries, and V2 disposition
 - [Documentation index](docs/README.md) — entry point for modules 01–19 and all reference documents
 - [Repository map](DIRECTORY.md) — responsibility of every source and configuration file
 - [Changelog](CHANGELOG.md)

@@ -5,7 +5,7 @@ status: proposed
 scope: change-gates
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-24
+last_reviewed: 2026-09-25
 ---
 
 # 变更门禁与发布治理
@@ -27,9 +27,9 @@ flowchart LR
 
 | 类别 | 例子 | 最低证据 |
 |---|---|---|
-| Docs-only | 解释、链接、设计状态 | link/manifest/docs eval |
+| Docs-only | 解释、链接、设计状态 | link/manifest/docs consistency gate |
 | Internal refactor | 不改公开契约 | unit + type/lint + owning package tests |
-| Behavior | 状态机、工具结果、记忆规则 | unit + integration + targeted snapshot/eval |
+| Behavior | 状态机、工具结果、记忆规则 | unit + integration + targeted snapshot/negative tests |
 | Protocol/schema | event/RPC/session format | compatibility + old fixture replay + generated docs |
 | Security/side effect | approval、sandbox、delete、credential | negative tests + threat review + failure injection |
 | Performance | context、ledger、startup | scenario benchmark + correctness gate |
@@ -40,13 +40,16 @@ flowchart LR
 sequenceDiagram
   participant A as Author/Agent
   participant G as Change Classifier
-  participant T as Test/Eval System
+  participant T as Local Tests / Gates
+  participant L as Langfuse (optional external)
   participant R as Reviewer
   participant P as Release
   A->>G: diff + claimed scope
   G-->>A: required evidence plan
-  A->>T: run narrow then expanded checks
-  T-->>R: receipts, reports, snapshots
+  A->>T: run narrow then expanded deterministic checks
+  T-->>R: receipts, gate reports, snapshots
+  A->>L: optional, explicitly authorized quality evaluation
+  L-->>R: external quality report
   R->>R: inspect claim/evidence/boundary
   R-->>P: approve or request correction
   P->>P: reproduce release gate + attest artifact
@@ -56,7 +59,7 @@ sequenceDiagram
 
 ### 3.1 从当前 CI 渐进接入
 
-当前 [CI](../../../.github/workflows/ci.yml) 只有 `typecheck`、`test`、`evals` 三个 job；下表是**目标接线**，不是现有脚本或在线 required check 声明。新门禁先有独立命令、合法/非法 fixture、明确输入/产物，再接入相应 job。CI 结构测试还须能在删除关键步骤时失败；是否被 GitHub branch protection 要求，需单独在线核查。
+当前 [CI](../../../.github/workflows/ci.yml) 有 `typecheck`、`test`、`evals` 三个 job；这是 TraceGraph 的当前状态，不代表 V2 要保留本地产品 Eval 套件。迁移时将确定性检查归入 `test`/工程门禁，模型与产品质量评估交给可选的外部 Langfuse 流程。下表是**目标接线**，不是现有脚本或在线 required check 声明。新门禁先有独立命令、合法/非法 fixture、明确输入/产物，再接入相应 job。CI 结构测试还须能在删除关键步骤时失败；是否被 GitHub branch protection 要求，需单独在线核查。
 
 | 目标守卫 | 前置与负例 | 建议位置 |
 |---|---|---|
@@ -65,11 +68,11 @@ sequenceDiagram
 | 录制 Session | keyless 入口、脱敏和人工 refresh；故意漂移事件/外部文件应失败 | `test`，在 `SNAP-070` 实现后 |
 | 用户路径 Benchmark | 正确性先通过，固定输入/runner 与慢路径反例 | 独立资源 lane，校准后再阻断 |
 
-无密钥真实模型 lane 可以观察，但跳过不得被报告为“已验证”。只有稳定复现违规、合法路径诊断明确、并行负载下可靠且成本可接受时，才从观察升级为阻断。现有性能 eval 属回归报警，不等于公开 SLA。具体执行次序见[工程 SOP](04-engineering-sop.md)。
+Langfuse/真实模型评估是独立、显式触发的质量流程；其不可用或未运行不应阻塞本地 CI，但报告必须标为“未验证”。确定性权限与行为不变量仍由本地反例门禁阻断。性能回归由 `benchmarks/` 和对应性能门负责，不等于公开 SLA。具体执行次序见[工程 SOP](04-engineering-sop.md)。
 
 ## 4. 发布证据包
 
-每次版本发布保存：commit/ref、锁文件 digest、构建环境、依赖清单/SBOM（阶段引入）、测试/eval/benchmark 摘要、schema compatibility、迁移说明、已知限制、artifact checksum 和签名/attestation 状态。
+每次版本发布保存：commit/ref、锁文件 digest、构建环境、依赖清单/SBOM（阶段引入）、本地测试/门禁/benchmark 摘要、schema compatibility、迁移说明、已知限制、artifact checksum 和签名/attestation 状态。若有 Langfuse 评估，附外部报告引用并标明数据/模型版本；它不是发布的硬依赖。
 
 ## 5. 关键参数
 

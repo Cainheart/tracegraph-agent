@@ -5,7 +5,7 @@ status: proposed
 scope: client-protocol
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
 # 共享协议与 Controller 设计
@@ -14,11 +14,10 @@ last_reviewed: 2026-09-23
 
 ```mermaid
 flowchart LR
-  CLI[CLI] --> SDK[SDK Client]
-  WEB[Web] --> SDK
+  CLI[CLI] --> SDK[Internal Client]
+  WEB[Web UI] --> SDK
   DESK[Desktop] --> SDK
-  EXT[External API] --> SDK
-  SDK --> TR[Transport Adapter]
+  SDK --> TR[Local Transport Adapter]
   TR --> CT[Domain Controller]
   CT --> UC[Use-case Ports]
   UC --> RT[Host/Runtime]
@@ -78,5 +77,4 @@ Transport 认证得到 actor，Domain Policy 决定能否执行；二者不可�
 
 ## 6. 验收
 
-同一 conformance fixtures 驱动 in-process、HTTP 和 Desktop pipe；错误码/事件一致；旧客户端能忽略新增可选字段；未知 discriminator 明确报兼容错误；Controller 无具体 React/Electron/CLI import。
-
+同一 conformance fixtures 驱动 CLI、Web UI 和 Desktop 的内部调用路径；错误码/事件一致；旧客户端能忽略新增可选字段；未知 discriminator 明确报兼容错误；Controller 无具体 React/Electron/CLI import。该内部协议不意味着发布外部 SDK 或 API。

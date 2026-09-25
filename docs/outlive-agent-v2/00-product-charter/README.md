@@ -5,7 +5,7 @@ status: proposed
 scope: product
 language: zh-CN
 parent: ../../outlive-agent-v2.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
 # 00 · 产品宪章
@@ -180,7 +180,7 @@ V2 早期不以“记住了多少条”衡量成功，而以以下指标衡量�
 |---|---|
 | 可靠性 | crash→resume 成功率、unknown action 对账率、取消到静默的时间 |
 | 记忆质量 | 有有效来源的 active memory 比例、被用户纠正率、过期命中率、引用可打开率 |
-| 经验复用 | Experience Case 被召回后提高一次性通过率的 paired eval |
+| 经验复用 | Experience Case 被召回后提高一次性通过率；由本地可验证结果与后续 Langfuse 外部 paired evaluation 共同观察 |
 | 可解释性 | 用户能否从答案跳回支持它的事件/工件/验证 |
 | 可移植性 | Capsule 在全新环境校验并恢复的成功率 |
 | 安全 | 越权记忆召回、跨 workspace 泄漏、旧 approval 复活必须为零 |

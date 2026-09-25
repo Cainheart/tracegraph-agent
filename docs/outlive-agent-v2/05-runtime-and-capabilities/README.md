@@ -5,7 +5,7 @@ status: proposed
 scope: runtime
 language: zh-CN
 parent: ../../outlive-agent-v2.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
 # 05 · Runtime 与能力编排
@@ -213,7 +213,7 @@ Subagent provider 接受一个冻结 delegation spec：
 - parent trace/session/run lineage；
 - result contract 和 cancellation ownership。
 
-Provider 可以在进程内 fork、启动外部 Agent 或走 ACP/A2A，但父 Runtime 只依赖统一 contract。
+Provider 可以在进程内 fork 或通过 A2A 协作；ACP 及其他独立编辑器/自动化入口不纳入当前产品范围。父 Runtime 只依赖统一 contract。
 
 ### 8.2 Team
 

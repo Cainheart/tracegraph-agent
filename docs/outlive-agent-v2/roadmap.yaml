@@ -1,7 +1,7 @@
 schema_version: 1
 roadmap: outlive-agent-v2
 status: proposed
-last_reviewed: 2026-09-24
+last_reviewed: 2026-09-25
 
 execution_rules:
   one_primary_change_type_per_task: true
@@ -46,15 +46,15 @@ phases:
     exit_criteria:
       - no-progress、cancel、retry、unknown/reconcile 可区分且可证明
   - id: P6
-    title: 统一协议与 Desktop
+    title: 三种产品入口与 Desktop
     depends_on: [P3]
     exit_criteria:
-      - CLI/API/Web/Desktop 共享 Command/Query/Event 语义
+      - CLI/Web UI/Desktop 共享内部 Command/Query/Event 语义
   - id: P7
     title: 回归、性能、i18n 与文档
     depends_on: [P4, P5, P6]
     exit_criteria:
-      - Snapshot、Benchmark、Eval、i18n/docs 门禁可重复运行
+      - Snapshot、Benchmark、Langfuse 外部评估流程与 i18n/docs 门禁具备各自明确的运行和报告边界
   - id: P8
     title: 公开证明与发布
     depends_on: [P7]
@@ -65,15 +65,18 @@ phases:
 tasks:
   - id: OLV-000
     phase: P0
-    title: 接受或修订产品工作名与 V2 宪章
+    title: 评审 V2 宪章与未决设计决定
     owner: human-maintainer
     change_type: decision
     depends_on: []
     outputs:
       - .agents/notes/implemented-or-rejected/outlive-agent-v2
     acceptance:
-      - 九项主设计决策逐项有结论
-      - 公开命名前完成独立命名与商标检查
+      - 主设计决策逐项有结论，且 Current/Target/Deferred 边界一致
+      - Outlive Agent 已确定为产品与底层 Agent Runtime/技术内核的统一名称
+      - 当前产品入口限定为 CLI、Web UI、Desktop；独立 API、SDK、ACP 不纳入范围
+      - LSP 为可选只读代码导航接缝（definition/references/implementation/hover），服务端由部署配置；Current diagnostics 不自动进入目标，CodeGraph 不纳入内建 V2 能力或迁移目标
+      - 公开发布前完成独立名称、商标与域名核查
 
   - id: GOV-001
     phase: P0
@@ -128,7 +131,7 @@ tasks:
     depends_on: [BASE-003]
     outputs: [architecture-policy.yaml, scripts/verify-boundaries.mjs]
     acceptance:
-      - 包升格准则和 architecture-policy.yaml 工作名经 Note 裁决
+      - 包升格准则和 architecture-policy.yaml 文件名经 Note 裁决
       - 当前依赖图通过
       - 临时反向依赖、deep import 和依赖环失败
       - 移除 CI 中的检查步骤时连线测试失败
@@ -424,14 +427,15 @@ tasks:
       - checksum/redaction/quarantine/diff/explicit-accept 全链通过
 
   - id: MEM-048
-    phase: P4
-    title: Memory 与 Experience paired eval
-    owner: evals
-    change_type: tests
+    phase: P7
+    title: Memory 与 Experience 的 Langfuse paired evaluation
+    owner: langfuse-integration
+    change_type: validation
     depends_on: [MEM-044, MEM-045]
-    outputs: [evals/memory, evals/experience]
+    outputs: ["external:langfuse-memory-evaluation", "external:langfuse-experience-evaluation"]
     acceptance:
-      - 独立验证集报告收益、伤害和置信区间
+      - 外部独立验证集报告收益、伤害和置信区间；本地安全不变量仍由确定性测试验证
+      - Langfuse 不可用或未授权时不阻塞本地测试、CI 或发布门禁
 
   - id: RUN-050
     phase: P5
@@ -497,37 +501,37 @@ tasks:
 
   - id: API-060
     phase: P6
-    title: 统一 Command/Query/Event vocabulary
-    owner: api
+    title: 定义三种产品入口共用的内部 Command/Query/Event contract
+    owner: client-protocol
     change_type: protocol
     depends_on: [PKG-031, PKG-033]
     outputs: [packages/sdk/protocol]
     acceptance:
-      - Web/CLI/SDK schema 同源并生成 fixture
+      - Web UI/CLI/Desktop 使用同源内部 schema 并生成 fixture；不发布外部 SDK
 
   - id: API-061
     phase: P6
-    title: Controller 与 transport 分离
-    owner: api
+    title: 分离领域 Controller 与本地客户端 transport
+    owner: client-protocol
     change_type: refactor
     depends_on: [API-060]
     outputs: [packages/api, packages/host/webserver]
     acceptance:
-      - controller 可无 HTTP 进程内测试
+      - controller 可进程内测试；Web HTTP 仅作为本地 Web UI transport
 
   - id: API-062
     phase: P6
-    title: Framed RPC conformance
-    owner: sdk
+    title: Desktop/CLI 内部 framed RPC conformance
+    owner: client-protocol
     change_type: protocol
     depends_on: [API-061]
     outputs: [packages/sdk/client, packages/sdk/server]
     acceptance:
-      - partial frame/cancel/backpressure/version mismatch tests
+      - partial frame/cancel/backpressure/version mismatch tests；不形成外部 RPC 产品
 
   - id: CLI-063
     phase: P6
-    title: CLI/TUI 改用统一 client/controller
+    title: CLI 改用统一 client/controller
     owner: cli
     change_type: refactor
     depends_on: [API-062]
@@ -566,16 +570,6 @@ tasks:
     outputs: [desktop-native-adapters]
     acceptance:
       - opaque handles 与 authority checks
-
-  - id: API-067
-    phase: P6
-    title: 裁决独立 apps/api
-    owner: architecture
-    change_type: decision
-    depends_on: [API-061, CLI-063]
-    outputs: [agent-note-api-app]
-    acceptance:
-      - 只有 lifecycle 独立时实现，否则明确 rejected
 
   - id: CLIENT-068
     phase: P6
@@ -631,13 +625,14 @@ tasks:
 
   - id: EVAL-074
     phase: P7
-    title: Memory safety 与质量 suite
-    owner: evals
-    change_type: tests
+    title: Langfuse Memory 与检索质量评估
+    owner: langfuse-integration
+    change_type: validation
     depends_on: [MEM-048]
-    outputs: [evals/memory-safety]
+    outputs: ["external:langfuse-memory-quality-report"]
     acceptance:
-      - leak/revoked/stale/conflict/injection 场景覆盖
+      - 外部评估覆盖相关性、新鲜度、来源引用和 Experience 复用收益
+      - leak/revoked/scope/injection 等安全不变量由仓库内本地负例门禁阻断
 
   - id: I18N-075
     phase: P7

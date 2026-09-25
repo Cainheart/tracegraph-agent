@@ -11,7 +11,7 @@ replaces:
   - verification-map.md
   - known-limitations-map.json
   - KNOWN_LIMITATIONS.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
 # 10 · TraceGraph → Outlive Agent 迁移基线
@@ -50,7 +50,7 @@ flowchart LR
 | 任务依赖与验收 | `docs/outlive-agent-v2/roadmap.yaml` |
 | 为什么做某项长期决定 | `.agents/notes/*` |
 
-不再建立一份覆盖全仓的手工 verification map。模块文档应直接写出其代码、契约、测试和最窄验证命令；机器一致性由 eval、架构门禁和生成目录检查。
+不再建立一份覆盖全仓的手工 verification map。模块文档应直接写出其代码、契约、测试和最窄验证命令；机器一致性由文档一致性检查、架构门禁和生成目录检查。
 
 ## 2. 从 TraceGraph 继承的七条工程约束
 
@@ -83,15 +83,15 @@ flowchart LR
 | `G-09` Plan/Todo | 同 Run 计划审批和 Ledger Todo | 保留为可选 workflow capability | 05 §7–8 |
 | `G-10` Skill | 本地 `SKILL.md`、渐进披露、工具收窄 | 保留；边界稳定后再评估独立 package | 03 §14、05 §7 |
 | `G-11` MCP | Host-owned stdio/native Tool bridge | 先抽 seam；PTC/远程 transport 单独决策 | `PKG-032` |
-| `G-12` LSP | stdio diagnostics/definition/references | 保留 provider seam，统一 CodeIntel 边界 | `PKG-032`、03 §14 |
+| `G-12` LSP | Current：stdio diagnostics/definition/references | Target：采用 DSH 式可选只读代码导航 seam（definition/references/implementation/hover），由部署配置外部语言服务器；Current diagnostics 不自动迁入 | `PKG-032`、03 §14 |
 | `G-13` Sandbox | macOS `run_test` child enforcement | 保留平台真实性；未实现平台继续 fail closed | 05 §9 |
 | `G-14` Steering | durable input queue、安全点消费、cancel lane | 合并到 cancellation ownership | `RUN-051` |
 | `G-15` Telemetry | vendor-neutral bounded sink、Ledger 后派生 | 保留为诊断旁路，不升级为事实源 | 07 |
-| `G-16` Evals | 离线行为、质量、性能与文档评测 | 拆清 Eval/Benchmark/Snapshot 职责 | P7 |
+| `G-16` Evals | 当前离线行为/质量检查 | 确定性检查归本地测试/门禁；性能与会话回归分别归 Benchmark/Snapshot；模型和产品质量评估计划由外部 Langfuse 承担，不建设本地 `evals/` 套件 | P7 |
 | `G-17` Extension | trusted catalog、六个 seam、idle reload | 保留注册思想，拆 registration/lifecycle | `CORE-023`、`CORE-027` |
 | `G-18` Attachment | staging/claim、hash、Artifact、显式 image input | 保留为 capability contribution | `CORE-027` |
 | `G-19` Credential | secret reference、Keychain、输出脱敏 | 保留；Desktop 只接 opaque handle bridge | `DESK-066` |
-| `G-20` CodeGraph | 静态 TS 图、顶层 symbol、LSP 摘要、stale-base | 保留为集成家族；不冒充完整语义图 | 03 §14 |
+| `G-20` CodeGraph | 当前实现中的静态 TS 图、顶层 symbol、LSP 摘要、stale-base | 不纳入 Outlive Agent V2 内建能力或迁移目标；现有实现仅保留为 Current 事实 | 03 §14 |
 | `G-21` Memory/Retrieval | JSONL、BM25、来源引用、Context 注入 | 作为 V2 差异化重点重构生命周期 | `MEM-040`～`MEM-048` |
 | `G-22` 工程与发布 | CI、覆盖率、lockfile/release guard | 保留门禁，扩展架构/docs/snapshot 检查 | P0/P1/P7 |
 | `G-23` Replay | 逐事件重放、差异、只读时间旅行 | 并入 Evidence family 和 recorded snapshots | `PKG-030`、`SNAP-070` |
@@ -110,13 +110,13 @@ flowchart LR
 | `LIM-GENERAL-ACTION-RECOVERY` | 自动对账主要覆盖单目标 Patch | Target：通用 action reconciliation，见 `RUN-052` |
 | `LIM-TOKENIZER` | 无覆盖完整 provider wire request 的 canonical tokenizer | Deferred：通过 Model/Token provider seam 接入，不写死单一 tokenizer |
 | `LIM-RETRIEVAL-ADVANCED` | 默认本地 BM25；无 Memory 管理面和自动全仓摄入 | Partial target：先做治理/管理面；vector 不是“事实”前置条件 |
-| `LIM-SEMANTIC-CODEGRAPH` | 无动态调用、DI、路由、方法级和跨语言完整语义 | Deferred：不是 V2 差异化主线 |
-| `LIM-LSP-PLATFORM` | 无完整 indexing、自动 post-patch 诊断和跨 Host session | Partial target：先稳定 LSP seam 与 Context provenance |
+| `LIM-SEMANTIC-CODEGRAPH` | 无动态调用、DI、路由、方法级和跨语言完整语义 | CodeGraph 不纳入 V2 内建能力；如未来重议，需独立 Note 与用户价值依据 |
+| `LIM-LSP-PLATFORM` | 无完整 indexing、自动 post-patch 诊断和跨 Host session | Target：先稳定 DSH 式只读代码导航 seam 与 Context provenance；post-patch diagnostics 不纳入当前目标 |
 | `LIM-SUBAGENTS` | spawn 同步、无 worker 自动重启/重派、无跨 Host | Partial target：补 durable capacity/status；跨 Host 延后 |
 | `LIM-MCP` | 仅 Host-owned stdio/native bridge | Partial target：先抽 contract；PTC/HTTP/resources 逐项 Note 裁决 |
 | `LIM-EXTENSION-LOADING` | 不加载任意本地/npm 模块，也无 hostile-code isolation | Keep boundary：受信声明式扩展；不把插件加载等同沙箱 |
 | `LIM-SKILL-DISTRIBUTION` | Skill 只读本地数据，无网络安装、签名或脚本执行 | Keep boundary for V2：先保证可审计和权限收窄 |
-| `LIM-REAL-EVALS` | 主要使用确定性离线 fixture | Target：P7 增加隔离的 optional real-provider/browser lane，不替代离线门 |
+| `LIM-REAL-EVALS` | 当前以确定性离线 fixture 为主 | Target：模型/产品质量评估可选接入外部 Langfuse；CI 仍由本地确定性测试/门禁阻断，不自建 real-provider eval lane |
 | `LIM-PRODUCTION-HOST` | loopback Host 无 TLS、多人鉴权和部署封装 | Rejected for V2 MVP：产品仍为 local-first |
 | `LIM-SSE-RESUME` | 刷新、长离线或 token 更新后的 durable cursor 不完整 | Target：统一 versioned Event protocol，见 `API-060`～`API-062` |
 | `LIM-BROWSER-E2E` | 无真实浏览器 E2E | Target：纳入 P7 recorded scenario/browser lane |
@@ -134,7 +134,7 @@ flowchart LR
 - 本地 Memory 来源引用、BM25 与预算内 Context 注入；
 - Host/SDK/Web/CLI 的类型化纵向链；
 - Subagent/Team/Skill/MCP/LSP/Extension 已有的有界能力；
-- CI、覆盖率、供应链、离线 eval 与私有 release bundle 门禁。
+- CI、覆盖率、供应链、当前离线 eval 脚本与私有 release bundle 门禁；迁移后逐项将确定性验证归入本地测试/门禁，将产品质量评估交由外部 Langfuse。
 
 迁移可以改变 owner、目录、package 和协议版本，但不能把这些能力先删除再“重新实现”。移动和行为改变必须分开验证。
 

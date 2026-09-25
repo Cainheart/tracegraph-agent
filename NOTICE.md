@@ -1,6 +1,6 @@
 # Notice
 
-TraceGraph Agent 是独立实现的开源项目，本仓库源码采用 MIT License（见 [LICENSE](LICENSE)）。
+Outlive Agent 是独立实现的开源项目，本仓库源码采用 MIT License（见 [LICENSE](LICENSE)）。
 
 仓库内的代码、文档、图标与界面均由本项目自行编写，不使用任何第三方产品的商标、图标或品牌界面。
 

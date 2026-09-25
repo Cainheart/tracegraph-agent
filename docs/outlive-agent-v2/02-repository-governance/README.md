@@ -5,7 +5,7 @@ status: proposed
 scope: repository
 language: zh-CN
 parent: ../../outlive-agent-v2.md
-last_reviewed: 2026-09-24
+last_reviewed: 2026-09-25
 ---
 
 # 02 · 仓库治理
@@ -62,8 +62,9 @@ docs/
 scripts/                          门禁、生成器、迁移器
 benchmarks/                       跨包性能门（目标）
 snapshots/                        录制 Session 回归（目标）
-evals/                            行为/质量/检索效果
 ```
+
+模型/Agent 质量评估计划使用外部 Langfuse 项目；它不对应仓库内目录。仓库仍保留确定性测试、CI/架构/文档门禁、性能 Benchmarks 与回归 Snapshots。
 
 ## 3. 根 `AGENTS.md` 的职责
 
@@ -201,7 +202,7 @@ Skill 应是“薄指针”：调用仓库脚本并解释选择，不重新实�
 | Decision record | `.agents/notes/*` | 随生命周期变化 |
 | Generated catalog | module graph、event/tool catalog | 由脚本写，不手工编辑 |
 
-不再维护覆盖全仓的手工 verification map 或独立限制清单。迁移期边界统一收敛到 `../10-tracegraph-to-outlive-migration/README.md`，稳定后的当前事实回写 owning module；一致性由 eval、架构门禁和生成目录证明。
+不再维护覆盖全仓的手工 verification map 或独立限制清单。迁移期边界统一收敛到 `../10-tracegraph-to-outlive-migration/README.md`，稳定后的当前事实回写 owning module；一致性由本地文档检查、架构门禁和生成目录检查证明。
 
 ### 7.2 每个 package README 的最低契约
 

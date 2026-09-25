@@ -1,4 +1,4 @@
-# TraceGraph / Outlive Agent 仓库规则（中文对照）
+# Outlive Agent 仓库规则（中文对照）
 
 中文对照 · [English source](AGENTS.md)
 

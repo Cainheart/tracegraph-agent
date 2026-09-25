@@ -1,4 +1,4 @@
-# TraceGraph Agent 目录结构说明
+# Outlive Agent 目录结构说明
 
 > 用途：说明本仓库每一个源文件/配置文件的职责，便于快速定位改动点。
 > 范围：只列源码、配置与文档。`node_modules/`、`dist/`、`coverage/`、`*.map`、`*.tsbuildinfo`、`.vite-tracegraph/` 等构建与依赖产物不在说明范围内；与源码同目录的逐文件单元测试（`*.test.ts` / `*.test.tsx`）也不逐个列出，只保留三个跨层套件，约定见第 3 节第 5 条。
@@ -7,7 +7,7 @@
 
 ## 0. 一句话背景
 
-TraceGraph Agent 是一个本地优先（local-first）的 **Web Coding Agent**：pnpm workspace + strict TypeScript 单仓多包，核心把 Agent 的 Decision / Tool / Approval / Patch / Test / Context / 代码架构变化放进同一条可回放轨迹。Web 前端（React + Vite）通过 typed SDK 连本机 Fastify Host（`127.0.0.1:4311`），Host 驱动 Core Runtime。
+Outlive Agent 是一个本地优先（local-first）的 **Web Coding Agent**：pnpm workspace + strict TypeScript 单仓多包，核心把 Agent 的 Decision / Tool / Approval / Patch / Test / Context / 代码架构变化放进同一条可回放轨迹。Web 前端（React + Vite）通过 typed SDK 连本机 Fastify Host（`127.0.0.1:4311`），Host 驱动 Agent Runtime。
 
 数据流：
 

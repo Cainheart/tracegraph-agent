@@ -1,51 +1,53 @@
 ---
 id: outlive-agent-v2-quality-system
-title: Outlive Agent V2 质量、回归、文档与国际化
+title: Outlive Agent V2 工程质量、外部评估、文档与国际化
 status: proposed
 scope: quality
 language: zh-CN
 parent: ../../outlive-agent-v2.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
-# 07 · 质量、回归、文档与国际化
+# 07 · 工程质量、外部评估、文档与国际化
 
 ## 子模块导航
 
 ```mermaid
 flowchart LR
-  T[Tests & Evals] --> G[Change Gate]
+  T[本地测试与工程门禁] --> G[Change Gate]
   B[Benchmarks] --> G
   S[Recorded Snapshots] --> G
   D[Docs · i18n · Website] --> G
   G --> E[Release Evidence]
+  L[Langfuse 外部质量评估] -.独立报告，不作为 CI 前置.-> E
 ```
 
 | 子模块 | 评审焦点 |
 |---|---|
-| [测试与 Eval 策略](01-test-eval-strategy.md) | 哪一类问题由哪一层证据回答 |
+| [测试与外部评估策略](01-test-eval-strategy.md) | 哪些问题由本地测试/门禁验证，哪些交由 Langfuse 评估 |
 | [Benchmark 系统](02-benchmark-system.md) | 场景、度量、基线、噪声与回归门槛 |
 | [录制会话 Snapshot](03-recorded-session-snapshots.md) | 录制、脱敏、回放、断言和更新审查 |
 | [Docs、i18n 与 Website](04-docs-i18n-website.md) | 文档真源、翻译、生成站点和发布边界 |
 
-## 1. 六层证据，不用一个 `test` 包打天下
+## 1. 工程验证与产品评估分责
 
 | 层 | 目的 | 放置位置 | 是否允许网络/真实模型 |
 |---|---|---|---:|
 | Unit | 局部算法与边界 | owning package `tests/` | 否 |
 | Contract/Conformance | Provider 是否满足 seam | owning family/test-support | 否 |
 | Integration | 多包真实组合 | app/package integration tests | 默认否 |
-| Snapshot | 模型/用户可见行为与 Session 回放 | `snapshots/` | 回放否；录制显式允许 |
-| Eval | 行为、检索、记忆质量对比 | `evals/` | 默认否；可有单独 real lane |
+| E2E | 产品入口与部署路径 | apps 下的端到端测试 | 默认否；真实外部依赖单独声明 |
+| Snapshot | 确定性 Session 回放与行为回归 | `snapshots/` | 回放否；录制显式允许 |
 | Benchmark | 性能和资源回归 | `benchmarks/` | 否 |
+| 产品/模型 Eval | 检索、记忆、Experience、任务质量对比 | 外部 Langfuse 项目；不设仓库内 `evals/` 目录 | 显式运行/授权；不作为普通 CI 的网络前置 |
 
-E2E 是部署路径维度，可跨上述层；它不等于“所有测试都跑一遍”。
+本地测试与门禁负责能被确定性断言的正确性、安全和兼容性；Langfuse 负责需要数据集、模型或人工评审的质量评估。两者不能互相替代，Langfuse 的分数不能豁免本地安全门禁。
 
 ## 2. Benchmarks
 
-### 2.1 为什么从 `evals/perf` 独立
+### 2.1 与现有离线性能检查的边界
 
-Eval 回答“效果是否更好”；Benchmark 回答“同一用户路径是否变慢/变大”。二者更新口径、机器噪声和失败解释不同。迁移期间可以保留现有 `evals/perf`，但新跨包性能门进入 `benchmarks/`。
+Benchmark 回答“同一用户路径是否变慢/变大”，不承担模型质量评判。迁移期间可复用 TraceGraph 当前已有的离线性能检查；V2 新增的跨包性能基线统一进入 `benchmarks/`，不因此保留本地 `evals/` 目录。
 
 ### 2.2 按用户路径组织
 
@@ -143,38 +145,27 @@ snapshots/<profile>/<scenario>/
 - normalization 必须是 fixed point；
 - Model prose 不能证明 workspace 副作用，必须比较 `workspace.expected`。
 
-## 4. Evals
+## 4. 外部产品/模型质量评估：Langfuse
 
-保留现有 `evals/`，扩展为：
+V2 不建设自有的模型评估 Runner、LLM-as-judge 框架或根目录 `evals/`。需要比较检索、Memory/Experience 复用、任务完成质量等带模型或人工判断的指标时，计划使用外部 Langfuse 项目管理评估数据与报告；Langfuse 集成属于后续可选工作，不是 Runtime 的依赖，也不阻塞本地开发与发布门禁。
 
-```text
-evals/
-├── runtime/       终止、取消、重试、no-progress
-├── recovery/      WAL、unknown、reconcile
-├── memory/        recall、冲突、过期、遗忘、引用
-├── experience/    复用是否提高任务结果
-├── retrieval/     BM25/hybrid/rerank 对比
-├── safety/        scope、permission、secret、prompt injection
-├── docs/          当前声明与实现一致性
-└── replay/        trace-to-replay deterministic checks
+```mermaid
+flowchart LR
+  A[本地 Run / 已提交证据] -->|显式授权、最小化与脱敏后| X[可选导出边界]
+  X --> L[外部 Langfuse 项目]
+  L --> D[数据集运行 / 质量报告]
+  D --> R[人工产品评审]
+  T[本地确定性测试与安全门禁] --> G[CI / Release Gate]
+  R -.不替代.-> G
 ```
 
-### 4.1 Experience paired eval
+边界约束：
 
-同一个任务运行两次：A 不提供经验，B 提供匹配 Experience Case；比较首次通过率、工具次数、token、错误和结果质量。只有 B 在独立验证集上稳定改善，才能声称“Agent 从经验中学习”。
-
-### 4.2 Memory 不是只测 recall@K
-
-同时测试：
-
-- relevant recall；
-- irrelevant suppression；
-- source citation validity；
-- stale/conflict handling；
-- cross-scope leak = 0；
-- revoked/deleted recall = 0；
-- prompt injection from memory；
-- token budget and cache stability。
+- 评测运行、模型裁判、评测集与结果归外部 Langfuse 项目管理；仓库不镜像一套 `evals/` 目录或实现第二个评测平台。
+- 默认不向外部平台发送原始 Session、Memory、源代码、credential 或可识别用户内容。需要真实数据时必须有明确 opt-in、最小化/脱敏策略和可撤回配置。
+- 确定性不变量（权限、scope、撤销/删除、协议、状态机、回放一致性）仍由本地正反例测试与 CI 门禁阻断；模型裁判不能作为安全证明。
+- Langfuse、网络或模型凭据不可用时，本地测试、构建和发布门禁仍能独立运行；外部评估结果单独报告“未运行/未验证”，不伪装为通过。
+- Experience paired comparison 可以在 Langfuse 外部评估流程中对照有/无经验的质量差异；跨任务稳定收益不足时，不宣称 Agent 已从经验中学习。
 
 ## 5. 回归变更规则
 

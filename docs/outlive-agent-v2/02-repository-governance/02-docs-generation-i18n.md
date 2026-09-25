@@ -5,7 +5,7 @@ status: proposed
 scope: docs-i18n-governance
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
 # 文档、生成物与国际化治理
@@ -31,7 +31,7 @@ flowchart LR
 | 类型 | 真源 | 更新触发 | 验证 |
 |---|---|---|---|
 | 目标架构 | `docs/outlive-agent-v2/` | 决策状态、边界或路线变化 | 链接、manifest、评审 |
-| 当前模块 | `docs/modules/` | 公开行为、事件、测试、边界变化 | implementation consistency eval |
+| 当前模块 | `docs/modules/` | 公开行为、事件、测试、边界变化 | implementation consistency check/gate |
 | API/Schema | 源码 schema/comments | 生成器或 schema 变化 | clean-tree regeneration |
 | 用户教程 | `docs/guides`（目标） | 用户路径变化 | 可执行 snippets/E2E |
 | 决策理由 | `.agents/notes` | 决策产生或被替代 | 状态和证据链接 |
@@ -71,7 +71,7 @@ sequenceDiagram
 
 ## 6. 目录与迁移
 
-本次三级文档结构是 `总入口 → 模块 README → 子模块`。迁移旧路径时必须同步 manifest、全仓链接和 docs eval；可在发布前保留短期 redirect 文件，但仓库内链接应直接指向新路径。
+本次三级文档结构是 `总入口 → 模块 README → 子模块`。迁移旧路径时必须同步 manifest、全仓链接和文档一致性门禁；可在发布前保留短期 redirect 文件，但仓库内链接应直接指向新路径。
 
 ## 7. 验收标准
 

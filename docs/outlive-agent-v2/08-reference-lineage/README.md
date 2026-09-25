@@ -5,7 +5,7 @@ status: internal-design-input
 scope: design-lineage
 language: zh-CN
 parent: ../../outlive-agent-v2.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
 # 08 · 设计依据与取舍
@@ -37,7 +37,7 @@ flowchart LR
 | Codex | 源码归档快照（无 `.git` 元数据） | Rust crate 拆分、core 约束、app-server protocol、memories、rollout trace、sandbox |
 | Claw Code | 源码快照（可追溯本地 commit） | PHILOSOPHY、Rust crate、runtime/tools、agent-managed workflow |
 | Pi | 源码快照（可追溯本地 commit） | minimal agent core、event flow、session tree、extensions、RPC、permissions boundary |
-| TraceGraph | 本仓 | README、modules、tests/evals、源码体量与依赖、V2 迁移基线 |
+| TraceGraph | 本仓 | README、modules、当前 tests/evals、源码体量与依赖、V2 迁移基线 |
 
 前三个快照来自源码归档且没有 `.git` 元数据，不能声称精确 commit；Claw 和 Pi 的快照可追溯到本地 commit。未来再次设计时应记录新的 source snapshot date。
 
@@ -101,6 +101,8 @@ flowchart LR
 
 ## 5. Pi
 
+以下入口形态描述的是 Pi 的产品，不代表 Outlive Agent 的入口规划；Outlive Agent V2 当前只规划 Desktop、Web UI、CLI。
+
 ### 5.1 吸收
 
 - **极小 Agent Core**：状态、tool loop、event stream 与 provider API 分离。
@@ -158,7 +160,7 @@ flowchart LR
 - Memory origin/trust/source refs + BM25；
 - Agent Team、Subagent、Skill、MCP、LSP、CodeGraph；
 - Web/Host/SDK/CLI 的纵向链；
-- owning module 文档与实现一致性 eval。
+- owning module 文档与实现一致性检查/门禁。
 
 因此 V2 不应重写 Runtime。最优策略是：**保留可信数据链，拆出能力 owner，再把 Memory/Experience 生命周期建立在这条证据链上。**
 

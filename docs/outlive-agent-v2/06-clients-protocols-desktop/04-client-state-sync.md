@@ -5,7 +5,7 @@ status: proposed
 scope: client-state
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
 # 客户端状态同步设计
@@ -54,7 +54,7 @@ sequenceDiagram
 | operations/approvals | operation/approval ID | command result/events |
 | artifacts/memories | stable ID + version | query/events |
 | pendingCommands | command ID | local + result reconciliation |
-| connection | endpoint/session/cursor/stale | SDK stream |
+| connection | endpoint/session/cursor/stale | internal client stream |
 | ui | route, panes, filters, draft | local only |
 
 Server 事件 reducer 必须纯函数、可重放；组件不直接解析 wire event。

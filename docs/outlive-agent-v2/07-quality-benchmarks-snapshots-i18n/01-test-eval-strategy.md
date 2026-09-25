@@ -1,14 +1,14 @@
 ---
 id: outlive-agent-v2-test-eval-strategy
-title: 测试与 Eval 策略
+title: 工程测试与外部质量评估策略
 status: proposed
-scope: quality-tests-evals
+scope: quality-testing-external-evaluation
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-24
+last_reviewed: 2026-09-25
 ---
 
-# 测试与 Eval 策略
+# 工程测试与外部质量评估策略
 
 ## 1. 证据层位置
 
@@ -17,12 +17,11 @@ flowchart TB
   U[Unit] --> C[Contract/Conformance]
   C --> I[Integration]
   I --> E[E2E User Paths]
-  I --> EV[Behavior Evals]
-  EV --> R[Release Evidence]
-  E --> R
+  E --> R[CI / Release Evidence]
+  L[Langfuse 外部质量评估] -.独立报告.-> R
 ```
 
-测试证明确定性契约和边界；Eval 衡量可能带模型/检索不确定性的质量。二者不能用同一个“通过率”混合。
+本地测试与工程门禁证明确定性契约、安全边界和可复现行为。模型、检索、Memory/Experience 与任务质量评估计划交由外部 Langfuse 项目执行；不建设本地 Eval Runner 或 `evals/` 目录。外部质量分数不替代本地正确性和安全门禁。
 
 ## 2. 层级责任
 
@@ -32,27 +31,18 @@ flowchart TB
 | Contract | provider 是否满足 port | MCP/LSP/tool/store conformance |
 | Integration | 多模块组合是否成立 | Runtime→Tool→Evidence→Session |
 | E2E | 用户路径/部署是否成立 | CLI/Web/Desktop start→approve→resume |
-| Eval | 质量是否改善/退化 | retrieval precision、episode boundary、task success |
+| 外部质量评估 | 跨数据集的模型/产品质量趋势 | retrieval relevance、Experience paired comparison、task quality；由 Langfuse 运行和报告 |
 | Security | 是否能违反边界 | path escape、approval reuse、scope leakage |
 
 ## 3. Fixture 设计
 
 Fixture 使用稳定 ID/clock、临时 workspace、fake model/provider 和显式 expected events。禁止以网络、当前主目录或真实 secret 作为普通测试前置。模型 fixture 记录 semantic response，不依赖 token chunk 的偶然分片。
 
-## 4. Eval Case
+## 4. 外部评估边界
 
-```yaml
-id: memory-version-conflict
-input: fixtures/sessions/version-conflict.jsonl
-profile: eval-local
-expected:
-  must_retrieve: [new-decision]
-  must_not_retrieve: [superseded-decision]
-  require_evidence: true
-scorers: [scope, freshness, provenance]
-```
+Langfuse 中的评估数据集、评分器/人工判读和运行报告由外部项目管理；本仓只定义需要回答的产品问题、事件/指标语义和隐私约束，不复制一套本地数据集或评分执行框架。外部评估需标明数据版本、模型/配置、样本量、阈值来源和失败样例，以便结果可解释、可复查。
 
-每个 scorer 写明人类语义、确定性/模型裁判、阈值来源和失败样例。LLM-as-judge 只能辅助，关键安全/权限条件使用确定性断言。
+外部评估仅用于可能不确定的质量问题，例如检索相关性、经验复用收益和任务结果趋势。关键安全/权限条件必须用本地确定性断言，禁止用 LLM-as-judge 证明“没有越权”或“删除已生效”。
 
 ### 4.1 能力评测卡与独立 oracle
 
@@ -61,10 +51,10 @@ scorers: [scope, freshness, provenance]
 | 风险 | 正例与反例 | Oracle |
 |---|---|---|
 | P2 Runtime 拆分 | 合法审批/补丁路径；事件乱序或丢 Receipt | 现有 CLI e2e、Ledger replay 与外部文件状态 |
-| P4 Memory | 正确来源；过期、撤销、冲突、跨 scope、注入 | Context 中必须/禁止的来源 ID 与权限断言 |
+| P4 Memory | 正确来源；过期、撤销、冲突、跨 scope、注入 | 本地测试断言必须/禁止的来源 ID 与权限；外部 Langfuse 只比较相关性与任务质量 |
 | P5 外部动作 | 对账成功；执行后状态未知或重试碰撞 | 命令 ID、before-image、Receipt、独立观察和无重复副作用 |
 
-`SNAP-070` 的通用 recorded-session harness 仍是 P7 目标；P2 不能把它当作既有测试前置。现有小型离线检索 fixture 和四项性能 gate 只能证明受控输入下的回归边界，不代表开放域任务成功率或产品 SLA。
+`SNAP-070` 的通用 recorded-session harness 仍是 P7 目标；P2 不能把它当作既有测试前置。现有小型离线检索 fixture 和四项性能 gate 只能证明受控输入下的回归边界，不代表开放域任务成功率或产品 SLA。使用 Langfuse 评估属于显式、可选的外部流程，不是 P2/P7 本地 CI 的前置条件。
 
 ## 5. 变更流程
 
@@ -72,12 +62,12 @@ scorers: [scope, freshness, provenance]
 sequenceDiagram
   participant O as Owner
   participant T as Targeted Tests
-  participant E as Eval Suite
+  participant E as Langfuse (optional external)
   participant R as Reviewer
   O->>T: implementation + new failure fixture
   T-->>O: deterministic evidence
-  O->>E: affected suites + baseline comparison
-  E-->>R: per-case delta + aggregate
+  O->>E: explicitly authorized quality run
+  E-->>R: external report + per-case delta
   R->>R: inspect regressions and changed expectations
 ```
 
@@ -89,10 +79,10 @@ sequenceDiagram
 |---|---|
 | random seed | 固定并报告；可有 nightly multi-seed |
 | flaky retry | 一次仅用于分类，最终仍标 flaky/fail |
-| model/network lane | 默认离线；真实模型独立非阻塞/受预算 lane |
-| eval aggregation | 同时看 case-level hard gates 与总体趋势 |
+| model/network lane | 本地 CI 默认离线；Langfuse 评估显式启动、单独授权和报告 |
+| external eval aggregation | 同时查看 case-level 变化与总体趋势；不作为本地安全 hard gate |
 | coverage | 关注风险/状态转换，不把行覆盖率当目标 |
 
 ## 7. 验收
 
-每个关键不变量至少一个正例和反例；所有 provider family 有 conformance；修复事故加入 fixture；Eval report 可追到 case/version/model/config；失败能定位 owning module，而不是只给总分。
+每个关键不变量至少一个本地正例和反例；所有 provider family 有 conformance；修复事故加入 fixture；如运行 Langfuse 外部评估，报告可追到数据集版本/model/config；失败能定位 owning module，而不是只给总分。未运行的外部评估必须标为未验证。

@@ -4,8 +4,8 @@ title: 将 Outlive Agent V2 作为提议中的产品与架构方向
 status: proposed
 owners: [product, architecture]
 created: 2026-09-23
-last_reviewed: 2026-09-23
-affects: [identity, runtime, memory, packages, clients, repository-governance]
+last_reviewed: 2026-09-25
+affects: [identity, runtime, memory, packages, clients, repository-governance, quality]
 supersedes: []
 language: zh-CN
 translation_of: 2026-09-23-outlive-agent-v2.md
@@ -17,7 +17,7 @@ translation_of: 2026-09-23-outlive-agent-v2.md
 
 ## 问题
 
-TraceGraph 已具备有用的证据、回放、Memory、Web、CLI 和评测基础，但产品叙事仍以追踪为主，主 Runtime 也累积了过多职责。仓库还缺少一个简明的治理入口，用来管理架构决策、可复用流程、包晋升、录制会话回归以及未来的 Desktop 工作。
+TraceGraph 已具备有用的证据、回放、Memory、Web、CLI 和离线质量检查基础，但产品叙事仍以追踪为主，主 Runtime 也累积了过多职责。仓库还缺少一个简明的治理入口，用来管理架构决策、可复用流程、包晋升、录制会话回归以及未来的 Desktop 工作。
 
 ## 当前状态
 
@@ -31,15 +31,19 @@ TraceGraph 已具备有用的证据、回放、Memory、Web、CLI 和评测基�
 
 ## 提案
 
-将 [Outlive Agent V2](../../../docs/outlive-agent-v2.md) 作为提议中的目标架构，将 **Outlive Agent** 作为产品工作名；迁移期间继续保留 **TraceGraph Engine** 和 `@tracegraph/*` 作用域。
+将 **Outlive Agent** 确定为产品与底层 Agent Runtime/技术内核的统一名称。**TraceGraph Agent** 仅用于指代迁移前的项目、当前仓库和历史实现；迁移期间继续保留 `@tracegraph/*` 作为代码兼容作用域，不把它视为另一套产品或技术内核品牌。[Outlive Agent V2](../../../docs/outlive-agent-v2.md)仍是提议中的目标架构，名称决定已明确。
+
+当前产品入口限定为 **Desktop、Web UI、CLI**；独立 API、对外 SDK、ACP 暂不纳入产品范围，内部协议/client 仅服务这三种入口。LSP（Language Server Protocol，语言服务器协议）采用 DSH 式可选只读代码导航接入：共享 `lsp` 契约、配置型 stdio Provider 和模型可见的 `lsp` 工具，操作限于 definition、references、implementation、hover；语言服务器由部署方提供，DSH 不随包分发服务端。TraceGraph 当前的 diagnostics 不自动进入目标。CodeGraph 不作为 Outlive Agent 的内建 V2 能力，也不安排现有实现迁移。
 
 设计围绕一个承诺：一次工作会话留下的不应只是答案，还应有证据、可审查的记忆和可复用的经验。知识可以跨越会话；权限必须在当下重新确立。
 
 实现顺序遵循机器可读的 [`roadmap.yaml`](../../../docs/outlive-agent-v2/roadmap.yaml)：先建立基线和架构门禁，再扩展实体包。
 
+质量验证采用明确分工：本地保留确定性测试、CI/架构门禁、性能 Benchmark 与 Session Snapshot；模型、检索、Memory/Experience 和任务质量评估计划后续使用外部 Langfuse 项目，不建设仓库内 `evals/` 评测套件。Langfuse 不可用或未授权时，不得阻塞本地门禁；权限、scope、撤销和删除等不变量必须由本地测试证明。
+
 ## 考虑过的备选方案
 
-- 继续用 **TraceGraph Agent** 作产品名：适合技术内核，但不足以表达记忆与经验的产品承诺。
+- 继续用 **TraceGraph Agent** 作为新产品及技术内核名：否决；仅保留为迁移前项目与历史实现名称。
 - **Time Agent** 或 **Time Memory Agent**：容易被误认为调度工具，作为产品名也不自然。
 - **MEN/Man Agent**：含义不明，还会带来可避免的歧义。
 - 立即照搬其他项目的目录和包数量：表面上推进很快，却会固化本仓库尚未稳定的边界。
@@ -54,11 +58,14 @@ TraceGraph 已具备有用的证据、回放、Memory、Web、CLI 和评测基�
 
 ## 迁移与回滚
 
-V2 在维持当前公开行为的前提下渐进引入。包名与持久化格式保持兼容，直到获接受的 Note 规定了版本化迁移。即使否决产品工作名，也不必重命名技术内核或包作用域。
+V2 在维持当前公开行为的前提下渐进引入。产品与底层技术内核统一称为 Outlive Agent；现有包名与持久化格式保持兼容，直到独立的版本化迁移获批。TraceGraph Agent 作为仓库和迁移历史名称保留，不再代表另一套技术内核品牌。
 
 ## 验收标准
 
-- [ ] 评审并接受或否决产品名称、Memory 权限模型、包晋升门槛和 Desktop 外壳选型。
+- [x] 确认 Outlive Agent 同时作为产品与底层 Agent Runtime/技术内核的统一名称。
+- [x] 确认产品入口仅为 Desktop、Web UI、CLI；独立 API、对外 SDK、ACP 延后。
+- [x] 确认 LSP 采用 DSH 式可选只读代码导航接缝（definition/references/implementation/hover），不内置语言服务器，Current diagnostics 不自动进入目标；CodeGraph 不进入内建 V2 能力/迁移目标。
+- [ ] 评审 Memory 权限模型、包晋升门槛和 Desktop 外壳选型。
 - [ ] 完成 P0 基线与 P1 架构门禁。
 - [ ] 展示恢复、取消，以及从证据到纠正/导出的、保留来源链的 Memory 生命周期。
 - [ ] 每个纵向切片验证并交付后，才更新当前文档。

@@ -2,7 +2,7 @@
 
 [中文](CHANGELOG.zh.md) · English
 
-All notable TraceGraph Agent changes are recorded here. The project follows
+All notable Outlive Agent changes are recorded here. The project follows
 semantic version identifiers, but remains pre-release while every workspace
 package is private.
 

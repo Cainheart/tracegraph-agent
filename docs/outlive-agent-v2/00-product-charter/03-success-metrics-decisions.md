@@ -5,7 +5,7 @@ status: proposed
 scope: product-metrics
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
 # 成功指标与产品决策机制
@@ -21,7 +21,7 @@ flowchart TB
   D --> O
 ```
 
-产品指标不直接由 UI 埋点定义。每个指标必须先有语义、分母、事件来源和隐私级别，再由 Truth Plane 或离线 Eval 投影；不能为了指标增加不必要的长期收集。
+产品指标不直接由 UI 埋点定义。每个指标必须先有语义、分母、事件来源和隐私级别；本地工程指标可由 Truth Plane 派生，模型/任务质量评估计划由外部 Langfuse 项目承载。不得为评估默认外发原始 Session/Memory，也不能为了指标增加不必要的长期收集。
 
 ## 2. 指标树
 
@@ -44,7 +44,7 @@ flowchart TB
 |---|---|---|
 | `metric_window` | 同时保留版本窗口与 28 天滚动窗口 | 版本评审决定，不硬编码于 Runtime |
 | `minimum_sample_size` | 未达到样本量只展示趋势，不作发布裁决 | 在基线采集后确定 |
-| `regression_budget` | 每条关键路径独立配置 | 由 Benchmark/Eval owner 提案并记录原因 |
+| `regression_budget` | 每条关键路径独立配置 | 工程性能由 Benchmark owner 提案；产品质量指标由 Langfuse 评估方案提出并记录原因 |
 | `privacy_mode` | 默认本地聚合，外发 opt-in | 产品宪章硬约束 |
 | `success_target` | 先测当前基线，再定目标 | 禁止无基线写漂亮百分比 |
 
@@ -56,7 +56,7 @@ flowchart TB
 sequenceDiagram
   participant O as Owner
   participant N as Decision Note
-  participant E as Evidence/Eval
+  participant E as Evidence / Langfuse report
   participant G as Review Gate
   O->>N: 提案 + 反证条件
   E-->>N: 基线与风险证据

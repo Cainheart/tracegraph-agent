@@ -5,10 +5,10 @@ status: proposed
 scope: clients
 language: zh-CN
 parent: ../../outlive-agent-v2.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
-# 06 · 客户端、协议与 Desktop
+# 06 · 三种产品入口、内部协议与 Desktop
 
 ## 子模块导航
 
@@ -16,7 +16,7 @@ last_reviewed: 2026-09-23
 flowchart LR
   P[Shared Protocol] --> C[Domain Controllers]
   C --> H[Host / Runtime]
-  P --> E[CLI · API · Web]
+  P --> E[CLI · Web UI]
   P --> D[Desktop Main · Bridge · Renderer]
   H --> EV[Events / Projections]
   EV --> E
@@ -26,20 +26,20 @@ flowchart LR
 | 子模块 | 评审焦点 |
 |---|---|
 | [共享协议与 Controller](01-shared-protocol-controller.md) | 资源、命令、查询、事件与版本边界 |
-| [CLI、API 与 Web](02-cli-api-web.md) | 三种入口如何复用语义又保留交互差异 |
+| [CLI 与 Web UI](02-cli-web-ui.md) | 两种窗口/终端入口如何复用语义又保留交互差异 |
 | [Desktop 进程与安全](03-desktop-process-security.md) | Main/Preload/Renderer、Host 生命周期和最小权限 |
 | [客户端状态同步](04-client-state-sync.md) | snapshot、增量事件、重连、乐观状态和冲突处理 |
 
-## 1. 一套业务语义，四种入口
+## 1. 一套业务语义，三种产品入口
 
 | 入口 | 适合 | Transport | 是否拥有 Runtime 状态 |
 |---|---|---|---:|
-| CLI/TUI | 终端交互、脚本、一次性任务 | 进程内或 framed stdio | 否 |
-| API/SDK | 嵌入、自动化、测试 | versioned RPC/HTTP | 否 |
-| Web | 本机浏览器工作台 | HTTP Command/Query + SSE/WebSocket | 否 |
+| CLI | 终端交互、脚本、一次性任务；TUI 是其呈现模式 | 进程内或 framed stdio | 否 |
+| Web UI | 本机浏览器工作台 | 本地 HTTP Command/Query + SSE/WebSocket | 否 |
 | Desktop | 日常多项目、原生目录与窗口 | private framed pipe + renderer bridge | 否 |
 
 入口只做输入、呈现、连接和平台适配。Session、Run、Memory、Approval、Tool、Workspace 的 owner 都在 Host/Runtime。
+独立 API、对外 SDK、ACP 及编辑器插件暂不属于当前产品范围；内部 Host protocol/client 仅作为上述三种入口的实现依赖。
 
 ## 2. 共享协议核心
 
@@ -104,11 +104,11 @@ Controller 负责：
 
 BFF 不直接打开 JSONL 或 Memory index；UI 也不能用“本地应用”身份绕过 Controller。
 
-## 5. Web 入口
+## 5. Web UI 入口
 
 现有 `apps/web` 和 Host/SSE 是可保留基础。V2 收敛点：
 
-- Web 只依赖 `sdk/client` 与 client UI modules，不复制 route DTO；
+- Web UI 只依赖内部 `sdk/client` 与 client UI modules，不复制 route DTO；
 - 三条现有事件流逐步归一为 durable events、projection snapshot、live hints 三种语义；
 - 浏览器不提交任意本机路径，目录选择由 Host provider 完成；
 - credential 输入 write-only，client 不持久化 secret；
@@ -122,7 +122,7 @@ CLI 分成两层：
 ```text
 apps/cli              argv、命令 UX、profile 选择、进程退出码
 packages/client/tui   可选终端呈现
-packages/sdk/client   与其他客户端同一命令/事件语义
+packages/sdk/client   内部 client helper；不是对外发布的 SDK
 ```
 
 支持三种模式：
@@ -133,17 +133,9 @@ packages/sdk/client   与其他客户端同一命令/事件语义
 
 Machine mode 的 stdout 只输出协议结果；日志走 stderr。命令成功退出码只表示 CLI 命令完成，不自动等价为外部业务副作用成功，结果中仍需 Observation status。
 
-## 7. API 应用
+## 7. 暂不纳入的产品入口
 
-`apps/api` 是可选 headless composition，而不是第二套 Host：
-
-- 复用 `packages/api` controller 和 `sdk/server`；
-- profile 明确开放哪些 routes/capabilities；
-- 默认 bind loopback；非本机监听必须显式 auth、TLS/反向代理说明和风险提示；
-- 不默认暴露本地目录选择、credential 管理或 full-write；
-- health 只报告进程/依赖状态，不声称某个业务任务成功。
-
-早期可继续由 `apps/cli serve` 承担启动；当 headless 生命周期和 CLI UX 独立演进时再物理创建 `apps/api`。
+独立 `apps/api`、面向第三方的 SDK、ACP/编辑器接入当前均不建设，也不作为 V2 验收项。Web UI 所需的本机 HTTP/SSE、Desktop 所需的私有 framed pipe，以及 CLI 使用的内部 client/controller 都是三种产品入口的实现传输，不构成独立 API 产品承诺。
 
 ## 8. Desktop 设计
 
@@ -176,7 +168,7 @@ flowchart LR
 
 ### 8.3 为什么不默认开本机 HTTP 端口
 
-Desktop 使用私有 framed stdio/pipe，减少端口冲突、跨站请求、token 泄漏和版本错配。Node IPC 可负责启动/停止，但业务 RPC 使用有版本 framing，便于与 SDK/测试复用。
+Desktop 使用私有 framed stdio/pipe，减少端口冲突、跨站请求、token 泄漏和版本错配。Node IPC 可负责启动/停止，但业务 RPC 使用有版本 framing，便于与内部 client 和测试复用。
 
 ### 8.4 Renderer 安全
 
@@ -218,27 +210,27 @@ Desktop 使用私有 framed stdio/pipe，减少端口冲突、跨站请求、tok
 - config/profile schema；
 - Session resume/fork；
 - Desktop framing；
-- SDK method/error。
+- internal client method/error。
 
 流程：先更新 canonical contract → 生成 schema/fixtures → 更新所有消费者 → compatibility test → 文档。不能只改 TypeScript interface 而不验证 wire payload。
 
 ## 11. 客户端里程碑
 
-1. 统一 Web/SDK 的 Command/Query/Event vocabulary；
-2. 拆 Controller 与 Fastify transport；
-3. CLI 改用同一 client/controller；
-4. 增加 framed RPC server/client 与协议 conformance；
+1. 统一 CLI/Web UI/Desktop 的内部 Command/Query/Event vocabulary；
+2. 拆 Controller 与本地 Web transport；
+3. CLI 改用同一内部 client/controller；
+4. 为 Desktop Host 增加 framed RPC 与内部协议 conformance；
 5. 建 `apps/desktop-host`，先无 GUI smoke；
 6. 建 Desktop shell，复用 Web UI；
 7. 做 crash/restart、version mismatch、secret、directory picker E2E；
-8. 再评估独立 `apps/api` 和 ACP surface。
+8. 独立 `apps/api`、对外 SDK 和 ACP 不进入当前路线；未来如重议，需新增 Note 和产品需求证据。
 
 ## 12. 验收标准
 
-- 同一命令从 CLI/Web/Desktop/SDK 产生相同 canonical events；
+- 同一命令从 CLI/Web UI/Desktop 产生相同 canonical events；
 - Desktop Main/Renderer 中没有 Session/Memory 真源；
 - 重连不重复命令、不丢 durable event；
 - protocol schema 与实现由 CI 检查新鲜度；
 - Desktop 默认不开网络端口，Renderer 无 Node 权限；
-- API 非 loopback 监听必须显式鉴权配置；
+- Web 的 Host transport 默认仅供本机客户端使用，不作为独立公开 API 承诺；
 - 每个客户端都能展示 Memory 来源、unknown 状态和恢复报告，而非只显示聊天文本。

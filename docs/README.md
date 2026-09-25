@@ -1,4 +1,4 @@
-# TraceGraph Agent 文档 / Documentation
+# Outlive Agent 文档 / Documentation
 
 [English index](#english-index) · [中文索引](#中文索引)
 
@@ -11,7 +11,7 @@
 - [V2 设计文档索引](outlive-agent-v2/README.md)：11 个模块目录及其决策级子模块设计。
 - [V2 实施路线](outlive-agent-v2/09-implementation-roadmap/README.md)与[任务 DAG](outlive-agent-v2/roadmap.yaml)：按依赖执行的阶段、任务与验收标准。
 - [V2 工程研发与维护 SOP](outlive-agent-v2/02-repository-governance/04-engineering-sop.md)：把现有验证资产、目标门禁和每次改动的交付证据串成可执行流程。
-- [TraceGraph → Outlive 迁移基线](outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md)：旧能力、现存边界、不可重做资产及其 V2 去向。
+- [Outlive Agent 迁移基线](outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md)：旧能力、现存边界、不可重做资产及其 V2 去向。
 
 > V2 文档描述目标状态，不代表功能已经实现。迁移完成前，当前事实仍以 README、对应模块文档及其链接的源码/测试为准。
 

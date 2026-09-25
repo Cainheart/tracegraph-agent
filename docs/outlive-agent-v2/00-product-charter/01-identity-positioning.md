@@ -5,7 +5,7 @@ status: proposed
 scope: product-identity
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
 # 身份与定位设计
@@ -34,16 +34,16 @@ flowchart TB
 |---|---|---|---|
 | P0 | 长期维护多个代码库的个人开发者 | 恢复上下文、记住架构理由、复用排障经验 | 跨会话恢复后减少重复探索且保留来源 |
 | P1 | 2～10 人小团队 | 交接、评审、共享已验证做法 | 经验可审查、可撤销、按 scope 共享 |
-| P2 | Agent/工具开发者 | 嵌入 Runtime、协议和证据链 | SDK/协议稳定且不依赖 UI |
+| 延后 | Agent/工具开发者 | 外部嵌入 Runtime、独立 SDK/ACP | 不属于当前产品入口范围；需基于用户需求另行评审 |
 | 非首发 | 大型企业治理、人格延续消费者 | 企业策略或人生档案 | 只保留接口余地，不承诺 V2 完成 |
 
 ## 3. 名称架构
 
 | 名称 | 职责 | 规则 |
 |---|---|---|
-| Outlive Agent | 产品工作名 | 表达“经验比一次执行活得更久”，不承诺生物意义的永生 |
-| TraceGraph Engine | 技术内核/历史连续性 | 可在迁移期继续描述证据图与追踪能力 |
-| `@tracegraph/*` | 当前包 scope | 在独立迁移任务完成前保持，不因品牌决定做大规模 rename |
+| Outlive Agent | 产品名与底层 Agent Runtime/技术内核名 | 产品和内核使用统一名称；各技术子系统按职责命名 |
+| TraceGraph Agent | 迁移前项目/产品名 | 仅在说明当前仓库、已有实现或历史来源时使用 |
+| `@tracegraph/*` | 当前包 scope | 在独立迁移任务完成前作为兼容标识保留，不代表另一套产品品牌 |
 | Legacy Capsule | 用户主动策展的可移植资产 | 不可用于未经授权的人格冒充 |
 
 命名变更必须同时检查：包名、协议 ID、持久格式、CLI 命令、导出格式和外部链接；品牌名不应渗透到不可迁移的 schema discriminator。
@@ -62,7 +62,7 @@ flowchart TB
 |---|---|---|
 | `primary_persona` | `long_horizon_developer` | 有另一类用户达到连续 3 个版本的同等留存证据 |
 | `product_category` | `evidence-grounded coding agent` | 核心工作流不再以代码仓库为主时 |
-| `brand_scope` | 产品层使用 Outlive，迁移期保留技术 scope | 完成包/协议兼容方案且迁移收益大于破坏成本时 |
+| `brand_scope` | 产品与技术内核统一使用 Outlive Agent；迁移期保留现有包 scope | 完成包/协议兼容方案且迁移收益大于破坏成本时 |
 | `legacy_claim_level` | 可移植、可验证、可继承的经验 | 在隐私、授权、身份和长期托管均有独立治理前不得扩大 |
 
 ## 6. 决策门
@@ -75,6 +75,5 @@ flowchart TB
 
 ## 8. 待评审
 
-- `Outlive Agent` 是否作为公开名称，还是仅作内部 working name；
-- TraceGraph Engine 是否长期保留为底层品牌；
+- 公开发布前的商标、域名、包名和主要社交账号核查；
 - P1 团队共享是否进入 V2，还是仅保留单用户多设备的数据模型余量。

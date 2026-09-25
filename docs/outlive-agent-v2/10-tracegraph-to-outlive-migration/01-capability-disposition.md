@@ -5,7 +5,7 @@ status: proposed
 scope: migration-capabilities
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
 # TraceGraph 能力迁移处置
@@ -47,9 +47,10 @@ flowchart LR
 | Context/Model | G-02/03 | Context + LLM | Retain/Upgrade，补 provenance/provider seam |
 | Tool/Security | G-05/06/13/19 | Tool + Execution + Credential | Retain，拆 Definition/Policy/Executor/Receipt |
 | Orchestration | G-07/08/09/14 | Runtime + Orchestration | Upgrade，durable ownership/cancel/recovery |
-| Integrations | G-10/11/12/17/18/20 | Skill/MCP/LSP/Extension/Attachment/Codegraph | Retain behind provider seams；按价值逐项升级 |
+| Integrations | G-10/11/12/17/18 | Skill/MCP/LSP/Extension/Attachment | Retain selected integrations behind provider seams；按价值逐项升级 |
+| CodeGraph | G-20 | Current implementation only | 不纳入 V2 内建能力或迁移目标；未来重议需独立 Note |
 | Memory | G-21 | Memory/Experience | Replace lifecycle, retain provenance/BM25 assets |
-| Quality/Operations | G-15/16/22 | Quality/Governance | Retain and separate Eval/Benchmark/Snapshot/docs gates |
+| Quality/Operations | G-15/16/22 | Quality/Governance | Keep deterministic tests and engineering gates local; Benchmark/Snapshot stay separate; model/product evaluation is external via Langfuse, not a local `evals/` suite |
 
 ## 4. 单项迁移卡
 
@@ -96,5 +97,4 @@ sequenceDiagram
 
 ## 7. 验收
 
-每个 G 项能从旧模块/测试追到目标 owner；迁移没有先删除强资产；Current/Target 状态不混写；被 defer/reject 的能力在 CLI/API/README 不会被误宣称支持。
-
+每个 G 项能从旧模块/测试追到目标 owner；迁移没有先删除强资产；Current/Target 状态不混写；被 defer/reject 的能力不会在 CLI、Web UI 或 README 中被误宣称为 Outlive Agent V2 能力。

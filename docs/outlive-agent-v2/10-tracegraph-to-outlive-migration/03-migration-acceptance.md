@@ -5,7 +5,7 @@ status: proposed
 scope: migration-acceptance
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
 # 迁移验收与切换设计
@@ -29,7 +29,7 @@ flowchart LR
 | Structural | owner 唯一、禁止依赖为零、公开 API 窄、无 deep import |
 | Behavioral | 旧正反 fixtures、事件/错误/receipt 语义一致或有声明升级 |
 | Data/Recovery | 旧 session/event/artifact 可读；中断续跑；rollback/reconcile |
-| User/Operational | CLI/API/Web/Desktop 关键路径、可观察错误、性能预算、文档 |
+| User/Operational | CLI/Web UI/Desktop 关键路径、可观察错误、性能预算、文档 |
 
 ## 3. 切换时序
 

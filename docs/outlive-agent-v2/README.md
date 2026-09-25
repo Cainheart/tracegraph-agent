@@ -5,7 +5,7 @@ status: proposed
 scope: design-index
 language: zh-CN
 parent: ../outlive-agent-v2.md
-last_reviewed: 2026-09-24
+last_reviewed: 2026-09-25
 ---
 
 # Outlive Agent V2 · 设计文档索引
@@ -22,7 +22,7 @@ last_reviewed: 2026-09-24
 
 ```mermaid
 flowchart TB
-  U[Developer / Team] --> S[CLI · API · Web · Desktop]
+  U[Developer / Team] --> S[CLI · Web UI · Desktop]
   S --> C[Control & Composition]
   C --> R[Runtime & Orchestration]
   R --> MC[Model · Context · Capabilities]
@@ -57,8 +57,8 @@ flowchart TB
 | [03 包家族](03-package-topology/README.md) | 物理依赖骨架 | 各家族职责、公开接缝、依赖与升包门槛 |
 | [04 记忆与经验](04-memory-and-experience/README.md) | 可信数据平面上层 | Episode、Memory、Experience、Retrieval、Legacy |
 | [05 Runtime 与能力](05-runtime-and-capabilities/README.md) | 执行与编排核心 | Loop、Tool、Context、扩展、取消与恢复 |
-| [06 客户端与协议](06-clients-protocols-desktop/README.md) | 用户入口与传输边界 | 协议 Controller、CLI/API/Web、Desktop、状态同步 |
-| [07 质量系统](07-quality-benchmarks-snapshots-i18n/README.md) | 横切验证平面 | Tests/Evals、Benchmarks、Snapshots、Docs/i18n/Website |
+| [06 客户端与协议](06-clients-protocols-desktop/README.md) | 三种产品入口与内部传输边界 | 协议 Controller、CLI/Web UI、Desktop、状态同步 |
+| [07 质量系统](07-quality-benchmarks-snapshots-i18n/README.md) | 横切验证平面 | 本地测试/工程门禁、Benchmarks、Snapshots、外部 Langfuse 评估、Docs/i18n/Website |
 | [08 设计依据](08-reference-lineage/README.md) | 设计证据与取舍记录 | 源码观察、吸收/拒绝矩阵 |
 | [09 实施路线](09-implementation-roadmap/README.md) | 迁移执行控制面 | Phase DAG、任务契约、评审检查点 |
 | [10 迁移基线](10-tracegraph-to-outlive-migration/README.md) | 当前系统到 V2 的桥 | 能力、边界与验收迁移 |
@@ -94,13 +94,13 @@ flowchart TB
 
 | 顺序 | 决定 | 主要输入 | 会阻塞 |
 |---:|---|---|---|
-| 1 | `Outlive Agent` 是否成为公开工作名，首要用户是否锁定长期 Coding 开发者 | [身份与定位](00-product-charter/01-identity-positioning.md) | 对外叙事、指标 |
+| 1 | 首要用户是否锁定长期 Coding 开发者，核心产品承诺是否聚焦可追溯、可修正、可继承的工程经验 | [身份与定位](00-product-charter/01-identity-positioning.md) | 对外叙事、指标 |
 | 2 | 三平面只是逻辑边界，还是在 V2 内拆 Host/Truth 进程 | [三平面](01-system-architecture/01-runtime-control-truth-planes.md) | 协议、Desktop、恢复 |
 | 3 | 自动 Memory 准入允许到什么范围，删除语义如何承诺 | [Memory 生命周期](04-memory-and-experience/02-memory-lifecycle.md) | Memory MVP、隐私声明 |
 | 4 | 哪些逻辑模块最先升包，升包评分卡是否接受 | [依赖门禁](03-package-topology/05-profiles-dependency-gates.md) | P2/P3 包迁移 |
 | 5 | 有副作用工具的 `unknown → reconcile` 是否作为全局硬约束 | [Tool 管线](05-runtime-and-capabilities/02-tool-policy-receipt.md) | Runtime 可靠性 |
 | 6 | Desktop shell、Host 生命周期和私有传输选型 | [Desktop 安全](06-clients-protocols-desktop/03-desktop-process-security.md) | Desktop 实施 |
-| 7 | 哪些 Snapshot/Benchmark/Eval 成为 hard gate | [质量系统](07-quality-benchmarks-snapshots-i18n/README.md) | P7/发布 |
+| 7 | 哪些本地测试/门禁、Snapshot/Benchmark 阻断合并；Langfuse 评估如何独立报告 | [质量系统](07-quality-benchmarks-snapshots-i18n/README.md) | P7/发布 |
 | 8 | local-first、单 Host 和非人格模拟边界是否保持为 V2 非目标 | [边界处置](10-tracegraph-to-outlive-migration/02-boundary-disposition.md) | 产品范围、社区承诺 |
 
 建议按顺序逐项给出 `接受 / 修改 / 试验 / 延后 / 拒绝`，再把结果写入 Agent Note；没有必要一次批准全部 53 份文档。

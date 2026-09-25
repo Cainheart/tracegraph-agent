@@ -1,4 +1,4 @@
-# TraceGraph / Outlive Agent Repository Instructions
+# Outlive Agent Repository Instructions
 
 [中文对照](AGENTS.zh.md) · English (canonical)
 

@@ -5,7 +5,7 @@ status: proposed
 scope: roadmap-reviews
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
 # 架构与阶段评审检查点
@@ -30,7 +30,7 @@ flowchart LR
 | Design | owner、非目标、不变量、替代项是否清楚 | module/submodule doc + Note |
 | Boundary | 端口是否窄，依赖方向能否机器守住 | import graph、API surface、conformance plan |
 | Migration | 现有行为/数据如何保留，是否双真源 | migration table、fixtures、rollback |
-| Quality | 新路径怎样失败，是否有回归预算 | tests/evals/snapshots/benchmarks |
+| Quality | 新路径怎样失败，是否有回归预算 | local tests/gates/snapshots/benchmarks；可附 Langfuse 外部质量报告 |
 | Security/privacy | authority、secret、删除、第三方数据 | threat cases、negative tests |
 | Release | 用户路径、兼容、artifact 可复核 | release evidence bundle |
 

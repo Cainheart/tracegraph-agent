@@ -5,7 +5,7 @@ status: proposed
 scope: memory
 language: zh-CN
 parent: ../../outlive-agent-v2.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
 # 04 · 记忆与经验系统
@@ -370,11 +370,13 @@ V2 MVP 只做用户本人主动提供的工程/工作记忆，不对“人格延
 | M2 | `remember/recall` | 引入 candidate/status/lineage，不改变默认召回 |
 | M3 | Session/Run events | 实现异步 Episode extraction |
 | M4 | retrieval package | 拆 retrieval definition 与 BM25 provider |
-| M5 | UI/Host/SDK | memory inspect/review/revoke/query API |
+| M5 | UI/Host/内部协议客户端 | memory inspect/review/revoke/query 命令 |
 | M6 | Artifact/Event export | Legacy Capsule v1 |
-| M7 | evals | conflict、stale、forget、citation、experience paired eval |
+| M7 | 外部 Langfuse 质量评估（可选后续集成） | conflict/stale 对检索质量的影响、citation、Experience paired comparison；安全不变量仍由本地测试阻断 |
 
-## 13. 评测矩阵
+## 13. 本地安全测试与外部质量评估问题
+
+下表中的权限、scope、准入、撤销和删除等确定性要求必须由本地测试覆盖并可进入 CI 门禁；相关性、经验复用收益等非确定性质量问题可在后续 Langfuse 外部评估中测量。外部平台不能作为数据安全证明。
 
 | 场景 | 必须证明 |
 |---|---|

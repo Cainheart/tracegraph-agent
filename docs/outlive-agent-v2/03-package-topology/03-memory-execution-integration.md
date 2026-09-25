@@ -5,7 +5,7 @@ status: proposed
 scope: package-families
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
 # Memory、Execution 与 Integration 家族设计
@@ -57,12 +57,13 @@ sandbox/     policy | local-provider | capability-probe
 
 | family | 子模块 | 关键边界 |
 |---|---|---|
-| `codegraph` | graph contracts、TS provider、query tool | 索引是派生物，不是真源 |
-| `lsp` | protocol、stdio client、workspace manager、tool adapter | server 生命周期不归 ToolCall 临时拥有 |
+| `lsp` | navigation contract、stdio Provider、per-workspace server lifecycle、只读 `tool-lsp` adapter | 仅连接部署方配置的语言服务器；server 生命周期不归 ToolCall 临时拥有 |
 | `mcp` | client、discovery、resource/prompt、tool bridge | MCP 不等于 approval/policy |
 | `skill` | manifest、loader、filesystem provider、runner | 指令内容是非可信输入 |
 | `hooks` | protocol、dispatcher、adapters | hook 失败策略显式 |
 | `extensions` | manifest、host、isolation、compat | 第三方扩展不能获得隐式全权限 |
+
+CodeGraph 是当前仓库已有的静态代码图实现，但不属于 Outlive Agent V2 的内建 Integration family，也没有目标 package 或迁移任务。若未来要重新纳入，须单独论证用户价值与维护成本并通过 Note。
 
 ## 5. 资源生命周期
 
@@ -97,4 +98,3 @@ Terminal、LSP、MCP connection 等长寿命资源由 Host/Provider owner 管理
 ## 7. 验收
 
 可用 fake provider 做 conformance；资源 teardown 经故障注入验证；未知外部状态进入 reconcile；禁用某 capability 后 profile 校验给出可操作错误；删除索引仍能从记忆真源重建。
-

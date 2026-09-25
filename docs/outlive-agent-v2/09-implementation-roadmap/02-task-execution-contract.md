@@ -5,7 +5,7 @@ status: proposed
 scope: roadmap-task-contract
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-24
+last_reviewed: 2026-09-25
 ---
 
 # Agent 任务执行契约
@@ -66,7 +66,7 @@ Agent 不得因任务难而扩大范围、删除失败测试、修改 baseline �
 
 | 任务类 | 最低证据 |
 |---|---|
-| docs | link/manifest/eval + 人类结构 review |
+| docs | link/manifest/static consistency gate + 人类结构 review |
 | move/refactor | behavior parity + import graph + 已有纵向 e2e/replay + 必要的 build/perf smoke |
 | behavior | 新正反 fixtures + owning tests + event/contract update |
 | schema/protocol | backward fixtures/upcaster + generated artifact clean |

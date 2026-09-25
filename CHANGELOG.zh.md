@@ -2,7 +2,7 @@
 
 [English](CHANGELOG.md) · 中文
 
-这里记录 TraceGraph Agent 的重要变更。项目使用语义化版本标识，但所有 workspace 包仍为私有，因此目前仍属预发布阶段。
+这里记录 Outlive Agent 的重要变更。项目使用语义化版本标识，但所有 workspace 包仍为私有，因此目前仍属预发布阶段。
 
 ## [0.1.0-alpha.0] - 2026-09-19
 

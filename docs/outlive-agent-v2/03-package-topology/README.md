@@ -5,7 +5,7 @@ status: proposed
 scope: packages
 language: zh-CN
 parent: ../../outlive-agent-v2.md
-last_reviewed: 2026-09-24
+last_reviewed: 2026-09-25
 ---
 
 # 03 · 包家族与依赖设计
@@ -97,7 +97,7 @@ flowchart LR
 | `memory/` | lifecycle、retrieval、experience、context bridge、export | P1 差异化 | `memory.ts` + retrieval |
 | `llm/` | model seam、provider adapters、retry、usage | P1 | `model-provider.ts` |
 | execution families | fs、shell、terminal、sandbox、subprocess | P1 | 当前 tool/runtime/sandbox |
-| intelligence families | codegraph、lsp | P1 | `codegraph`、`core/lsp` |
+| LSP 代码导航家族 | lsp | P1（可选） | `core/lsp` |
 | integration families | mcp、skill、hooks、extensions | P1 | `core/mcp`、`skill.ts`、extension |
 | orchestration families | workflow、goal、todo、subagent、team、jobs | P2 | runtime/team/todo/subagent |
 | control families | api、sdk、host、boot、profiles | P2 | host/sdk/cli |
@@ -243,8 +243,9 @@ packages/memory/
 ├── memory-context/        bounded cited Context contribution
 ├── experience/            procedural cases and applicability
 ├── legacy-capsule/        export/import/checksum/redaction
-└── memory-evals/          recall, conflict, provenance, forgetting
 ```
+
+Memory/Experience 的产品质量评估属于外部 Langfuse 流程，不作为 `packages/` 家族包或仓库内评测 Runner；scope、撤销、删除等安全不变量仍由 Memory owning packages 的确定性测试验证。
 
 `memory-context` 只消费 active、scope-compatible、未过期且有证据的记录；它不能把 Memory 变成 system instruction。完整设计见 [04](../04-memory-and-experience/README.md)。
 
@@ -277,16 +278,27 @@ packages/sandbox/   sandbox | sandbox-local | sandbox-policy
 
 文件、shell、terminal 与 LSP 必须共享同一个 execution world。将它们分别指向本机和远端会产生“命令在 A、文件在 B”的不可解释状态，因此 Provider 由同一 profile 成组装配。
 
-## 14. 代码智能与集成家族
+## 14. LSP 代码导航与集成家族
 
 ```text
-packages/codegraph/ codegraph | codegraph-ts
 packages/lsp/       lsp | lsp-stdio | tool-lsp
 packages/mcp/       mcp-client | mcp-resources | mcp-tool-bridge
 packages/skill/     skill | skill-filesystem | tool-skill
 packages/hooks/     hook-protocol | hook-adapters
 packages/extensions/extension-runtime | extension-host
 ```
+
+Outlive 采用 DSH 的三段式接入形态：
+
+```mermaid
+flowchart LR
+  Agent[Agent Loop / Tool Registry] --> Tool[tool-lsp<br/>模型可见的只读工具]
+  Tool --> Seam[lsp<br/>统一请求与结果契约]
+  Provider[lsp-stdio<br/>按扩展名路由并管理进程] --> Seam
+  Provider <-->|LSP over stdio| Server[部署方配置的语言服务器]
+```
+
+初始工具操作只包括 `goToDefinition`、`findReferences`、`goToImplementation` 和 `hover`。DSH 不随包分发语言服务器，也不把 diagnostics、rename、formatting 等纳入这组只读导航工具；Outlive 的目标同样不内置服务端，具体命令和扩展名映射由 profile/deployment 配置。该能力是可选 Provider seam，不是产品入口或 Runtime 的必需依赖。TraceGraph 当前 G-12 的 diagnostics 是现状能力，不因保留 LSP seam 就自动进入 V2 目标；若要保留，须另有需求和设计决策。**CodeGraph 不属于 V2 内建包家族**；现有 `@tracegraph/codegraph` 仅作为当前实现记录，不安排向 Outlive Agent 目标架构迁移。
 
 MCP 回答“怎么发现和连接外部工具/资源”；Tool Executor 回答“这个动作是否允许、如何执行、如何对账”。两者绝不能合并为“用了 MCP 就安全”。
 
@@ -306,7 +318,7 @@ packages/jobs/      jobs | jobs-local | tool-jobs
 - A2A 负责 Agent↔Agent 任务与状态；MCP 负责 Agent↔Tool/Resource 连接。
 - 子 Agent 继承 trace lineage，但拥有独立 Session/Run、预算、工具白名单和 settlement。
 
-## 16. Control、Host、SDK 与 Client families
+## 16. Control、Host、内部协议与 Client families
 
 ```text
 packages/api/
@@ -321,6 +333,7 @@ packages/client/
   connection | store | locale | ui-* | web
 ```
 
+- `api`、`sdk` 在此仅指三种产品入口所需的内部 Controller/protocol/client 实现，不代表独立 API 或开发者 SDK 产品；ACP 不在当前目标中。
 - `sdk/protocol` 依赖最少，不含业务实现。
 - Controller 接受 Command/Query 并调用 domain service，不直接解析 Ledger 文件。
 - Client store 是投影缓存，不是业务真源。
@@ -335,9 +348,7 @@ profiles/
 ├── cli.yaml
 ├── web.yaml
 ├── desktop.yaml
-├── headless.yaml
-├── sdk.yaml
-└── acp.yaml
+└── headless.yaml  # 内部自动化测试，不作为产品入口
 ```
 
 Bundle 可以贡献一组能力，例如 `coding-base`、`memory-local`、`web-app`。Profile 负责有序组合与覆盖。最终 resolved config 必须可 dump、可 hash、可在 Run 中引用。
@@ -349,7 +360,7 @@ Bundle 可以贡献一组能力，例如 `coding-base`、`memory-local`、`web-a
 | `@tracegraph/contracts` | 保持，分 canonical/wire/config 子入口 | foundation/contracts |
 | `@tracegraph/core` | `kernel/domains/seams` 内部治理 | core + evidence/session/tool/context/memory 等 families |
 | `@tracegraph/retrieval` | 保持独立 | memory/memory-retrieval-bm25 |
-| `@tracegraph/codegraph` | 保持独立 | codegraph/codegraph-ts |
+| `@tracegraph/codegraph` | 保持当前实现与验证事实 | 不迁入 Outlive Agent V2 内建能力；未来若需纳入，另行评审 Note |
 | `@tracegraph/telemetry` | 保持独立 | support/telemetry |
 | `@tracegraph/host` | 先拆 controller 与 transport 目录 | api/* + host/* |
 | `@tracegraph/sdk` | 先拆 protocol/client | sdk/* |

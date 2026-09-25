@@ -5,7 +5,7 @@ status: proposed
 scope: migration-boundaries
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
 # TraceGraph 边界迁移处置
@@ -30,10 +30,10 @@ flowchart LR
 | Platform security | sandbox portability、credential portability、network egress | 未有真实 provider/conformance 前 fail closed |
 | Distribution | multi-host、production TLS/multi-user、remote team | V2 MVP reject，保持 local-first |
 | Provider fidelity | tokenizer、streaming、LSP/MCP transport | 先建 seam，再逐 provider 证明，不写万能宣称 |
-| Knowledge depth | advanced retrieval、semantic codegraph | Memory 治理优先于向量；Codegraph 不冒充全语义 |
+| Knowledge depth | advanced retrieval、semantic codegraph | Memory 治理优先于向量；CodeGraph 仅记作现有实现，不纳入 V2 内建能力 |
 | Reliability | action reconcile、subagent recovery、SSE resume | Target，需 durable identity/cursor/receipt |
 | Extension trust | hostile modules、Skill distribution | 保持声明式/本地/受信边界，隔离另立决策 |
-| Quality realism | real-provider eval、browser E2E、large UX | P7 目标，不能替代离线确定性门 |
+| Quality realism | 外部模型/任务质量、browser E2E、large UX | Langfuse 质量评估作为可选外部流程；browser E2E 与本地确定性门按路线图建设，外部评估不能替代它们 |
 | Observability | full OTel/collector | 延后；telemetry 永不成为事实真源 |
 
 逐项 Boundary ID 与状态仍由父 README 的唯一表维护。
@@ -78,9 +78,8 @@ sequenceDiagram
 - 加 vector DB 后称 Memory 完成；
 - 有 SSE endpoint 但无 cursor/reconnect 就称可恢复；
 - 有多 Agent UI 就称分布式调度；
-- optional real eval 偶尔通过就替代 deterministic regression。
+- optional Langfuse/真实模型评估偶尔通过就替代 deterministic regression。
 
 ## 7. 验收
 
 每个公开限制可从 README/模块文档找到，错误行为可复现；边界解决 PR 含旧失败 fixture 与新通过证据；剩余 unsupported 组合仍 fail closed；父表没有无 owner 的“未来优化”。
-

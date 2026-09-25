@@ -5,7 +5,7 @@ status: proposed
 scope: capability-extension
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
 # 能力扩展模型设计
@@ -29,7 +29,7 @@ Skill、MCP、LSP、Terminal、Sandbox、Hook 和第三方 Extension 的协议�
 |---|---|---|---|
 | Skill | Skill loader/runner | context + optional tools | 非可信指令、版本漂移 |
 | MCP | MCP client/connection pool | tools/resources/prompts | 远程能力变化、权限误解 |
-| LSP | workspace language service | tools/query | 进程泄漏、workspace 串扰 |
+| LSP | 可选、只读的代码导航 seam；通过配置的 stdio Provider 连接外部语言服务器 | definition、references、implementation、hover；不含 diagnostics 或代码变更操作 | 进程泄漏、workspace 串扰、执行世界错配 |
 | Terminal | terminal manager | tool + event stream | PTY 控制、敏感输出 |
 | Sandbox | execution provider | tool providers | 逃逸、能力探测偏差 |
 | Hook | hook dispatcher | lifecycle events | 阻塞/递归/隐式副作用 |
@@ -73,4 +73,3 @@ sequenceDiagram
 ## 7. 验收
 
 Conformance suite 验证注册、schema、取消、超时、teardown、撤权和崩溃隔离；恶意 manifest、未知权限、重复 ID、版本不兼容在启动前失败。待定：扩展签名信任模型和跨平台沙箱实现。
-

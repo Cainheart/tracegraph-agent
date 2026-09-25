@@ -2,12 +2,12 @@ schema_version: 1
 document_set: outlive-agent-v2
 status: proposed
 language: zh-CN
-last_reviewed: 2026-09-24
+last_reviewed: 2026-09-25
 
 identity:
-  product_working_name: Outlive Agent
+  product_name: Outlive Agent
   previous_product_name: TraceGraph Agent
-  technical_core_name: TraceGraph Engine
+  technical_core_name: Outlive Agent
   package_scope_during_migration: "@tracegraph"
   vision: 让时间带走人的生命，却带不走人曾经留下的记忆与经验。
   product_promise: 让工作记忆有来源、经验可继承、行动可验证。
@@ -83,16 +83,16 @@ documents:
   - id: clients-and-desktop
     path: 06-clients-protocols-desktop/README.md
     status: proposed
-    owns: [cli, api, web, desktop, sdk, rpc]
+    owns: [cli, web-ui, desktop, internal-protocol, local-rpc]
     subdocuments:
       - 06-clients-protocols-desktop/01-shared-protocol-controller.md
-      - 06-clients-protocols-desktop/02-cli-api-web.md
+      - 06-clients-protocols-desktop/02-cli-web-ui.md
       - 06-clients-protocols-desktop/03-desktop-process-security.md
       - 06-clients-protocols-desktop/04-client-state-sync.md
   - id: quality-system
     path: 07-quality-benchmarks-snapshots-i18n/README.md
     status: proposed
-    owns: [tests, evals, benchmarks, snapshots, i18n, website]
+    owns: [tests, engineering-gates, benchmarks, snapshots, langfuse-integration, i18n, website]
     subdocuments:
       - 07-quality-benchmarks-snapshots-i18n/01-test-eval-strategy.md
       - 07-quality-benchmarks-snapshots-i18n/02-benchmark-system.md
@@ -139,7 +139,6 @@ non_goals_v2:
   - vector_similarity_as_truth
 
 review_required:
-  - product_working_name
   - memory_authority_model
   - package_extraction_thresholds
   - desktop_shell_choice

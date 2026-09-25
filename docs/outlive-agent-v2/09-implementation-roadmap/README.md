@@ -6,7 +6,7 @@ scope: roadmap
 language: zh-CN
 parent: ../../outlive-agent-v2.md
 machine_readable: roadmap.yaml
-last_reviewed: 2026-09-24
+last_reviewed: 2026-09-25
 ---
 
 # 09 · 实施路线
@@ -67,7 +67,7 @@ P4 与 P5 可在 P2 后并行；P6 应等待 Evidence/Session/API 边界稳定�
 
 | Task | 动作 | 输出 | 验收 |
 |---|---|---|---|
-| `OLV-000` | 评审工作名、产品边界和九个决策 | 接受/修订的 V2 charter | 决策记录进入 implemented 或 rejected Note |
+| `OLV-000` | 评审 V2 宪章与未决设计决定 | 接受/修订的 V2 charter | 九项主决策都有结论；Outlive Agent 产品与内核名称已确定 |
 | `GOV-001` | 验收根 `AGENTS.md`、Notes/Skills 入口 | 治理骨架 | 链接与状态可用；文件已存在不等于任务完成；不与上级 workspace 规则冲突 |
 | `DOC-002` | 校验 V2 frontmatter、manifest 和 roadmap DAG | `verify-v2-docs` | 坏路径、未知 status、重复 task id、依赖环负例均 exit 1 |
 | `BASE-003` | 生成当前 package DAG、LOC、测试数、事件数、性能基线 | baseline report | 命令可重跑；结构数据由源码生成，环境/时间/耗时另记，不手填永久数字 |
@@ -75,7 +75,7 @@ P4 与 P5 可在 P2 后并行；P6 应等待 Evidence/Session/API 边界稳定�
 
 **退出标准**：未来 Agent 只读 `AGENTS.md` 和 V2 主入口即可定位 current truth、target design、owner 与验证命令。
 
-`roadmap.yaml` 的前置关系是 `GOV-001 → DOC-002 → BASE-003`，不可因入口文件已存在便跳过验收。[现有 proposed Note](../../../.agents/notes/proposed/2026-09-23-outlive-agent-v2.md)还须在 `ARCH-010` 前裁决物理升包准则和架构规则文件名；当前根规则继续有效。`architecture-policy.yaml` 只是与任务 DAG 对齐的目标工作名，尚非已存在配置。
+`roadmap.yaml` 的前置关系是 `GOV-001 → DOC-002 → BASE-003`，不可因入口文件已存在便跳过验收。[现有 proposed Note](../../../.agents/notes/proposed/2026-09-23-outlive-agent-v2.md)还须在 `ARCH-010` 前裁决物理升包准则和架构规则文件名；当前根规则继续有效。`architecture-policy.yaml` 只是与任务 DAG 对齐的暂定文件名，尚非已存在配置。
 
 ## 4. Phase 1 · 先让架构违规可失败
 
@@ -114,7 +114,7 @@ P4 与 P5 可在 P2 后并行；P6 应等待 Evidence/Session/API 边界稳定�
 
 每个任务只做移动/提取；行为改进留 P4/P5。
 
-`CORE-021` 与 `CORE-028` 在 P2 不依赖 P7 的 `SNAP-070`：前者先用现有 focused、CLI 纵向 e2e 与 replay eval，后者再核对 canonical event 顺序、审批时点和外部文件字节。若增加最小 keyless 录制场景，先独立交付并在 DAG 中声明前置；通用录制、脱敏与刷新纪律仍归 `SNAP-070`。
+`CORE-021` 与 `CORE-028` 在 P2 不依赖 P7 的 `SNAP-070`：前者先用现有 focused、CLI 纵向 e2e 与 replay 检查，后者再核对 canonical event 顺序、审批时点和外部文件字节。若增加最小 keyless 录制场景，先独立交付并在 DAG 中声明前置；通用录制、脱敏与刷新纪律仍归 `SNAP-070`。
 
 ## 6. Phase 3 · 只升稳定边界
 
@@ -148,11 +148,10 @@ P4 与 P5 可在 P2 后并行；P6 应等待 Evidence/Session/API 边界稳定�
 |---|---|---|
 | `MEM-044` | Experience Case schema/extractor | 成功、失败、unknown 都能表达；有适用条件 |
 | `MEM-045` | conflict/staleness/use feedback | unresolved conflict 不静默注入 |
-| `MEM-046` | Inspect/Review/Correct/Revoke/Delete 领域命令与当前 Web/SDK 控制面 | 全部经 Command/Event；跨 scope 负测；不依赖未来 Desktop 协议 |
+| `MEM-046` | Inspect/Review/Correct/Revoke/Delete 领域命令与 Web UI/CLI 内部控制面 | 全部经 Command/Event；跨 scope 负测；Desktop 复用同一内部协议 |
 | `MEM-047` | Legacy Capsule v1 | checksum、redaction、quarantine import、review diff |
-| `MEM-048` | Memory/Experience paired eval | 独立验证集证明收益或如实报告无收益 |
 
-**退出标准**：能够现场展示“一条长期记忆从证据产生、被召回、被纠正、旧版本退出 Context、导出后仍可校验”的完整链。
+**退出标准**：能够现场展示“一条长期记忆从证据产生、被召回、被纠正、旧版本退出 Context、导出后仍可校验”的完整链；本地端到端与安全反例通过，Langfuse 外部质量评估不作为本阶段阻塞条件。
 
 ## 8. Phase 5 · Runtime 可靠性补口
 
@@ -167,23 +166,22 @@ P4 与 P5 可在 P2 后并行；P6 应等待 Evidence/Session/API 边界稳定�
 
 RUN-052 必须先用一个本仓完全控制的 provider 做纵向证明，再考虑外部 Agent Adapter。
 
-## 9. Phase 6 · 统一协议和 Desktop
+## 9. Phase 6 · 三种产品入口与 Desktop
 
 | Task | 内容 | 验收 |
 |---|---|---|
-| `API-060` | 统一 Command/Query/Event vocabulary | Web/SDK/CLI schema 同源 |
-| `API-061` | Controller 与 Fastify transport 分离 | controller 可进程内/RPC 测试 |
-| `API-062` | framed RPC protocol/server/client | partial frame、cancel、version mismatch conformance |
-| `CLI-063` | CLI/TUI 走同一 client/controller | JSON mode 干净、event 一致 |
+| `API-060` | 定义三种产品入口共用的内部 Command/Query/Event contract | Web UI/CLI/Desktop schema 同源；不发布外部 SDK |
+| `API-061` | 分离领域 Controller 与本地客户端 transport | controller 可进程内/RPC 测试；Web HTTP 仅服务本地 UI |
+| `API-062` | Desktop/CLI 内部 framed RPC conformance | partial frame、cancel、version mismatch conformance；不形成外部 API |
+| `CLI-063` | CLI 走同一 client/controller | JSON mode 干净、event 一致 |
 | `DESK-064` | `apps/desktop-host` exact-version runtime | 无 GUI smoke、崩溃/重启/关闭可测 |
 | `DESK-065` | Desktop shell + shared UI | Renderer 无 Node，默认无端口 |
 | `DESK-066` | 原生目录/打开文件/credential bridge | opaque handles、scope/policy enforced |
-| `API-067` | 评估/创建独立 `apps/api` | 仅当 lifecycle 已与 CLI 独立；否则记录 rejected |
 | `CLIENT-068` | Memory/Experience 控制面接入统一协议与共享 UI | Web/Desktop 对同一命令产生同一 canonical event |
 
 Desktop 技术选择必须先有 Note；当前倾向 Electron，不在任务里预先锁死。
 
-## 10. Phase 7 · 回归、性能、i18n 和文档产品化
+## 10. Phase 7 · 回归、性能、外部评估接入、i18n 和文档产品化
 
 | Task | 内容 | 验收 |
 |---|---|---|
@@ -191,7 +189,8 @@ Desktop 技术选择必须先有 Note；当前倾向 Electron，不在任务里�
 | `SNAP-071` | recovery/cancel/memory/subagent 四组场景 | workspace 与事件均比较 |
 | `BENCH-072` | benchmark harness + machine report | raw samples、budget、环境信息 |
 | `BENCH-073` | 首批 8 条用户路径基线 | 负优化 CI 可见；更新需显式 |
-| `EVAL-074` | Memory safety/quality suite | leak/revoked/stale/conflict/injection 场景 |
+| `MEM-048` | Memory/Experience 的 Langfuse paired evaluation | 独立验证集报告收益/伤害；外部评估不替代本地安全测试 |
+| `EVAL-074` | Langfuse Memory 质量评估（外部、可选） | 评估相关性/新鲜度/引用和 Experience 收益；leak/revoked/scope/injection 仍由本地负例门禁证明 |
 | `I18N-075` | client locale package + terminology | Web/Desktop/TUI 同 key；fallback 可测 |
 | `DOC-076` | bilingual pair/YAML checker | hash/结构/链接漂移失败 |
 | `DOC-077` | 生成 event/tool/module/profile catalogs | `--check` 检测陈旧产物 |

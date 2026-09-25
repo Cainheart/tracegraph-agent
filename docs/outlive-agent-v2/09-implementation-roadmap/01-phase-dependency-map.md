@@ -5,7 +5,7 @@ status: proposed
 scope: roadmap-phases
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
 # 阶段依赖与并行路线
@@ -20,7 +20,7 @@ flowchart TB
   P2 --> P4[P4 Memory/Experience Slice]
   P2 --> P5[P5 Runtime Reliability]
   P3 --> P6[P6 Shared Protocol/Desktop]
-  P4 --> P7[P7 Snapshot/Benchmark/i18n]
+  P4 --> P7[P7 Snapshot/Benchmark/Langfuse opt-in/i18n]
   P5 --> P7
   P6 --> P7
   P7 --> P8[P8 Public Proof/Release]
@@ -36,10 +36,10 @@ flowchart TB
 | P1 | AGENTS/Notes/Skills、架构/文档门禁 | CI failure fixtures | 大拆包 |
 | P2 | core 内 Evidence/Session/Runtime/Tool/Context 边界 | import rules + behavior parity | 发布大量新 package |
 | P3 | 满足门槛的 family packages | move-only diff + conformance/perf | 为目录美观抽包 |
-| P4 | 一个可见、可纠正、可遗忘的 Memory 纵切 | end-to-end memory eval | 人格/云同步 |
+| P4 | 一个可见、可纠正、可遗忘的 Memory 纵切 | 本地端到端与安全反例通过；Langfuse 质量评估可后续独立运行 | 人格/云同步 |
 | P5 | cancel/recovery/reconcile/no-progress | failure injection snapshots | 分布式 scheduler |
 | P6 | 共享协议、Desktop Host/bridge | multi-transport conformance/security | 独立业务语义 |
-| P7 | snapshots/benchmarks/docs/i18n | regression reports | 只建空目录 |
+| P7 | snapshots/benchmarks、可选 Langfuse 接入、docs/i18n | 回归报告；外部质量评估独立报告且不阻塞本地门禁 | 只建空目录 |
 | P8 | install→task→evidence→resume→export 公开路径 | clean install/release evidence | 未证明的营销能力 |
 
 ## 3. 并行 lanes
@@ -56,14 +56,14 @@ flowchart LR
   C --> REL
 ```
 
-- Governance lane 可先建 Note、规则和 docs eval；
+- Governance lane 可先建 Note、规则和 docs consistency gate；
 - Quality lane 可先固定当前 fixtures/baselines；
 - Domain extraction 必须先完成相关 logical seam 才允许相应 feature lane；
 - Memory、Runtime reliability、Client 可并行，但共享协议/schema 由单 owner 合并。
 
 ## 4. 临界路径
 
-当前最可能临界路径：现状基线 → Runtime/Evidence 逻辑分层 → shared protocol → Desktop；以及 Session/Evidence → Memory lifecycle → retrieval/context → end-to-end eval。二者在 P7 汇合。
+当前最可能临界路径：现状基线 → Runtime/Evidence 逻辑分层 → shared protocol → Desktop；以及 Session/Evidence → Memory lifecycle → retrieval/context → 本地纵向验证。Langfuse 外部质量评估可在 P7 后按需补入，不阻塞该路径。
 
 ## 5. WIP 与切片参数
 

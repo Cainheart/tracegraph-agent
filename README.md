@@ -1,14 +1,14 @@
-# TraceGraph Agent
+# Outlive Agent
 
 [English](README.en.md) · 简体中文
 
 > **一个架构感知、全程可观测、Context、长期 Memory 与验证证据可检查的 Web Coding Agent。**
 >
-> 状态：`v0.1-alpha.0`。本地优先、单机运行、未发布 npm；P0 纵向链已实现。当前边界见对应的[模块文档](docs/modules/)与 [TraceGraph → Outlive 迁移基线](docs/outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md)。
+> 状态：`v0.1-alpha.0`。本地优先、单机运行、未发布 npm；P0 纵向链已实现。当前边界见对应的[模块文档](docs/modules/)与 [Outlive Agent 迁移基线](docs/outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md)。
 
 大多数 Coding Agent 只留给你一段聊天记录：改了什么、为什么改、依据是什么，散落在几十轮对话里，事后几乎无法复核。
 
-TraceGraph Agent 把 Decision、Tool、Approval、Patch、Test、Context 和代码架构变化收进**同一条可回放的轨迹**。每个结论都能回溯到产生它的那次模型请求、那次工具执行和那份证据。
+Outlive Agent 把 Decision、Tool、Approval、Patch、Test、Context 和代码架构变化收进**同一条可回放的轨迹**。每个结论都能回溯到产生它的那次模型请求、那次工具执行和那份证据。
 
 ## 主要能力
 
@@ -22,7 +22,7 @@ TraceGraph Agent 把 Decision、Tool、Approval、Patch、Test、Context 和代�
 - **长期 Memory**：Markdown 按标题/段落分块、原子 JSONL 索引、本地 BM25 检索，命中带来源路径、精确行号与内容 hash，每轮模型请求前自动注入带引用的上下文。
 - **三种工作模式**：Plain Chat（无任何文件与命令能力）、Managed Project、Linked Local Folder。
 
-G-01 至 G-23 的迁移去向见[TraceGraph → Outlive 迁移基线](docs/outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md)；当前实现、源码与验证入口见[模块文档](docs/modules/)；每个源文件的职责见[目录说明](DIRECTORY.md)。
+G-01 至 G-23 的迁移去向见[Outlive Agent 迁移基线](docs/outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md)；当前实现、源码与验证入口见[模块文档](docs/modules/)；每个源文件的职责见[目录说明](DIRECTORY.md)。
 
 ## 一眼看清边界
 
@@ -125,7 +125,7 @@ CI 由三个独立 job 组成（`typecheck` / `test` / `evals`），另设覆盖
 ## 文档
 
 - [Outlive Agent V2 设计总纲](docs/outlive-agent-v2.md) —— 产品哲学与目标架构提案；不代表相关能力已经实现
-- [TraceGraph → Outlive 迁移基线](docs/outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md) —— 旧能力、边界及其 V2 去向
+- [Outlive Agent 迁移基线](docs/outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md) —— 旧能力、边界及其 V2 去向
 - [文档索引](docs/README.md) —— 模块 01–19 与全部参考文档的入口
 - [目录说明](DIRECTORY.md) —— 每个源文件与配置文件的职责
 - [变更记录](CHANGELOG.md)

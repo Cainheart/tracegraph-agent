@@ -5,9 +5,9 @@ status: proposed
 document_role: canonical-v2-entry
 language: zh-CN
 product_name:
-  working: Outlive Agent
+  canonical: Outlive Agent
   previous: TraceGraph Agent
-technical_core: TraceGraph Engine
+technical_core_name: Outlive Agent
 vision: 让时间带走人的生命，却带不走人曾经留下的记忆与经验。
 positioning: 让工作记忆有来源、经验可继承、行动可验证的本地优先 Agent Runtime
 current_truth_sources:
@@ -18,7 +18,7 @@ migration_baseline:
 doc_manifest: outlive-agent-v2/manifest.yaml
 design_index: outlive-agent-v2/README.md
 roadmap_manifest: outlive-agent-v2/roadmap.yaml
-last_reviewed: 2026-09-24
+last_reviewed: 2026-09-25
 ---
 
 # Outlive Agent V2 设计总纲
@@ -29,15 +29,15 @@ last_reviewed: 2026-09-24
 
 本文是 V2 的主入口。它描述的是**目标架构与迁移顺序**，不是对当前实现的完成度宣称。当前真实能力仍以 [README](../README.md)、既有[模块文档](modules/)及其指向的源码/测试为准；旧 TraceGraph 文档中仍有价值的能力、边界和验收规则已经收敛到 [TraceGraph → Outlive 迁移基线](outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md)。模块目录、子模块位置图与决策文档从[设计文档索引](outlive-agent-v2/README.md)进入；具体一次改动怎样选 owner、验证和门禁，见[工程研发与维护 SOP](outlive-agent-v2/02-repository-governance/04-engineering-sop.md)。
 
-## 1. 名称裁决
+## 1. 产品与技术内核命名
 
-V2 的建议工作名是 **Outlive Agent**，底层技术内核继续叫 **TraceGraph Engine**。
+**Outlive Agent** 同时是面向用户的产品名称和底层 Agent Runtime/技术内核名称。产品与内核属于同一个系统，不再分别使用两个品牌名。
 
-| 名称 | 角色 | 为什么这样分 |
+| 名称 | 角色 | 使用规则 |
 |---|---|---|
-| **Outlive Agent** | 面向使用者的产品工作名 | `Outlive` 直接表达“记忆与经验超越一次会话和一个执行进程”，比 Time Agent 更不像日历/调度工具 |
-| **TraceGraph Engine** | 事件、证据、关系、回放与派生图谱 | TraceGraph 已准确描述现有技术资产，不应因产品叙事升级而丢掉 |
-| `@tracegraph/*` | 迁移期包作用域 | V2 尚在提案期；先稳住边界，再单独决定是否改包名，避免一次变更同时制造品牌和兼容性风险 |
+| **Outlive Agent** | 产品与底层 Agent Runtime/技术内核 | 统一承载记忆、经验、证据、回放与行动能力；子系统按模块职责命名，产品与内核不再拆分命名 |
+| **TraceGraph Agent** | 迁移前的项目/产品名称 | 仅用于描述当前仓库、既有实现和历史迁移来源 |
+| `@tracegraph/*` | 现有 package scope | 迁移期间作为代码兼容标识保留；它不代表另一套产品或技术内核 |
 
 没有采用以下名称：
 
@@ -46,7 +46,7 @@ V2 的建议工作名是 **Outlive Agent**，底层技术内核继续叫 **Trace
 - **MEN / Man Agent**：缩写含义不自明，`Man` 还有性别和“人工”歧义。
 - **Memory Agent**：过于通用，无法体现证据、继承与运行时边界。
 
-截至 2026-09-23 的定向检查没有发现精确同名的 GitHub 仓库或 npm 包，但这**不是商标清查**。在公开发布前仍需做域名、商标、包名和主要社交账号检查。因此本文将 `Outlive Agent` 标记为 working name，而不是不可逆决定。
+V2 文档已确定以 **Outlive Agent** 作为产品和技术内核的统一名称。公开发布前仍需独立检查商标、域名、包名和主要社交账号；这些发布前核查不改变当前设计中的名称决定。
 
 ## 2. 一句话定义
 
@@ -76,9 +76,9 @@ V2 的建议工作名是 **Outlive Agent**，底层技术内核继续叫 **Trace
 | Session | JSONL Session、恢复、Run 状态、会话列表/搜索 | 版本化 Session 家族、分支/迁移/查询边界清晰 | 基础已实现 |
 | Memory | 本地 JSONL、BM25、来源引用、预算 recall | Candidate→Review→Commit→Use→Revise/Forget 全生命周期；Episode/Procedure/Preference 分型 | 部分实现 |
 | Runtime | 单体 `runtime.ts`，工具、审批、Context、模型、子 Agent 已贯通 | 极小 Agent Loop + 可替换能力接缝 + no-progress guard | 需治理 |
-| Client | Web + CLI + Host/SDK | CLI、API、Web、Desktop 共用一个 Runtime/Protocol | Desktop 未实现 |
-| Governance | 模块文档、CI/evals | 根 `AGENTS.md`、Agent Notes、Skills、架构门禁、生成目录 | 部分实现 |
-| Quality | unit/E2E/evals/perf/replay | 独立 benchmarks 与 recorded-session snapshots；回归预算 | 需重组 |
+| Client | Web UI + CLI + Host 内部协议客户端 | Desktop、Web UI、CLI 共用一个 Runtime/Protocol；仅这三种作为产品入口 | Desktop 未实现 |
+| Governance | 模块文档、CI（当前含 `evals` job） | 根 `AGENTS.md`、Agent Notes、Skills、架构/文档门禁、生成目录 | 部分实现 |
+| Quality | unit/E2E、当前离线 eval、perf/replay | 仓库内保留确定性测试/门禁、benchmarks 与 recorded-session snapshots；模型、检索、记忆和任务质量评估由外部 Langfuse 承担，不建本地 `evals/` 评测套件 | 需重组 |
 | i18n | Web 文案已有中英文机制，公开 README 双语 | UI locale 包 + 文档配对清单与 YAML 一致性记录 | 需标准化 |
 
 “部分实现”不能写成“V2 已具备”。每个详细文档都会用 **Current / Target / Deferred** 标识事实边界。
@@ -90,10 +90,9 @@ flowchart TB
   Human[Human / Automation]
 
   subgraph Surfaces[产品入口]
-    CLI[CLI / TUI]
-    Web[Web]
+    CLI[CLI]
+    Web[Web UI]
     Desktop[Desktop]
-    API[API / SDK / ACP]
   end
 
   subgraph Control[控制与组合平面]
@@ -120,7 +119,7 @@ flowchart TB
   subgraph Capabilities[能力与提供方]
     Models[Model Providers]
     Exec[FS · Shell · Terminal · Sandbox]
-    Intel[LSP · CodeGraph]
+    LSP[可选 LSP 代码导航]
     Connect[MCP · Skills · Hooks]
   end
 
@@ -140,11 +139,14 @@ flowchart TB
   Replay --> Gateway
 ```
 
-这张图有三个关键约束：
+这张图有四个关键约束：
 
-- 四种客户端只负责呈现和传输，不拥有 Session、Run、Approval 或 Memory 的业务事实。
+- 产品入口限定为 Desktop、Web UI、CLI；CLI 内的 TUI 只是呈现模式。独立 API、对外 SDK 和 ACP 暂不纳入当前产品范围；内部 Host 协议仍可服务这三种入口。
+- 三种客户端只负责呈现和传输，不拥有 Session、Run、Approval 或 Memory 的业务事实。
 - Runtime 依赖能力**定义**，组合层选择具体 Provider；能力实现不得反向依赖 UI 或 Agent Loop。
 - Memory 从已提交证据中产生候选，再以带引用的有限内容回到 Context；不能从模型自述直接写成长期事实。
+
+**LSP** 在这里指 DSH 式的只读代码导航接入：共享 LSP seam、可配置的 stdio Provider，以及供 Agent 调用的 `lsp` 工具，初始操作限定为跳转定义、查找引用、查找实现和 hover。Outlive 不内置或安装语言服务器；部署配置负责提供服务端命令与扩展名映射。它是可选能力，不是产品入口或 Runtime 必需依赖。DSH 的这组能力不包含 diagnostics；TraceGraph 当前 G-12 中的诊断能力属于现状，不能自动视为 Outlive 目标。**CodeGraph 不属于 Outlive Agent 的内建 V2 能力**；当前仓库中的静态代码图实现仍是现状资产，但不进入目标 Runtime/包家族，也不安排迁移。
 
 详细设计见 [系统架构](outlive-agent-v2/01-system-architecture/README.md)、[包家族](outlive-agent-v2/03-package-topology/README.md)和[记忆与经验](outlive-agent-v2/04-memory-and-experience/README.md)。
 
@@ -158,8 +160,7 @@ tracegraph-agent/
 │   └── skills/                    # 怎么重复做：项目操作手册（薄指针）
 ├── apps/
 │   ├── cli/                       # 命令 UX 与 profile 启动
-│   ├── api/                       # 可选 headless API 应用
-│   ├── web/                       # 浏览器客户端
+│   ├── web/                       # Web UI
 │   ├── desktop/                   # Electron/Tauri 壳（待 ADR 裁决）
 │   └── desktop-host/              # 私有 framed-RPC bridge
 ├── packages/
@@ -171,18 +172,19 @@ tracegraph-agent/
 │   ├── tool/                      # Registry/Executor/Policy/Approval/Receipt
 │   ├── llm/                       # Model seam、provider、retry、usage
 │   ├── fs|shell|terminal|sandbox/ # Definition/Provider/Consumer 能力家族
-│   ├── lsp|mcp|skill|workflow/    # 可替换能力家族
+│   ├── lsp|mcp|skill|workflow/    # 可替换能力家族；LSP 仅为可选代码导航接缝
 │   ├── subagent|team/             # 委派与协作
-│   ├── api|sdk|host|client/       # 进程边界与客户端协议
+│   ├── api|sdk|host|client/       # 三种入口共用的内部 Controller/传输协议，不承诺外部 API/SDK
 │   └── util|test-support|runtime-diagnostics/
-├── profiles/                      # base/web/desktop/headless/sdk/acp 显式组合
+├── profiles/                      # base/cli/web/desktop；headless 仅供自动化测试
 ├── benchmarks/                    # 跨包用户路径性能门
 ├── snapshots/                     # 录制 Session 的无密钥回归库
-├── evals/                         # 质量、行为和检索效果评测
 ├── docs/                          # 当前文档、V2 设计、ADR/事后分析
 ├── scripts/                       # 生成器与门禁，不承载产品能力
 └── website/                       # 延后；仅做 docs 的公开投影
 ```
+
+模型/Agent 质量评估计划使用外部 Langfuse 项目管理数据集与评估结果；它不是仓库内目录或 Runtime 依赖。安全、权限、状态机和协议等确定性不变量仍由本地测试与 CI 门禁验证，不能交给外部评分替代。
 
 这是一张**目标地图，不是立即创建 60 个空包的命令**。迁移遵循“先在现有 `core` 内形成可守卫边界，再把满足升包条件的能力抽出”的顺序。升包条件见[包家族设计](outlive-agent-v2/03-package-topology/README.md)。
 
@@ -227,7 +229,7 @@ V2 不把“记住一句话”当成记忆系统的终点。真正需要保存�
 | 重启就丢任务/上下文 | durable Session + checkpoint + reconcile | 杀进程后恢复，同一 Run 继续且证据链不分叉 |
 | 一直 working 但无进展 | progress fingerprint + bounded guard | 重复工具/重复 diff 被识别并解释性停机 |
 | 点停止后工具仍在跑 | cancellation ownership + quiescence proof | 取消后无新工具启动，进程组最终退出 |
-| 只能看 UI，无法自动监控 | versioned Query/Command/Event API | CLI、Web、Desktop、SDK 看到同一状态 |
+| 只能看 UI，无法自动监控 | 三种入口共用的内部 Query/Command/Event 协议 | CLI、Web UI、Desktop 看到同一状态 |
 | 子 Agent 不可控 | durable delegation + capacity/budget/status | 根 Trace 可还原派发、结果、失败和关闭 |
 | 不知道指令从哪里来 | Context provenance | 每个模型可见片段可追溯到 user/repo/skill/memory/tool |
 | “记忆”会污染或泄露 | candidate gate + scope + consent + forget | 能解释为何记住、为何召回、如何纠正/删除 |
@@ -239,13 +241,13 @@ V2 的亮点不是“功能最多”，而是把这些可靠性承诺连成一�
 | 文档 | 回答的问题 |
 |---|---|
 | [00 产品宪章](outlive-agent-v2/00-product-charter/README.md) | 愿景如何落到产品边界，哪些诱人方向明确不做 |
-| [01 系统架构](outlive-agent-v2/01-system-architecture/README.md) | 四入口、控制平面、Runtime、可信数据平面如何交互 |
+| [01 系统架构](outlive-agent-v2/01-system-architecture/README.md) | 三种产品入口、控制平面、Runtime、可信数据平面如何交互 |
 | [02 仓库治理](outlive-agent-v2/02-repository-governance/README.md) | AGENTS、Notes、Skills、scripts、docs 怎么维护大工程 |
 | [03 包家族与依赖](outlive-agent-v2/03-package-topology/README.md) | 每个 family/subpackage 做什么，何时值得升包 |
 | [04 记忆与经验](outlive-agent-v2/04-memory-and-experience/README.md) | Session、Episode、Memory、Experience、Legacy 如何区分 |
 | [05 Runtime 与能力](outlive-agent-v2/05-runtime-and-capabilities/README.md) | Agent Loop、Tool、Context、Workflow、Subagent、MCP 等如何组合 |
-| [06 客户端与 Desktop](outlive-agent-v2/06-clients-protocols-desktop/README.md) | CLI/API/Web/Desktop 如何共享事实与协议 |
-| [07 质量系统](outlive-agent-v2/07-quality-benchmarks-snapshots-i18n/README.md) | Benchmarks、Snapshots、Evals、docs/i18n、website 怎么分工 |
+| [06 客户端与 Desktop](outlive-agent-v2/06-clients-protocols-desktop/README.md) | CLI/Web UI/Desktop 如何共享事实与内部协议 |
+| [07 质量系统](outlive-agent-v2/07-quality-benchmarks-snapshots-i18n/README.md) | 工程测试/门禁、Benchmarks、Snapshots、外部 Langfuse 评估、docs/i18n、website 怎么分工 |
 | [08 设计依据](outlive-agent-v2/08-reference-lineage/README.md) | 哪些外部项目启发了什么，以及明确拒绝复制什么 |
 | [09 实施路线](outlive-agent-v2/09-implementation-roadmap/README.md) | 先做什么、依赖什么、每个任务如何验收 |
 | [10 迁移基线](outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md) | TraceGraph 的 G-01～G-23、现存边界和不可重做资产如何进入 V2 |
@@ -254,22 +256,23 @@ V2 的亮点不是“功能最多”，而是把这些可靠性承诺连成一�
 
 ## 10. 迁移纪律
 
-1. **名称迁移与代码迁移分开**：V2 提案期不改 npm scope、事件名、持久格式或公开 API。
+1. **名称迁移与代码迁移分开**：V2 提案期不改 npm scope、事件名、持久格式或既有客户端契约；不因此承诺新增外部 API。
 2. **搬家与行为改造分开**：一个 PR 只做一种；文件移动必须先由边界门禁保护。
 3. **Current 与 Target 分开**：文档中没有证据的目标必须写 `proposed/deferred`，不能使用完成时。
 4. **每个持久格式单调演进**：发布过的 generation 不覆盖、不原地改写；通过相邻迁移升级。
 5. **每个副作用有业务 Receipt**：CLI exit 0、HTTP 200 或模型一句“完成了”都不是业务成功。
 6. **每个重要承诺有反向测试**：不仅证明正确路径通过，还要临时破坏不变量并证明门禁 `exit 1`。
 
-## 11. 本轮应评审的九个决策
+## 11. 本轮应评审的十个决策
 
-- [ ] 接受 **Outlive Agent** 作为工作名，TraceGraph 作为技术内核名。
+- [x] 接受 **Outlive Agent** 同时作为产品与底层 Agent Runtime/技术内核名称；TraceGraph Agent 仅指现有仓库及迁移前状态。
 - [ ] 接受“记忆可延续，权限不延续”为核心安全原则。
 - [ ] 接受 Evidence → Episode → Memory/Experience → Legacy 的四层模型。
 - [ ] 接受先内部成层、再按升包门槛物理拆包，不一次创建全部目标包。
-- [ ] 接受 CLI/API/Web/Desktop 共享一个 Runtime 与版本化协议。
+- [x] 产品入口限于 CLI、Web UI、Desktop；独立 API、对外 SDK、ACP 暂不纳入当前范围。
+- [x] LSP 采用 DSH 式可选只读代码导航接缝（definition/references/implementation/hover），不内置语言服务器；CodeGraph 不纳入 Outlive Agent 内建 V2 能力或迁移目标。
 - [ ] 接受 Desktop 主进程不拥有业务状态，使用私有 framed RPC 与 Host 通信。
-- [ ] 接受 `benchmarks/`、`snapshots/`、`evals/` 三者分工，不混成一个测试目录。
+- [ ] 接受仓库内以确定性测试/门禁、`benchmarks/`、`snapshots/` 为质量基线；模型/Agent 质量评估交给外部 Langfuse，不建设本地 `evals/` 评测套件。
 - [ ] 接受 website 延后，仅作为 docs 投影，不成为第二份文档真源。
 - [ ] 接受“人格复刻/身后代理”不进入 V2 MVP，只先做工程记忆与用户主动策展的 Legacy Capsule。
 

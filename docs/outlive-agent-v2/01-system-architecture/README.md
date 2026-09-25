@@ -5,7 +5,7 @@ status: proposed
 scope: architecture
 language: zh-CN
 parent: ../../outlive-agent-v2.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
 # 01 · 系统架构
@@ -31,7 +31,7 @@ flowchart LR
 
 V2 架构同时解决四个问题：
 
-1. CLI、API、Web、Desktop 不能各自实现一套 Session/Run 语义。
+1. CLI、Web UI、Desktop 不能各自实现一套 Session/Run 语义；独立 API/SDK/ACP 不属于当前产品入口。
 2. 当前 `packages/core/src/runtime.ts` 超过一万行，能力边界存在于概念和文档中，却未被物理依赖守住。
 3. Memory 需要成为可信数据平面的一部分，而不是 Runtime 尾部的一个检索 helper。
 4. 仓库需要能持续增加能力，却不让 Agent Loop、Host 和 UI 互相反向依赖。
@@ -49,7 +49,7 @@ V2 架构同时解决四个问题：
 | L4 | Runtime | Agent、Turn、Step、Tool pipeline、cancel、retry、guard | HTTP/Electron/React |
 | L5 | Memory & Orchestration | Memory lifecycle、Experience、Workflow、Subagent、Team、Goal | 绕过 L1 直接写持久事实 |
 | L6 | Control & Composition | profile、bundle、controller、gateway、settings、credentials | 领域真源 |
-| L7 | Surfaces | CLI/TUI、Web、Desktop、SDK、ACP | Session/Run 的权威副本 |
+| L7 | Surfaces | CLI、Web UI、Desktop | Session/Run 的权威副本 |
 
 依赖并非简单 `L7 → L0` 的逐层链。关键是：
 
@@ -70,7 +70,7 @@ V2 架构同时解决四个问题：
 
 ### 3.3 控制平面
 
-控制平面处理“允许以什么组合运行”：profile、provider、workspace、setting、credential reference、permission ceiling、客户端连接和 API。它不直接制造业务事实，只把用户意图送入 Runtime，并把已提交投影送回客户端。
+控制平面处理“允许以什么组合运行”：profile、provider、workspace、setting、credential reference、permission ceiling 与三种客户端连接。内部 Controller/transport 负责把用户意图送入 Runtime，并把已提交投影送回客户端；不承诺独立的外部 API 产品面。
 
 ## 4. 能力接缝的统一形态
 
@@ -132,11 +132,9 @@ policy:
 | `cli` | 交互式/一次性命令 | 进程内 client，可启动 TUI |
 | `web` | 本机浏览器工作台 | HTTP command/query + SSE/WebSocket events |
 | `desktop` | 桌面产品 | 私有 stdio/pipe transport，不默认开 loopback 端口 |
-| `headless` | 自动任务和评测 | 无 UI、确定性输入输出 |
-| `sdk` | 进程外嵌入 | framed RPC server |
-| `acp` | 编辑器/自动化协议 | 严格缩小的 automation surface |
+| `headless` | 内部自动化测试 | 无 UI、确定性输入输出；不是面向用户的产品入口 |
 
-Profile 只声明组合，不保存用户数据。覆盖层必须有顺序和来源；最终 resolved profile 的 hash 写入 Run header，保证以后知道当时到底运行了什么。
+独立 API、对外 SDK 和 ACP 暂不定义 Profile，也不进入当前产品范围。内部 SDK/client 代码若用于三种入口，只是实现细节。Profile 只声明组合，不保存用户数据。覆盖层必须有顺序和来源；最终 resolved profile 的 hash 写入 Run header，保证以后知道当时到底运行了什么。
 
 ## 6. 一次 Turn 的规范时序
 
@@ -200,7 +198,7 @@ sequenceDiagram
 | Query | 读取已提交状态 | `session/read`、`memory/search`、`run/evidence` | 不产生业务副作用；分页与预算有界 |
 | Event | 已发生的事实或瞬态提示 | `tool.receipt`、`run.ended`、`assistant.chunk` | durable/transient 明确分开 |
 
-Web 路由、stdio RPC、SDK 方法和 Desktop bridge 都是这三种语义的 transport adapter，不能各自发明状态机。
+Web 路由、CLI 调用、Desktop bridge 和内部 client 都是这三种语义的 transport adapter，不能各自发明状态机；内部协议不等于承诺对外 SDK/API。
 
 ## 8. 身份与关联
 
@@ -259,7 +257,7 @@ traceId
 | `model-provider.ts` | LLM family | seam 与 concrete presets/providers 分离 |
 | `mcp/`、`lsp/`、`sandbox/`、`skill.ts` | Capability families | 最适合优先提取的可替换接缝 |
 | `runtime.ts` | `core/agent-loop` + feature drivers | 最后拆；只保留状态机和 orchestration |
-| `packages/host`、`packages/sdk` | API/SDK/Host families | 在 Runtime 事实边界稳定后拆 controller/transport |
+| `packages/host`、`packages/sdk` | Host 与内部 client/protocol families | 在 Runtime 事实边界稳定后拆 controller/transport；不作为独立 API/SDK 产品发布 |
 
 ## 12. 架构级禁止项
 

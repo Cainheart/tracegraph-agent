@@ -5,7 +5,7 @@ status: proposed
 scope: command-query-event
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
 # 命令、查询与事件模型
@@ -91,5 +91,4 @@ HTTP 200、RPC success 或 CLI exit 0 只说明传输/进程成功；业务成�
 
 ## 7. 验收与开放问题
 
-验收包括重复命令、响应丢失、并发版本冲突、旧事件重放、未知新字段和投影重建。待定：长任务采用 `accepted + event stream` 还是统一 operation resource；建议后者，以便 CLI/API/Desktop 共享状态。
-
+验收包括重复命令、响应丢失、并发版本冲突、旧事件重放、未知新字段和投影重建。待定：长任务采用 `accepted + event stream` 还是统一 operation resource；建议后者，以便 CLI/Web UI/Desktop 共享状态。这里的协议是内部客户端契约，不代表提供独立公共 API。

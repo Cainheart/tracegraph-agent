@@ -5,7 +5,7 @@ status: proposed
 scope: memory-retrieval
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-25
 ---
 
 # 记忆检索与上下文注入设计
@@ -44,7 +44,7 @@ score = semantic_match
       - conflict/staleness/risk penalties
 ```
 
-公式只是可解释维度，实际权重必须由 Eval 选择并版本化。事实查询偏证据/时效，偏好查询偏 actor/scope，Experience 偏条件匹配与验证结果；不能用一套权重处理所有 kind。
+公式只是可解释维度，实际权重需通过可复核的质量证据选择并版本化；开放域相关性可后续用外部 Langfuse 评估，安全过滤本身必须由本地确定性测试验证。事实查询偏证据/时效，偏好查询偏 actor/scope，Experience 偏条件匹配与验证结果；不能用一套权重处理所有 kind。
 
 ## 4. Context segment
 
@@ -88,7 +88,7 @@ sequenceDiagram
 | `memory_budget_ratio` | Context 总预算的一小部分，按任务类型设上限 |
 | `top_k` | 先取较宽候选，再 hard cap 注入条数 |
 | `diversity` | 同一 claim/version 聚类去重 |
-| `minimum_score` | 按 kind/eval 定，不用全局固定值 |
+| `minimum_score` | 按 kind 与版本化评估证据定，不用全局固定值 |
 | `conflict_mode` | surface pair + require caution |
 | `retrieval_trace` | 保存 IDs、分数维度和过滤理由，不默认保存 query secret |
 
@@ -98,5 +98,4 @@ sequenceDiagram
 
 ## 8. 验收与开放问题
 
-Eval 至少覆盖 scope 泄漏、过期版本、冲突记忆、同义词、恶意历史指令、预算压缩和 index rebuild。待定：默认 embedding provider、本地 lexical-only 模式、用户是否能固定/排除某条 Memory。
-
+本地确定性测试必须覆盖 scope 泄漏、撤销/删除、恶意历史指令和过滤边界；后续 Langfuse 外部质量评估可覆盖过期/冲突记忆、同义词召回、预算压缩与 Experience 复用效果。待定：默认 embedding provider、本地 lexical-only 模式、用户是否能固定/排除某条 Memory。
