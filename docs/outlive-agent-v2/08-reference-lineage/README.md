@@ -5,7 +5,7 @@ status: internal-design-input
 scope: design-lineage
 language: zh-CN
 parent: ../../outlive-agent-v2.md
-last_reviewed: 2026-09-25
+last_reviewed: 2026-09-26
 ---
 
 # 08 · 设计依据与取舍
@@ -32,14 +32,14 @@ flowchart LR
 
 | 项目 | 源码快照 | 重点阅读 |
 |---|---|---|
-| DeepSeek Harness | 源码归档快照（无 `.git` 元数据） | 根/局部 AGENTS、architecture、package groups、Agent Notes/Skills、benchmarks、snapshots、i18n、Desktop |
+| DeepSeek Harness | 初始源码归档快照（无 `.git`）；UI/Memory 补充核对使用本机 Git checkout `46a7f68b0922371ce7144b668b90e377d8e799f4` | 根/局部 AGENTS、architecture、package groups、Agent Notes/Skills、benchmarks、snapshots、i18n、Desktop、Web 工作台 |
 | ZCode | 源码归档快照（无 `.git` 元数据） | 根/CLI AGENTS、architecture policy、Desktop/Web/CLI、protocol/runtime 边界 |
 | Codex | 源码归档快照（无 `.git` 元数据） | Rust crate 拆分、core 约束、app-server protocol、memories、rollout trace、sandbox |
 | Claw Code | 源码快照（可追溯本地 commit） | PHILOSOPHY、Rust crate、runtime/tools、agent-managed workflow |
 | Pi | 源码快照（可追溯本地 commit） | minimal agent core、event flow、session tree、extensions、RPC、permissions boundary |
 | TraceGraph | 本仓 | README、modules、当前 tests/evals、源码体量与依赖、V2 迁移基线 |
 
-前三个快照来自源码归档且没有 `.git` 元数据，不能声称精确 commit；Claw 和 Pi 的快照可追溯到本地 commit。未来再次设计时应记录新的 source snapshot date。
+ZCode 与 Codex 的引用快照来自源码归档且没有 `.git` 元数据，不能声称精确 commit；DeepSeek Harness 的初始架构快照亦如此，但本轮 UI/Memory 补充观察已固定到上表所列本机 checkout commit。Claw 和 Pi 的快照可追溯到本地 commit。未来再次设计时应记录新的 source snapshot date。
 
 ## 2. DeepSeek Harness
 

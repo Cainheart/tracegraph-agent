@@ -4,7 +4,7 @@ title: 将 Outlive Agent V2 作为提议中的产品与架构方向
 status: proposed
 owners: [product, architecture]
 created: 2026-09-23
-last_reviewed: 2026-09-25
+last_reviewed: 2026-09-26
 affects: [identity, runtime, memory, packages, clients, repository-governance, quality]
 supersedes: []
 language: zh-CN
@@ -31,9 +31,11 @@ TraceGraph 已具备有用的证据、回放、Memory、Web、CLI 和离线质�
 
 ## 提案
 
-将 **Outlive Agent** 确定为产品与底层 Agent Runtime/技术内核的统一名称。**TraceGraph Agent** 仅用于指代迁移前的项目、当前仓库和历史实现；迁移期间继续保留 `@tracegraph/*` 作为代码兼容作用域，不把它视为另一套产品或技术内核品牌。[Outlive Agent V2](../../../docs/outlive-agent-v2.md)仍是提议中的目标架构，名称决定已明确。
+将 **Outlive Agent** 确定为产品与底层 Agent Runtime/技术内核的统一名称，并定位为可处理多类型真实任务的完整通用 Agent；编码是重要场景，不是产品边界。**TraceGraph Agent** 仅用于指代迁移前的项目、当前仓库和历史实现。最终 package scope 为 `@outlive/*`；当前 `@tracegraph/*` 仅迁移期保留，改名须走独立、兼容且无行为变化的迁移。[Outlive Agent V2](../../../docs/outlive-agent-v2.md)仍是提议中的目标架构，名称核查已由维护者确认完成。
 
 当前产品入口限定为 **Desktop、Web UI、CLI**；独立 API、对外 SDK、ACP 暂不纳入产品范围，内部协议/client 仅服务这三种入口。LSP（Language Server Protocol，语言服务器协议）采用 DSH 式可选只读代码导航接入：共享 `lsp` 契约、配置型 stdio Provider 和模型可见的 `lsp` 工具，操作限于 definition、references、implementation、hover；语言服务器由部署方提供，DSH 不随包分发服务端。TraceGraph 当前的 diagnostics 不自动进入目标。CodeGraph 不作为 Outlive Agent 的内建 V2 能力，也不安排现有实现迁移。
+
+多人团队共享 Workspace/Memory 不进入 V2，留待后续版本单独评审；此决定仅针对人类多用户共享，不影响 V2 内部 Subagent/Agent Team 协作。
 
 设计围绕一个承诺：一次工作会话留下的不应只是答案，还应有证据、可审查的记忆和可复用的经验。知识可以跨越会话；权限必须在当下重新确立。
 
@@ -58,12 +60,14 @@ TraceGraph 已具备有用的证据、回放、Memory、Web、CLI 和离线质�
 
 ## 迁移与回滚
 
-V2 在维持当前公开行为的前提下渐进引入。产品与底层技术内核统一称为 Outlive Agent；现有包名与持久化格式保持兼容，直到独立的版本化迁移获批。TraceGraph Agent 作为仓库和迁移历史名称保留，不再代表另一套技术内核品牌。
+V2 在维持当前公开行为的前提下渐进引入。产品与底层技术内核统一称为 Outlive Agent；最终包 scope 使用 `@outlive/*`，现有 `@tracegraph/*` 与持久化格式保持兼容，直到独立的版本化迁移获批。TraceGraph Agent 作为仓库和迁移历史名称保留，不再代表另一套技术内核品牌。
 
 ## 验收标准
 
 - [x] 确认 Outlive Agent 同时作为产品与底层 Agent Runtime/技术内核的统一名称。
 - [x] 确认产品入口仅为 Desktop、Web UI、CLI；独立 API、对外 SDK、ACP 延后。
+- [x] 确认最终 package scope 为 `@outlive/*`，名称核查已完成；`@tracegraph/*` 只作迁移期兼容，实际改名另走迁移方案。
+- [x] 确认多人团队共享 Workspace/Memory 不进入 V2，留待后续版本；与内部 Agent Team 协作区分。
 - [x] 确认 LSP 采用 DSH 式可选只读代码导航接缝（definition/references/implementation/hover），不内置语言服务器，Current diagnostics 不自动进入目标；CodeGraph 不进入内建 V2 能力/迁移目标。
 - [ ] 评审 Memory 权限模型、包晋升门槛和 Desktop 外壳选型。
 - [ ] 完成 P0 基线与 P1 架构门禁。
@@ -72,7 +76,7 @@ V2 在维持当前公开行为的前提下渐进引入。产品与底层技术�
 
 ## 风险与未决问题
 
-- Outlive Agent 的最终商标、域名和包名核查仍未完成。
+- 多人团队共享进入后续版本前，需单独定义成员权限、共享 scope、纠错仲裁、撤销和数据隔离。
 - 将个人历史经验导出为可继承内容，公开定位之前需要威胁模型、隐私评审和明确的同意语义。
 - Desktop 技术方案仍待决策，并非已经锁定的实现选择。
 

@@ -5,7 +5,7 @@ status: proposed
 scope: design-decisions
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-25
+last_reviewed: 2026-09-26
 ---
 
 # 吸收、改造、延后与拒绝矩阵
@@ -31,6 +31,7 @@ flowchart LR
 | 家族包 + profile composition | DeepSeek Harness | Adapt | 先逻辑边界，满足门槛再升包 | import graph + extraction benchmark |
 | Agent Notes / Skills 分工 | DeepSeek Harness | Adopt | 决策理由与操作手册分离 | local docs/architecture gates |
 | App-server/shared protocol | Codex、ZCode、Pi | Adapt | CLI/Web UI/Desktop 共用内部领域协议，不扩展成独立 API/SDK 产品面 | multi-transport conformance |
+| DSH/Codex-like Agent 工作台交互 | DeepSeek Harness；用户的 DSH 使用体验 | Adapt（用户已接受） | Web/Desktop 共享 Workspace/Session 导航、对话与 Run 活动、Tool/Approval/变更审阅；Memory/Evidence 使用 Outlive 自己的契约 | Web/Desktop 核心用户路径一致性 + Outlive Memory 来源与状态可检查 |
 | Recorded session snapshots | DeepSeek Harness、Codex | Adapt | 录制后脱敏、离线回放、业务断言 | snapshot semantic diff |
 | 强 Coding 工具体验 | ZCode、Claw Code、Codex | Adopt | Tool pipeline 叠加 Receipt/Observation | local task tests + optional Langfuse quality report |
 | 任意扩展直接进入内核 | 多插件系统常见 | Reject | Definition/Provider/Adapter + policy | malicious extension tests |

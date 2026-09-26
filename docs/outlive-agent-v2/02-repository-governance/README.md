@@ -5,7 +5,7 @@ status: proposed
 scope: repository
 language: zh-CN
 parent: ../../outlive-agent-v2.md
-last_reviewed: 2026-09-25
+last_reviewed: 2026-09-26
 ---
 
 # 02 · 仓库治理
@@ -13,13 +13,19 @@ last_reviewed: 2026-09-25
 ## 子模块导航
 
 ```mermaid
-flowchart LR
-  A[AGENTS 规则] --> N[Notes 决策记忆]
-  A --> S[Skills 操作手册]
-  N --> D[Docs/生成/i18n]
-  S --> G[变更门禁与发布]
-  D --> G
-  G --> SOP[工程 SOP]
+flowchart TB
+  H[维护者 / 编码 Agent] --> A[AGENTS：范围、约束与真源入口]
+  A --> T[本次工程任务]
+  T --> N{是否需要长期裁决？}
+  N -->|需要| D[Agent Note：理由、取舍与后果]
+  N -->|不需要| I[实现或文档切片]
+  D --> I
+  T --> S{流程是否稳定且可重复？}
+  S -->|是| K[Agent Skill：有权限边界的操作步骤]
+  K --> I
+  I --> V[本地证据与 CI 门禁]
+  V --> C[源码、测试、Current 文档与发布证据]
+  C -.新事实/失败复盘.-> D
 ```
 
 | 子模块 | 评审焦点 |
@@ -28,6 +34,38 @@ flowchart LR
 | [文档、生成与国际化](02-docs-generation-i18n.md) | 文档所有权、派生物、目录与翻译漂移治理 |
 | [变更门禁与发布](03-change-gates-release.md) | 从局部验证到 release evidence 的渐进门禁 |
 | [工程研发与维护 SOP](04-engineering-sop.md) | 从需求、归属、纵向验证到规则复盘的实际执行顺序 |
+
+## 模块在整体工程中的位置
+
+仓库治理位于**产品 Runtime 之外**，负责 Outlive Agent 的开发过程、证据可信度和长期维护方式；它不会被用户产品加载，也不拥有 Run、Session、Memory 等业务状态。
+
+```mermaid
+flowchart TB
+  U[产品用户] --> P[Outlive Agent Runtime]
+  P --> D[Session / Evidence / Memory 数据]
+
+  M[维护者 / 编码 Agent] --> R[仓库治理规则与流程]
+  R --> S[源码、测试、配置与文档改动]
+  S --> G[工程检查：单测 / 契约 / 门禁 / 真实入口]
+  G -->|验证通过| A[可复核的版本与发布证据]
+  G -->|失败或未知| X[停止、修复或按规则恢复]
+  A -.仅通过已发布产品路径.-> P
+```
+
+治理规则约束“产品如何被开发和验证”，不是产品中的又一个 `Agent Runtime` 平面。其权威产物是规则、决策记录、操作流程、源码与验证证据；这些产物最终通过正常代码发布流程进入产品，而不是运行时动态读取仓库 `.agents/`。
+
+## Current 与 Target 边界
+
+| 资产 / 能力 | 当前工作树中可核实的事实 | V2 目标，不可误报为已实现 |
+|---|---|---|
+| 仓库规则 | 根 `AGENTS.md` 存在；`.agents/notes/` 有生命周期说明/模板；`.agents/skills/` 有中英文维护 Skill | 规则与 Note/Skill 契约更完整，目录级规则按风险逐步增加 |
+| 决策导航 | `docs/outlive-agent-v2.md` 有已评审方向；本 README 负责子模块导航 | Note、路线 task、设计文档和评审登记关系可自动检查 |
+| 文档资产 | 当前模块文档、V2 设计文档、`manifest.yaml`、`roadmap.yaml` 已存在 | 自动发现孤儿页、失效链接、重复 ID、翻译 stale 与生成漂移 |
+| CI | `.github/workflows/ci.yml` 当前有 `typecheck`、`test`、`evals` 三个 job | 文档、依赖边界、单 Ledger writer 和 Projection 纯度门禁经负例验证后逐步接入 |
+| 评估 | 当前 CI 有离线 `evals` job | V2 不依赖仓库内本地产品评估套件；模型/产品质量评估走可选外部 Langfuse |
+| Snapshot / Benchmark / Website | 需由各自脚本与目录核验现状，不能从文档目录图推断已具备通用机制 | 通用 Session Snapshot、跨包 Benchmark 和 Website 在路线指定阶段逐步建设；Website 仅投影 `docs/` |
+
+根规则、Note、Skill 的现有事实分别以仓库内文件为准；文档/边界验证器、翻译 digest 门禁及通用 Snapshot/Benchmark 是路线任务或提案。具体命令与当前状态见[变更门禁](03-change-gates-release.md)和[工程 SOP](04-engineering-sop.md)。
 
 ## 1. 目标
 
@@ -281,14 +319,14 @@ CI 使用 `--check` 比较生成结果的新鲜度；生成器不能在普通检
 
 ## 10. Website 是否需要
 
-当前不需要立即复制一个 `website/`。网站只有在以下条件同时满足时进入路线：
+当前不建设 `website/`。只有 Outlive Agent V2 的实现阶段（P1–P7）完成、进入 P8 后，并且以下条件同时满足，才启动文档站建设：
 
 - 公共文档已超过 README 能承载的规模；
 - 有可发布版本和稳定安装路径；
 - docs 链接、双语配对和生成目录已有 CI 门禁；
 - website 可以从 `docs/` 投影，不会形成第二份正文。
 
-届时建议使用静态文档站（例如 VitePress），职责仅是导航、搜索、版本切换和演示入口。顺带澄清：所参考工程的 `website/` 是 VitePress 投影，不是 WordPress 站点。
+届时建议使用静态文档站（例如 VitePress），职责仅是导航、搜索、版本切换和演示入口。它消费 `docs/` 中的规范正文，不建立第二份正文真源。顺带澄清：所参考工程的 `website/` 是 VitePress 投影，不是 WordPress 站点。
 
 ## 11. 治理完成标准
 

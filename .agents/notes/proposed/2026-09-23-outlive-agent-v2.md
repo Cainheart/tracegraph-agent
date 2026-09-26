@@ -4,7 +4,7 @@ title: Adopt Outlive Agent V2 as the proposed product and architecture direction
 status: proposed
 owners: [product, architecture]
 created: 2026-09-23
-last_reviewed: 2026-09-25
+last_reviewed: 2026-09-26
 affects: [identity, runtime, memory, packages, clients, repository-governance, quality]
 supersedes: []
 ---
@@ -36,12 +36,14 @@ migration rules are consolidated in the
 ## Proposal
 
 Adopt **Outlive Agent** as the single canonical name for both the user-facing
-product and the underlying Agent Runtime/technical core. **TraceGraph Agent**
-refers only to the pre-migration project, current repository, and historical
-implementation; retain the `@tracegraph/*` package scope for code compatibility
-during migration without treating it as a separate product or core brand.
+product and the underlying Agent Runtime/technical core, and position it as a
+full general-purpose Agent for varied real-world tasks; coding is an important
+scenario, not the product boundary. **TraceGraph Agent** refers only to the
+pre-migration project, current repository, and historical implementation. The
+final package scope is `@outlive/*`; keep `@tracegraph/*` only for migration
+compatibility until a separate, behavior-preserving migration is approved.
 [Outlive Agent V2](../../../docs/outlive-agent-v2.md) remains the proposed target
-architecture; the name decision is settled.
+architecture, and the maintainer confirms the naming clearance is complete.
 
 The current product surfaces are limited to **Desktop, Web UI, and CLI**.
 Standalone API, externally distributed SDK, and ACP are outside the current
@@ -53,6 +55,10 @@ hover. Deployments supply the language-server executable; DSH ships none.
 TraceGraph's current diagnostics do not automatically enter the target.
 CodeGraph is not a built-in Outlive Agent V2 capability, and the existing
 implementation has no planned migration target.
+
+Human multi-user Workspace/Memory sharing is outside V2 and deferred to a later
+version for separate review. This does not remove internal Subagent/Agent Team
+collaboration from the V2 runtime design.
 
 The design centers on one promise: a work session should leave behind evidence,
 reviewable memory, and reusable experience—not only an answer. Knowledge may
@@ -93,10 +99,11 @@ provable by local deterministic tests.
 ## Migration and rollback
 
 V2 is introduced incrementally behind current public behavior. Outlive Agent
-names both the product and its underlying technical runtime. Existing package
-names and persisted formats remain compatible until a separate versioned
-migration is accepted. TraceGraph Agent remains a repository and migration
-history label, not a second technical-core brand.
+names both the product and its underlying technical runtime. The final package
+scope is `@outlive/*`; existing `@tracegraph/*` names and persisted formats
+remain compatible until a separate versioned migration is accepted. TraceGraph
+Agent remains a repository and migration history label, not a second
+technical-core brand.
 
 ## Acceptance criteria
 
@@ -104,6 +111,10 @@ history label, not a second technical-core brand.
       underlying Agent Runtime/technical core.
 - [x] Limit product surfaces to Desktop, Web UI, and CLI; defer standalone API,
       external SDK, and ACP.
+- [x] Set `@outlive/*` as the final package scope; the maintainer confirms name
+      clearance is complete, while actual renaming remains a separate migration.
+- [x] Defer human multi-user Workspace/Memory sharing beyond V2; distinguish it
+      from internal Agent Team collaboration.
 - [x] Use DSH's optional read-only LSP code-navigation seam (definitions,
       references, implementations, hover); ship no language server and do not
       automatically carry current diagnostics into the target. Exclude
@@ -117,7 +128,8 @@ history label, not a second technical-core brand.
 
 ## Risks and open questions
 
-- Final trademark/domain/package-name clearance for Outlive Agent is pending.
+- Human team sharing requires a separate post-V2 review of membership, shared
+  scope, correction arbitration, revocation, and data isolation.
 - Personal legacy export needs a threat model, privacy review, and explicit
   consent semantics before public positioning.
 - Desktop technology remains a decision, not a locked implementation choice.

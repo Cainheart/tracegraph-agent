@@ -2,7 +2,7 @@ schema_version: 1
 document_set: outlive-agent-v2
 status: proposed
 language: zh-CN
-last_reviewed: 2026-09-25
+last_reviewed: 2026-09-26
 
 identity:
   product_name: Outlive Agent
@@ -35,9 +35,9 @@ documents:
   - id: system-architecture
     path: 01-system-architecture/README.md
     status: proposed
-    owns: [layers, control-plane, data-plane, flows, invariants]
+    owns: [runtime-boundaries, session-evidence, flows, invariants]
     subdocuments:
-      - 01-system-architecture/01-runtime-control-truth-planes.md
+      - 01-system-architecture/01-agent-runtime-session-evidence.md
       - 01-system-architecture/02-command-query-event-model.md
       - 01-system-architecture/03-identity-state-recovery.md
       - 01-system-architecture/04-profiles-composition.md

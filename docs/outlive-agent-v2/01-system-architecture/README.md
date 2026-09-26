@@ -5,7 +5,7 @@ status: proposed
 scope: architecture
 language: zh-CN
 parent: ../../outlive-agent-v2.md
-last_reviewed: 2026-09-25
+last_reviewed: 2026-09-26
 ---
 
 # 01 · 系统架构
@@ -14,16 +14,17 @@ last_reviewed: 2026-09-25
 
 ```mermaid
 flowchart LR
-  P[运行/控制/真源平面] --> CE[命令·查询·事件]
+  P[Agent Runtime<br/>入口控制 + 执行编排] --> CE[命令·查询·事件契约]
   CE --> IR[身份·状态·恢复]
   IR --> PC[Profile·组合根]
   PC -.装配.-> P
+  P <--> SE[Session & Evidence]
 ```
 
 | 子模块 | 评审焦点 |
 |---|---|
-| [三平面与所有权](01-runtime-control-truth-planes.md) | 各平面拥有什么、调用方向和失效隔离 |
-| [命令、查询与事件](02-command-query-event-model.md) | 写入、读取、事件投影和协议演进 |
+| [Agent Runtime 与 Session/Evidence](01-agent-runtime-session-evidence.md) | Runtime 内部职责，以及它与 Session/Evidence、能力和 Memory 的协作 |
+| [命令、查询与事件](02-command-query-event-model.md) | CLI/Web UI/Desktop 到 Agent Runtime 的内部协议；命令提交事实，Query 读取具名读模型 |
 | [身份、状态与恢复](03-identity-state-recovery.md) | ID、状态机、checkpoint、重放与 reconcile |
 | [Profile 与组合根](04-profiles-composition.md) | 能力如何装配、校验和按入口复用 |
 
@@ -33,22 +34,22 @@ V2 架构同时解决四个问题：
 
 1. CLI、Web UI、Desktop 不能各自实现一套 Session/Run 语义；独立 API/SDK/ACP 不属于当前产品入口。
 2. 当前 `packages/core/src/runtime.ts` 超过一万行，能力边界存在于概念和文档中，却未被物理依赖守住。
-3. Memory 需要成为可信数据平面的一部分，而不是 Runtime 尾部的一个检索 helper。
+3. Memory 必须从已提交证据中受治理地产生，再按当前权限回到 Runtime 的 Context；它不是 Runtime 尾部的一个无条件检索 helper。
 4. 仓库需要能持续增加能力，却不让 Agent Loop、Host 和 UI 互相反向依赖。
 
-## 2. 八层逻辑架构
+## 2. 逻辑职责与依赖次序
 
-逻辑层不等于必须立即对应一个 npm 包；它首先规定依赖和事实所有权。
+下表是逻辑职责和依赖次序，不是顶层产品系统的同级分层，也不代表进程边界。顶层总图把 L4 执行编排与 L6 入口控制/组合一起归为 **Agent Runtime**；Session/Evidence 是 Runtime 使用的持久事实与查询子系统。
 
 | 层 | 名称 | 主要职责 | 不允许拥有 |
 |---:|---|---|---|
 | L0 | Foundation | branded ids、时间、hash、schema、基础 contracts | 业务状态、I/O 编排 |
-| L1 | Truth | Event Ledger、Artifact、Receipt、Session format、Projection、Replay | UI 状态、模型策略 |
+| L1 | Session & Evidence | Event Ledger、Artifact、Receipt、Session format、Session/Run 页面读模型、Replay | UI 权威状态、模型策略 |
 | L2 | Capability | FS/Shell/Terminal/Sandbox/LSP/MCP/Skill 等定义与 provider | Agent Loop 决策、客户端状态 |
 | L3 | Model & Context | 模型路由、Prompt/Context 组装、token、compaction、provenance | 工具副作用 |
-| L4 | Runtime | Agent、Turn、Step、Tool pipeline、cancel、retry、guard | HTTP/Electron/React |
+| L4 | Agent Runtime：执行与编排 | Agent、Turn、Step、Tool pipeline、cancel、retry、guard | HTTP/Electron/React、具体持久化实现 |
 | L5 | Memory & Orchestration | Memory lifecycle、Experience、Workflow、Subagent、Team、Goal | 绕过 L1 直接写持久事实 |
-| L6 | Control & Composition | profile、bundle、controller、gateway、settings、credentials | 领域真源 |
+| L6 | Agent Runtime：入口控制与组合 | profile、bundle、controller、gateway、settings、credential reference | 领域真源、Run 内部执行状态 |
 | L7 | Surfaces | CLI、Web UI、Desktop | Session/Run 的权威副本 |
 
 依赖并非简单 `L7 → L0` 的逐层链。关键是：
@@ -58,19 +59,30 @@ V2 架构同时解决四个问题：
 - L6 负责选择和装配实现，不把部署选择下沉到 L4；
 - L7 只能通过版本化 Command/Query/Event 协议操作系统。
 
-## 3. 三个平面
+L4 与 L6 是 Agent Runtime 内部可分离的模块职责，不是两个必须独立部署的系统。L1 则回答“运行事实保存在哪里、如何重建和查询”，不负责决定 Agent 下一步做什么。
 
-### 3.1 执行平面
+## 3. Agent Runtime 与支撑子系统
 
-执行平面处理“现在要做什么”：Agent Loop、模型调用、工具执行、审批、取消、子 Agent 和 Workflow。它可以失败、重试或重启，但不能成为唯一历史。
+### 3.1 Agent Runtime：控制与执行是一体的
 
-### 3.2 可信数据平面
+Agent Runtime 是从入口命令到 Run 执行的统一逻辑子系统，内部包括两类职责：
 
-可信数据平面处理“发生过什么”：Event、Receipt、Artifact、Session、Projection、Memory 和 Experience。它必须先提交再发布，读取时验证顺序、hash、schema、scope 和引用。
+- **入口控制与组合**：校验命令及当前 authority，加载 Profile/Policy，绑定本次允许使用的 Model/Tool Provider，并把用户命令交给执行循环。
+- **执行与编排**：推进 Agent Loop、Context、模型请求、工具调用、审批、取消、重试、Workflow 和 Subagent。
 
-### 3.3 控制平面
+这两类职责可以分模块、分 package，但在顶层架构图里属于同一个 Agent Runtime；不应被画成 Runtime 之外的另一个同级控制系统。
 
-控制平面处理“允许以什么组合运行”：profile、provider、workspace、setting、credential reference、permission ceiling 与三种客户端连接。内部 Controller/transport 负责把用户意图送入 Runtime，并把已提交投影送回客户端；不承诺独立的外部 API 产品面。
+### 3.2 Session & Evidence：保存发生过什么
+
+Session & Evidence 为 Runtime 提供持久化与查询能力：Event Ledger 保存已提交运行事实，Artifact/Receipt/Observation 保存证据，Session/Run 页面查询读模型可由事实重建。Runtime 的模型消息历史从 Session 消息事件与 Surface 操作派生，由 Context Assembly 使用；Memory 状态/检索投影来自独立的 Memory 生命周期事件流。它们不是同一个 Projection，也不意味着必须单独部署。
+
+“Truth”在本设计中描述的是这些事实的可信约束，不再作为与 Control、Runtime 并列的第三个系统平面。
+
+### 3.3 能力提供方与 Memory：Runtime 的协作者
+
+- **能力提供方**（Model、Tool、FS、Shell、MCP、Skills 等）通过稳定接口由 Runtime 调用；入口装配依据 Profile/Policy 绑定具体实现。
+- **Memory/Experience**从已提交证据提取候选，经治理后再按当前权限、scope、时效和预算提供给 Context。它不是事实账本，也不继承旧会话的权限。
+- UI 通过内部 Command/Query/Event 契约操作系统；不承诺独立的外部 API 产品面，也不持有 Session/Run 的权威状态。
 
 ## 4. 能力接缝的统一形态
 
@@ -107,7 +119,13 @@ V2 不让每个 app 手写依赖树，而用显式 profile 组装同一组 packa
 ```yaml
 schema_version: 1
 profile: desktop
-extends: base
+surface: desktop
+bundles:
+  - outlive/runtime-base
+  - outlive/session-evidence-local
+  - outlive/memory-local
+  - outlive/workspace-tools
+  - outlive/surface-desktop
 runtime:
   agent_loop: default
   session_persistence: jsonl
@@ -128,13 +146,13 @@ policy:
 
 | Profile | 用途 | 主要差异 |
 |---|---|---|
-| `base` | 共享能力底座 | 不含客户端和网络监听 |
+| `base` | 创建 CLI/Web/Desktop Profile 的内部模板，不单独运行 | 提供公共 Bundle 清单起点；具体能力由 `runtime-base` 等 Bundle 声明 |
 | `cli` | 交互式/一次性命令 | 进程内 client，可启动 TUI |
 | `web` | 本机浏览器工作台 | HTTP command/query + SSE/WebSocket events |
 | `desktop` | 桌面产品 | 私有 stdio/pipe transport，不默认开 loopback 端口 |
 | `headless` | 内部自动化测试 | 无 UI、确定性输入输出；不是面向用户的产品入口 |
 
-独立 API、对外 SDK 和 ACP 暂不定义 Profile，也不进入当前产品范围。内部 SDK/client 代码若用于三种入口，只是实现细节。Profile 只声明组合，不保存用户数据。覆盖层必须有顺序和来源；最终 resolved profile 的 hash 写入 Run header，保证以后知道当时到底运行了什么。
+上面的 Bundle ID 仅是说明“显式列出组合”的示例，不是最终命名裁决。独立 API、对外 SDK 和 ACP 暂不定义 Profile，也不进入当前产品范围。内部 SDK/client 代码若用于三种入口，只是实现细节。Profile 只声明组合，不保存用户数据。覆盖层必须有顺序和来源；Run header 应记录 `composition_digest` 和脱敏装配清单引用，保证以后能解释当时使用了什么。
 
 ## 6. 一次 Turn 的规范时序
 
@@ -145,15 +163,21 @@ sequenceDiagram
   participant R as Runtime
   participant S as Session/Ledger
   participant X as Context
+  participant MR as Memory Retrieval
   participant M as Model
   participant T as Tool Executor
   participant E as External World
   participant MM as Memory Pipeline
+  participant Q as Session/Run UI Read Model
 
   C->>G: command(id, expectedVersion, intent)
   G->>R: admitted command + current authority
   R->>S: turn.started / config snapshot
-  R->>X: assemble from committed state
+  R->>S: read current Session Surface / committed message events
+  S-->>R: branch history source
+  R->>MR: retrieve with current authority, scope and budget
+  MR-->>R: allowed, cited Memory segments
+  R->>X: assemble model history + allowed Memory + other inputs
   X->>S: context.manifest
   R->>M: prepared immutable request
   M-->>R: streamed attempt
@@ -166,8 +190,10 @@ sequenceDiagram
     T->>S: receipt + observation/unknown
   end
   R->>S: step.ended / turn.ended / checkpoint
-  S-->>G: committed events
-  G-->>C: projections and live hints
+  S-->>Q: committed Session/Run events
+  Q->>Q: update recoverable UI query view
+  R-->>C: optional transient token/chunk stream
+  Q-->>C: queried committed Session/Run view
   S-->>MM: committed event notification
   MM->>S: memory.candidate (async, bounded)
 ```

@@ -5,7 +5,7 @@ status: proposed
 scope: clients
 language: zh-CN
 parent: ../../outlive-agent-v2.md
-last_reviewed: 2026-09-25
+last_reviewed: 2026-09-26
 ---
 
 # 06 · 三种产品入口、内部协议与 Desktop
@@ -40,6 +40,12 @@ flowchart LR
 
 入口只做输入、呈现、连接和平台适配。Session、Run、Memory、Approval、Tool、Workspace 的 owner 都在 Host/Runtime。
 独立 API、对外 SDK、ACP 及编辑器插件暂不属于当前产品范围；内部 Host protocol/client 仅作为上述三种入口的实现依赖。
+
+### Web UI 与 Desktop UI 的工作台方向
+
+Web 与 Desktop 的交互形态以 DSH Agent 工作台为直接参照；按用户使用感受，它接近 Codex 一类完整 Agent 工作台。目标是复用熟悉的 Workspace/Session 导航、中心对话与运行活动、结构化工具/审批呈现、按需上下文面板和变更审阅，承载编码及其他工具型任务。Desktop 复用 Web 的主要工作台 UI，只额外提供窗口、菜单、原生目录/文件操作等平台能力；不维护另一套业务交互。
+
+借鉴的是产品信息架构与可见工作流，不是照搬 DSH 的代码或插件实现。Outlive 特有的 Evidence 来源、Memory 生命周期与本次 MemoryUse 必须按 Outlive 契约呈现；不能因参考 DSH 就暗示它已有相同记忆管理能力。详细交互目标见 [CLI 与 Web UI 设计](02-cli-web-ui.md)，源码观察见[设计依据](../08-reference-lineage/01-source-observations.md)。
 
 ## 2. 共享协议核心
 
@@ -161,7 +167,7 @@ flowchart LR
 
 职责：
 
-- **Renderer**：和 Web 共用 UI modules，不获得 Node API。
+- **Renderer**：与 Web 共用 Agent 工作台 shell 和主要 UI modules，不获得 Node API；与 Web 的业务交互保持一致。
 - **Preload**：暴露窄 typed bridge；无任意 channel。
 - **Main**：窗口、菜单、更新、原生目录选择、child process 生命周期；不保存 task/session 状态。
 - **Desktop Host**：加载 exact-version Runtime、profile 和 client graph；拥有业务状态。

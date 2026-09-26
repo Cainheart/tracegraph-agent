@@ -5,7 +5,7 @@ status: proposed
 scope: packages
 language: zh-CN
 parent: ../../outlive-agent-v2.md
-last_reviewed: 2026-09-25
+last_reviewed: 2026-09-26
 ---
 
 # 03 · 包家族与依赖设计
@@ -354,6 +354,8 @@ profiles/
 Bundle 可以贡献一组能力，例如 `coding-base`、`memory-local`、`web-app`。Profile 负责有序组合与覆盖。最终 resolved config 必须可 dump、可 hash、可在 Run 中引用。
 
 ## 18. 当前包迁移表
+
+表中的 `@tracegraph/*` 是当前实现名称，不是 Outlive 的长期命名目标。最终 package scope 为 `@outlive/*`；维护者确认商标、域名、包名与主要社交账号核查已完成。边界拆分和包名更换分开进行；当前代码继续保留 `@tracegraph/*`，直到独立 Note 与无行为变化的兼容迁移方案获批。
 
 | 当前 package/app | 第一落点 | 长期目标 |
 |---|---|---|

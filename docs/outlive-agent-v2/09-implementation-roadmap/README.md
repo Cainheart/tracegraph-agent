@@ -6,7 +6,7 @@ scope: roadmap
 language: zh-CN
 parent: ../../outlive-agent-v2.md
 machine_readable: roadmap.yaml
-last_reviewed: 2026-09-25
+last_reviewed: 2026-09-26
 ---
 
 # 09 · 实施路线
@@ -67,7 +67,7 @@ P4 与 P5 可在 P2 后并行；P6 应等待 Evidence/Session/API 边界稳定�
 
 | Task | 动作 | 输出 | 验收 |
 |---|---|---|---|
-| `OLV-000` | 评审 V2 宪章与未决设计决定 | 接受/修订的 V2 charter | 九项主决策都有结论；Outlive Agent 产品与内核名称已确定 |
+| `OLV-000` | 评审 V2 宪章与未决设计决定 | 接受/修订的 V2 charter | 产品与架构决策均有结论；最终 scope 为 `@outlive/*`；多人团队共享明确延后到 V2 之后 |
 | `GOV-001` | 验收根 `AGENTS.md`、Notes/Skills 入口 | 治理骨架 | 链接与状态可用；文件已存在不等于任务完成；不与上级 workspace 规则冲突 |
 | `DOC-002` | 校验 V2 frontmatter、manifest 和 roadmap DAG | `verify-v2-docs` | 坏路径、未知 status、重复 task id、依赖环负例均 exit 1 |
 | `BASE-003` | 生成当前 package DAG、LOC、测试数、事件数、性能基线 | baseline report | 命令可重跑；结构数据由源码生成，环境/时间/耗时另记，不手填永久数字 |
@@ -137,21 +137,23 @@ P4 与 P5 可在 P2 后并行；P6 应等待 Evidence/Session/API 边界稳定�
 
 | Task | 内容 | 验收 |
 |---|---|---|
-| `MEM-040` | Memory Contract V2：status/scope/provenance/validity/governance/lineage | v1 reader/migration；现有记录不丢 |
+| `MEM-040` | Memory Contract V2：status/scope/provenance/validity/governance/lineage；定 Session/Run 与跨 Session Memory aggregate 的 ownership 边界 | v1 reader/migration；现有记录不丢；Memory stream 不绑定单个来源 Session |
 | `MEM-041` | Candidate/Review/Activate/Dispute/Supersede/Revoke/Expire | 非法状态转移拒绝；事件完整 |
-| `MEM-042` | Context provenance 统一 Memory `origin/source_refs/trust` | 每个 recalled item 可追到来源 |
-| `MEM-043` | 两阶段 Episode extraction + consolidation | lease/backoff/idempotency；主 Run 不阻塞 |
+| `MEM-042` | Context provenance + exact version/digest；区分 retrieved/selected/adapter-invoked；Run-scoped `MemoryUse` 状态 | dispatch intent 先持久化；Manifest 可重建 Runtime 交给 Adapter 的内容；不推断远端接受或模型内部使用 |
+| `MEM-045` | conflict/staleness/use feedback | 依赖生命周期与 MemoryUse 请求状态；unresolved conflict 不静默注入 |
+| `MEM-046` | Inspect/Review/Correct/Revoke/Delete 领域命令与 Desktop/Web UI/CLI 共享控制面 | 候选、来源、冲突和 MemoryUse 请求状态可查；撤销/删除/cross-scope 负测通过 |
+| `MEM-043` | 两阶段 Episode extraction + consolidation | 在 Review 控制面就绪后才自动提取；candidate/diff 可见；lease/backoff/idempotency；主 Run 不阻塞；不静默激活 |
 
 ### 7.2 Experience 与用户控制
 
 | Task | 内容 | 验收 |
 |---|---|---|
 | `MEM-044` | Experience Case schema/extractor | 成功、失败、unknown 都能表达；有适用条件 |
-| `MEM-045` | conflict/staleness/use feedback | unresolved conflict 不静默注入 |
-| `MEM-046` | Inspect/Review/Correct/Revoke/Delete 领域命令与 Web UI/CLI 内部控制面 | 全部经 Command/Event；跨 scope 负测；Desktop 复用同一内部协议 |
 | `MEM-047` | Legacy Capsule v1 | checksum、redaction、quarantine import、review diff |
 
-**退出标准**：能够现场展示“一条长期记忆从证据产生、被召回、被纠正、旧版本退出 Context、导出后仍可校验”的完整链；本地端到端与安全反例通过，Langfuse 外部质量评估不作为本阶段阻塞条件。
+**执行顺序约束**：先完成契约/事件所有权与可回放的 Context Manifest（MEM-040/042），再提供冲突和可见控制面（MEM-045/046），最后才允许 Episode 自动提取和 consolidation（MEM-043）。自动召回单独受 MemoryUse 请求状态、UI 可见性、撤销/删除和反例测试门控，不因检索实现存在就默认打开。
+
+**退出标准**：能够现场展示“一条长期记忆从可回放的执行证据成为候选，经用户检查和准入后跨 Session 召回；Runtime 交给 Provider Adapter 的请求内容有 Run-scoped MemoryUse 记录；纠正后旧版本退出 Context；删除后回放清楚标注 redacted；导出后仍可校验”的完整链；本地端到端与安全反例通过，Langfuse 外部质量评估不作为本阶段阻塞条件。
 
 ## 8. Phase 5 · Runtime 可靠性补口
 
@@ -175,7 +177,7 @@ RUN-052 必须先用一个本仓完全控制的 provider 做纵向证明，再�
 | `API-062` | Desktop/CLI 内部 framed RPC conformance | partial frame、cancel、version mismatch conformance；不形成外部 API |
 | `CLI-063` | CLI 走同一 client/controller | JSON mode 干净、event 一致 |
 | `DESK-064` | `apps/desktop-host` exact-version runtime | 无 GUI smoke、崩溃/重启/关闭可测 |
-| `DESK-065` | Desktop shell + shared UI | Renderer 无 Node，默认无端口 |
+| `DESK-065` | Desktop shell + DSH/Codex-like shared workbench UI | Web/Desktop 共用主要布局与核心用户路径；Renderer 无 Node，默认无端口 |
 | `DESK-066` | 原生目录/打开文件/credential bridge | opaque handles、scope/policy enforced |
 | `CLIENT-068` | Memory/Experience 控制面接入统一协议与共享 UI | Web/Desktop 对同一命令产生同一 canonical event |
 
@@ -204,7 +206,7 @@ Desktop 技术选择必须先有 Note；当前倾向 Electron，不在任务里�
 | `DEMO-082` | 取消→进程组静默 | 无残留、事件解释完整 |
 | `REL-083` | 可安装 CLI + Desktop preview | checksum、SBOM、版本、known limitations |
 | `REL-084` | 外部用户按文档从零跑通 | 记录失败点并修正文档 |
-| `SITE-085` | 静态文档站 | 只有满足治理前置条件才启动 |
+| `SITE-085` | 静态文档站 | V2 P1–P7 实现阶段完成后，且满足治理前置条件才启动；只投影 `docs/` |
 
 Star 不是工程验收项，但这三条公开证明比“支持几十个工具”更容易形成可信差异。
 

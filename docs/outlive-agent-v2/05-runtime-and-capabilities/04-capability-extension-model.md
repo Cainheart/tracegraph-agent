@@ -5,7 +5,7 @@ status: proposed
 scope: capability-extension
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-25
+last_reviewed: 2026-09-26
 ---
 
 # 能力扩展模型设计
@@ -57,7 +57,7 @@ sequenceDiagram
 
 ## 5. 隔离与兼容
 
-第一方 provider 可同进程；第三方 extension 默认独立进程或受限 worker（具体技术待选）。跨隔离边界只传版本化 schema，不传 callback/复杂对象。Extension 崩溃不得拖垮 Truth Plane；被撤权后现有 handles 失效。
+第一方 provider 可同进程；第三方 extension 默认独立进程或受限 worker（具体技术待选）。跨隔离边界只传版本化 schema，不传 callback/复杂对象。Extension 崩溃不得破坏 Session/Evidence 中已提交的事实；被撤权后现有 handles 失效。
 
 ## 6. 参数
 

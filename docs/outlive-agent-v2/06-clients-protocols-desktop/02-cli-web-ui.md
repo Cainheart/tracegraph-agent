@@ -5,7 +5,7 @@ status: proposed
 scope: client-surfaces
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-25
+last_reviewed: 2026-09-26
 ---
 
 # CLI 与 Web UI 入口设计
@@ -36,6 +36,22 @@ CLI 可以嵌入本地 Host，也可连接已有 Host，但两种模式使用同
 ## 3. Web UI
 
 Web UI 持有 normalized client projection、窗口/筛选/草稿等 UI 状态，不持有 Session/Run 真源。关键页面建议：workspace/session 导航、run timeline、approval inbox、Evidence/Artifact inspector、Memory review、settings/profile。
+
+### Web 与 Desktop 共用的 Agent 工作台体验
+
+交互参照采用 DSH 的 Web 工作台，并吸收你所说的 Codex-like 完整 Agent 使用感受。目标不是只有一个聊天框，而是让用户在同一工作区里发起不同类型的任务、观察 Agent 正在做什么、检查产物并控制下一步；Coding 是其中一个重要工作流。
+
+| 工作台区域 | 目标交互 | Outlive 约束 |
+|---|---|---|
+| 左侧导航 | Workspace/项目分组、Session 列表、新建/搜索/切换；区分运行中、待处理和归档状态 | 只显示 Host 投影；排序、折叠等纯 UI 偏好可留在 Client |
+| 中央工作区 | 对话、Run/Turn 时间线、计划与进度、结构化 Tool 调用/结果、失败/取消/重试状态 | 显示事实事件与明确状态，不把 live hint 当作已提交结果 |
+| 按需上下文面板 | 文件/Artifact 预览、变更 diff、Terminal/浏览器等会话上下文；支持从消息或 Tool 结果跳转检查 | 只开放当前 Profile 已装配的能力；文件和副作用仍经 Host/Policy |
+| 人的控制入口 | Approval、模型/Profile、权限与设置入口 | 确认/拒绝由统一 Controller/Policy 处理，界面不能自行授予权限 |
+| Outlive 记忆视图 | 查看 Memory/Experience 来源、scope、版本、冲突与有效状态；追踪检索、选中、提交给 Adapter 的阶段 | MemoryUse 仅证明请求提交状态，不宣称模型内部使用或因果影响；review/revoke/delete 走领域命令 |
+
+交互基线可从 DSH 的三栏 AppFrame、Workspace/Session 侧栏、Conversation/Tool cards、右侧 Sidebar 与变更审阅中取材。Web 与 Desktop 应共享主要布局、组件和用户路径；Desktop 的标题栏、系统菜单、原生打开文件/目录等差异由平台适配层承接。具体功能按 Outlive 路线阶段落地，不要求首个版本一次复制 DSH 的全部面板或插件。
+
+参考实现位置与不能据此声称的内容，记录在[DSH 工作台源码观察](../08-reference-lineage/01-source-observations.md)。
 
 ```mermaid
 sequenceDiagram

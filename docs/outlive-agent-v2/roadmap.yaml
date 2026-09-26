@@ -1,7 +1,7 @@
 schema_version: 1
 roadmap: outlive-agent-v2
 status: proposed
-last_reviewed: 2026-09-25
+last_reviewed: 2026-09-26
 
 execution_rules:
   one_primary_change_type_per_task: true
@@ -71,12 +71,16 @@ tasks:
     depends_on: []
     outputs:
       - .agents/notes/implemented-or-rejected/outlive-agent-v2
+      - docs/outlive-agent-v2/README.md
     acceptance:
       - 主设计决策逐项有结论，且 Current/Target/Deferred 边界一致
+      - 决策登记表区分已接受、待评审、已延后；未到阶段的决定有明确裁决时机，不冒充已接受
       - Outlive Agent 已确定为产品与底层 Agent Runtime/技术内核的统一名称
+      - 最终 package scope 为 @outlive/*；维护者确认名称核查已完成，@tracegraph/* 仅迁移期保留且改名须独立兼容迁移方案
+      - V2 不提供多人团队共享 Workspace/Memory；该产品能力留待 V2 后评审，不与内部多 Agent 协作混淆
       - 当前产品入口限定为 CLI、Web UI、Desktop；独立 API、SDK、ACP 不纳入范围
       - LSP 为可选只读代码导航接缝（definition/references/implementation/hover），服务端由部署配置；Current diagnostics 不自动进入目标，CodeGraph 不纳入内建 V2 能力或迁移目标
-      - 公开发布前完成独立名称、商标与域名核查
+      - 维护者确认公开发布前的商标、域名、包名及主要社交账号核查已完成
 
   - id: GOV-001
     phase: P0
@@ -371,18 +375,23 @@ tasks:
     depends_on: [MEM-040, PKG-034]
     outputs: [context-provenance]
     acceptance:
-      - recalled context 每项可回到 evidence refs
+      - recalled context 每项可回到 evidence refs 与确切 memory version
+      - ContextManifest 绑定实际渲染内容的 digest/token estimate；retrieved、selected、adapter_invoked 状态可区分
+      - dispatch_intent 在外部调用前持久化；adapter_invoked/response/failed/unknown 用追加事件表达
+      - MemoryUse 只证明 Runtime 将对应内容交给 Provider Adapter，不声称远端接受或模型内部使用
 
   - id: MEM-043
     phase: P4
     title: Episode extraction 与 consolidation
     owner: memory
     change_type: behavior
-    depends_on: [MEM-041, MEM-042]
+    depends_on: [MEM-041, MEM-042, MEM-046]
     outputs: [memory-background-pipeline]
     acceptance:
       - bounded lease/backoff/idempotency
       - 主 Run settlement 不等待 extraction
+      - extraction/consolidation 只产出可检查 candidate/diff；不得静默更新 active memory
+      - 本任务不新增自动召回策略；G-21 既有每轮 recall 走兼容迁移，后续默认策略由 MEM-042 使用记录与 MEM-046 可见控制面裁决
 
   - id: MEM-044
     phase: P4
@@ -399,7 +408,7 @@ tasks:
     title: 冲突、过期与使用反馈
     owner: memory
     change_type: behavior
-    depends_on: [MEM-041]
+    depends_on: [MEM-041, MEM-042]
     outputs: [memory-conflict-feedback]
     acceptance:
       - unresolved conflict 不静默注入
@@ -414,7 +423,9 @@ tasks:
     acceptance:
       - 全部写入经 Command/Event
       - revoked/deleted/cross-scope 负测通过
-      - 不依赖未来 Desktop 或 framed RPC
+      - Desktop/Web UI/CLI 可查看候选、active/disputed/revoked 状态、来源与 MemoryUse 请求状态
+      - review/correct/revoke/delete 反馈到唯一领域服务，不由客户端各自写数据
+      - 不依赖未来 framed RPC 实现细节；通过稳定内部 command/query seam 接入
 
   - id: MEM-047
     phase: P4
@@ -552,12 +563,14 @@ tasks:
 
   - id: DESK-065
     phase: P6
-    title: Desktop shell 与共享 UI
+    title: Desktop shell 与 DSH/Codex-like 共享工作台 UI
     owner: desktop
     change_type: feature
     depends_on: [DESK-064]
     outputs: [apps/desktop]
     acceptance:
+      - Web/Desktop 共享 Workspace/Session 导航、中心对话/Run 活动与 Tool 状态呈现等主要工作台 UI
+      - 核心用户路径语义一致；Desktop 仅通过平台适配增加原生窗口与系统操作
       - Renderer 无 Node 权限
       - 默认不开放网络端口
 
@@ -717,11 +730,12 @@ tasks:
 
   - id: SITE-085
     phase: P8
-    title: 条件性建立文档站
+    title: V2 实现完成后条件性建立文档站
     owner: docs
     change_type: feature
     depends_on: [DOC-076, DOC-077, REL-083]
     outputs: [website]
     acceptance:
+      - 仅在 P1–P7 实现阶段完成、进入 P8 后启动
       - 只投影 docs，不复制正文
       - build 含 dead-link/Mermaid/version checks

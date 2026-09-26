@@ -5,7 +5,7 @@ status: proposed
 scope: migration-boundaries
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-25
+last_reviewed: 2026-09-26
 ---
 
 # TraceGraph 边界迁移处置
@@ -28,7 +28,7 @@ flowchart LR
 | 群 | 当前主题 | V2 裁决原则 |
 |---|---|---|
 | Platform security | sandbox portability、credential portability、network egress | 未有真实 provider/conformance 前 fail closed |
-| Distribution | multi-host、production TLS/multi-user、remote team | V2 MVP reject，保持 local-first |
+| Distribution | multi-host、production TLS/multi-user、remote team | V2 MVP 延后，保持 local-first；多人团队共享待 V2 后单独评审 |
 | Provider fidelity | tokenizer、streaming、LSP/MCP transport | 先建 seam，再逐 provider 证明，不写万能宣称 |
 | Knowledge depth | advanced retrieval、semantic codegraph | Memory 治理优先于向量；CodeGraph 仅记作现有实现，不纳入 V2 内建能力 |
 | Reliability | action reconcile、subagent recovery、SSE resume | Target，需 durable identity/cursor/receipt |

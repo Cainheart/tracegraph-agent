@@ -5,7 +5,7 @@ status: proposed
 scope: product-metrics
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-25
+last_reviewed: 2026-09-26
 ---
 
 # 成功指标与产品决策机制
@@ -21,7 +21,7 @@ flowchart TB
   D --> O
 ```
 
-产品指标不直接由 UI 埋点定义。每个指标必须先有语义、分母、事件来源和隐私级别；本地工程指标可由 Truth Plane 派生，模型/任务质量评估计划由外部 Langfuse 项目承载。不得为评估默认外发原始 Session/Memory，也不能为了指标增加不必要的长期收集。
+产品指标不直接由 UI 埋点定义。每个指标必须先有语义、分母、事件来源和隐私级别；本地工程指标可由已提交的 Session/Evidence 事件派生，模型/任务质量评估计划由外部 Langfuse 项目承载。不得为评估默认外发原始 Session/Memory，也不能为了指标增加不必要的长期收集。
 
 ## 2. 指标树
 
@@ -34,7 +34,7 @@ flowchart TB
 | 可信度 | `grounded_memory_rate` | active memory 中具有有效 EvidenceRef 且可解析的比例 |
 | 可纠正性 | `correction_propagation_latency` | 修订提交到所有默认检索面不再返回旧版本的时间 |
 | 用户控制 | `forget_verification_rate` | 删除流程通过真源与派生面复核的比例 |
-| Coding 质量 | `verified_task_completion_rate` | 有业务级完成证据的任务比例，不以“Agent 说完成”为准 |
+| 通用任务执行质量 | `verified_task_completion_rate` | 编码及其他工具型任务中，有业务级完成证据的任务比例，不以“Agent 说完成”为准 |
 
 护栏指标：错误召回率、越 scope 召回数、未经确认的高风险写入数、恢复后旧权限复活数、每任务 token/时间/磁盘成本、回归 Snapshot 差异率。
 
