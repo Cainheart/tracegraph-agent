@@ -14,11 +14,19 @@ import { registerSecretForRedaction, sha256, stableStringify } from "./crypto.js
 import { JsonlEventLedger } from "./event-ledger.js";
 import { CORE_BUILTIN_PERMISSION_PRESETS, createEffectivePermissionPolicy } from "./policy-engine.js";
 import { createAgentRuntime, type AgentRuntime } from "./runtime.js";
-import { JsonlSessionStore } from "./session-store.js";
+import { JsonlSessionStore, SessionNotFoundError, SessionPathSafetyError } from "./session-store.js";
 import { createDefaultToolRegistry } from "./tool-registry.js";
 import type { CodeGraphProvider, ModelAdapter } from "./types.js";
 
 const roots: string[] = [];
+
+/**
+ * These cases abandon a Runtime mid-Run next to a second writer on the same
+ * tree, and the pending-queue capacity case queues 99 inputs through a Session
+ * index that is rewritten for every entry. The default 5s is too tight for that
+ * on a contended runner.
+ */
+const STEERING_TEST_TIMEOUT_MS = 30_000;
 
 afterEach(async () => {
   // Several cases deliberately abandon a Runtime mid-Run next to a second
@@ -33,7 +41,7 @@ afterEach(async () => {
   })));
 });
 
-describe("G14 Runtime steering and cancellation", () => {
+describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEOUT_MS }, () => {
   it("consumes three queued messages FIFO at three distinct model safe points", async () => {
     const harness = await createHarness("fifo");
     const firstCall = deferred<void>();
@@ -202,6 +210,8 @@ describe("G14 Runtime steering and cancellation", () => {
         return new Promise(() => undefined);
       },
     };
+    // This case restarts without a Session store, so the abandoned Runtime owns
+    // no Session index write for the two restarts below to wait out.
     const first = await createAgentRuntime({ dataDir: harness.dataDir, model });
     const started = await first.startRun(startInput(harness.workspace));
     await entered.promise;
@@ -287,6 +297,10 @@ describe("G14 Runtime steering and cancellation", () => {
     await first.submitUserInput(original);
 
     now = new Date("2026-09-19T00:02:00.000Z");
+    await settleSessionIndexBeforeRestart(
+      harness.sessionsRoot,
+      await first.getProjection(started.run_id),
+    );
     const restarted = await createAgentRuntime({
       dataDir: harness.dataDir,
       sessionStore: new JsonlSessionStore(harness.sessionsRoot, { now: () => now }),
@@ -307,6 +321,10 @@ describe("G14 Runtime steering and cancellation", () => {
       body: "a genuinely new input cannot mutate an interrupted run",
     }))).rejects.toMatchObject({ code: "run_not_mutable" });
 
+    await settleSessionIndexBeforeRestart(
+      harness.sessionsRoot,
+      await restarted.getProjection(started.run_id),
+    );
     const restartedAgain = await createAgentRuntime({ dataDir: harness.dataDir, model });
     await expect(restartedAgain.submitUserInput({
       ...alias,
@@ -792,6 +810,8 @@ describe("G14 Runtime steering and cancellation", () => {
       && (event.data.input as { input_id?: string } | undefined)?.input_id === `input:recover:${label}`
     ));
     if (queued === undefined) throw new Error("queued steering event is unavailable");
+    // Freeze the abandoned Runtime's Session writes before the simulated crash.
+    await settleSessionIndexBeforeRestart(harness.sessionsRoot, beforeRestart);
 
     if (preconsume) {
       const externalLedger = new JsonlEventLedger(join(harness.dataDir, "events"), {
@@ -915,7 +935,8 @@ describe("G14 Runtime steering and cancellation", () => {
       });
       const started = await first.startRun(startInput(harness.workspace));
       await entered.promise;
-      expect((await first.getProjection(started.run_id)).status).toBe(priorStatus);
+      const beforeExternalCancel = await first.getProjection(started.run_id);
+      expect(beforeExternalCancel.status).toBe(priorStatus);
 
       const ledger = new JsonlEventLedger(join(harness.dataDir, "events"), {
         now: () => now,
@@ -942,6 +963,7 @@ describe("G14 Runtime steering and cancellation", () => {
         }),
       });
 
+      await settleSessionIndexBeforeRestart(harness.sessionsRoot, beforeExternalCancel);
       now = new Date("2026-09-19T00:02:00.000Z");
       const restarted = await createAgentRuntime({
         dataDir: harness.dataDir,
@@ -1024,6 +1046,10 @@ describe("G14 Runtime steering and cancellation", () => {
     });
 
     now = new Date("2026-09-19T00:02:00.000Z");
+    // `waiting` is the last Commit this Runtime made. The cancel queued above is
+    // the restarted Host's to consume, and the abandoned Runtime never indexes
+    // it, so waiting on the queued fact itself would wait forever.
+    await settleSessionIndexBeforeRestart(harness.sessionsRoot, waiting);
     const restarted = await createAgentRuntime({
       dataDir: harness.dataDir,
       sessionStore: new JsonlSessionStore(harness.sessionsRoot, { now: () => now }),
@@ -1122,6 +1148,9 @@ describe("G14 Runtime steering and cancellation", () => {
       }),
     });
 
+    // `waiting` is the last Commit this Runtime made; the simulated cancel and
+    // its consumption below are repair facts for the restarted Host.
+    await settleSessionIndexBeforeRestart(harness.sessionsRoot, waiting);
     now = new Date("2026-09-19T00:02:00.000Z");
     const restartedStore = new JsonlSessionStore(harness.sessionsRoot, { now: () => now });
     const restarted = await createAgentRuntime({
@@ -1295,6 +1324,55 @@ async function waitForPendingCount(
     await new Promise((resolve) => setTimeout(resolve, 5));
   }
   throw new Error(`Timed out waiting for ${count} pending user inputs`);
+}
+
+/**
+ * A crash in these cases is simulated by abandoning a Runtime mid-Run: it stays
+ * alive in-process, so it can still be draining Session index writes when the
+ * next Runtime takes the Session Lease over. `SessionStore` publishes an append
+ * by replacing the whole file, and a Runtime indexes every committed batch
+ * *after* the Ledger commit that made the batch visible, so a projection can
+ * already report a new Run state while that Session write is still in flight.
+ * Taking the next Lease over in that window makes the new owner scan a file
+ * whose identity changes between its `stat` and its `open`, which the store
+ * fails closed on as `SessionPathSafetyError` ("session file changed while
+ * opening").
+ *
+ * Wait until `before` reports indexed, so the abandoned Runtime owns no Session
+ * write when the next one starts. Only call this where the abandoned Runtime was
+ * composed with a Session store: without one it indexes nothing at all, which is
+ * why the restart case that composes none needs no wait. `before` must be a
+ * projection captured before any Ledger append the abandoned Runtime did not
+ * make itself, because it only ever indexes its own commits, so waiting on an
+ * externally appended fact would wait forever.
+ */
+async function settleSessionIndexBeforeRestart(
+  sessionsRoot: string,
+  before: RunProjection,
+): Promise<void> {
+  const sessionId = before.session_id;
+  const lastEventId = before.timeline.at(-1)?.event_id;
+  if (sessionId === undefined || lastEventId === undefined) return;
+  // A read takes no Lease, so a second reader cannot fence the abandoned Runtime.
+  const store = new JsonlSessionStore(sessionsRoot);
+  await store.initialize();
+  const deadline = Date.now() + 15_000;
+  while (Date.now() < deadline) {
+    try {
+      const { entries } = await store.readAll(sessionId);
+      // Entries are chained in Commit order, so the newest Commit landing means
+      // every earlier one has landed too.
+      if (entries.some((entry) => entry.event_ref.event_id === lastEventId)) return;
+    } catch (error) {
+      // The replace this wait exists for is in progress, or the Session has not
+      // been published yet. Keep waiting; the deadline still fails loudly.
+      if (!(error instanceof SessionPathSafetyError) && !(error instanceof SessionNotFoundError)) {
+        throw error;
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+  throw new Error(`Timed out waiting for the Session index to reach ${lastEventId}`);
 }
 
 function assertCanonicalCancellation(projection: RunProjection): void {
