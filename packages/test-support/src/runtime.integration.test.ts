@@ -45,7 +45,22 @@ afterEach(async () => {
   await Promise.all(cleanups.splice(0).map((cleanup) => cleanup()));
 });
 
-describe("P0 Agent runtime", () => {
+/**
+ * `startRun` and `stop` must return without waiting for an adapter that never
+ * resolves, so these tests race the call against a ceiling. The ceiling only
+ * fails fast on a regression -- a blocked call never settles at all -- which is
+ * why it sits far above real latency: the previous 250 ms ceiling tripped at
+ * ~280 ms on the coverage-instrumented CI runner.
+ */
+const NON_BLOCKING_REGRESSION_BUDGET_MS = 10_000;
+
+function blockedAfterBudget(label: string): Promise<never> {
+  return new Promise<never>((_, reject) => {
+    setTimeout(() => reject(new Error(label)), NON_BLOCKING_REGRESSION_BUDGET_MS);
+  });
+}
+
+describe("P0 Agent runtime", { timeout: 30_000 }, () => {
   it("never persists an exact registered credential during a complete Run", async () => {
     const fixture = await createFailingTypescriptFixture();
     const data = await createTemporaryDataDir();
@@ -1859,7 +1874,7 @@ describe("P0 Agent runtime", () => {
 
     const started = await Promise.race([
       runtime.startRun(startInput(fixture.handle)),
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("startRun blocked")), 250)),
+      blockedAfterBudget("startRun blocked"),
     ]);
     expect(["indexing", "running"]).toContain(started.status);
     const stoppedPromise = runtime.stop({
@@ -1871,7 +1886,7 @@ describe("P0 Agent runtime", () => {
     });
     const stopped = await Promise.race([
       stoppedPromise,
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("stop blocked on model")), 500)),
+      blockedAfterBudget("stop blocked on model"),
     ]);
     expect(stopped.status).toBe("cancelled");
     expect(stopped.timeline.filter((event) => [
@@ -2313,7 +2328,7 @@ describe("P0 Agent runtime", () => {
         project_id: fixture.handle.project_id,
         run_id: started.run_id,
       }),
-      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("stop blocked on index")), 500)),
+      blockedAfterBudget("stop blocked on index"),
     ]);
 
     expect(stopped.status).toBe("cancelled");
