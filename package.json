@@ -10,11 +10,15 @@
   },
   "scripts": {
     "clean:dist": "node scripts/clean-dist.mjs",
+    "verify:boundaries": "node scripts/verify-boundaries.mjs",
+    "verify:v2-docs": "node scripts/verify-v2-docs.mjs",
+    "baseline:current": "node scripts/gen-current-baseline.mjs",
+    "baseline:current:check": "node scripts/gen-current-baseline.mjs --check",
     "build": "pnpm run clean:dist && pnpm -r --if-present build",
     "typecheck": "pnpm run build && pnpm -r --if-present typecheck && pnpm run typecheck:evals",
     "typecheck:evals": "tsc -p tsconfig.evals.json --noEmit",
     "test": "pnpm run build && pnpm -r --if-present test:unit && pnpm run test:engineering",
-    "test:engineering": "node --test scripts/clean-dist.test.mjs scripts/verify-lockfile.test.mjs scripts/verify-release.test.mjs && vitest run scripts/check-coverage.test.ts",
+    "test:engineering": "node --test scripts/clean-dist.test.mjs scripts/verify-lockfile.test.mjs scripts/verify-release.test.mjs scripts/verify-v2-docs.test.mjs scripts/gen-current-baseline.test.mjs scripts/verify-boundaries.test.mjs && vitest run scripts/check-coverage.test.ts",
     "test:e2e": "pnpm run build && pnpm --filter @tracegraph/cli test:e2e",
     "test:watch": "pnpm -r --parallel --if-present test:watch",
     "coverage": "pnpm run build && vitest run --config vitest.coverage.config.ts && node scripts/check-coverage.mjs",
@@ -34,6 +38,7 @@
     "@vitest/coverage-v8": "5.0.1",
     "tsx": "4.23.13",
     "typescript": "7.0.2",
-    "vitest": "5.0.1"
+    "vitest": "5.0.1",
+    "yaml": "2.9.1"
   }
 }

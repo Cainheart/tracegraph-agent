@@ -1,0 +1,63 @@
+version: 1
+global:
+  forbid_cycles: true
+  forbid_deep_imports: true
+packages:
+  - name: '@tracegraph/cli'
+    root: apps/cli
+    allowed:
+      - '@tracegraph/codegraph'
+      - '@tracegraph/contracts'
+      - '@tracegraph/core'
+      - '@tracegraph/host'
+      - '@tracegraph/retrieval'
+      - '@tracegraph/retrieval-service'
+      - '@tracegraph/sdk'
+      - '@tracegraph/telemetry'
+      - '@tracegraph/test-support'
+    forbidden: []
+  - name: '@tracegraph/retrieval-service'
+    root: apps/retrieval-service
+    allowed: ['@tracegraph/retrieval']
+    forbidden: ['@tracegraph/cli', '@tracegraph/core', '@tracegraph/host', '@tracegraph/sdk', '@tracegraph/web']
+  - name: '@tracegraph/web'
+    root: apps/web
+    allowed: ['@tracegraph/contracts', '@tracegraph/sdk']
+    forbidden: ['@tracegraph/cli', '@tracegraph/core', '@tracegraph/host', '@tracegraph/retrieval-service', '@tracegraph/test-support']
+  - name: '@tracegraph/failing-typescript-fixture'
+    root: examples/failing-typescript-repo
+    allowed: []
+    forbidden: ['@tracegraph/cli', '@tracegraph/core', '@tracegraph/host', '@tracegraph/web']
+  - name: '@tracegraph/codegraph'
+    root: packages/codegraph
+    allowed: ['@tracegraph/contracts']
+    forbidden: ['@tracegraph/cli', '@tracegraph/core', '@tracegraph/host', '@tracegraph/retrieval-service', '@tracegraph/web']
+  - name: '@tracegraph/contracts'
+    root: packages/contracts
+    allowed: []
+    forbidden: ['@tracegraph/cli', '@tracegraph/codegraph', '@tracegraph/core', '@tracegraph/host', '@tracegraph/retrieval-service', '@tracegraph/sdk', '@tracegraph/test-support', '@tracegraph/web']
+  - name: '@tracegraph/core'
+    root: packages/core
+    allowed: ['@tracegraph/contracts', '@tracegraph/telemetry']
+    forbidden: ['@tracegraph/cli', '@tracegraph/codegraph', '@tracegraph/host', '@tracegraph/retrieval', '@tracegraph/retrieval-service', '@tracegraph/sdk', '@tracegraph/test-support', '@tracegraph/web']
+  - name: '@tracegraph/host'
+    root: packages/host
+    allowed: ['@tracegraph/contracts', '@tracegraph/core']
+    forbidden: ['@tracegraph/cli', '@tracegraph/retrieval-service', '@tracegraph/sdk', '@tracegraph/web']
+  - name: '@tracegraph/retrieval'
+    root: packages/retrieval
+    allowed: []
+    forbidden: ['@tracegraph/cli', '@tracegraph/core', '@tracegraph/host', '@tracegraph/retrieval-service', '@tracegraph/web']
+  - name: '@tracegraph/sdk'
+    root: packages/sdk
+    allowed: ['@tracegraph/contracts']
+    forbidden: ['@tracegraph/cli', '@tracegraph/core', '@tracegraph/host', '@tracegraph/retrieval-service', '@tracegraph/web']
+  - name: '@tracegraph/telemetry'
+    root: packages/telemetry
+    allowed: []
+    forbidden: ['@tracegraph/cli', '@tracegraph/host', '@tracegraph/retrieval-service', '@tracegraph/web']
+  - name: '@tracegraph/test-support'
+    root: packages/test-support
+    allowed: ['@tracegraph/contracts', '@tracegraph/core']
+    forbidden: ['@tracegraph/cli', '@tracegraph/host', '@tracegraph/retrieval-service', '@tracegraph/sdk', '@tracegraph/web']
+exceptions: []

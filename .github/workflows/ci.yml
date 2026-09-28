@@ -38,6 +38,7 @@ jobs:
       - run: node scripts/verify-lockfile.mjs --skip-frozen
       - run: pnpm install --frozen-lockfile
       - run: pnpm verify:lockfile
+      - run: pnpm verify:boundaries
       - run: pnpm typecheck
       - run: pnpm release:check
 
