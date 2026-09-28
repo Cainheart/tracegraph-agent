@@ -5,7 +5,7 @@ status: proposed
 scope: command-query-event
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-26
+last_reviewed: 2026-09-28
 ---
 
 # 命令、查询与事件模型
@@ -187,7 +187,9 @@ sequenceDiagram
 
 图中各参与者的职责是：客户端发起命令并展示状态；入口网关 / 控制器（Gateway / Controller）校验请求并分派用例；智能体运行时（Agent Runtime）执行 Run；事件账本（Event Ledger）原子保存已发生事实；页面读模型投影器（Projector）只消费已提交事件并更新查询视图。
 
-`accepted`（已接纳）只表示 Run 已开始推进，不表示最终成功；结果要看后续终态事件和对应证据。只有同步完成的短命令才可能在同一次调用中返回 `completed`（已完成）；版本前置条件不满足则返回 `conflict`（冲突），且不提交本次写入。长任务最终状态采用操作资源（Operation Resource）还是事件流（Event Stream）提供，仍待裁决。
+`accepted`（已接纳）只表示 Run 已开始推进，不表示最终成功；结果要看后续终态事件和对应证据。只有同步完成的短命令才可能在同一次调用中返回 `completed`（已完成）；版本前置条件不满足则返回 `conflict`（冲突），且不提交本次写入。
+
+**DEC-06 已接受：长任务使用“可查询操作资源 + 持久事件流”的组合。** Operation Resource 是当前状态和断线重连后的权威快照；Durable Event Stream 用于实时更新、游标续传和客户端观察，不是唯一最终状态来源。客户端重连时先读取操作资源/快照，再从已知游标继续订阅事件。此处借鉴 DSH Job 的资源控制与事件观察分工，但 Outlive 的 Resource、事件格式和存储实现仍按自己的协议定义。
 
 HTTP 200、RPC 成功响应或 CLI 退出码为 0，只说明传输或进程层没有报错；业务结果要依据业务回执（receipt）、观察结果（Observation）和 Run 终态共同判断。
 
@@ -220,4 +222,4 @@ HTTP 200、RPC 成功响应或 CLI 退出码为 0，只说明传输或进程层�
 
 ## 9. 验收与开放问题
 
-验收包括重复命令、响应丢失、并发版本冲突、旧事件重放、未知新字段，以及分别重建 Session/Run UI Read Model、模型消息历史和 Memory Index。待定：长任务采用 `accepted + event stream` 还是统一 operation resource；建议后者，以便 CLI/Web UI/Desktop 共享状态。这里的协议是内部客户端契约，不代表提供独立公共 API。
+验收包括重复命令、响应丢失、并发版本冲突、旧事件重放、未知新字段，以及分别重建 Session/Run UI Read Model、模型消息历史和 Memory Index。DEC-06 的资源与事件分工已裁决；仍需在实现中验证状态快照与事件游标之间无漏项、无重复副作用，且 CLI/Web UI/Desktop 能从同一 Operation Resource 恢复状态。这里的协议是内部客户端契约，不代表提供独立公共 API。

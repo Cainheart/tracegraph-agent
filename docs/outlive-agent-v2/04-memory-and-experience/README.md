@@ -5,7 +5,7 @@ status: proposed
 scope: memory
 language: zh-CN
 parent: ../../outlive-agent-v2.md
-last_reviewed: 2026-09-26
+last_reviewed: 2026-09-28
 ---
 
 # 04 · 记忆与经验系统
@@ -96,7 +96,7 @@ DSH 当前源码给 Outlive 的可靠参照是 **Session 事件日志是一次�
 |---|---|---|
 | Memory 真相源 | `<dataDir>/memory/records.jsonl` 保存 admitted `MemoryRecord`；Run/Session Ledger 另记 `memory.candidate_evaluated`、`memory.written`、`memory.recalled`、`retrieval.index_updated` | Memory 生命周期成为规范 Event Ledger 中按 owner/scope 隔离的独立 aggregate stream；迁移必须无损读取既有 JSONL 与事件，索引仍是可重建投影 |
 | 准入与学习 | `remember()` 做 strict schema、scope、trust/source、expiry、重复和幂等准入；未实现后台 Episode/自动提取和用户 review 管理页 | 提取先生成可查看/编辑/接受/拒绝的 Candidate；审核决策与版本 lineage 可审计；自动提取排在控制面之后 |
-| 检索与注入 | 配置 retriever 后，每轮在 Context build 前按 Run task 自动 recall；默认 8 hits / 4,096 tokens，检查 canonical record 与 provenance 后注入 `untrusted` Memory Context | 把 retrieved → selected → Provider Adapter invoked 分开留证；现有自动 recall 作为兼容路径逐步加上可见性、开关/策略和请求状态，裁决默认行为前不扩张无审计的新路径 |
+| 检索与注入 | 配置 retriever 后，每轮在 Context build 前按 Run task 自动 recall；默认 8 hits / 4,096 tokens，检查 canonical record 与 provenance 后注入 `untrusted` Memory Context | 把 retrieved → selected → Provider Adapter invoked 分开留证；迁移 G-21 时补可见性、请求状态、scope/policy 与用户开关；按 DEC-02，V2 默认关闭自动 Recall，用户显式开启后才在当前权限范围内召回，不扩张静默路径 |
 | 检索后端 | 本地 JSONL + BM25 是默认路径，可配置远端 retrieval service；当前无 embedding/vector/reranker | backend 可替换，但排序不能绕过 scope/authority/status；向量/RAG 是独立 ADR，不是记忆可信性的来源 |
 | 使用与 UI | `memory.recalled` 和 Context Manifest 已有有界 provenance，但还没有独立 Memory 管理 API/UI，也不能把检索命中简单等同于模型请求状态 | Run-scoped `MemoryUse` 绑定具体 Memory 版本与 Runtime adapter-input；UI 展示请求包含及 response/unknown 状态，不声称模型因果使用 |
 | 忘记/删除 | 当前 JSONL append-only；过期/superseded 在召回时过滤，没有“遗忘即物理擦除”能力 | 可撤销与可删正文分开定义；Artifact/密钥、索引、缓存、备份与 tombstone 需统一治理，具体加密/恢复方案先过 ADR |
@@ -277,7 +277,7 @@ stateDiagram-v2
 | personal/secret | 必须 explicit consent；默认不 export |
 | 与 active 记录冲突 | 进入 disputed，不覆盖旧记录 |
 
-低风险自动准入可作为后续策略，但必须在候选/历史可检查、MemoryUse 可审计、纠错/撤销可用和反例门禁建立后单独开启；不能把“证据强”当成跳过用户控制的理由。
+V2 不开放低风险自动准入。若后续版本要重新评估，必须在候选/历史可检查、MemoryUse 可审计、纠错/撤销可用和反例门禁建立后单独评审；不能把“证据强”当成跳过用户控制的理由。
 
 ### 6.3 更新不是覆盖
 
@@ -299,7 +299,7 @@ stateDiagram-v2
 
 - 一个 owner 串行处理同一 memory scope；
 - 去重、冲突检测、过期和 lineage；
-- 生成可审阅的 consolidation diff；首个可用阶段不静默改 active memory，低风险自动准入需独立裁决与门禁；
+- 生成可审阅的 consolidation diff；V2 不静默改 active memory，所有 Candidate 均须用户显式准入；任何后续版本对低风险自动准入的调整都需单独裁决与门禁；
 - 更新检索索引和健康报告；
 - 不静默重写整个记忆库。
 
@@ -429,10 +429,10 @@ V2 MVP 只做用户本人主动提供的工程/工作记忆，不对“人格延
 | 切片 | 当前基础 | 下一步 |
 |---|---|---|
 | M0 · 契约与所有权 | Current `records.jsonl` + Memory/Session events | 定义分离的 Memory aggregate stream；迁移既有 records/events 无损；版本、scope、provenance、治理事件；不复制为第二套 journal |
-| M1 · 请求可追溯 | Current 每轮 auto recall（仅 retriever 已装配时）、BM25、budget、Context Manifest | 区分 retrieved/selected/adapter_invoked；为 Runtime Adapter input 记录 MemoryUse 与状态；以 feature/policy 兼容现有行为，不把 recall event 直接当成 provider 成功 |
+| M1 · 请求可追溯 | Current 每轮 auto recall（仅 retriever 已装配时）、BM25、budget、Context Manifest | 区分 retrieved/selected/adapter_invoked；为 Runtime Adapter input 记录 MemoryUse 与状态；兼容迁移 G-21 并落实 V2 默认关闭、用户显式开启的 DEC-02 策略；不把 recall event 直接当成 Provider 成功 |
 | M2 · 人的控制面 | 当前缺 Memory 管理 API/UI | Desktop/Web UI/CLI 共享 inspect/review/correct/revoke/delete；来源、状态、请求包含记录可见；先满足治理和纠错路径 |
 | M3 · 有界学习 | 当前无后台 Episode/自动提取 | settlement 后异步抽取候选；保留失败/unknown，幂等重跑，不静默激活 |
-| M4 · 策略裁决 | G-21 现有自动 recall + 新 visibility/MemoryUse + 负向测试 | 再决定默认 recall、用户开关与低风险准入；先兼容、可观测、可关闭，不无审计扩张 |
+| M4 · 策略实现与验证 | G-21 现有自动 Recall + 新 visibility/MemoryUse + 负向测试 | 实现并验证默认关闭、用户显式开启和 scope/policy 过滤；所有 Candidate 显式审核，V2 不启用低风险自动准入；如未来版本要更改须另行评审 |
 | M5 · 经验与迁移 | Experience/Artifact/Event export | Experience 条件化复用、Legacy Capsule v1 |
 | M6 · 外部质量评估 | 外部 Langfuse（可选后续集成） | conflict/stale 对检索质量的影响、citation、Experience paired comparison；安全不变量仍由本地测试阻断 |
 

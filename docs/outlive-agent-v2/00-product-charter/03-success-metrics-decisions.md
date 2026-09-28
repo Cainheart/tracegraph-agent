@@ -5,7 +5,7 @@ status: proposed
 scope: product-metrics
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-26
+last_reviewed: 2026-09-28
 ---
 
 # 成功指标与产品决策机制
@@ -50,7 +50,7 @@ flowchart TB
 
 ## 4. 决策记录
 
-重大产品决定采用一页 Note，至少包含：问题、用户证据、可选项、决定、反证条件、影响指标、回滚方式和 owner。状态只允许 `proposed → accepted/implemented → superseded/archived`，被拒绝选项进入 `rejected` 而不是删除。
+重大产品决定采用一页 Note，至少包含：问题、用户证据、可选项、决定、反证条件、影响指标、回滚方式和 owner。评审结果与实现生命周期分开记录：评审结果可为 `accepted`、`modified`、`experiment`、`deferred` 或 `rejected`；Note 生命周期为 `proposed → implemented/rejected → archived`。已接受但尚未交付的方案仍保持 `proposed`，只有代码和验证证据满足完成条件后才进入 `implemented`。被拒绝选项进入 `rejected` 而不是删除。该区分沿用 DSH Notes 的“决策结果写在正文、status 表示生命周期”做法。
 
 ```mermaid
 sequenceDiagram
@@ -78,8 +78,8 @@ sequenceDiagram
 
 每个公开成功 claim 都能映射到一个已定义指标及其证据事件；指标有分母、窗口、隐私级别和 owner；没有基线的指标不设置伪精确目标；护栏退化时不能只凭北极星改善放行。
 
-## 7. 待评审
+## 7. DEC-08 已接受；仍待基线的产品参数
 
-- 是否允许匿名、明确 opt-in 的社区基准遥测；
-- 哪三个指标作为公开 README 的可信证明；
-- Beta 与 Stable 的最低样本量、回归预算和支持周期。
+- 默认不向外发送产品遥测；后续如确需启用，必须由用户明确 opt-in，按白名单发送最少字段，不能自动收集 Prompt/响应、源码、Session/Memory 正文或稳定身份标识。此处比 DSH 对明确选择字段的遥测做法更保守。
+- Langfuse 用于用户授权的模型/任务质量评估，与本地确定性工程门禁分开；不可用时不阻断本地测试。
+- README 只发布定义、分母、时间窗口、隐私说明与可复核证据齐全的指标。具体公开指标组合、最低样本量、回归预算和支持周期待基线/版本规划形成后确定；这是参数校准，不再是 DEC-08 方向待评审。

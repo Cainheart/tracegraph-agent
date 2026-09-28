@@ -2,7 +2,7 @@ schema_version: 1
 document_set: outlive-agent-v2
 status: proposed
 language: zh-CN
-last_reviewed: 2026-09-26
+last_reviewed: 2026-09-28
 
 identity:
   product_name: Outlive Agent
@@ -126,7 +126,7 @@ machine_readable:
   roadmap: roadmap.yaml
 
 state_vocabulary:
-  document: [proposed, accepted, implemented, superseded, archived]
+  document: [proposed, accepted, implemented, superseded, archived, internal-design-input]
   capability: [current, partial, target, deferred, rejected]
   memory: [candidate, active, disputed, superseded, revoked, expired]
 
@@ -138,8 +138,4 @@ non_goals_v2:
   - website_as_document_source_of_truth
   - vector_similarity_as_truth
 
-review_required:
-  - memory_authority_model
-  - package_extraction_thresholds
-  - desktop_shell_choice
-  - legacy_capsule_scope
+review_required: [] # DEC-01–12 已接受；实现细节由 roadmap 和 owner 文档跟踪。

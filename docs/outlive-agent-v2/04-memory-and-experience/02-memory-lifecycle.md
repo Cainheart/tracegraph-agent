@@ -5,7 +5,7 @@ status: proposed
 scope: memory-lifecycle
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-26
+last_reviewed: 2026-09-28
 ---
 
 # Memory 生命周期设计
@@ -95,7 +95,7 @@ sequenceDiagram
   Pj-->>U: versioned result + memory id
 ```
 
-V2 首阶段采用显式准入：抽取结果进入可检查队列，不能静默变成 active。未来若开放低风险自动准入，必须限定 narrow scope、strong evidence、低 sensitivity，并先具备可检查历史、撤销/纠正、MemoryUse 审计和反例门禁；身份、凭据、私人信息、跨项目规则和冲突项始终要求显式确认。
+DEC-02 已接受：V2 MVP 的所有抽取结果都进入可检查队列，须经用户显式检查/确认才能成为 active；低风险项也不自动准入。若 V2 之后要重新考虑低风险自动准入，必须单独评审，并先具备 narrow scope、strong evidence、低 sensitivity、可检查历史、撤销/纠正、MemoryUse 审计和反例门禁；身份、凭据、私人信息、跨项目规则和冲突项始终要求显式确认。
 
 ## 4. 冲突与修订
 
@@ -115,7 +115,7 @@ V2 首阶段采用显式准入：抽取结果进入可检查队列，不能静�
 
 | 参数 | 推荐起点 |
 |---|---|
-| `auto_admit` | 仅 low sensitivity + narrow scope + strong evidence |
+| `auto_admit` | V2 MVP 固定关闭；所有 Candidate 显式审核后才能 active，不设低风险自动准入例外 |
 | `default_ttl` | 按 kind；decision/constraint 要求版本或复审点，不用统一永久 |
 | `confidence_floor` | 只用于候选排序，不越过 policy |
 | `max_active_conflicts` | 不自动淘汰；达到阈值要求人工整理 |
@@ -125,13 +125,11 @@ V2 首阶段采用显式准入：抽取结果进入可检查队列，不能静�
 
 模型推断无 EvidenceRef 不得 active；source trust 与推断置信不可混为一值；旧 approval/credential 不随 Memory 恢复；被 supersede/revoked 内容不默认注入；仅搜索命中不得记作使用；删除后从备份/投影恢复也不能复活。验收覆盖并发修订、scope 串扰、过期、冲突、删除、拒绝候选和导入去重。
 
-## 8. V2 待评审与明确延期
+## 8. 已接受约束与实现期 ADR
 
-- Memory aggregate stream 的 ID/partition 与跨进程 writer/concurrency 语义；
-- G-21 JSONL → Ledger aggregate 的无损迁移、暂停写入/切换/回滚及旧版本读取；
-- 加密正文/Artifact、密钥、备份和历史 Run `MemoryUse` 摘要的删除边界；
-- 各 kind 的默认 TTL 与复审提示；
-- 既有 G-21 每轮自动 recall 的兼容开关、默认状态和可见性就绪标准；
-- 自动准入是否在首个公开版本完全关闭。
+- **DEC-02 已接受**：Candidate 不能静默成为 active；自动 Recall 与自动准入分离。G-21 的旧 Recall 路径须先有可见状态、来源、请求状态和用户控制；V2 MVP 默认关闭自动 Recall，用户显式开启后只召回当前 scope/policy 允许的 active Memory。
+- **DEC-03 已接受**：导出只包含用户选择的项目；默认导出来源引用/摘要而非原始证据，原始证据按项 opt-in；第三方内容默认排除，包中不承载 credential/approval/权限。
+- **P4 实现期 ADR**：Memory aggregate 的物理分区、并发 writer、加密 Artifact/密钥/备份和删除重建边界，须在实现时确定具体存储与事务机制；这些选择不得改变上面的准入、导出和撤销原则。
+- **P4 实现参数**：G-21 相邻迁移与回滚、各 kind 的 TTL/复审提示、索引清理与备份保留窗口，在获得真实数据与恢复测试后定值；不能据此重新打开已经接受的“默认不自动准入”原则。
 
 多人团队共享 Memory 明确不进入 V2。团队级 Memory owner、成员权限、共享/撤销和纠错仲裁留待后续版本评审；V2 先落实单用户 owner 与 scope 边界。

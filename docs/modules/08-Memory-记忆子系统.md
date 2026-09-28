@@ -6,6 +6,8 @@
 > 最后核对：2026-09-19  
 > 实现状态：**G-21 已实现**；默认生产路径是本地 JSONL 索引 + BM25，不是向量 RAG
 
+> **V2 边界：**这里记录的是当前 G-21 Memory。Outlive Agent V2 的 Memory lifecycle、MemoryUse 治理与管理面尚未实现；不能因为当前已有 `remember()` / `recall()` 就把 V2 目标描述为已交付。
+
 ---
 
 ## 1. 当前链路与事实源
@@ -96,6 +98,8 @@ Ledger 不保存 raw query，也不保存命中正文，只保存 query hash、�
 ## 6. 默认本地检索与可选 HTTP 服务
 
 `@tracegraph/retrieval` 提供默认生产 backend：Markdown 分块、内容 hash、按项目隔离的 JSONL store、BM25 排名、幂等 ingest 和 `readChunk()`。它导出 backend/provider seam，但仓库当前没有 embedding 模型、向量数据库或 reranker 实现。
+
+远端 URL 只改变可重建的 retrieval index/search 调用，不迁移 canonical Memory：`<dataDir>/memory/records.jsonl` 仍是本机事实源。远端 ingest 会发送 `project_id`、`source_path` 和内容，search 会发送 `project_id` 与 query；响应的 project/query/hash 由 Client 和 Core 校验。`project_id` 只提供逻辑分区，不是租户授权；可选 bearer token 是整个 retrieval service 共用的服务级凭据，不提供逐项目 ACL。内置服务默认只监听 loopback；若 CLI 被配置为访问外部服务，接收端会看到相应的检索内容和查询。
 
 `apps/retrieval-service` 可把同一 backend 暴露为独立 Node HTTP 服务：
 

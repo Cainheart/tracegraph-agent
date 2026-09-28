@@ -5,7 +5,7 @@ status: internal-design-input
 scope: design-evidence
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-26
+last_reviewed: 2026-09-28
 ---
 
 # 参考源码观察与证据等级
@@ -44,6 +44,23 @@ flowchart LR
 | Claw Code | philosophy、agent-managed workflow、Rust runtime/tools | Agent 自管理流程有启发，但 governance 不能交给模型自证 |
 | Pi | 小内核、event/session tree、extensions/RPC | 最小核心和扩展性优秀，但权限/企业治理需补足 |
 | TraceGraph | ledger、receipt、projection、local-first、现有 tests/evals（Current） | 是迁移基础，不是待替换的“旧 Demo”；V2 不因此保留本地产品评测套件 |
+
+### DEC-01–12 的 DSH 对照证据
+
+以下对照基于本机 DSH checkout `/Users/cain/Downloads/dsh/deepseek-harness`，commit `46a7f68b0922371ce7144b668b90e377d8e799f4`；未运行的源码/文档观察按 E2 使用。这里只记录上游实际机制；Outlive 的批准方案和实现状态以[决策登记表](../README.md#6-决策登记表现在要评审什么)及各 owner 文档为准。
+
+| Outlive 决策 | DSH 可核对来源与实际模式 | Outlive 的适配边界 |
+|---|---|---|
+| DEC-01 包门槛 | `docs/cookbook/adding-a-package.md`、`packages/AGENTS.md`、`scripts/package-dependency-policy.ts`：按角色决定包族；Definition/Provider/Consumer 在各自演进时拆分，单一职责插件可留在一个包；具体依赖约束由专门检查器执行。DSH 没有可确认的通用“两个消费者”数值升包门槛。 | 两个真实 Consumer 或硬隔离理由是 Outlive 自己的硬门槛；评分卡只辅助讨论；`architecture-policy.yaml` 与 checker 是 Outlive 的实现选择，不声称来自 DSH。 |
+| DEC-02/03 记忆准入与导出 | DSH `packages/core/session/src/types.ts`、`packages/context/session-reference/` 有 append-only Session 事件与显式 Session 引用；`dsh-memory-cain/dsh-memory-dev/` 是用户自己的提案，不是上游已实现能力。 | 候选确认、默认 Recall、Legacy Capsule 导出与撤销是 Outlive 自己的产品/安全决定；只借鉴可追溯事件和显式引用，不把用户提案写成 DSH 能力。 |
+| DEC-04/06 恢复与长任务状态 | `docs/subsystems/jobs.md`：Job 有可查询状态/输出资源、owner scope、`list/get/read/readAt/wait/kill` 操作和可观察的输出流。 | Run 使用 Operation Resource 作为当前状态/重连真相，Durable Event Stream 传递增量；恢复 fencing、Memory 权限和 Ledger 真相按 Outlive 自己的不变量设计。 |
+| DEC-05 组合模型 | `docs/architecture.md` 的 Profiles and bundles：Profile 按序列出 Bundles，再叠加 Profile/Home/命令行 Patch；Patch 对配置行整体替换或插入。 | 采用显式、有序、可审计的声明式组合；不用任意可执行 Patch，也不照搬 Cordis 或热更新行为。 |
+| DEC-07 Desktop | `docs/architecture.md` 的 Desktop application、`apps/desktop-host/src/index.ts`、`apps/desktop/`：Electron Renderer/Main 与独立 Desktop Host 分工，Host 承载共享运行时。 | 选 Electron、Web/Desktop 共享主要 UI、Main 不拥有业务状态；Outlive IPC 协议、凭据边界和打包流程独立设计。 |
+| DEC-08 遥测 | `docs/subsystems/product-telemetry.md` 与 `packages/host/product-telemetry-otel/`：只发送调用方显式选择的事件和字段，不自动收集 Session 数据或标识符。 | Outlive 默认不外发；如未来启用需明确 opt-in 和白名单；模型/任务质量评估单独交给用户授权的 Langfuse。 |
+| DEC-09 Notes/Skills | `.agents/notes/README.md`：Note 路径表示 proposed/implemented/rejected 生命周期，`implemented` 对应已交付决定；`scripts/verify-skill-invocation-metadata.ts` 校验跨 Agent 的调用策略元数据一致性。 | Review accepted 与实现状态分开；Skill 两次真实使用是成熟度建议，不是文件创建或调用的强制验证器规则。 |
+| DEC-10 文档与 Website | `AGENTS.md`、`scripts/project-doc-site.ts`、`website/package.json`、`.github/workflows/docs-pages.yml`：版本化 Markdown 经确定性投影进入 VitePress 文档站，并有中英配对治理。 | 延至 V2 后期再建站；文档仍只有一个 Markdown 真源，Outlive 按文档族指定中文或英文源并人工审校译文。 |
+| DEC-11 版本策略 | `docs/cookbook/adding-a-package.md`、`scripts/check-workspace-constraints.ts`、`package.json` 与 release workflow：Harness package 的版本受根版本约束并沿统一发布流程发布。 | `@outlive/*` 使用仓库统一版本与 SemVer；不照搬 DSH 的注册表、凭据或 release workflow。 |
+| DEC-12 Benchmark | `.github/workflows/ci.yml` 的 `node-24-bench` PR job 将性能测试放在单独、受控 Runner lane。 | 固定 Runner class、PR 关键路径子集与 nightly/release 大场景；先观察校准噪声，不照搬 DSH 的专用 Runner 规格。 |
 
 ### DSH Web/Desktop 工作台观察
 

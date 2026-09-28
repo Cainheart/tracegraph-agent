@@ -5,7 +5,7 @@ status: proposed
 scope: quality-benchmarks
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-28
 ---
 
 # Benchmark 系统设计
@@ -68,11 +68,12 @@ sequenceDiagram
 | baseline update | reviewed artifact，绑定 commit/原因 |
 | network/model | 不进核心 perf gate；单独端到端观测 |
 
+**DEC-12 已接受**：PR 使用固定、可复现的 Runner class 与受控运行时，运行有代表性的关键路径子集；更大场景放到 nightly/release。先以观察模式测量噪声，再逐步阻断少数关键路径。此处参考 DSH 将 Benchmark 放入独立 PR lane 的做法，但不照搬它的专用 Runner 规格；Outlive 的机器规格和具体预算须经基线测量后校准。
+
 ## 6. 防作弊与可用性
 
 禁止通过减少验证、丢事件、缩短 fixture 或缓存跨 case 数据获得“优化”。Runner 默认 offline、临时目录隔离、固定 clock/seed；报告给出复现命令和 raw artifact。
 
-## 7. 验收与待决策
+## 7. 验收与实施校准
 
-同机重复运行误差可量化；故意注入慢路径能触发 gate；错误输出不能获得有效性能结果；baseline 文件可 code review。待定：固定 CI runner 规格、各场景预算、是否发布公开 benchmark dashboard。
-
+同机重复运行误差可量化；故意注入慢路径能触发 gate；错误输出不能获得有效性能结果；baseline 文件可 code review。DEC-12 的 Runner class 与 PR/nightly/release 分层已接受；P7 仍需通过基线校准具体 runner label、预算和阻断阈值。是否发布公开 benchmark dashboard 属于后续发布选择，不阻塞本地 Benchmark。

@@ -477,17 +477,19 @@ Outlive 可迁移的工程原则：**共享 Resolver、Bundle 顺序显式、解
 
 Outlive 的特殊边界是 Session/Evidence 的 Ledger 真源、Memory 权限再验证、Run 所有权和 Desktop 私有 Host。Profile 只能引用这些模块的可装配实现，不能重写其业务语义。Profile 配置也不取代 Agent Notes（为什么做）、Skills（怎么重复做）或 Evidence（实际发生了什么）。
 
-## 12. 待裁决项与 V2 范围
+## 12. 已接受的 Profile 裁决与 V2 范围
 
-| 决策 | 本文建议 | 状态 / 后续边界 |
+DEC-05 已接受下列组合模型。线格式、字段版本和 Settings 编辑体验仍由对应实现任务细化；不再重新评审是否使用动态继承或任意可执行 Patch。
+
+| 决策 | 已接受设计 | 实施边界 |
 |---|---|---|
-| Profile 的 `extends` | MVP 不使用动态 Profile 继承；用完整、有序 Bundle 列表。`base` 模板创建 Profile 时只复制 Bundle 清单，生成后互不隐式继承 | **建议评审**；当前其它文档中的 `extends: base` 只是早期概念写法，后续应同步替换 |
-| Bundle 与 package 的关系 | 逻辑 Bundle 可聚合多个 package，物理 package 仍按 package promotion gate 决定 | V2 架构原则；具体首批 Bundle 清单待 package topology 裁决 |
-| Patch 格式 | 有版本的声明式字段操作，严格按 schema 验证；不支持任意可执行配置 | **建议评审**；详细 wire schema 进入协议 / 配置 ADR |
-| 第三方 Bundle 动态安装 | 不作为默认启用能力；先定义来源验证、签名、权限、沙箱、撤销与版本迁移 | 暂缓专项信任模型裁决；不阻塞内建 Bundle |
-| Generation 热更新 | 新 Run 使用新 generation；已有 Run 固定旧 generation；代码包更新必要时要求重启 | **建议评审**；需结合 Host 生命周期与资源引用实现 |
-| `composition_digest` / manifest 存储 | Run 记录摘要及脱敏、不可变的装配依据引用 | **建议评审**；事件字段与保留策略由 Event Catalog / Session ADR 定义 |
-| Profiles 文件位置与用户编辑体验 | 区分 shipped template、user profile、workspace constraint；不得重复真源 | 暂不确定具体路径和 Settings UI；客户端文档再裁决 |
-| 产品 Surface | CLI、Web UI、Desktop；`headless` 仅内部验证 | 已由 V2 产品范围确定；无独立 API、SDK 或 ACP Profile |
+| Profile 继承 | 不使用动态 `extends`；Profile 持有完整、有序 Bundle 清单，模板创建时复制清单，之后不隐式继承 | P6 定文件位置与编辑 UX，不能恢复动态继承 |
+| Bundle 与 package | 一个逻辑 Bundle 可以组合多个物理 package；每个 package 仍须单独满足 DEC-01 升包门槛 | P3/P6 确认首批内建清单 |
+| Patch 格式 | 使用有版本、严格 Schema 校验的声明式字段操作；禁止任意可执行配置 | P6 定 Wire Schema、拒绝未知字段和迁移规则 |
+| 第三方 Bundle 动态安装 | V2 默认不启用；先有来源验证、签名、权限、沙箱、撤销和版本迁移方案 | 延后独立信任模型，不阻塞内建 Bundle |
+| Generation 更新 | 新 Run 固定新 Generation；已有 Run 保持原摘要/资源；需替换正在使用的代码时有界重启 Host | P6 验证 Host 生命周期和资源引用 |
+| `composition_digest` / manifest | Run 保存摘要及脱敏、不可变的装配依据引用 | P6 定 Event Catalog 字段与保留策略 |
+| Profiles 文件与 UI | 分离 shipped template、user profile、workspace constraint；事实只存一处 | P6 定实际路径与 Settings 编辑体验 |
+| 产品 Surface | CLI、Web UI、Desktop；`headless` 仅内部验证 | 已确定；无独立 API、SDK 或 ACP Profile |
 
 本模块的完成标准不是“支持任意插件、任意覆盖”，而是：**相同声明得到可复现的装配计划；权限限制不能被层级覆盖；装配失败不会留下半启动 Host；每个 Run 都能说明它使用的实现版本和配置来源。**

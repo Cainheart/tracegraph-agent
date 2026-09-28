@@ -206,6 +206,8 @@ CLI retrieval 配置只有三个环境输入：
 - 调用方主动 abort、4xx/认证，以及成功响应中的 scope、query hash、content hash 或 contract 校验错误都直接暴露，不用本地结果掩盖配置/安全问题；服务端返回的 HTTP 502–504 按明确的 availability 契约处理；
 - 本地与远端 response 都继续由 Core 校验 project scope 与 query hash，Memory hit 再经过 canonical record 过滤。
 
+该模式的 scope 是检索数据分区，不是远端身份/租户隔离：请求带 `project_id`（ingest 另带相对 `source_path` 与内容，search 带 query），Client/Core 校验响应仍属于该 project 且 query/hash 一致，但没有逐项目 ACL。若配置 `TRACEGRAPH_RETRIEVAL_URL` 指向外部端点，该端点会收到相应内容与 query；可选 token 是 service-wide bearer token。即使检索索引在独立服务上，canonical Memory、Ledger、Workspace 与 Runtime 仍由本机 Host 管理，因此这不是远程 Host 或多人共享部署。
+
 独立服务可用 `pnpm retrieval:serve` 启动（先 build，再运行 `@tracegraph/retrieval-service`）；默认 loopback `4312`。服务进程另接受 `TRACEGRAPH_RETRIEVAL_PORT`、`TRACEGRAPH_RETRIEVAL_DATA_DIR` 与同名 `TRACEGRAPH_RETRIEVAL_TOKEN`。CLI **不会**自动启动、探活或监管该进程；URL 未设置时也不会发任何 retrieval 网络请求。若在同一机器同时使用远端服务和 CLI 本地 mirror，应给服务配置独立 data directory，避免两个进程并发写同一个 JSONL 索引目录。
 
 服务/backend 暴露 embedding/provider 替换 seam，但当前标准装配仍是 JSONL/BM25；不能据此声称已经实现向量数据库、embedding 或 hybrid RAG。

@@ -5,7 +5,7 @@ status: proposed
 scope: docs-i18n-governance
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-26
+last_reviewed: 2026-09-28
 ---
 
 # 文档、生成物与国际化治理
@@ -138,7 +138,7 @@ Manifest 不应存储正文副本、架构事实、实施进度的自由文本�
 
 中英文不是两份独立设计。每一类文档明确 source locale 和 paired locale；若当前只有单语版本，应写清楚而不是复制一份空壳。
 
-当前仓库的 `.agents/notes/README.md` 明确英语为 Note 冲突处理的 canonical，中文文件是配对版本；Outlive V2 技术设计文档当前以 `zh-CN` 编写。它们是不同文档族，不能由这两个例子推导“全仓统一英语”或“全仓统一中文”。公开 API 教程的 canonical language 仍待相应阶段裁决。
+DEC-10 已接受按文档族指定唯一源语言：当前 Outlive V2 技术设计集继续以 `zh-CN` 为源；未来公开 API 文档与用户指南以英文为 canonical，中文作为人工审校的配对版本。DSH 的中英成对文档和配对校验是实践参照，不意味着两种语言可独立维护或由未经审校的机器翻译直接发布。不同文档族不推导“全仓统一英语”或“全仓统一中文”。
 
 ### 6.2 翻译状态与同步步骤
 
@@ -158,7 +158,7 @@ source draft → source reviewed → translation drafted → bilingual review �
 
 ## 7. Website 是发布适配器，不是真源
 
-已接受方向是 Website 延后到 V2 P1–P7 实现阶段结束后，再进入 P8 建设；Website 只投影 `docs/` 中的规范内容。站点框架与部署方案尚未决定。
+DEC-10 已接受 Website 延后至 V2 P1–P7 实现阶段结束后进入 P8，并采用 VitePress 将 `docs/` 中的规范 Markdown 投影为静态站点；不建立第二份正文真源。域名、托管与部署流水线仍是 P8 的实施选项，未在本轮裁定。
 
 启动 Website 需要同时满足：文档规模与搜索/版本导航需求超过 README 能承载的范围；有可发布版本与安装路径；内部链接、文档 Manifest、生成检查和双语配对已有确定门禁；站点可从同一个 docs 输入构建且无手工正文副本。
 

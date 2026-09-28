@@ -5,7 +5,7 @@ status: proposed
 scope: design-index
 language: zh-CN
 parent: ../outlive-agent-v2.md
-last_reviewed: 2026-09-26
+last_reviewed: 2026-09-29
 ---
 
 # Outlive Agent V2 · 设计文档索引
@@ -110,7 +110,7 @@ flowchart TB
 
 ### 6.1 已接受的方向（本轮无需重审）
 
-十五项具体记录见[总纲第 11 节](../outlive-agent-v2.md#11-本轮已评审的十五个决策)。按主题归纳：
+十五项具体记录见[总纲第 11 节](../outlive-agent-v2.md#11-本轮已评审的十五个产品与架构总纲决策)。按主题归纳：
 
 - 产品统一叫 Outlive Agent，定位为通用 Agent；当前入口是 CLI、Web UI、Desktop，Web/Desktop 工作台参考 DSH/Codex 交互形态。
 - Session/Run 执行事实与跨 Session Memory 分开治理；接受“记忆可延续，权限不延续”及有来源、可审查的 Memory 生命周期。
@@ -119,24 +119,24 @@ flowchart TB
 - 接受 Desktop 主进程不持有业务状态、质量验证交由本地确定性门禁/Benchmark/Snapshot 与外部 Langfuse 分工、V2 完成后再建设 Website。
 - V2 不做多人团队共享 Workspace/Memory，也不做数字人格或身后代理；这些边界不取消内部多 Agent 协作或用户策展的 Legacy Capsule。
 
-### 6.2 需要在相应阶段前裁决
+### 6.2 已接受的设计决策与实施节点
 
-表中“当前建议”只是源文档的提案摘要，不是预先替维护者作出的决定。阶段对应 [`roadmap.yaml`](roadmap.yaml)；不在当前阶段的条目先保留，不阻塞眼前工作。
+维护者已于 **2026-09-28** 接受 DEC-01 至 DEC-12 下列设计方向。这里的 `accepted` 是评审结果，不是代码状态；对应代码、门禁和运行验证仍须按 [`roadmap.yaml`](roadmap.yaml) 的阶段实施。逐项 DSH 源码/文档证据以及不可据此推断的内容见[参考观察记录](08-reference-lineage/01-source-observations.md)。DSH 作为工程参照，不代表 DSH 已实现 Outlive 的 Memory 产品，也不意味着 Outlive 必须照搬 DSH 的技术栈。
 
-| ID | 状态 / 裁决时机 | 需要回答的问题 | 当前文档建议（尚未批准） | 设计依据 |
-|---|---|---|---|---|
-| DEC-01 | **待评审：P1 的 `ARCH-010` 前** | 如何把现有包晋升硬门槛编码进门禁；评分卡是否只作排序参考；策略文件是否命名为 `architecture-policy.yaml`？ | 维持根 `AGENTS.md` 的现有硬门槛：边界稳定、至少两个真实消费者或有硬隔离理由、并有契约测试；评分卡只辅助排序，不自动升包。 | [依赖门禁与升包](03-package-topology/05-profiles-dependency-gates.md)；路线任务 `ARCH-010` |
-| DEC-02 | **待评审：P4 Memory 实施前** | G-21 既有自动 Recall 的迁移开关和默认行为是什么；低风险候选何时可自动激活？ | 先迁移可见性、请求状态和策略控制；首阶段显式准入，高风险/冲突内容始终需确认。低风险自动准入需另设证据、撤销和审计门槛。 | [Memory 生命周期](04-memory-and-experience/02-memory-lifecycle.md)；[用户价值边界](00-product-charter/02-user-value-boundaries.md) |
-| DEC-03 | **待评审：Memory 导出实现及公开 Beta 前** | 导出是否包含原始证据；是否提供脱敏等级和选择性导出；如何说明系统无法控制导出后副本的删除？ | 只导出用户明确选择、带来源和校验信息的内容；原始证据与敏感字段的默认策略仍需裁决，并明确外部副本边界。 | [用户价值边界](00-product-charter/02-user-value-boundaries.md)；[Legacy 治理](04-memory-and-experience/05-legacy-governance.md) |
-| DEC-04 | **待评审：P5 Runtime 可靠性实现前** | Lease/fencing 的持久化和原子抢占位置、Checkpoint 存储与提交边界、长时工具的 owner、Provider/Profile 漂移及审批拒绝的终态如何定？ | 以 Run 级 fencing、Ledger 为恢复真源、未知副作用先 reconcile 为设计建议；具体存储、并发和终态映射仍由 ADR 裁决。 | [身份、状态与恢复](01-system-architecture/03-identity-state-recovery.md) |
-| DEC-05 | **待评审：Profile/Host 组合实现前** | 是否采用静态完整 Bundle 列表而不做动态 `extends`；Patch、Generation 更新、`composition_digest`/脱敏 Manifest 如何定？ | 显式有序 Bundle、声明式 schema 校验 Patch、新 Run 使用新 Generation、Run 固定摘要及装配依据。当前为建议，尚未批准。 | [Profiles 与组合](01-system-architecture/04-profiles-composition.md) |
-| DEC-06 | **待评审：P6 长任务协议实现前** | 长任务状态通过 Operation Resource 还是事件流提供？ | 优先考虑 Operation Resource；协议文档明确仍待裁决。 | [命令、查询与事件模型](01-system-architecture/02-command-query-event-model.md) |
-| DEC-07 | **待评审：P6 Desktop 实施前** | Desktop 外壳选 Electron 还是 Tauri；Host 生命周期和私有传输如何落实？ | 当前 React/Vite/TypeScript 资产使 Electron 成为首选候选；这不是已作出的技术决定。 | [Desktop 客户端设计](06-clients-protocols-desktop/README.md)；[Desktop 进程安全](06-clients-protocols-desktop/03-desktop-process-security.md) |
-| DEC-08 | **待评审：P8 Beta/Stable 发布前** | 是否启用匿名 opt-in 社区遥测；公开 README 展示哪些可信指标；Beta/Stable 的样本量、回归预算和支持周期是什么？ | 先有可解释的指标定义、隐私级别、分母和验证证据，再决定是否公开或收集遥测；当前没有已批准数值。 | [成功指标与决策机制](00-product-charter/03-success-metrics-decisions.md) |
-| DEC-09 | **待评审：P0 `GOV-001` / `DOC-002` 完成前** | Note 的评审结果与 `status` 生命周期是否保持分开；Skill “两次真实使用”是成熟度指导还是自动准入硬门槛；哪些局部目录需要独立 `AGENTS.md`？ | 评审结果和实现状态分开表达；没有 schema/校验器前不新增机器状态字段；局部规则按真实子树风险添加，不为目录整齐而创建。 | [AGENTS、Notes 与 Skills](02-repository-governance/01-agents-notes-skills.md) |
-| DEC-10 | **待评审：P7 文档国际化与 P8 Website 前** | 面向公开用户的 API 指南以哪种语言为源；Website 选静态站点还是直接发布 Markdown；何时引入章节级翻译工具？ | 按文档族指定 canonical language；已接受 Website 延后且只投影 docs，具体生成器和双语自动化仍未定。 | [文档、生成与国际化](02-repository-governance/02-docs-generation-i18n.md) |
-| DEC-11 | **待评审：P3 首批 package 发布前** | `@outlive/*` 下的 package 采用统一版本还是独立版本；兼容变更如何映射到发布版本？ | 版本策略须配合已接受的独立兼容迁移方案；当前没有已批准的 changeset/版本发布工具选择。 | [变更门禁与发布](02-repository-governance/03-change-gates-release.md)；[包拓扑](03-package-topology/README.md) |
-| DEC-12 | **待评审：P7 Snapshot/Benchmark 门禁接 CI 前** | Benchmark 用本机基线还是固定 runner 作阻断；PR、nightly、release lane 的资源预算和重跑策略是什么？ | 先保证场景、runner、正确性和原始样本可比较，再决定是否阻断；Langfuse 外部质量评估仍不进入普通确定性 CI。 | [变更门禁与发布](02-repository-governance/03-change-gates-release.md)；[质量系统](07-quality-benchmarks-snapshots-i18n/README.md) |
+| ID | 评审结果 / 实现状态 | 已接受的裁决（结合 DSH 实践适配） | 设计依据 / 实施阶段 |
+|---|---|---|---|
+| DEC-01 | **已接受；`ARCH-010` 已交付依赖门禁** | 保留 Outlive 的物理包硬门槛：职责边界稳定、至少两个真实消费者或有明确硬隔离理由、并有契约测试。评分卡只排序和触发讨论，不能自动升包。`architecture-policy.yaml` 是唯一机器可读边界策略源；检查器要求包清单显式登记并验证依赖方向与公开导出。是否满足边界稳定、consumer/隔离理由和契约测试，仍须在升包评审中提供证据。根 `AGENTS.md` 与模块文档只解释规则并链接，不复制配置。两个消费者这一数值门槛是 Outlive 自己的规则，不宣称来自 DSH。 | [依赖门禁与升包](03-package-topology/05-profiles-dependency-gates.md)；`ARCH-010` |
+| DEC-02 | **已接受；待 P4 Memory 实施** | Memory Candidate 默认必须经用户可见的检查/确认才能成为 active；V2 不做低风险自动准入。自动 Recall 与自动准入分开：G-21 先迁移可见性、请求状态、scope/policy 和逐轮来源记录，自动 Recall 默认关闭并由用户显式开启；不扩大静默注入路径。 | [Memory 生命周期](04-memory-and-experience/02-memory-lifecycle.md)；[用户价值边界](00-product-charter/02-user-value-boundaries.md) |
+| DEC-03 | **已接受；待 Memory/Capsule 与 Beta 实施** | 导出默认只含用户选择的 Memory/Experience、来源引用与校验信息；原始证据按项 opt-in 并经过脱敏/密钥检查，第三方资料默认排除。Capsule 不携带凭据、审批或可执行权限；导出后副本不受本机删除控制，必须在确认页说明。 | [Legacy 治理](04-memory-and-experience/05-legacy-governance.md)；公开 Beta 前验证 |
+| DEC-04 | **已接受原则；物理存储细节待 P5 实施 ADR** | Run 级所有权采用单调 fencing；Ledger 是恢复真源，Checkpoint 是可重建的恢复加速资料。旧 Attempt 不得复活；未知副作用进入 reconcile，不盲目重试；恢复时重新检查权限和 Provider/Profile 摘要。操作资源控制生命周期，执行 Provider 持有其资源并报告收敛。审批拒绝单独记录，不等同于用户取消；若没有可继续的替代路径才以明确策略失败结束。具体 SQLite/文件/事务位置由实现 ADR 决定。 | [身份、状态与恢复](01-system-architecture/03-identity-state-recovery.md)；P5 |
+| DEC-05 | **已接受；待 Profile/Host 组合实施** | Profile 保存完整、有序的 Bundle 清单，不做隐式动态 `extends`；Patch 是有版本、受 Schema 校验的声明式修改，不执行任意代码。新 Run 固定 Composition Generation、摘要和脱敏装配依据；在途 Run 不被热更新改写。 | [Profiles 与组合](01-system-architecture/04-profiles-composition.md) |
+| DEC-06 | **已接受；待 P6 协议实施** | 长任务以可查询的 Operation Resource 作为当前状态与重连真相；durable event stream 供实时更新、游标续传和观察，不单独承担最终状态。断线后重新读 Resource/Snapshot，再续订事件，沿用 DSH Job 的“资源控制 + 事件观察”组合。 | [命令、查询与事件模型](01-system-architecture/02-command-query-event-model.md) |
+| DEC-07 | **已接受；待 P6 Desktop 实施** | Desktop 采用 Electron 壳、独立 Host 和 Web 共享工作台 UI；Renderer 通过受限 Preload/Bridge 与 Main 通信，Main 通过私有 framed RPC 调用 Host。业务状态归 Host/Runtime，不归 Electron Main。 | [Desktop 客户端设计](06-clients-protocols-desktop/README.md)；[Desktop 进程安全](06-clients-protocols-desktop/03-desktop-process-security.md) |
+| DEC-08 | **已接受原则；指标阈值待 P8 基线后确定** | 默认不外发产品遥测；如后续启用，必须由用户明确 opt-in，按事件白名单发送，不收集 Prompt/响应、源码、Session/Memory 正文或自动身份标识。Langfuse 独立承载用户授权的模型/任务质量评估。README 只发布有定义、分母、窗口、隐私说明和可复核证据的指标；样本量与回归阈值在基线后制定。 | [成功指标与决策机制](00-product-charter/03-success-metrics-decisions.md)；P8 |
+| DEC-09 | **已接受；待 P0 `GOV-001` / `DOC-002` 实施** | 评审结果记录在本登记表/Note 正文，Note `status` 只表示提案、实现、否决或归档生命周期；接受但未实现仍是 `proposed`。Skill 的“两次真实使用”是成熟度复核建议，不是创建/启用硬门槛。目录级 `AGENTS.md` 只按子树独有、高风险规则增设。 | [AGENTS、Notes 与 Skills](02-repository-governance/01-agents-notes-skills.md) |
+| DEC-10 | **已接受；待 P7 文档治理、P8 Website 实施** | 文档按文档族指定单一源语言；公开 API/用户指南采用英文为 canonical、中文为人工审校配对版，现有中文 V2 设计集继续以中文为源，直到抽取公开文档。接受静态站点从版本化 docs 投影；使用 VitePress 路线，Website 延后至 P1–P7 开发完成。社区翻译可通过 PR 贡献，但必须经术语/事实审校及配对检查，不接受未审校机器译文直接发布。 | [文档、生成与国际化](02-repository-governance/02-docs-generation-i18n.md)；[Docs/Website 设计](07-quality-benchmarks-snapshots-i18n/04-docs-i18n-website.md) |
+| DEC-11 | **已接受；待 P3 首批 package 发布前实施** | `@outlive/*` 属于同一 Monorepo 发布族，包版本跟随仓库统一版本；兼容性和破坏性变更按统一 SemVer/迁移说明发布，不采用每包独立版本或 Changesets 作为版本真源。真正公开发布前再确定注册表、发布凭据和自动化细节。 | [变更门禁与发布](02-repository-governance/03-change-gates-release.md)；[包拓扑](03-package-topology/README.md) |
+| DEC-12 | **已接受原则；固定 Runner/预算待 P7 门禁实施时校准** | 性能门禁采用可复现的固定 Runner class 和受控运行时；PR 运行短小的关键路径集，较大场景放到 nightly/release。先以观察模式量化噪声，再对少数用户关键路径阻断；基线绑定 commit、场景、硬件/运行时指纹和原始样本。借鉴 DSH 的独立 PR Benchmark lane，不照搬其专用 Runner 的资源规格。 | [Benchmark 系统](07-quality-benchmarks-snapshots-i18n/02-benchmark-system.md)；[变更门禁与发布](02-repository-governance/03-change-gates-release.md) |
 
 ### 6.3 已明确延后（当前不阻塞）
 

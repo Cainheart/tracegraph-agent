@@ -4,7 +4,7 @@ title: 将 Outlive Agent V2 作为提议中的产品与架构方向
 status: proposed
 owners: [product, architecture]
 created: 2026-09-23
-last_reviewed: 2026-09-26
+last_reviewed: 2026-09-29
 affects: [identity, runtime, memory, packages, clients, repository-governance, quality]
 supersedes: []
 language: zh-CN
@@ -69,7 +69,8 @@ V2 在维持当前公开行为的前提下渐进引入。产品与底层技术�
 - [x] 确认最终 package scope 为 `@outlive/*`，名称核查已完成；`@tracegraph/*` 只作迁移期兼容，实际改名另走迁移方案。
 - [x] 确认多人团队共享 Workspace/Memory 不进入 V2，留待后续版本；与内部 Agent Team 协作区分。
 - [x] 确认 LSP 采用 DSH 式可选只读代码导航接缝（definition/references/implementation/hover），不内置语言服务器，Current diagnostics 不自动进入目标；CodeGraph 不进入内建 V2 能力/迁移目标。
-- [ ] 评审 Memory 权限模型、包晋升门槛和 Desktop 外壳选型。
+- [x] 结合 DSH 实践评审并接受 DEC-01–12：包晋升；Memory 准入/导出；恢复和长任务状态；Profile 组合；Electron Desktop；遥测；Note/Skill 生命周期；文档/Website/i18n；统一包版本；校准后的 PR Benchmark。具体裁决已记录在 V2 决策登记表和各 owner 文档。
+- [ ] 按路线实现已接受决策；只有源码、测试和可复现验证证明行为已交付后，才将本 Note 移入 `implemented/`。
 - [ ] 完成 P0 基线与 P1 架构门禁。
 - [ ] 展示恢复、取消，以及从证据到纠正/导出的、保留来源链的 Memory 生命周期。
 - [ ] 每个纵向切片验证并交付后，才更新当前文档。
@@ -78,11 +79,11 @@ V2 在维持当前公开行为的前提下渐进引入。产品与底层技术�
 
 - 多人团队共享进入后续版本前，需单独定义成员权限、共享 scope、纠错仲裁、撤销和数据隔离。
 - 将个人历史经验导出为可继承内容，公开定位之前需要威胁模型、隐私评审和明确的同意语义。
-- Desktop 技术方案仍待决策，并非已经锁定的实现选择。
+- Electron 已作为 Desktop 外壳获接受；Host 集成、打包、签名、更新和发布行为仍待实现。
 
 ## 证据
 
 - 设计文档集：[`docs/outlive-agent-v2.md`](../../../docs/outlive-agent-v2.md)
-- 实现：待完成
-- 测试：待完成
-- 验证：待完成
+- `ARCH-010` 实现：[`architecture-policy.yaml`](../../../architecture-policy.yaml)、[`scripts/verify-boundaries.mjs`](../../../scripts/verify-boundaries.mjs)
+- `ARCH-010` 测试：[`scripts/verify-boundaries.test.mjs`](../../../scripts/verify-boundaries.test.mjs) 覆盖当前依赖图、反向依赖、deep import、依赖环和 CI 接线移除
+- `ARCH-010` 验证：`pnpm verify:boundaries` 通过（12 个 workspace packages、20 条 workspace dependencies、1,259 条 import references）；其余 V2 路线仍待实施

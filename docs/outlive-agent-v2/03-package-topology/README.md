@@ -5,7 +5,7 @@ status: proposed
 scope: packages
 language: zh-CN
 parent: ../../outlive-agent-v2.md
-last_reviewed: 2026-09-26
+last_reviewed: 2026-09-29
 ---
 
 # 03 · 包家族与依赖设计
@@ -43,7 +43,7 @@ V2 采用两级目标：
 
 ## 2. 升包门槛
 
-当前根 [`AGENTS.md`](../../../AGENTS.md) 的可执行约束是：**边界稳定，且至少有两个真实 consumer 或明确的硬隔离理由，并已有 contract tests**，才可创建物理 package。以下信号只帮助判断是否值得提出升包评审，单独或累计出现两项都不替代该约束：
+当前根 [`AGENTS.md`](../../../AGENTS.md) 的升包评审约束是：**边界稳定，且至少有两个真实 consumer 或明确的硬隔离理由，并已有 contract tests**，才可创建物理 package。`architecture-policy.yaml` 要求每个 workspace package 显式登记，`pnpm verify:boundaries` 检查依赖方向、已声明 imports、公开 exports、跨包相对路径和依赖环；该机器门禁不自动判断升包证据是否充分。以下信号只帮助判断是否值得提出升包评审，单独或累计出现两项都不替代该约束：
 
 - 有两个及以上独立 Consumer；
 - 有两个及以上 Provider，需要替换实现；
@@ -54,7 +54,7 @@ V2 采用两级目标：
 - 有独立测试/benchmark/发布边界；
 - 保留在原包会形成依赖环或越权依赖。
 
-安全、进程或协议边界可以构成硬隔离理由，但必须在 Note 中说清楚失败模式、替代方案和 conformance；不是“一项自动强制升包”。[评分卡](05-profiles-dependency-gates.md)目前只是提案触发器；若要改变根规则，须先让[现有 proposed Note](../../../.agents/notes/proposed/2026-09-23-outlive-agent-v2.md)得到包门槛裁决并同步根规则、本页与路线图。不满足当前门槛时，留在 family 内的模块目录。禁止为了“一文件一包”升包。
+安全、进程或协议边界可以构成硬隔离理由，但必须在 Note 中说清楚失败模式、替代方案和 conformance；不是“一项自动强制升包”。**DEC-01 已接受：评分卡只排序并触发讨论，不能替代根规则的硬门槛。**根 `AGENTS.md` 继续作为评审约束；P1 `ARCH-010` 已把 workspace 包登记与依赖边界接入机器检查，并添加反向依赖、deep import、依赖环和 CI 接线反例。不满足当前升包门槛时，留在 family 内的模块目录。禁止为了“一文件一包”升包。
 
 ## 3. 全局依赖方向
 
@@ -374,27 +374,22 @@ Bundle 可以贡献一组能力，例如 `coding-base`、`memory-local`、`web-a
 
 ## 19. 架构门禁
 
-目标工作文件名统一为 `architecture-policy.yaml`（与 [roadmap.yaml](../roadmap.yaml) 一致），`ARCH-010` 开工前在 Note 中确认；不得并存第二份 `architecture-rules.yaml`。它至少表达：
+**DEC-01 已接受**：唯一机器可读边界来源是 `architecture-policy.yaml`（与 [roadmap.yaml](../roadmap.yaml) 一致）；不得并存第二份 `architecture-rules.yaml`。`ARCH-010` 已实现该策略和检查器，当前 schema 为：
 
 ```yaml
 version: 1
 global:
   forbid_cycles: true
   forbid_deep_imports: true
-  max_file_lines: 500
-  max_public_methods: 15
-modules:
-  - id: evidence-projection
-    roots: [packages/evidence/projection/src]
-    requires: [foundation-contracts]
-    purity: true
-  - id: core-agent-loop
-    roots: [packages/core/agent-loop/src]
-    requires: [foundation-contracts, evidence-event, tool-executor, llm]
-    forbidden: [apps, packages/client, packages/host]
+packages:
+  - name: '@tracegraph/cli'
+    root: apps/cli
+    allowed: ['@tracegraph/core']
+    forbidden: ['@tracegraph/web']
+exceptions: []
 ```
 
-门禁分迁移状态：`legacy` 模块先只观测，`managed` 模块强制执行。每完成一个迁移切片，将对应模块从 legacy 改为 managed，避免一次要求旧代码全部合规。
+每个 workspace package 都必须在 `packages` 登记其仓库相对 root、允许边和禁止边；未列入 `allowed` 的边默认拒绝。例外需有 owner、Note 和过期日期。`pnpm verify:boundaries` 当前检查包依赖图、源码 imports、公开 exports、跨包相对路径和依赖环，CI 会运行此命令。策略中的 `legacy`/`managed` 模块迁移态和逻辑 module 级规则属于后续扩展；当前 checker 不接受或执行这些字段。
 
 ## 20. 包拓扑验收
 

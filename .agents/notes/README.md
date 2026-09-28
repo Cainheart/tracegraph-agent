@@ -1,8 +1,8 @@
 ---
 id: agent-notes-policy
-status: proposed
+status: implemented
 owner: repository-governance
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-29
 ---
 
 # Agent Notes
@@ -14,6 +14,12 @@ accepted, rejected, superseded, or archived. They complement source code and
 tests; they are not runtime instructions.
 
 ## Lifecycle
+
+The review decision (for example, accepted or deferred) is separate from the
+Note lifecycle below. An accepted design can remain `proposed` until code,
+tests, and current documentation prove delivery. Do not add a second status
+field for review decisions; record those in the Note body and decision
+register.
 
 ```text
 proposed ──accepted and shipped──> implemented ──replaced──> archived

@@ -26,11 +26,15 @@ G-01 至 G-23 的迁移去向见[Outlive Agent 迁移基线](docs/outlive-agent-
 
 ## 一眼看清边界
 
+当前产品入口是 Web Workbench 与由本机 CLI 启动的 Host；**Desktop 客户端尚未实现**。**Memory V2 也尚未实现**：当前可用的是 G-21 Memory（canonical JSONL、BM25 与有来源的 Context 注入），不是 V2 设计中的生命周期治理与管理面。
+
+这里的“本地优先”表示 Workspace、Host 和 canonical Memory 由单机上的一个 Host 管理，并不表示所有请求都留在本机：模型请求会发送到用户配置的 provider；设置 `TRACEGRAPH_RETRIEVAL_URL` 时，检索内容也会发送到该检索端点。内置 retrieval-service 默认只监听 loopback；把 CLI 指向外部端点不会把它变成远程 Runtime 或多人协作服务。`project_id` 是检索分区键而非租户授权；可选 bearer token 是服务级凭据。
+
 这个项目现在**不是**：
 
 - **不是生产级沙箱**。OS 级隔离目前只覆盖 `run_test` 子进程，且仅 macOS Seatbelt 生效；Linux/Windows 的受限模式会以 `unmet_constraints` 拒绝启动，不会假装隔离成功。
 - **不是语义检索**。Memory 是词法 BM25，没有 embedding、向量库或 reranker；同义改写与跨语言语义匹配不在能力内。
-- **不是分布式系统**。Ledger、Artifact、Memory 与检索索引只协调本进程，没有跨 Host 锁、consensus 或可靠消息队列。
+- **不是分布式 Runtime**。Ledger、Artifact 与 canonical Memory 由单机 Host 管理；没有跨 Host 锁、consensus、可靠消息队列或多人共享 Workspace。可选 retrieval-service 只提供独立的索引/搜索 API，不改变该边界。
 - **不是 npm 包**。所有 workspace 包保持 `private`，发布工作流产出的是带 SHA-256 的私有 bundle，不是发布、签名或 provenance。
 - **不是完整的代码理解**。CodeGraph 是静态 import/export 与顶层 symbol，不是动态调用、DI、路由或跨语言调用图。
 - **不是 token 级流式输出**。模型返回的结构化 Decision 必须整体校验通过后才进入 Ledger；不暴露、也不伪造模型私有思维链。

@@ -65,6 +65,21 @@ Current implementation and verification entry points live in the
 
 ## What this is not
 
+The current product entry points are the Web Workbench and a Host started by
+the local CLI. **The Desktop client is not implemented. Memory V2 is also not
+implemented**: the available G-21 Memory is the canonical JSONL store, BM25,
+and cited Context injection, not the V2 lifecycle governance and management
+surface.
+
+Here, “local-first” means that the Workspace, Host, and canonical Memory are
+managed by one Host on one machine. It does not mean every request stays local:
+model requests go to the configured provider, and setting
+`TRACEGRAPH_RETRIEVAL_URL` sends retrieval content to that endpoint. The
+built-in retrieval service listens on loopback by default. Pointing the CLI at
+an external endpoint does not make it a remote Runtime or a multi-user service.
+`project_id` is a retrieval partition key, not tenant authorization; the
+optional bearer token is service-wide.
+
 At this point the project is **not**:
 
 - **A production sandbox.** OS-level isolation currently wraps only the
@@ -74,9 +89,11 @@ At this point the project is **not**:
 - **Semantic retrieval.** Memory is lexical BM25 — no embeddings, vector
   database, or reranker. Paraphrase and cross-language semantic matching are
   out of scope.
-- **A distributed system.** The Ledger, Artifact Store, Memory, and retrieval
-  index coordinate within a single process. There is no cross-Host lock,
-  consensus, or reliable message queue.
+- **A distributed Runtime.** The Ledger, Artifact Store, and canonical Memory
+  are managed by the single-machine Host. There is no cross-Host lock,
+  consensus, reliable message queue, or shared multi-user Workspace. The
+  optional retrieval service only provides a separate index/search API and
+  does not change that boundary.
 - **An npm package.** Every workspace package stays `private`, and the release
   workflow does not claim or perform an npm registry publication: it produces a
   SHA-256-checksummed private workspace bundle, not a publication, signature, or

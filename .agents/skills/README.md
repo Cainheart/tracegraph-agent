@@ -24,10 +24,13 @@ task; the paired files describe the same workflow and must change together.
 | Paired docs / 双语文档 | [outlive-translate-docs-zh](outlive-translate-docs-zh/SKILL.md) | [outlive-translate-docs-en](outlive-translate-docs-en/SKILL.md) | Human semantic comparison; no pair manifest yet / 人工语义核对，尚无配对清单 |
 | Release check / 发布检查 | [outlive-release-check-zh](outlive-release-check-zh/SKILL.md) | [outlive-release-check-en](outlive-release-check-en/SKILL.md) | Private bundle checks, not publication or product proof / 私有产物检查，非发布或产品证明 |
 
-These are initial operating manuals. Format and links are checked, but the
-proposed V2 rule of two real uses has not yet been met; refine each pair after
-observed use before treating its procedure as a stable governance standard.
-这些是初版操作手册：格式和链接已校验，V2 提案要求的“两次真实使用”尚未完成。
+Entries above are accepted for use within their stated boundaries; items under
+Deferred are not callable workflows. These are initial operating manuals, and
+their presence does not prove that every procedure has been validated in use.
+Review them when real use reveals a gap;
+the V2 design recommends observing repeated use to assess maturity, but does
+not make a usage count a creation or invocation gate.
+这些是初版操作手册。文件存在不代表每项流程都经过实际验证；真实使用暴露缺口时应修订。V2 设计建议通过重复使用观察成熟度，但不把使用次数设为创建或调用门槛。
 
 ## Deferred / 暂缓
 

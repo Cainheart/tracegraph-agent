@@ -5,7 +5,7 @@ status: proposed
 scope: design-decisions
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-26
+last_reviewed: 2026-09-28
 ---
 
 # 吸收、改造、延后与拒绝矩阵
@@ -72,10 +72,10 @@ flowchart TB
 | reject permanence | 可因新证据重开，但新 Note 必须回应旧拒绝理由 |
 | source coupling | 不依赖上游私有 API/目录稳定性 |
 
-## 6. 下一轮需原型的决定
+## 6. 已接受方向下仍需验证的实现问题
 
-1. Runtime core 内部分层后，哪些边界真正值得独立 package；
-2. Desktop shell 与 Host 进程通信模型；
-3. Memory admission 的自动化范围；
-4. Recorded Session 的脱敏和 semantic diff；
-5. MCP/LSP/Extension 长生命周期 provider 的统一接口。
+1. P2 内部分层后，哪些边界满足 DEC-01 门槛并值得在 P3 升为独立 package；
+2. 按 DEC-07 实现 Electron ↔ Host framed RPC，并验证进程崩溃、重启和权限边界；
+3. 按 DEC-02/03 验证 Memory 候选审核、显式 Recall 控制、导出脱敏与撤销；不再以自动准入范围作为未决项；
+4. Recorded Session 的脱敏策略和 semantic diff 的可用性；
+5. MCP/LSP/Extension 长生命周期 Provider 的统一接口及其资源回收策略。

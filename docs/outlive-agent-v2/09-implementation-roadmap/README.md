@@ -6,7 +6,7 @@ scope: roadmap
 language: zh-CN
 parent: ../../outlive-agent-v2.md
 machine_readable: roadmap.yaml
-last_reviewed: 2026-09-26
+last_reviewed: 2026-09-29
 ---
 
 # 09 · 实施路线
@@ -75,13 +75,13 @@ P4 与 P5 可在 P2 后并行；P6 应等待 Evidence/Session/API 边界稳定�
 
 **退出标准**：未来 Agent 只读 `AGENTS.md` 和 V2 主入口即可定位 current truth、target design、owner 与验证命令。
 
-`roadmap.yaml` 的前置关系是 `GOV-001 → DOC-002 → BASE-003`，不可因入口文件已存在便跳过验收。[现有 proposed Note](../../../.agents/notes/proposed/2026-09-23-outlive-agent-v2.md)还须在 `ARCH-010` 前裁决物理升包准则和架构规则文件名；当前根规则继续有效。`architecture-policy.yaml` 只是与任务 DAG 对齐的暂定文件名，尚非已存在配置。
+`roadmap.yaml` 的前置关系是 `GOV-001 → DOC-002 → BASE-003`，不可因入口文件已存在便跳过验收。DEC-01 已裁决物理升包硬门槛、评分卡用途和 `architecture-policy.yaml` 文件名；`ARCH-010` 现已交付包清单/依赖策略检查器和 CI 接线。升包证据仍按根规则评审；后续 `ARCH-011/012/013` 与 `DOC-014` 已解除依赖阻塞。
 
 ## 4. Phase 1 · 先让架构违规可失败
 
 | Task | 动作 | 验收要点 |
 |---|---|---|
-| `ARCH-010` | 在 Note 确认后新增 `architecture-policy.yaml` 与 `verify-boundaries` | 当前 DAG 通过；反向 import、deep import、环的负例失败；删除 CI 步骤的连线测试失败 |
+| `ARCH-010` | 按已接受的 DEC-01 新增 `architecture-policy.yaml` 与 `verify-boundaries` | **已完成**：12 个 workspace packages、20 条 workspace dependencies 和 1,259 条 import references 通过；反向依赖、deep import、依赖环与移除 CI 步骤的反例均通过测试 |
 | `ARCH-011` | 建 module graph 生成器 | 移动/新增 package 未更新图时 `--check` 失败 |
 | `ARCH-012` | 建差异化不变量门禁 | 第二 Ledger writer、wire 泄漏、Projection I/O fixture 均失败 |
 | `ARCH-013` | 渐进 `legacy/managed` 标记 | 只强制已迁移模块，存量不被一次性重写 |

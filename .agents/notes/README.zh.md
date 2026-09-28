@@ -1,8 +1,8 @@
 ---
 id: agent-notes-policy
-status: proposed
+status: implemented
 owner: repository-governance
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-29
 ---
 
 # Agent Notes
@@ -12,6 +12,10 @@ last_reviewed: 2026-09-23
 Agent Note 保存一项持久仓库决策**为什么**被提出、接受、否决、取代或归档。它补充源码与测试，但不是运行时指令。
 
 ## 生命周期
+
+评审结论（例如 accepted 或 deferred）与下方 Note 生命周期彼此独立。
+设计即使已接受，在代码、测试和当前文档共同证明交付之前，仍保持
+`proposed`。不要另增评审状态字段；评审结论记录在 Note 正文和决策登记表中。
 
 ```text
 proposed ──接受且已交付──> implemented ──被取代──> archived

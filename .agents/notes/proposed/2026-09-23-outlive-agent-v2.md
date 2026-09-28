@@ -4,7 +4,7 @@ title: Adopt Outlive Agent V2 as the proposed product and architecture direction
 status: proposed
 owners: [product, architecture]
 created: 2026-09-23
-last_reviewed: 2026-09-26
+last_reviewed: 2026-09-29
 affects: [identity, runtime, memory, packages, clients, repository-governance, quality]
 supersedes: []
 ---
@@ -119,8 +119,14 @@ technical-core brand.
       references, implementations, hover); ship no language server and do not
       automatically carry current diagnostics into the target. Exclude
       CodeGraph from built-in V2 capabilities and migration targets.
-- [ ] Review the memory authority model, package-promotion gate, and Desktop
-      shell choice.
+- [x] Review and accept DEC-01–12 against DSH practices: package promotion;
+      Memory admission/export; recovery and long-job state; Profile composition;
+      Electron Desktop; telemetry; Note/Skill lifecycle; docs/Website/i18n;
+      unified package versions; and calibrated PR benchmarks. The detailed
+      decisions are recorded in the V2 decision register and owner docs.
+- [ ] Implement the accepted choices through the roadmap and move this Note to
+      `implemented/` only after source, tests, and reproducible verification
+      demonstrate the shipped behavior.
 - [ ] Complete P0 baselines and P1 architecture gates.
 - [ ] Demonstrate recovery, cancellation, and a provenance-preserving Memory
       lifecycle from evidence through correction/export.
@@ -132,11 +138,12 @@ technical-core brand.
   scope, correction arbitration, revocation, and data isolation.
 - Personal legacy export needs a threat model, privacy review, and explicit
   consent semantics before public positioning.
-- Desktop technology remains a decision, not a locked implementation choice.
+- Electron is the accepted Desktop shell; Host integration, packaging, signing,
+  updates, and release behavior remain implementation work.
 
 ## Evidence
 
 - Design set: [`docs/outlive-agent-v2.md`](../../../docs/outlive-agent-v2.md)
-- Implementation: pending
-- Tests: pending
-- Verification: pending
+- `ARCH-010` implementation: [`architecture-policy.yaml`](../../../architecture-policy.yaml), [`scripts/verify-boundaries.mjs`](../../../scripts/verify-boundaries.mjs)
+- `ARCH-010` tests: [`scripts/verify-boundaries.test.mjs`](../../../scripts/verify-boundaries.test.mjs) covers the current dependency graph, reverse dependency, deep import, package cycle, and removed CI wiring
+- `ARCH-010` verification: `pnpm verify:boundaries` passes (12 workspace packages, 20 workspace dependencies, 1,259 import references); the rest of the V2 roadmap remains pending

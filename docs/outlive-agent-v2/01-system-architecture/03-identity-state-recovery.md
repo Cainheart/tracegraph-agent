@@ -375,17 +375,19 @@ sequenceDiagram
 | 取消收敛 | Run 在 Tool / child 执行中收到取消 | 不再发新动作；等待或对账完成后才提交 `cancelled` | cancel 按钮一按就返回已取消，但子进程仍写入 |
 | 恢复内容脱敏 | 快照/Artifact 中包含凭据或后来登记为秘密的字符串 | 写入时最小化并脱敏；恢复读取时再次 scope/hash/secret 检查 | 通过 checkpoint 回放泄漏密钥 |
 
-## 10. ADR 待裁决与明确延期
+## 10. 已接受的恢复原则与实现期 ADR
 
-| 决策 | 当前建议 | 状态 |
+DEC-04 已接受下列领域原则；存储引擎、事务边界和具体错误码由 P5 实现 ADR 细化，不得改变这些不变量。
+
+| 决策 | 已接受的设计 | 实施边界 |
 |---|---|---|
-| 执行 Lease 的保护单位 | Run 级 Lease + Ledger/Stream 自己的 append 并发控制；不把二者混为 Session lease | 需要存储与长工具执行方案共同裁决 |
-| Lease 落点与原子 claim | 与 Ledger 同事务、SQLite compare-and-set 或专用 coordinator | 后续存储 ADR；先定义 fencing contract |
-| Checkpoint 持久化 | 不可变 Artifact + Ledger 中可发现的引用；Checkpoint 落后允许，Ledger 永不依赖快照 | 后续 ADR 决定 SQLite / 文件 / Artifact 索引与清理策略 |
-| 长工具执行 owner | Runtime 持有还是独立 operation worker 持有；必须先定义 Lease 交接、operation id 和 Receipt owner | 待纵向用例证明后裁决 |
-| Provider / Profile 漂移 | authority 总是重验；provider digest 不匹配时默认暂停，不静默路由 | 明确兼容策略后裁决 |
-| approval 被拒绝的终态 | 不允许继续执行；最终映射为 `failed` 还是 `cancelled` 需统一领域语义 | 待命令 / 事件契约一起裁决 |
-| 长任务状态接口 | 操作资源（Operation Resource）还是事件流（Event Stream） | 由客户端协议模块裁决；不影响这里的 Ledger 真源原则 |
-| 多人团队共享 Workspace / Memory 与跨成员 Lease | 不进入 V2，后续单独设计成员权限、共享 scope、冲突和撤销 | 已明确延期，不是本轮开放决策 |
+| 执行 Lease 的保护单位 | Run Attempt 使用单调 fencing；Ledger/Stream 自行检查 append 版本，不把二者混称为 Session Lease | P5 选择可原子 claim 的本地存储机制并做 stale-owner 负例 |
+| Lease 落点与原子 claim | 新 owner 必须取得更高 fencing epoch；旧 epoch 的 append/dispatch 一律拒绝 | 同事务、SQLite compare-and-set 或 coordinator 属实现选择，由 P5 ADR 定；不得退化成进程内布尔锁 |
+| Checkpoint 持久化 | Checkpoint 是不可变 Artifact/快照引用，只能加速重放；Ledger 永远是真相源 | P5 定存储、索引和清理窗口，并验证 checkpoint 缺失/落后时可从 Ledger 恢复 |
+| 长工具执行 owner | Operation/Job Registry 拥有身份、状态、取消与收敛观察；执行 Provider 持有自己的进程/资源，并将结果回报到同一 operation/receipt | P5 用真实长任务纵向路径验证 owner 退出、接管和清理，不另造并行 Job 真相 |
+| Provider / Profile 漂移 | 恢复时重验当前 authority；Provider/Profile 摘要不兼容时暂停并要求迁移或重新授权，禁止静默换 Provider | P5 定兼容提示与人工恢复 UX |
+| approval 被拒绝 | 记录独立的 `approval.denied` 事实并禁止该动作；Run 可选安全替代路径，无法继续时以稳定 `policy_denied` 原因失败。`cancelled` 仅表示 Run 被用户取消 | P5 与 Command/Event Schema 一起实现并加拒绝/替代路径负例 |
+| 长任务状态接口 | Operation Resource 是当前状态和重连真相；Durable Event Stream 传递可续传更新，不独占最终状态 | 与 DEC-06 同一 P6 协议实现 |
+| 多人团队共享 Workspace / Memory 与跨成员 Lease | 不进入 V2，后续单独设计成员权限、共享 scope、冲突和撤销 | 明确延期，不是 V2 实现期决策 |
 
 本模块的验收目标不是“恢复成功率看起来高”，而是能用 Ledger、Checkpoint anchor、Lease epoch、Receipt / Observation 和最终状态证明：**没有双执行、没有丢事实、没有权限复活，也没有把未知副作用伪装成成功。**

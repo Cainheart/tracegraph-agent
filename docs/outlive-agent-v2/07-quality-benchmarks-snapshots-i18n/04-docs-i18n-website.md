@@ -5,10 +5,12 @@ status: proposed
 scope: quality-docs-site
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-28
 ---
 
 # Docs、i18n 与 Website 质量设计
+
+**DEC-10 已接受：**P1–P7 完成后，在 P8 使用 VitePress 从版本化 `docs/` 构建静态文档站；站点是 Markdown 的发布投影，不是第二份文档真源。公开 API/用户指南以英文为源、中文为人工审校配对版；当前 V2 设计集保持中文源。
 
 ## 1. 发布链
 
@@ -66,7 +68,7 @@ sequenceDiagram
 | 参数 | 推荐 |
 |---|---|
 | versioning | stable + latest + explicitly archived |
-| default language | 按目标社区决定；URL 始终含可预测 locale/version |
+| default language | 当前 V2 设计文档以 `zh-CN` 为源；公开用户文档以英文为源并提供审校中文配对；URL 含可预测 locale/version |
 | external links | 定期检查，网络抖动先告警后 hard fail |
 | analytics | 默认无/隐私友好 opt-in，不采集源码或 prompt |
 | accessibility | keyboard、contrast、semantic heading 作为发布门 |
@@ -76,6 +78,8 @@ sequenceDiagram
 
 从 canonical Markdown 可重复构建站点；断链、stale translation、不可运行示例和缺失状态标记会失败；版本/语言切换不会落到错误内容；公开页面能回到源文件和对应版本。
 
-## 8. 待评审
+## 8. 已裁决方向与 P8 仍需确定的实施细节
 
-静态站点框架、域名与部署平台；公开文档 canonical 语言；是否发布 V2 proposed 设计；是否允许社区翻译，以及翻译 owner/过期策略。
+已裁决：采用 VitePress；公开 API/用户指南英文 canonical、中文人工审校配对；社区翻译可通过 PR 贡献，合并前须经过事实、术语和链接审校；Website 延至 P8 并从规范 Markdown 构建。
+
+仍需在 P8 按当时发布需求确定域名、托管/部署平台、是否公开 V2 proposed 设计，以及社区翻译的具体 owner 与过期复核流程。这些运营细节不改变 DEC-10 已接受的真源、语言和审校原则。

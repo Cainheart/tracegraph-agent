@@ -14,6 +14,7 @@
 - 了解**V2 提议中的目标**：从 `docs/outlive-agent-v2.md` 开始，只打开本次任务需要的模块。
 - 了解**仓库决策的原因**：阅读 `.agents/notes/`。
 - 了解**可重复的维护流程**：只有真实的 `SKILL.md` 已获接受，才使用 `.agents/skills/`；候选名称不是可执行指令。
+- Notes 与 Skills 的索引定义仓库内的工作流程和生命周期：[Notes 索引](.agents/notes/README.md)与 [Skills 清单](.agents/skills/README.md)。V2 目标细节见[AGENTS、Notes 与 Skills 治理](docs/outlive-agent-v2/02-repository-governance/01-agents-notes-skills.md)；它用于解释设计理由，不能证明提议中的能力已经存在。
 - `docs/outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md` 记录 TraceGraph 能力及边界如何迁移到 V2，不能据此证明某项 V2 能力已交付。
 
 没有源码、测试和对应当前模块文档的更新，就不能把提议中的设计说成现有能力。
@@ -34,6 +35,7 @@
 - 通过公开包导出向内依赖；禁止跨包深层导入。
 - 领域契约应独立于传输层、模型供应商、UI 和持久化实现。
 - 只有边界稳定、至少有两个消费者或存在强隔离理由，并具备契约测试时，才引入实体包。
+- 每个 workspace package 都必须登记在 `architecture-policy.yaml`；运行 `pnpm verify:boundaries` 检查依赖方向、已声明导入、公开导出、跨包路径和依赖环。CI 会执行此门禁。
 - 可选能力通过类型化接缝注册，不要在中央 Agent Loop 中不断增加功能专属分支。
 - 持久 schema、事件、协议、权限、包边界和 Desktop 方面的决策，实现前需要 Agent Note。
 - V2 迁移期间保留 `@tracegraph/*` 包作用域，除非另有已接受的 Note 决定修改。

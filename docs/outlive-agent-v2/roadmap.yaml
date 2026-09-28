@@ -1,7 +1,7 @@
 schema_version: 1
 roadmap: outlive-agent-v2
 status: proposed
-last_reviewed: 2026-09-26
+last_reviewed: 2026-09-28
 
 execution_rules:
   one_primary_change_type_per_task: true
@@ -70,10 +70,13 @@ tasks:
     change_type: decision
     depends_on: []
     outputs:
-      - .agents/notes/implemented-or-rejected/outlive-agent-v2
+      - .agents/notes/proposed/2026-09-23-outlive-agent-v2.md
+      - .agents/notes/proposed/2026-09-23-outlive-agent-v2.zh.md
       - docs/outlive-agent-v2/README.md
     acceptance:
       - 主设计决策逐项有结论，且 Current/Target/Deferred 边界一致
+      - DEC-01–12 已结合 DSH 源码/文档对照并记录为 accepted；接受仅表示评审通过，不表示代码实现
+      - Outlive Agent V2 Note 在实现证据齐备前继续位于 proposed，不因设计评审完成而移动到 implemented
       - 决策登记表区分已接受、待评审、已延后；未到阶段的决定有明确裁决时机，不冒充已接受
       - Outlive Agent 已确定为产品与底层 Agent Runtime/技术内核的统一名称
       - 最终 package scope 为 @outlive/*；维护者确认名称核查已完成，@tracegraph/* 仅迁移期保留且改名须独立兼容迁移方案
@@ -135,7 +138,8 @@ tasks:
     depends_on: [BASE-003]
     outputs: [architecture-policy.yaml, scripts/verify-boundaries.mjs]
     acceptance:
-      - 包升格准则和 architecture-policy.yaml 文件名经 Note 裁决
+      - 按已接受 DEC-01 实现物理升包硬门槛；策略文件名固定为 architecture-policy.yaml
+      - verify-boundaries 实际读取 architecture-policy.yaml，不存在第二个机器规则真源
       - 当前依赖图通过
       - 临时反向依赖、deep import 和依赖环失败
       - 移除 CI 中的检查步骤时连线测试失败
@@ -391,7 +395,8 @@ tasks:
       - bounded lease/backoff/idempotency
       - 主 Run settlement 不等待 extraction
       - extraction/consolidation 只产出可检查 candidate/diff；不得静默更新 active memory
-      - 本任务不新增自动召回策略；G-21 既有每轮 recall 走兼容迁移，后续默认策略由 MEM-042 使用记录与 MEM-046 可见控制面裁决
+      - 按 DEC-02 迁移 G-21：V2 默认关闭自动 Recall，用户显式开启后仅召回当前 scope/policy 允许的 active Memory；不得新增静默注入路径
+      - 所有 Candidate（包括低风险）都须用户显式审核后才能 active；retrieved/selected/adapter_invoked 状态与来源可见
 
   - id: MEM-044
     phase: P4

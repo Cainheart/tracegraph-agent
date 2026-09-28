@@ -5,7 +5,7 @@ status: proposed
 scope: change-gates
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-26
+last_reviewed: 2026-09-29
 ---
 
 # 变更门禁与发布治理
@@ -35,10 +35,10 @@ flowchart TB
 | 项目 | 当前已核实状态 | V2 目标 |
 |---|---|---|
 | CI 工作流 | [`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml) 有 `typecheck`、`test`、`evals` 三个 job | 按所有权拆分 deterministic engineering gates；Langfuse 不要求在普通 PR 在线执行 |
-| `typecheck` job | lockfile check、冻结安装、根 typecheck、release shape check | 接入实现后的文档/边界门禁；每条门禁有负例 |
+| `typecheck` job | lockfile check、冻结安装、`pnpm verify:boundaries`、根 typecheck、release shape check | 继续按 owner 接入其他确定性门禁；在线 required check 另行核验 |
 | `test` job | supply-chain check、unit/engineering test、CLI E2E、coverage 和 bounded artifact 上传 | 增量接入由任务 DAG 和风险分类指定的验证 |
 | `evals` job | 当前运行仓库内的离线 Eval；不能据此推断 V2 会保留该产品质量评测架构 | 产品/模型/Memory 质量评估交由外部 Langfuse；本地保留确定性断言 |
-| 文档/依赖/不变量门禁 | 根 package scripts 当前没有 `verify-v2-docs`、`verify-boundaries` 或 `verify-invariants` | 分别经 `DOC-002`、`ARCH-010`、`ARCH-012` 落地后才可称为已实现 |
+| 文档/依赖/不变量门禁 | 根 scripts 有 `verify:v2-docs` 和 `verify:boundaries`；前者由 `test:engineering` 调用，后者由 CI `typecheck` job 调用并有接线反例测试；尚无 `verify-invariants` | `DOC-002`、`ARCH-010` 已交付；`verify-invariants` 仍由 `ARCH-012` 落地 |
 | 分支保护 | 工作树中能查到 workflow 配置，但不能证明 GitHub branch protection 的在线 required check 设置 | 在线设置必须另外查验，不能从 YAML 推断 |
 
 CI 的 job 名称、根命令和输入可能变更；说明中的“当前”要以源文件为准。V2 文档中写出的未来 gate 名称、Snapshot/Benchmark harness、package version 方案都不是现行 CI 能力。
@@ -136,8 +136,12 @@ Evidence manifest 应引用报告而不内嵌 credential、原始私密 Prompt �
 
 Break-glass 仅用于清晰的恢复/安全性紧急修复，不是常规绕过测试的渠道。不可省略：安全与权限负例、持久格式向前/回滚路径、最小业务验证和恢复方案。每个例外需要批准人、范围、未跑门禁、用户影响、到期时间和补测任务；发布后尽快补齐并复核。若补测失败，触发回滚或限制发布，而非修改报告状态。
 
-## 8. 待评审项与验收
+## 8. 已接受的 DEC-11/12 与实施校准
 
-Benchmark 的硬阻断 runner、monorepo 版本策略、nightly/PR/release 资源预算属于不同裁决，应在对应路线阶段分别记录，不由本篇的默认值代替用户决定；导航见[决策登记表](../README.md#6-决策登记表现在要评审什么)。
+**DEC-11 已接受：**`@outlive/*` 采用同一 Monorepo 版本与统一 SemVer 发布，不采用每包独立版本或 Changesets 作为版本真源。实际包发布、注册表、凭据、签名和自动化在首批包发布任务前实现与验证。
+
+**DEC-12 已接受：**PR Benchmark 使用可复现的固定 Runner class 与受控运行时，只运行有代表性的关键路径子集；更大的场景放到 nightly/release。先观察、量化噪声，再决定哪些路径转为阻断门禁。固定 Runner 的具体规格、各场景预算和 PR/nightly/release 资源成本，要在 P7 通过实测校准，不再作为设计方向待评审。
+
+实施时仍须为每条门禁建立真实调用、正反例、owner、输入与失败语义；CI 在线 required check 状态单独验证。详细裁决见[决策登记表](../README.md#6-决策登记表现在要评审什么)。
 
 **目标验收**：任意 diff 可得到明确风险分类与门禁计划；每条阻断检查有真实调用、可重现正例/反例、owner、输入与 failure semantics；CI 在线 required check 状态单独验证；发布物能连接到源码、依赖、测试和 migration evidence；所有跳过、未知和外部评估缺席都如实报告。

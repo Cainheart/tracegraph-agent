@@ -18,7 +18,7 @@ migration_baseline:
 doc_manifest: outlive-agent-v2/manifest.yaml
 design_index: outlive-agent-v2/README.md
 roadmap_manifest: outlive-agent-v2/roadmap.yaml
-last_reviewed: 2026-09-26
+last_reviewed: 2026-09-28
 ---
 
 # Outlive Agent V2 设计总纲
@@ -287,7 +287,7 @@ flowchart TB
 - **Session / Run 是执行事实**：记录用户输入、工具动作、Receipt、Observation、验证，以及 Runtime 交给 Provider Adapter 的 Context Manifest；压缩只改变派生上下文，不抹去可恢复的执行历史。
 - **Episode 是可重建的经历派生物**：把一段有目标和结果的经历组织起来，摘要不能创造事件中不存在的事实；它不等于页面查询读模型、模型消息历史或跨 Session Memory 状态投影。
 - **Memory / Experience 是独立治理的长期知识**：各自有 owner、scope、来源、版本、时效、同意与撤销；不归属于恰好产生它的单个 Session。
-- **新提取先产生 Candidate**：用户能看到来源并检查、修改、接受或拒绝。TraceGraph G-21 已有“配置 retriever 后每轮自动 recall”；V2 不把它冒充新能力，也不贸然删除，而是先迁移出可见性、请求状态和 policy/开关，再裁决默认行为；不新增绕过这些控制的静默路径。
+- **新提取先产生 Candidate**：用户能看到来源并检查、修改、接受或拒绝。TraceGraph G-21 已有“配置 retriever 后每轮自动 Recall”；V2 不把它冒充新能力，也不贸然删除，而是先迁移出可见性、请求状态和 scope/policy 控制，并将 V2 默认值设为关闭、由用户显式开启；不新增绕过这些控制的静默路径。
 - **区分检索、选中、请求提交**：`MemoryUse` 绑定 Runtime 交给 Provider Adapter 的请求内容，并记录提交/响应状态；它不证明远端模型接受、读取或依赖了某条记忆。“随后回答”只表示时间关联，不声称因果。
 - **记忆可延续，权限不延续**：跨会话、跨模型或 Capsule 导入都重新验证当前用户、workspace、policy 与 consent；历史 approval、credential、身份代理权不随记忆继承。
 
@@ -336,12 +336,12 @@ V2 的亮点不是“功能最多”，而是把这些可靠性承诺连成一�
 5. **每个副作用有业务 Receipt**：CLI exit 0、HTTP 200 或模型一句“完成了”都不是业务成功。
 6. **每个重要承诺有反向测试**：不仅证明正确路径通过，还要临时破坏不变量并证明门禁 `exit 1`。
 
-## 11. 本轮已评审的十五个决策
+## 11. 本轮已评审的十五个产品与架构总纲决策
 
 - [x] 接受 **Outlive Agent** 同时作为产品与底层 Agent Runtime/技术内核名称；TraceGraph Agent 仅指现有仓库及迁移前状态。
 - [x] 接受“记忆可延续，权限不延续”为核心安全原则。
 - [x] 接受 Session/Run 执行真相与跨 Session Memory 真相分离、共享事件基础设施的边界。
-- [x] 接受 Evidence → Episode → Candidate → 人可见准入 → Memory/Experience → Context Manifest/MemoryUse → 新证据的闭环；G-21 既有自动 recall 先兼容迁移、补可见性与请求状态，再裁决默认策略，不扩张无审计路径。
+- [x] 接受 Evidence → Episode → Candidate → 人可见准入 → Memory/Experience → Context Manifest/MemoryUse → 新证据的闭环；G-21 既有自动 Recall 先兼容迁移并补齐可见性、请求状态、scope/policy 与逐轮来源记录，V2 默认关闭自动 Recall，用户显式开启后才按当前权限召回，不扩张静默注入路径。
 - [x] 接受先内部成层、再按升包门槛物理拆包，不一次创建全部目标包。
 - [x] 接受最终 package scope 为 `@outlive/*`；商标、域名、包名与主要社交账号核查已由维护者确认完成；`@tracegraph/*` 仅迁移期保留，改名仍需独立兼容迁移方案。
 - [x] 接受 Outlive Agent 定位为用户直接使用的通用 Agent 产品与 Runtime；编码是重要场景而非产品边界，Claude Code、Codex、DSH 是产品形态参照，具体能力分阶段建设。
@@ -354,4 +354,4 @@ V2 的亮点不是“功能最多”，而是把这些可靠性承诺连成一�
 - [x] 接受“人格复刻/身后代理”不进入 V2 MVP，只先做工程记忆与用户主动策展的 Legacy Capsule。
 - [x] 接受多人团队共享 Workspace/Memory 不进入 V2，留待后续版本；这与 V2 内部的多 Agent 协作能力不是同一范围。
 
-以上十五个产品与架构决策均已通过评审。这里的“接受”确认的是 V2 目标设计方向，不代表对应功能已经实现；总纲和子文档的 `status: proposed` 仍表示目标方案尚待实施，状态须依据实际实现证据另行更新。后续尚待裁决的项目、推荐方案和裁决时机统一见[决策登记表](outlive-agent-v2/README.md#6-决策登记表现在要评审什么)，避免把已接受方向与阶段性开放问题混在一起。
+以上十五个产品与架构总纲决策均已通过评审。另有详细治理与实现策略 DEC-01–12，已于 2026-09-28 结合 DSH 实践对照并接受，见[决策登记表](outlive-agent-v2/README.md#6-决策登记表现在要评审什么)。这里的“接受”确认 V2 目标设计方向，不代表对应功能已经实现；总纲、子文档及 Agent Note 的 `status: proposed` 仍表示目标方案待路线任务落地，只有代码、测试和可复现验证证明交付后才能改成 `implemented`。其他阶段性开放事项与实施校准见登记表及路线文档。

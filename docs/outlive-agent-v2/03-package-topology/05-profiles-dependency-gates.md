@@ -5,7 +5,7 @@ status: proposed
 scope: package-governance
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-24
+last_reviewed: 2026-09-29
 ---
 
 # Profiles、依赖门禁与升包决策
@@ -38,7 +38,7 @@ boot/profile → all public composition ports（仅组合根例外）
 
 ## 3. 升包评分卡
 
-当前硬门槛来自根 [`AGENTS.md`](../../../AGENTS.md)：边界稳定，且有至少两个真实 consumer 或硬隔离理由，并有 contract tests。下表只用于**提案排序**，不能因为得分达到阈值就越过硬门槛；变更准则须由[proposed Note](../../../.agents/notes/proposed/2026-09-23-outlive-agent-v2.md)裁决后同步所有 owner 文档。
+**DEC-01 已接受**：物理升包硬门槛继续采用根 [`AGENTS.md`](../../../AGENTS.md) 的规则——边界稳定，且有至少两个真实 Consumer 或明确的硬隔离理由，并有契约测试。对照 DSH 的 package policy 与包设计指南，Outlive 保留这条适合本仓库的门槛；“至少两个 Consumer”是 Outlive 自己的明确规则，不声称是 DSH 的通用门槛。下表只用于**提案排序**，不能因为得分达到阈值就越过硬门槛。`ARCH-010` 已把当前 workspace package inventory、依赖方向和公开导出约束接入机器门禁；是否满足边界稳定、consumer/隔离理由和契约测试，仍须在升包评审中提供证据。本设计文档整体仍为 `proposed`。
 
 | 信号 | 分值 |
 |---|---:|
@@ -73,7 +73,7 @@ sequenceDiagram
 
 ## 5. 门禁实现
 
-目标文件名沿用 [roadmap.yaml](../roadmap.yaml) 的 `architecture-policy.yaml`，在 `ARCH-010` 前经 Note 确认；不另建 `architecture-rules.yaml` 形成双真源。它描述 roots、allowed/forbidden edges、exception owner 和 expiry。检查器解析 workspace/package imports 与相对路径；动态注册仍需 manifest 校验。每个例外必须有 Note、owner 和过期条件。
+**DEC-01 已接受 `architecture-policy.yaml` 作为唯一机器可读策略源**，与 [roadmap.yaml](../roadmap.yaml) 的任务输出保持一致；不另建 `architecture-rules.yaml` 形成双真源。`scripts/verify-boundaries.mjs` 实际读取该文件，核对 workspace 包清单、manifest 与源码依赖、公开 `exports`、跨包相对路径和依赖环；默认拒绝未允许的边。例外必须提供唯一 ID、owner、Note 路径和有效期。根 CI 的 `typecheck` job 运行 `pnpm verify:boundaries`，工程测试验证删除该步骤会失败。当前策略覆盖仓库现有 12 个 workspace packages；动态注册和更细粒度的逻辑模块治理不在此检查器范围内。升包仍须按 DEC-01 提供边界稳定、消费者/隔离理由和契约测试证据。策略文件与检查器已由 `ARCH-010` 交付；本设计文档其余目标仍为 `proposed`。
 
 ## 6. Profile 与 Bundle
 

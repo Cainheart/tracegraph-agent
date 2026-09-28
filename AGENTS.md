@@ -19,6 +19,11 @@ evidence, and verification rules; it does not replace those parent rules.
 - For **repeatable maintenance procedures**, use `.agents/skills/` only after a
   real `SKILL.md` has been accepted. A planned skill name is not an executable
   instruction.
+- The Notes and Skills indexes define their repository workflows and
+  lifecycle: [.agents/notes/README.md](.agents/notes/README.md) and
+  [.agents/skills/README.md](.agents/skills/README.md). The detailed V2 target
+  is [AGENTS, Notes and Skills governance](docs/outlive-agent-v2/02-repository-governance/01-agents-notes-skills.md);
+  read it for rationale, not as evidence that a proposed capability exists.
 - `docs/outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md` records how
   TraceGraph capabilities and boundaries migrate into V2. It is not proof that
   a V2 capability has shipped.
@@ -52,6 +57,9 @@ tests, and an updated owning module document.
   persistence implementations.
 - Introduce a physical package only after its boundary is stable, has at least
   two consumers or a hard isolation reason, and has contract tests.
+- Register every workspace package in `architecture-policy.yaml`; run
+  `pnpm verify:boundaries` to check dependency direction, declared imports,
+  public exports, cross-package paths, and cycles. CI runs this gate.
 - Register optional capabilities through typed seams. Do not grow new
   feature-specific branches in the central Agent Loop.
 - Persistent schema, event, protocol, authority, package-boundary, and Desktop

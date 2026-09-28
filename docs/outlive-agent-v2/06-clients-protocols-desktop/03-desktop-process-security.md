@@ -5,7 +5,7 @@ status: proposed
 scope: desktop-architecture
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-23
+last_reviewed: 2026-09-28
 ---
 
 # Desktop 进程与安全设计
@@ -72,9 +72,8 @@ Host 崩溃由 Main 检测并展示 recovery；有频率上限，避免崩溃循
 | renderer CSP | default-deny，按资源显式开放 |
 | restart policy | bounded exponential backoff + crash report |
 | background runs | 默认可继续，但托盘/状态明确且可停止 |
-| shell choice | Electron/Tauri 等作为待评审实现，不改变上述边界 |
+| shell choice | DEC-07 已接受 Electron；Main 只负责窗口、OS 集成和 Host 生命周期，不拥有 Agent/Session 业务状态 |
 
 ## 6. 验收
 
 安全测试覆盖恶意 Renderer payload、任意 IPC、路径逃逸、token 重放、外链/导航、Host crash/restart、renderer reload、窗口关闭和 update 签名失败。Desktop 与 Web 使用相同 client-store fixtures。
-

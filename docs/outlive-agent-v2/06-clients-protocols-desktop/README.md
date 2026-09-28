@@ -5,7 +5,7 @@ status: proposed
 scope: clients
 language: zh-CN
 parent: ../../outlive-agent-v2.md
-last_reviewed: 2026-09-26
+last_reviewed: 2026-09-28
 ---
 
 # 06 · 三种产品入口、内部协议与 Desktop
@@ -46,6 +46,8 @@ flowchart LR
 Web 与 Desktop 的交互形态以 DSH Agent 工作台为直接参照；按用户使用感受，它接近 Codex 一类完整 Agent 工作台。目标是复用熟悉的 Workspace/Session 导航、中心对话与运行活动、结构化工具/审批呈现、按需上下文面板和变更审阅，承载编码及其他工具型任务。Desktop 复用 Web 的主要工作台 UI，只额外提供窗口、菜单、原生目录/文件操作等平台能力；不维护另一套业务交互。
 
 借鉴的是产品信息架构与可见工作流，不是照搬 DSH 的代码或插件实现。Outlive 特有的 Evidence 来源、Memory 生命周期与本次 MemoryUse 必须按 Outlive 契约呈现；不能因参考 DSH 就暗示它已有相同记忆管理能力。详细交互目标见 [CLI 与 Web UI 设计](02-cli-web-ui.md)，源码观察见[设计依据](../08-reference-lineage/01-source-observations.md)。
+
+**DEC-07 已接受 Electron 作为 Desktop 外壳**，采用独立 Outlive Host、私有 framed RPC 与 Web 共享工作台 UI。此为目标实现选择，不表示仓库已有 Electron Desktop；Host 启动、签名打包、自动更新和发布流程仍须按路线任务实现与验证。
 
 ## 2. 共享协议核心
 

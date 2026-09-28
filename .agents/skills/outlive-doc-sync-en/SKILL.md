@@ -8,7 +8,7 @@ description: Synchronize truth sources and inspect links, status, and existing d
 Distinguish [current module docs](../../../docs/modules/) from the [proposed V2 design](../../../docs/outlive-agent-v2.md). Source and tests establish current capabilities; V2 text does not prove that a feature shipped. The Chinese equivalent is [outlive-doc-sync-zh](../outlive-doc-sync-zh/SKILL.md). Run commands from the repository root.
 
 1. Identify each changed document's owner and inbound links. After an implementation change, update the owning module doc, then consider docs/README.md, README.md, README.en.md, and DIRECTORY.md. When moving a V2 module, synchronize docs/outlive-agent-v2/README.md, manifest.yaml, roadmap.yaml, and old-path links. Never replace current facts with target-state prose.
-2. For new or moved files, check relative links and anchors, frontmatter id/status/parent, manifest coverage, and roadmap task IDs/dependencies. If the DAG changes, verify every dependency exists, IDs are unique, and no cycle exists. This repository does not yet have a complete automated link/YAML/DAG checker; report any unverified item honestly.
+2. For new or moved files, check relative links and anchors, frontmatter id/status/parent, manifest coverage, and roadmap task IDs/dependencies. Run `pnpm verify:v2-docs` to validate the V2 manifest paths/statuses and roadmap IDs/dependency DAG; it does not validate every Markdown link or translation's meaning.
 3. Run the existing documentation-consistency eval:
 
        pnpm exec vitest run --config vitest.evals.config.ts evals/docs

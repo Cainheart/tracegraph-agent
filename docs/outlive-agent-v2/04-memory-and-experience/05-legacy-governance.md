@@ -43,6 +43,8 @@ Manifest 区分内容创建者、导出操作者、被描述主体和授权主�
 
 ## 3. 导出流程
 
+DEC-03 已接受：默认仅导出用户选择的 Memory/Experience、来源引用与校验信息；原始证据逐项 opt-in，且先完成脱敏、密钥扫描和第三方资料排除检查。导出包不包含任何可继承的 credential、approval 或权限。
+
 ```mermaid
 sequenceDiagram
   participant U as User

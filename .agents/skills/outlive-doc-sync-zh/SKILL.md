@@ -8,7 +8,7 @@ description: TraceGraph 或 Outlive 的当前模块文档、V2 设计文档、�
 先区分[当前模块说明](../../../docs/modules/)与[提案中的 V2 设计](../../../docs/outlive-agent-v2.md)。源码和测试决定当前能力；V2 文档不能反向证明功能已实现。英文等价入口见 [outlive-doc-sync-en](../outlive-doc-sync-en/SKILL.md)。在仓库根目录执行命令。
 
 1. 找出改动文档的 owner 与入站链接。当前实现变化时更新对应模块文档，再检查 docs/README.md、README.md、README.en.md、DIRECTORY.md 是否需要改；V2 模块迁移时同步 docs/outlive-agent-v2/README.md、manifest.yaml、roadmap.yaml 与旧路径引用。不要用一个目标状态段落覆盖当前事实。
-2. 对新增/移动文件，逐个核对相对链接和锚点、frontmatter 的 id/status/parent、manifest 收录与 roadmap task ID/依赖。若改动 DAG，检查依赖都存在、没有重复 ID 与循环；本仓库还没有自动化全量链接/YAML/DAG 检查器，未检查项目必须如实列为未验证。
+2. 对新增/移动文件，逐个核对相对链接和锚点、frontmatter 的 id/status/parent、manifest 收录与 roadmap task ID/依赖。运行 `pnpm verify:v2-docs` 校验 V2 manifest 路径/状态及 roadmap ID/依赖 DAG；它不检查所有 Markdown 链接或翻译语义。
 3. 运行现有的文档一致性评估：
 
        pnpm exec vitest run --config vitest.evals.config.ts evals/docs

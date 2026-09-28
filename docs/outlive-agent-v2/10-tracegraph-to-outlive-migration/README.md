@@ -11,7 +11,7 @@ replaces:
   - verification-map.md
   - known-limitations-map.json
   - KNOWN_LIMITATIONS.md
-last_reviewed: 2026-09-25
+last_reviewed: 2026-09-29
 ---
 
 # 10 · TraceGraph → Outlive Agent 迁移基线
@@ -102,6 +102,11 @@ flowchart LR
 
 | Boundary ID | 当前边界 | V2 决定 |
 |---|---|---|
+| `LIM-LOCAL-FIRST` | 当前 Workspace、Host、Ledger、Artifact 与 canonical Memory 由单机 Host 管理；模型请求按配置发往 provider，检索可选走单独的 retrieval endpoint | Keep boundary：V2 仍为 local-first；provider/retrieval 网络访问不等于远程 Runtime 或多人共享 Workspace |
+| `LIM-DESKTOP` | 当前仓库只有 Web 与 CLI Host，没有 Desktop client | Target（未实现）：Desktop 是 V2 客户端目标，不能列为当前入口或已交付能力 |
+| `LIM-MEMORY-V2` | 当前 G-21 Memory 已实现；V2 lifecycle、MemoryUse 治理与管理面未实现 | Target（未实现）：按 `MEM-040`～`MEM-048` 逐步迁移；当前 G-21 事实与 V2 设计分开记录 |
+| `LIM-REMOTE-RETRIEVAL-SCOPE` | 可选 retrieval-service 只处理索引/搜索请求；`project_id` 是逻辑分区而非租户授权，bearer token 是服务级凭据 | Keep boundary：外部 endpoint 只承担显式配置的检索请求；需要逐租户隔离时另行设计授权/部署边界 |
+| `LIM-SANDBOX-SCOPE` | G-13 仅对内置 `run_test` child 生效；provider HTTP、Host、Ledger/Artifact 与 `commit_patch` 不在 child sandbox 内 | Keep boundary：不能把请求 preset/report 宣称为 Host/机器隔离；平台限制见 `LIM-SANDBOX-PORTABILITY` |
 | `LIM-SANDBOX-PORTABILITY` | Linux/Windows 受限 native sandbox backend 未实现 | Deferred：等平台 provider 和 conformance 设计成熟；继续 fail closed |
 | `LIM-PROVIDER-NETWORK` | provider 出站无 allowlist proxy | Deferred：单独 Security Note，不夹在 Memory MVP 中 |
 | `LIM-MULTIHOST-COORDINATION` | 无跨 Host consensus、锁和命令协调 | Rejected for V2 MVP：保持 local-first |
