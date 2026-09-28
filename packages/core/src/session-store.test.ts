@@ -269,7 +269,7 @@ describe("JsonlSessionStore", () => {
     expect(secondRoot.sessions[0]?.parent_session_id).toBeUndefined();
   });
 
-  it("enforces a single writer lease and refreshes heartbeats automatically", async () => {
+  it("enforces a single writer lease and refreshes heartbeats automatically", { timeout: 15_000 }, async () => {
     const root = await temporaryRoot();
     const sessionsRoot = join(root, "sessions");
     const first = new JsonlSessionStore(sessionsRoot, {
@@ -286,10 +286,14 @@ describe("JsonlSessionStore", () => {
       code: "session_lease_conflict",
     });
     const lockPath = `${await onlySessionFile(root)}.lock`;
-    const before = JSON.parse(await readFile(lockPath, "utf8")) as { heartbeat_at: string };
-    await new Promise((resolve) => setTimeout(resolve, 60));
-    const after = JSON.parse(await readFile(lockPath, "utf8")) as { heartbeat_at: string };
-    expect(Date.parse(after.heartbeat_at)).toBeGreaterThan(Date.parse(before.heartbeat_at));
+    const heartbeatAt = async (): Promise<number> => {
+      const lock = JSON.parse(await readFile(lockPath, "utf8")) as { heartbeat_at: string };
+      return Date.parse(lock.heartbeat_at);
+    };
+    const before = await heartbeatAt();
+    await waitUntil(async () => (await heartbeatAt()) > before);
+    const after = await heartbeatAt();
+    expect(after).toBeGreaterThan(before);
     await lease.release();
   });
 
@@ -431,6 +435,15 @@ async function onlySessionFile(root: string): Promise<string> {
     .filter((name) => name.endsWith(".jsonl"));
   if (files.length !== 1) throw new Error("expected one session file");
   return join(projectRoot, files[0]!);
+}
+
+async function waitUntil(predicate: () => boolean | Promise<boolean>): Promise<void> {
+  const deadline = Date.now() + 8_000;
+  while (Date.now() < deadline) {
+    if (await predicate()) return;
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+  throw new Error("Timed out waiting for the lease heartbeat to advance");
 }
 
 async function runChild(command: string, args: readonly string[]): Promise<string> {

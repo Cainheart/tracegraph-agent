@@ -72,6 +72,15 @@ function server(name: string, required = false): McpServerConfig {
   };
 }
 
+async function waitUntil(predicate: () => boolean): Promise<void> {
+  const deadline = Date.now() + 8_000;
+  while (Date.now() < deadline) {
+    if (predicate()) return;
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+  throw new Error("Timed out waiting for the crashed MCP server to be marked failed");
+}
+
 describe("McpManager", () => {
   it("keeps an optional missing process degraded and records failure", async () => {
     const manager = new McpManager({
@@ -191,7 +200,7 @@ describe("McpManager", () => {
     ]));
   });
 
-  it("moves a ready server to degraded when its process exits unexpectedly", async () => {
+  it("moves a ready server to degraded when its process exits unexpectedly", { timeout: 15_000 }, async () => {
     const fixture = [
       "const readline = require('node:readline');",
       "const rl = readline.createInterface({ input: process.stdin });",
@@ -210,7 +219,8 @@ describe("McpManager", () => {
     await expect(manager.start()).resolves.toMatchObject({
       servers: [{ name: "crashing", state: "ready", tool_count: 1 }],
     });
-    await new Promise((resolve) => setTimeout(resolve, 120));
+    // The fixture exits shortly after tools/list; wait for the terminal failure event instead of a fixed sleep.
+    await waitUntil(() => manager.history().some((event) => event.type === "mcp.server_failed"));
     expect(manager.snapshot().servers[0]).toMatchObject({ name: "crashing", state: "degraded", tool_count: 0 });
     expect(manager.history().map((event) => event.type)).toEqual(expect.arrayContaining([
       "mcp.tools_changed",
