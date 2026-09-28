@@ -75,7 +75,7 @@ P4 与 P5 可在 P2 后并行；P6 应等待 Evidence/Session/API 边界稳定�
 
 **退出标准**：未来 Agent 只读 `AGENTS.md` 和 V2 主入口即可定位 current truth、target design、owner 与验证命令。
 
-`roadmap.yaml` 的前置关系是 `GOV-001 → DOC-002 → BASE-003`，不可因入口文件已存在便跳过验收。DEC-01 已裁决物理升包硬门槛、评分卡用途和 `architecture-policy.yaml` 文件名；`ARCH-010/011/012` 已交付包边界、生成图和差异化不变量门禁并接入 CI。升包证据仍按根规则评审；`ARCH-013` 与 `DOC-014` 已解除依赖阻塞。
+`roadmap.yaml` 的前置关系是 `GOV-001 → DOC-002 → BASE-003`，不可因入口文件已存在便跳过验收。DEC-01 已裁决物理升包硬门槛、评分卡用途和 `architecture-policy.yaml` 文件名；`ARCH-010/011/012/013` 已交付包边界、生成图、差异化不变量门禁和渐进式包治理，并接入 CI。升包证据仍按根规则评审；`DOC-014` 已解除依赖阻塞。
 
 ## 4. Phase 1 · 先让架构违规可失败
 
@@ -84,7 +84,7 @@ P4 与 P5 可在 P2 后并行；P6 应等待 Evidence/Session/API 边界稳定�
 | `ARCH-010` | 按已接受的 DEC-01 新增 `architecture-policy.yaml` 与 `verify-boundaries` | **已完成**：12 个 workspace packages、20 条 workspace dependencies 和 1,259 条 import references 通过；反向依赖、deep import、依赖环与移除 CI 步骤的反例均通过测试 |
 | `ARCH-011` | 建 module graph 生成器 | **已完成**：`pnpm graph:modules` 从 workspace manifest 与源码 imports 生成包/模块 Mermaid 图；`pnpm graph:modules:check` 在 package/module 图漂移时失败，并已接入 CI `typecheck` job |
 | `ARCH-012` | 建差异化不变量门禁 | **已完成**：`pnpm verify:invariants` 锁定唯一 `JsonlEventLedger` writer、过滤 `_internal_` wire data 与无 I/O Projection；第二 writer、私有数据直出和 Projection I/O 反向 fixture 均失败，并已接入 CI `typecheck` job |
-| `ARCH-013` | 渐进 `legacy/managed` 标记 | 只强制已迁移模块，存量不被一次性重写 |
+| `ARCH-013` | 渐进 `legacy/managed` 标记 | **已完成**：3 个 workspace packages 标为 `managed` 并强制规则；其余 9 个标为 `legacy`，违规只生成带迁移 owner 的 warning；managed/legacy 反例与缺少 owner 均有测试 |
 | `DOC-014` | package README contract gate | 缺 purpose/state/model-effect/verification/limitations 时失败 |
 
 **退出标准**：错误依赖、第二真源和文档漂移不再依赖人工发现。

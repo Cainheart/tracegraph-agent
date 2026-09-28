@@ -35,10 +35,10 @@ flowchart TB
 | 项目 | 当前已核实状态 | V2 目标 |
 |---|---|---|
 | CI 工作流 | [`.github/workflows/ci.yml`](../../../.github/workflows/ci.yml) 有 `typecheck`、`test`、`evals` 三个 job | 按所有权拆分 deterministic engineering gates；Langfuse 不要求在普通 PR 在线执行 |
-| `typecheck` job | lockfile check、冻结安装、`pnpm verify:boundaries`、根 typecheck、release shape check | 继续按 owner 接入其他确定性门禁；在线 required check 另行核验 |
+| `typecheck` job | lockfile check、冻结安装、`pnpm verify:boundaries`、module graph freshness、`pnpm verify:invariants`、根 typecheck、release shape check | 在线 required check 另行核验 |
 | `test` job | supply-chain check、unit/engineering test、CLI E2E、coverage 和 bounded artifact 上传 | 增量接入由任务 DAG 和风险分类指定的验证 |
 | `evals` job | 当前运行仓库内的离线 Eval；不能据此推断 V2 会保留该产品质量评测架构 | 产品/模型/Memory 质量评估交由外部 Langfuse；本地保留确定性断言 |
-| 文档/依赖/不变量门禁 | 根 scripts 有 `verify:v2-docs` 和 `verify:boundaries`；前者由 `test:engineering` 调用，后者由 CI `typecheck` job 调用并有接线反例测试；尚无 `verify-invariants` | `DOC-002`、`ARCH-010` 已交付；`verify-invariants` 仍由 `ARCH-012` 落地 |
+| 文档/依赖/不变量门禁 | 根 scripts 有 `verify:v2-docs`、`verify:boundaries`、module graph check、`verify:invariants`；`test:engineering` 覆盖 docs 与各门禁反例，CI `typecheck` job 执行边界、图新鲜度与不变量检查 | `DOC-002`、`ARCH-010/011/012/013` 已交付；分支保护设置仍需在线核验 |
 | 分支保护 | 工作树中能查到 workflow 配置，但不能证明 GitHub branch protection 的在线 required check 设置 | 在线设置必须另外查验，不能从 YAML 推断 |
 
 CI 的 job 名称、根命令和输入可能变更；说明中的“当前”要以源文件为准。V2 文档中写出的未来 gate 名称、Snapshot/Benchmark harness、package version 方案都不是现行 CI 能力。

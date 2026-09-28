@@ -36,6 +36,7 @@
 - 领域契约应独立于传输层、模型供应商、UI 和持久化实现。
 - 只有边界稳定、至少有两个消费者或存在强隔离理由，并具备契约测试时，才引入实体包。
 - 每个 workspace package 都必须登记在 `architecture-policy.yaml`；运行 `pnpm verify:boundaries` 检查依赖方向、已声明导入、公开导出、跨包路径和依赖环。CI 会执行此门禁。
+- 每个包策略项必须明确 `governance`：`managed` 违规会阻断；`legacy` 违规会带必填的 `migration_owner` 报告。策略格式和包清单错误始终阻断。
 - 可选能力通过类型化接缝注册，不要在中央 Agent Loop 中不断增加功能专属分支。
 - 持久 schema、事件、协议、权限、包边界和 Desktop 方面的决策，实现前需要 Agent Note。
 - V2 迁移期间保留 `@tracegraph/*` 包作用域，除非另有已接受的 Note 决定修改。

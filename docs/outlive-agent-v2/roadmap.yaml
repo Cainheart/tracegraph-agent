@@ -170,10 +170,10 @@ tasks:
     owner: architecture
     change_type: config
     depends_on: [ARCH-010]
-    outputs: [architecture-policy.yaml]
+    outputs: [architecture-policy.yaml, scripts/verify-boundaries.mjs]
     acceptance:
-      - managed 模块强制所有规则
-      - legacy 模块只报告且有迁移 owner
+      - managed workspace package 的边界违规阻断检查
+      - legacy workspace package 的边界违规只报告，且必须登记 migration_owner
 
   - id: DOC-014
     phase: P1

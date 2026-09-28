@@ -60,6 +60,9 @@ tests, and an updated owning module document.
 - Register every workspace package in `architecture-policy.yaml`; run
   `pnpm verify:boundaries` to check dependency direction, declared imports,
   public exports, cross-package paths, and cycles. CI runs this gate.
+- Every package policy entry has an explicit `governance`: `managed` violations
+  block; `legacy` violations are reported with a required `migration_owner`.
+  Policy-format and inventory errors always block.
 - Register optional capabilities through typed seams. Do not grow new
   feature-specific branches in the central Agent Loop.
 - Persistent schema, event, protocol, authority, package-boundary, and Desktop

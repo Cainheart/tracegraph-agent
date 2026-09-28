@@ -16,11 +16,12 @@ const IGNORED_DIRECTORIES = new Set([
 export async function verifyBoundaries(root = REPOSITORY_ROOT, options = {}) {
   const repositoryRoot = resolve(root);
   const errors = [];
+  const warnings = [];
   const today = options.today ?? new Date().toISOString().slice(0, 10);
   const policy = await readYaml(repositoryRoot, POLICY_PATH, errors);
   const workspace = await readYaml(repositoryRoot, WORKSPACE_PATH, errors);
   if (policy === undefined || workspace === undefined) {
-    return result(errors, 0, 0, 0);
+    return result(errors, warnings, 0, 0, 0);
   }
 
   const parsedPolicy = validatePolicy(policy, errors);
@@ -48,19 +49,17 @@ export async function verifyBoundaries(root = REPOSITORY_ROOT, options = {}) {
       const edgeKey = edgeId(source.name, dependency);
       declaredEdges.add(edgeKey);
       graph.get(source.name)?.add(dependency);
-      checkEdge(source.name, dependency, source.manifestPath, parsedPolicy, exceptions, errors, "manifest dependency");
+      checkEdge(source.name, dependency, source.manifestPath, parsedPolicy, exceptions, errors, warnings, "manifest dependency");
     }
   }
 
   if (parsedPolicy.global.forbid_cycles) {
     const cycle = findCycle(graph);
     if (cycle !== undefined) {
-      addError(
-        errors,
-        "BOUNDARY_PACKAGE_CYCLE",
-        POLICY_PATH,
-        `Workspace dependency cycle: ${cycle.join(" -> ")}`,
-      );
+      const message = `Workspace dependency cycle: ${cycle.join(" -> ")}`;
+      for (const name of new Set(cycle.slice(0, -1))) {
+        reportPackageIssue(policyByName.get(name), errors, warnings, "BOUNDARY_PACKAGE_CYCLE", POLICY_PATH, message);
+      }
     }
   }
 
@@ -69,25 +68,30 @@ export async function verifyBoundaries(root = REPOSITORY_ROOT, options = {}) {
     const files = await collectSourceFiles(source.rootPath);
     for (const file of files) {
       const text = await readFile(file, "utf8");
-      for (const item of collectModuleSpecifiers(text, file, errors, repositoryRoot)) {
+      const sourceErrors = [];
+      const specifiers = collectModuleSpecifiers(text, file, sourceErrors, repositoryRoot);
+      for (const error of sourceErrors) {
+        reportPackageIssue(policyByName.get(source.name), errors, warnings, error.code, error.location, error.message);
+      }
+      for (const item of specifiers) {
         importCount += 1;
         const target = resolveWorkspaceSpecifier(item.specifier, packagesByName);
         if (target !== undefined) {
           if (parsedPolicy.global.forbid_deep_imports && !isPublicExport(target.manifest.exports, target.subpath)) {
-            addError(
-              errors,
+            reportPackageIssue(
+              policyByName.get(source.name), errors, warnings,
               "BOUNDARY_DEEP_IMPORT",
               item.location,
               `${item.specifier} subpath ${target.subpath} is not declared by ${target.name}'s package exports (keys: ${Object.keys(target.manifest.exports ?? {}).join(",")})`,
             );
           }
           if (target.name === source.name) {
-            addError(errors, "BOUNDARY_SELF_PACKAGE_IMPORT", item.location, `${source.name} must use package-relative imports within itself`);
+            reportPackageIssue(policyByName.get(source.name), errors, warnings, "BOUNDARY_SELF_PACKAGE_IMPORT", item.location, `${source.name} must use package-relative imports within itself`);
           } else {
-            checkEdge(source.name, target.name, item.location, parsedPolicy, exceptions, errors, "source import");
+            checkEdge(source.name, target.name, item.location, parsedPolicy, exceptions, errors, warnings, "source import");
             if (!declaredEdges.has(edgeId(source.name, target.name))) {
-              addError(
-                errors,
+              reportPackageIssue(
+                policyByName.get(source.name), errors, warnings,
                 "BOUNDARY_DEPENDENCY_UNDECLARED",
                 item.location,
                 `${source.name} imports ${target.name} without declaring it as a workspace dependency`,
@@ -98,7 +102,7 @@ export async function verifyBoundaries(root = REPOSITORY_ROOT, options = {}) {
         }
 
         if (item.specifier.startsWith("@tracegraph/")) {
-          addError(errors, "BOUNDARY_WORKSPACE_PACKAGE_UNKNOWN", item.location, `Unknown workspace import ${item.specifier}`);
+          reportPackageIssue(policyByName.get(source.name), errors, warnings, "BOUNDARY_WORKSPACE_PACKAGE_UNKNOWN", item.location, `Unknown workspace import ${item.specifier}`);
           continue;
         }
 
@@ -106,8 +110,8 @@ export async function verifyBoundaries(root = REPOSITORY_ROOT, options = {}) {
           const resolved = resolve(dirname(file), item.specifier);
           const targetPackage = containingPackage(resolved, packages);
           if (targetPackage !== undefined && targetPackage.name !== source.name) {
-            addError(
-              errors,
+            reportPackageIssue(
+              policyByName.get(source.name), errors, warnings,
               "BOUNDARY_CROSS_PACKAGE_RELATIVE_IMPORT",
               item.location,
               `${source.name} reaches ${targetPackage.name} by relative path; import its public package export instead`,
@@ -118,7 +122,7 @@ export async function verifyBoundaries(root = REPOSITORY_ROOT, options = {}) {
     }
   }
 
-  return result(errors, packages.length, declaredEdges.size, importCount);
+  return result(errors, warnings, packages.length, declaredEdges.size, importCount);
 }
 
 export function hasBoundaryCheckInCi(workflowText) {
@@ -135,10 +139,11 @@ export function hasBoundaryCheckInCi(workflowText) {
   }
 }
 
-function result(errors, packageCount, dependencyCount, importCount) {
+function result(errors, warnings, packageCount, dependencyCount, importCount) {
   return {
     ok: errors.length === 0,
     errors,
+    warnings,
     packageCount,
     dependencyCount,
     importCount,
@@ -170,7 +175,7 @@ function validatePolicy(value, errors) {
     return { global: { forbid_cycles: true, forbid_deep_imports: true }, packages: [], exceptions: [] };
   }
   validateKeys(value, ["version", "global", "packages", "exceptions"], ["version", "global", "packages", "exceptions"], POLICY_PATH, errors);
-  if (value.version !== 1) addError(errors, "BOUNDARY_POLICY_VERSION", POLICY_PATH, "version must be 1");
+  if (value.version !== 2) addError(errors, "BOUNDARY_POLICY_VERSION", POLICY_PATH, "version must be 2");
 
   const global = value.global;
   if (!isRecord(global)) {
@@ -192,7 +197,7 @@ function validatePolicy(value, errors) {
         addError(errors, "BOUNDARY_POLICY_PACKAGE_INVALID", location, "Each package entry must be a mapping");
         continue;
       }
-      validateKeys(entry, ["name", "root", "allowed", "forbidden"], ["name", "root", "allowed", "forbidden"], location, errors);
+      validateKeys(entry, ["name", "root", "allowed", "forbidden", "governance"], ["name", "root", "allowed", "forbidden", "governance", "migration_owner"], location, errors);
       if (!isNonEmptyString(entry.name) || !entry.name.startsWith("@tracegraph/")) {
         addError(errors, "BOUNDARY_POLICY_PACKAGE_INVALID", location, "Package name must be a non-empty @tracegraph/* identifier");
         continue;
@@ -201,11 +206,30 @@ function validatePolicy(value, errors) {
       if (packageRoot === undefined) addError(errors, "BOUNDARY_POLICY_PACKAGE_INVALID", location, "root must be a safe repository-relative path");
       const allowed = stringList(entry.allowed, location, "allowed", errors);
       const forbidden = stringList(entry.forbidden, location, "forbidden", errors);
+      const governance = entry.governance === "legacy" || entry.governance === "managed" ? entry.governance : "managed";
+      if (entry.governance !== "legacy" && entry.governance !== "managed") {
+        addError(errors, "BOUNDARY_POLICY_GOVERNANCE_INVALID", location, "governance must be either managed or legacy");
+      }
+      const migrationOwner = entry.migration_owner;
+      if (governance === "legacy" && !isNonEmptyString(migrationOwner)) {
+        addError(errors, "BOUNDARY_POLICY_MIGRATION_OWNER_MISSING", location, "legacy packages require a non-empty migration_owner");
+      }
+      if (governance === "managed" && Object.hasOwn(entry, "migration_owner")) {
+        addError(errors, "BOUNDARY_POLICY_MIGRATION_OWNER_UNEXPECTED", location, "migration_owner is only valid for legacy packages");
+      }
       for (const dependency of allowed) {
         if (dependency === entry.name) addError(errors, "BOUNDARY_POLICY_SELF_EDGE", location, `${entry.name} cannot allow a self dependency`);
         if (forbidden.includes(dependency)) addError(errors, "BOUNDARY_POLICY_EDGE_CONFLICT", location, `${dependency} is both allowed and forbidden`);
       }
-      packages.push({ name: entry.name, root: packageRoot ?? "", allowed, forbidden, location });
+      packages.push({
+        name: entry.name,
+        root: packageRoot ?? "",
+        allowed,
+        forbidden,
+        governance,
+        ...(governance === "legacy" && isNonEmptyString(migrationOwner) ? { migrationOwner: migrationOwner.trim() } : {}),
+        location,
+      });
     }
   }
 
@@ -417,18 +441,27 @@ function collectWorkspaceDependencies(manifest, packagesByName) {
   return [...dependencies].sort();
 }
 
-function checkEdge(from, to, location, policy, exceptions, errors, source) {
+function checkEdge(from, to, location, policy, exceptions, errors, warnings, source) {
   const fromPolicy = policy.packages.find((item) => item.name === from);
   if (fromPolicy === undefined) {
     addError(errors, "BOUNDARY_POLICY_PACKAGE_MISSING", location, `No architecture policy entry for ${from}`);
     return;
   }
   if (fromPolicy.forbidden.includes(to)) {
-    addError(errors, "BOUNDARY_EDGE_FORBIDDEN", location, `${source} ${from} -> ${to} is explicitly forbidden`);
+    reportPackageIssue(fromPolicy, errors, warnings, "BOUNDARY_EDGE_FORBIDDEN", location, `${source} ${from} -> ${to} is explicitly forbidden`);
     return;
   }
   if (fromPolicy.allowed.includes(to) || exceptions.has(edgeId(from, to))) return;
-  addError(errors, "BOUNDARY_EDGE_NOT_ALLOWED", location, `${source} ${from} -> ${to} is not allowed by ${POLICY_PATH}`);
+  reportPackageIssue(fromPolicy, errors, warnings, "BOUNDARY_EDGE_NOT_ALLOWED", location, `${source} ${from} -> ${to} is not allowed by ${POLICY_PATH}`);
+}
+
+function reportPackageIssue(policyPackage, errors, warnings, code, location, message) {
+  const diagnostic = { code, location, message };
+  if (policyPackage?.governance === "legacy") {
+    warnings.push({ ...diagnostic, migrationOwner: policyPackage.migrationOwner });
+    return;
+  }
+  errors.push(diagnostic);
 }
 
 function findCycle(graph) {
@@ -732,8 +765,11 @@ async function runCli(args) {
   }
   const root = rootIndex === -1 ? REPOSITORY_ROOT : resolve(args[rootIndex + 1]);
   const outcome = await verifyBoundaries(root);
+  for (const warning of outcome.warnings) {
+    process.stderr.write(`[${warning.code}] ${warning.location}: ${warning.message} (legacy report-only; migration owner: ${warning.migrationOwner})\n`);
+  }
   if (outcome.ok) {
-    process.stdout.write(`Architecture boundaries verified: ${outcome.packageCount} packages, ${outcome.dependencyCount} workspace dependencies, ${outcome.importCount} import references.\n`);
+    process.stdout.write(`Architecture boundaries verified: ${outcome.packageCount} packages, ${outcome.dependencyCount} workspace dependencies, ${outcome.importCount} import references; ${outcome.warnings.length} legacy findings reported.\n`);
     return;
   }
   for (const error of outcome.errors) process.stderr.write(`[${error.code}] ${error.location}: ${error.message}\n`);

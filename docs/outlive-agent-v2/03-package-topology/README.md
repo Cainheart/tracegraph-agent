@@ -374,22 +374,24 @@ Bundle 可以贡献一组能力，例如 `coding-base`、`memory-local`、`web-a
 
 ## 19. 架构门禁
 
-**DEC-01 已接受**：唯一机器可读边界来源是 `architecture-policy.yaml`（与 [roadmap.yaml](../roadmap.yaml) 一致）；不得并存第二份 `architecture-rules.yaml`。`ARCH-010` 已实现该策略和检查器，当前 schema 为：
+**DEC-01 已接受**：唯一机器可读边界来源是 `architecture-policy.yaml`（与 [roadmap.yaml](../roadmap.yaml) 一致）；不得并存第二份 `architecture-rules.yaml`。`ARCH-010/013` 已实现该策略、检查器和渐进治理，当前 schema v2 为：
 
 ```yaml
-version: 1
+version: 2
 global:
   forbid_cycles: true
   forbid_deep_imports: true
 packages:
   - name: '@tracegraph/cli'
     root: apps/cli
+    governance: legacy
+    migration_owner: cli-runtime
     allowed: ['@tracegraph/core']
     forbidden: ['@tracegraph/web']
 exceptions: []
 ```
 
-每个 workspace package 都必须在 `packages` 登记其仓库相对 root、允许边和禁止边；未列入 `allowed` 的边默认拒绝。例外需有 owner、Note 和过期日期。`pnpm verify:boundaries` 当前检查包依赖图、源码 imports、公开 exports、跨包相对路径和依赖环，CI 会运行此命令。策略中的 `legacy`/`managed` 模块迁移态和逻辑 module 级规则属于后续扩展；当前 checker 不接受或执行这些字段。
+每个 workspace package 都必须在 `packages` 登记其仓库相对 root、`governance`、允许边和禁止边；`governance` 取 `managed` 或 `legacy`，未列入 `allowed` 的边默认属于违规。`managed` 包的违规阻断检查；`legacy` 包的违规以 warning 报告，并必须登记非空 `migration_owner`。策略格式或清单错误仍然阻断。例外需有 owner、Note 和过期日期。`pnpm verify:boundaries` 检查包依赖图、源码 imports、公开 exports、跨包相对路径和依赖环，CI 会运行此命令。当前状态粒度是 workspace package；更细的逻辑 module 级治理仍属后续扩展。
 
 ## 20. 包拓扑验收
 
