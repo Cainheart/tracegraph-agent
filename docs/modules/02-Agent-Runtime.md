@@ -1,9 +1,9 @@
 # 模块 02：Agent Runtime
 
 > 定位：整个系统的执行内核。模型循环、动作闸门、审批、Patch 提交、Context 组装、事件写入全部在这里发生。
-> 代码：`packages/core/src/runtime.ts`、`subagent.ts`、`memory.ts`、`runtime-telemetry.ts`、`policy-engine.ts`、`approval-token-store.ts`、`sandbox/`、`action-wal.ts`、`session-store.ts`、`session-controller.ts`
+> 代码：`packages/core/src/domains/runtime/{runtime,runtime-telemetry}.ts`、`kernel/{types,crypto,workspace,registration,raw-tool-result}.ts`、`kernel/tool/definition.ts`、`domains/extensions/{registration,manager}.ts`、`domains/tools/{registry,executor,policy-engine,approval-token-store,tool-output-limits}.ts`、`domains/{context/{context,context-compaction,token-meter},credentials/credentials,evidence/{action-wal,attachment,event-ledger,projection,replay},memory/memory,model/{fake-model,model-provider},session/{session-store,session-controller},skill/skill,subagent/subagent,team/team,todo/todo}.ts`、`seams/{sandbox,lsp,mcp}/`
 > 契约：`packages/contracts/src/{commands,action,tool,action-wal,event,context,memory,token,sandbox,permission,projection,session,steering,subagent,telemetry}.ts` 与 `packages/telemetry/src/`
-> 最后核对：2026-09-19（对照源码核对主循环、审批、命令、Sandbox、Steering、Telemetry 与投影路径）
+> 最后核对：2026-09-29（CORE-023 Extension focused 3 个文件、24 项测试通过；Core build/typecheck 通过）
 > 实现状态：**已验证**（当前精确用例数以 Core/Test-support 测试命令为准）
 
 ---
@@ -42,7 +42,7 @@
 | `rollbackPolicy` | | `{enabled:false, allowForce:false}` | 显式 rollback 总开关及非 disposable 的 force 策略 |
 | `actionCommitFaultInjector` | | `undefined` | 仅用于自动化注入四个 commit 边界崩溃点 |
 
-```89:90:packages/core/src/runtime.ts
+```89:90:packages/core/src/domains/runtime/runtime.ts
 /** Default guard against an unbounded model/tool loop. This is not a token limit. */
 export const DEFAULT_MAX_TURNS = 12;
 ```
@@ -94,7 +94,7 @@ export const DEFAULT_MAX_TURNS = 12;
 
 `getProjection()`、`replay()`、`replayAt()` 与 `replayDiff()` 都直接读账本；后两者额外把 Session/Run/sequence 作为强制范围并验证 hash chain：
 
-```485:491:packages/core/src/runtime.ts
+```485:491:packages/core/src/domains/runtime/runtime.ts
   async getProjection(runId: string): Promise<RunProjection> {
     const events = await this.#ledger.list(runId);
     if (events.length === 0) {
@@ -230,7 +230,7 @@ Context contribution 被转成有界、untrusted 的 retrieval-style surface，�
 
 循环条件四项同时成立才继续：
 
-```2201:2206:packages/core/src/runtime.ts
+```2201:2206:packages/core/src/domains/runtime/runtime.ts
     while (
       !state.stopped
       && state.pendingPatch === undefined
@@ -282,7 +282,7 @@ Context contribution 被转成有界、untrusted 的 retrieval-style surface，�
 
 ### 4.2 第 12 步的凭据闸门
 
-```759:765:packages/core/src/runtime.ts
+```759:765:packages/core/src/domains/runtime/runtime.ts
         const serializedDecision = JSON.stringify(decision);
         if (
           redactSecrets(serializedDecision) !== serializedDecision
@@ -304,7 +304,7 @@ usage append 失败不会改变已有模型响应或 Run 结果；因此它是 d
 
 ### 4.4 第 25 步的原子性
 
-```932:940:packages/core/src/runtime.ts
+```932:940:packages/core/src/domains/runtime/runtime.ts
         state.pendingPatch = { pendingApproval, previewCall: call };
         await this.#append(state, {
           type: "approval.requested",
@@ -354,7 +354,7 @@ usage append 失败不会改变已有模型响应或 Run 结果；因此它是 d
 
 第 15 步的四字段校验值得单独记住：
 
-```405:412:packages/core/src/runtime.ts
+```405:412:packages/core/src/domains/runtime/runtime.ts
         if (
           delta.project_id !== state.projectId
           || delta.base_snapshot_id !== state.baseGraph.snapshot_id
@@ -405,7 +405,7 @@ restore attempt 在真正修改 before 状态前先以 `started` 落 Recovery Le
 
 ### 6.2 动作身份由 runtime 拥有
 
-```142:148:packages/core/src/runtime.ts
+```142:148:packages/core/src/domains/runtime/runtime.ts
   /**
    * Number of runtime-owned action identities minted for this run.  The model
    * supplies an action_id as a correlation hint, but the Harness owns the
@@ -419,7 +419,7 @@ restore attempt 在真正修改 before 状态前先以 `started` 落 Recovery Le
 
 ### 6.3 重复动作拦截
 
-```844:861:packages/core/src/runtime.ts
+```844:861:packages/core/src/domains/runtime/runtime.ts
       const actionSignature = commandSignature({
         tool_name: call.tool_name,
         arguments: call.arguments,

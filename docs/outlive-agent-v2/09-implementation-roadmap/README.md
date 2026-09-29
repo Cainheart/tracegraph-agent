@@ -85,7 +85,7 @@ P4 与 P5 可在 P2 后并行；P6 应等待 Evidence/Session/API 边界稳定�
 | `ARCH-011` | 建 module graph 生成器 | **已完成**：`pnpm graph:modules` 从 workspace manifest 与源码 imports 生成包/模块 Mermaid 图；`pnpm graph:modules:check` 在 package/module 图漂移时失败，并已接入 CI `typecheck` job |
 | `ARCH-012` | 建差异化不变量门禁 | **已完成**：`pnpm verify:invariants` 锁定唯一 `JsonlEventLedger` writer、过滤 `_internal_` wire data 与无 I/O Projection；第二 writer、私有数据直出和 Projection I/O 反向 fixture 均失败，并已接入 CI `typecheck` job |
 | `ARCH-013` | 渐进 `legacy/managed` 标记 | **已完成**：3 个 workspace packages 标为 `managed` 并强制规则；其余 9 个标为 `legacy`，违规只生成带迁移 owner 的 warning；managed/legacy 反例与缺少 owner 均有测试 |
-| `DOC-014` | package README contract gate | 缺 purpose/state/model-effect/verification/limitations 时失败 |
+| `DOC-014` | package README contract gate | **已完成**：12 个 workspace package 均提供 Purpose、Public API、Dependencies、State ownership、Extension points、Model effect、Verification、Known limitations；`pnpm verify:package-readmes` 校验缺失/空章节并接入 CI `typecheck` job |
 
 **退出标准**：错误依赖、第二真源和文档漂移不再依赖人工发现。
 
@@ -100,13 +100,13 @@ P4 与 P5 可在 P2 后并行；P6 应等待 Evidence/Session/API 边界稳定�
 | `CORE-020` | 提取 `kernel`：brand/types/crypto/workspace 与注册接口 | 不改导出名/行为 |
 | `CORE-021` | 将 sandbox/lsp/mcp 移入 `seams/`，消除其对 domains 的反向依赖 | 不先升包 |
 | `CORE-022` | 将 tool registry 的 Definition 与 Executor/Policy 分开 | 不新增工具 |
-| `CORE-023` | 将 Extension registration 与 manager lifecycle 分开 | 不开放任意代码执行 |
+| `CORE-023` | **已完成**：Extension registration contracts 与 manager lifecycle 分入 `domains/extensions/`；包根 API 保持兼容 | 不开放任意代码执行 |
 
 ### 5.2 P2B · Domains 与 Runtime 缩小
 
 | Task | 内容 | 验收 |
 |---|---|---|
-| `CORE-024` | evidence/session/context/model/memory/team 等目录化 | 顶层平铺清零；行为测试不变 |
+| `CORE-024` | evidence/session/context/model/memory/team 等目录化 | **已完成**：Core `src/` 顶层只保留 `index.ts` 与 `kernel/`、`domains/`、`seams/`；行为测试与 CLI E2E、Ledger replay 验证通过 |
 | `CORE-025` | 提取 Run/Turn/Step 状态机与纯函数 | canonical event 顺序不变 |
 | `CORE-026` | 提取 Tool/Context/Evidence service façade | `runtime.ts` 不访问其内部文件 |
 | `CORE-027` | feature drivers 通过扩展点注册 | 禁止新增 feature-specific loop 分支 |

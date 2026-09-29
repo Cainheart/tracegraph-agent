@@ -88,11 +88,11 @@ flowchart LR
 
 | Family | 目标职责 | 优先级 | 当前主要来源 |
 |---|---|---:|---|
-| `foundation/` | contracts、brand、hash、time、bounded values | P0 | `packages/contracts`、`core/crypto.ts` |
+| `foundation/` | contracts、brand、hash、time、bounded values | P0 | `packages/contracts`、`core/kernel/crypto.ts` |
 | `evidence/` | ledger、receipt、artifact、projection、replay、WAL、bundle | P0 | `packages/core` |
 | `session/` | session model、format、persistence、query、migration | P0 | `core/session-*` |
 | `core/` | Agent/Run/Turn/Step、scope、最小 loop | P0 | `core/runtime.ts` |
-| `tool/` | registry、executor、policy、approval、output | P0 | `tool-registry.ts` 等 |
+| `tool/` | registry、executor、policy、approval、output | P0 | `core/kernel/tool/`、`core/domains/tools/`（CORE-022）；尚未提升为物理包 |
 | `context/` | assembly、provenance、token、compaction、spill | P1 | `context*.ts` |
 | `memory/` | lifecycle、retrieval、experience、context bridge、export | P1 差异化 | `memory.ts` + retrieval |
 | `llm/` | model seam、provider adapters、retry、usage | P1 | `model-provider.ts` |

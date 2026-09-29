@@ -1,7 +1,7 @@
 # 模块 17：Skill 系统（G-10）
 
 > 定位：把 Agent Skill 作为可审计的本地 Markdown 能力目录，先向模型公开有限的目录元数据，再由 `load_skill` 按需载入正文；Skill 不能扩大 G-06 权限，只能在当前 Run 内进一步收紧工具面。
-> 代码：`packages/contracts/src/skill.ts`、`packages/core/src/skill.ts`、`packages/core/src/tool-registry.ts`、`packages/core/src/context.ts`、`packages/core/src/context-compaction.ts`、`packages/core/src/runtime.ts`、`apps/cli/src/skill-command.ts`、`packages/host/src/index.ts`、`packages/sdk/src/index.ts`、`apps/web/src/components/SettingsPanel.tsx`
+> 代码：`packages/contracts/src/skill.ts`、`packages/core/src/domains/skill/skill.ts`、`packages/core/src/domains/tools/registry.ts`、`packages/core/src/domains/context/context.ts`、`packages/core/src/domains/context/context-compaction.ts`、`packages/core/src/domains/runtime/runtime.ts`、`apps/cli/src/skill-command.ts`、`packages/host/src/index.ts`、`packages/sdk/src/index.ts`、`apps/web/src/components/SettingsPanel.tsx`
 > 实现状态：**已实现/已验证**；G-10 追加 3 个 canonical Event，G-11 再追加 5 个 MCP Event，G-12 再追加 2 个 LSP Event，G-20 再追加 2 个 CodeIntel Event，当前为 102 种 Event、20 个内置 Tool（含 `load_skill`）；`PROJECTOR_VERSION = "tracegraph.projector.v9"`。
 
 ## 1. 文件布局与安全边界
@@ -80,7 +80,7 @@ tracegraph skills validate --project-root <path> --user-root <path>
 | 层 | 主要证据 |
 |---|---|
 | Contracts | `packages/contracts/src/skill-g10.test.ts`：名称/路径、strict snapshot、诊断/冲突、三种 Event |
-| Core | `packages/core/src/skill.test.ts`：坏 frontmatter 跳过、项目优先、目录渐进披露、正文进入 tool Context、白名单拒绝伪造调用 |
+| Core | `packages/core/src/domains/skill/skill.test.ts`：坏 frontmatter 跳过、项目优先、目录渐进披露、正文进入 tool Context、白名单拒绝伪造调用 |
 | Tool/Context | `tool-registry.test.ts`、Context/Token tests：20-tool surface、`load_skill` output bound、Manifest/Observation 链路 |
 | Host/SDK/CLI/Web | `/api/skills`、typed `listSkills()`、`tracegraph skills list|validate` 与 Settings loaded-skills/conflicts 面板 |
 | Evals/docs | `evals/docs/implementation-consistency.eval.ts` 核对 100 Event、20 Tool、G-10/G-11/G-12 文件、路由和 CLI 命令 |

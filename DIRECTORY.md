@@ -222,41 +222,23 @@ tracegraph-agent/
 │   │   ├── package.json          依赖 contracts + telemetry + zod
 │   │   ├── tsconfig.json / tsconfig.test.json
 │   │   └── src/
-│   │       ├── runtime.ts        AgentRuntime：Run 生命周期、Plan/Execute/Todo、Decision/Policy/Approval、G-07 有界父子 Run、G-08 Agent Team、G-14 steering、G-17 extension lease/hook/context/error/recovery、G-18 attachment、批调度、Sandbox、WAL、Memory 与 Telemetry
-│   │       ├── attachment.ts     G-18 私有两阶段 staging/claim、MIME magic/hash/scope/TTL、去重、PDF 文本提取、Artifact 与 content lookup
-│   │       ├── subagent.ts       G-07 Host-owned profile registry、role hash/工具白名单解析、公平并发 permit pool 与预算默认值
-│   │       ├── team.ts           G-08 root-Ledger Team service：命令幂等/内部命名空间、actor 权限、mailbox claim、optimistic task version、owner child evidence resolver、heartbeat sweep 与 member-loss 原子 reopen
-│   │       ├── replay.ts         G-23 完整 Ledger 校验后按 Run/sequence 投影、稳定 snapshot hash 与同次读取的正反向结构化 diff
-│   │       ├── runtime-telemetry.ts G-15 提交后派生器：只从已落 Ledger 的 SessionEvent 白名单字段生成 bounded span/metric/log；去重与关联表有界，不转发 Event summary/任意 data
-│   │       ├── todo.ts           TodoDomainService：账本重放、依赖图/迁移、eligible 独立执行证据校验、命令幂等与确定性成环路径
-│   │       ├── action-wal.ts     ActionWal/RecoveryLedger：私有 before-image、hash-chained phase/attempt、durable replace 与报告导出
-│   │       ├── session-store.ts  JsonlSessionStore：v0→v1、引用索引、列表/搜索/原子改名/软删、单写者 lease 与 tail repair
-│   │       ├── session-controller.ts 启动恢复编排：tail 审计、已注册 workspace 的 Action WAL 对账、无终态 Run 中断与安全 resume
-│   │       ├── extension.ts      G-17 六 seam ExtensionManager：可逆注册、生命周期 timeout、LIFO dispose、atomic reload rollback、Run lease、snapshot、错误隔离与有界贡献
-│   │       ├── tool-registry.ts  六个最小核心工具 + 两个可逆内置扩展贡献的十三个 Artifact/Todo/子 Agent/Team 工具；`team_read` 无损分页与写工具紧凑回执；默认 19-Tool 组装
-│   │       ├── tool-output-limits.ts G-02/G-05 共用的逐工具 raw/summary/facts/result 字节上限；`todo_read` / `team_read` content/result 为 512/640 KiB、模型 excerpt 为 4,000 UTF-8 bytes
-│   │       ├── sandbox/          G-13 子进程边界（4 个实现文件 + 1 个用例）
-│   │       │   ├── index.ts      汇总再导出（platform/process-runner/runner/seatbelt）
-│   │       │   ├── platform.ts   probeNativeSandbox、validateSandboxPaths（symlink/越界校验）、disabled/unavailable report、SandboxPathError
-│   │       │   ├── seatbelt.ts   macOS `/usr/bin/sandbox-exec` profile 生成与参数拼装、SeatbeltParameterError
-│   │       │   ├── process-runner.ts runBoundedProcess：独立进程组、超时、输出上限与 SIGTERM→SIGKILL 回收
-│   │       │   └── runner.ts     SandboxRunner/NativeSandboxRunner/createSandboxRunner：组装 probe + profile + bounded process 并产出 versioned report
-│   │       ├── context.ts        DeterministicContextBuilder、同步兼容入口与 async buildWithStrategies、DEFAULT_CONTEXT_POLICY、preflight 对账
-│   │       ├── context-compaction.ts G-02 有序 surface strategy chain、原文归档/可见 locator、结构化 summary 校验、timeout/降级与 Context nodes
-│   │       ├── token-meter.ts    CalibratedTokenMeter：可选 section TokenCounter、provider/model 滑动校准、缓存失效与安全原子落盘
-│   │       ├── credentials.ts    CredentialStore、macOS Keychain、非 macOS 0600 私有文件、只读环境层、引用解析与迁移审计
-│   │       ├── policy-engine.ts  G-06 生效策略推导与规则求值：hard constraint、Host/project 分层规则、稳定排序与 policy/action digest；恢复可保留已给定 digest
-│   │       ├── approval-token-store.ts G-06 进程内一次性审批令牌：同步原子 issue/consume、TTL/容量上限、精确绑定 project/run/action/approval/digest/scope，失配先消费再拒绝
-│   │       ├── model-provider.ts ConfigurableModelAdapter：动态模型工具白名单、单/批 Decision、独立 Context summary、显式 image capability 与 OpenAI/Anthropic 图片 block、协议/推理强度/脱敏/JSON-SSE usage
-│   │       ├── fake-model.ts     DeterministicFakeModel：无需 API Key 的确定性模型（Core Gate）
-│   │       ├── event-ledger.ts   JsonlEventLedger：append-only、hash chain、同 Run `appendAtomic()` 单次 durable replace、不变量校验、损坏检测与错误类型
-│   │       ├── projection.ts     projectRun 事件→RunProjection 投影（含 strict attachment proof replay）、toWireEvent 出口脱敏、ProjectionError
-│   │       ├── artifact-store.ts Artifact 落盘/读取：文本/JSON 与 G-18 binary bytes，公开 1 MiB、Runtime internal 8 MiB 单工件硬上限，scope/hash/MIME/脱敏与权限校验
-│   │       ├── crypto.ts         sha256、id 工厂、stableStringify、密钥与敏感文本/结构化数据脱敏
-│   │       ├── workspace.ts      工作区句柄创建（只读/受管/fixture）、路径边界校验、受控临时目录清理
-│   │       ├── memory.ts         G-21 JsonlMemoryStore 与 MemoryManager：候选评估/去重、canonical record、索引更新、scope/expiry 过滤、预算 recall 与 durable 事件
-│   │       ├── types.ts          ModelAdapter/ModelInput/ContextSummaryInput/ModelObservation/ToolDefinition/CodeGraphProvider/AgentRuntimeHooks 等内部类型
-│   │       └── index.ts          汇总再导出（Runtime、Extension、Context、Tools、Policy、Approval Token、Ledger、Artifacts、Workspace、Memory、Provider、Session、Sandbox、WAL、Token...）
+│   │       ├── index.ts          稳定包级 barrel；转发各域 API
+│   │       ├── kernel/           Core 稳定基础类型、Tool 契约、crypto、workspace 与注册 ports
+│   │       ├── seams/            sandbox/、lsp/、mcp/ 外部能力边界及其用例
+│   │       └── domains/          按职责拥有实现与 focused tests；无平铺 feature 模块
+│   │           ├── context/      context builder、compaction、token meter
+│   │           ├── credentials/  CredentialStore 与凭据迁移/引用解析
+│   │           ├── evidence/     Action WAL、Artifact/attachment、Event Ledger、Projection、Replay
+│   │           ├── extensions/   registration contracts、lifecycle manager 与测试
+│   │           ├── memory/       JsonlMemoryStore、MemoryManager 与测试
+│   │           ├── model/        Configurable adapter、fake model 与协议用例
+│   │           ├── runtime/      AgentRuntime、提交后 Telemetry 派生器与 Runtime 集成用例
+│   │           ├── session/      JSONL store、启动恢复 controller 与测试
+│   │           ├── skill/        Skill registry 与测试
+│   │           ├── subagent/     Host-owned profile registry 与委派预算
+│   │           ├── team/         root-Ledger Team service 与测试
+│   │           ├── todo/         TodoDomainService 与测试
+│   │           └── tools/        Definition composition、Registry、Executor、Policy、Approval 与 output limits
 │   │
 │   ├── retrieval/                G-21 零外部服务依赖的本地 Markdown/JSONL/BM25 检索包
 │   │   ├── package.json          build/typecheck/test:unit；运行时只依赖 Node 标准库
@@ -347,29 +329,29 @@ tracegraph-agent/
 | 想改什么 | 主要落点 |
 |---|---|
 | 命令/请求/事件/投影的数据结构 | `packages/contracts/src/*.ts` |
-| Agent 主循环、审批、Patch 提交、事件写入 | `packages/core/src/runtime.ts` |
-| 新增或收紧工具契约、权限与限额 | `packages/contracts/src/{action,tool}.ts`、`packages/core/src/{tool-registry,tool-output-limits,runtime}.ts` |
-| 子进程 Sandbox mode/report、平台探测与 Seatbelt | `packages/contracts/src/sandbox.ts`、`packages/core/src/sandbox/`、`runtime.ts`、`tool-registry.ts`、`apps/cli/src/sandbox-config.ts` |
-| 权限预设、策略规则求值、审批令牌与 Host/Web 配置（G-06） | `packages/contracts/src/{permission,action,event,projection,session}.ts`、`packages/core/src/{policy-engine,approval-token-store,runtime}.ts`、`apps/cli/src/permission-config.ts`、`packages/{host,sdk}/src/index.ts`、`apps/web/src/live-client.ts`、`apps/web/src/App.tsx`、`apps/web/src/components/SettingsPanel.tsx` |
-| 有界子 Agent 委派、受信 profile、独立 child Session/Ledger 与只读回放（G-07） | `packages/contracts/src/{subagent,event,projection,session,steering}.ts`、`packages/core/src/{subagent,runtime,projection}.ts`、`apps/cli/src/{index,subagent-config}.ts`、`packages/{host,sdk}/src/index.ts`、`apps/web/src/{client,live-client,model}.ts`、`apps/web/src/components/Trajectory.tsx`、`evals/runtime/subagent-delegation.eval.ts` |
-| Agent Team roster/mailbox/task board、heartbeat/sweep、CLI 运维入口与用户 steer/cancel（G-08） | `packages/contracts/src/{team,event,projection,action}.ts`、`packages/core/src/{team,runtime,projection,tool-registry}.ts`、`apps/cli/src/{index,team-command}.ts`、`packages/{host,sdk}/src/index.ts`、`apps/web/src/{App,client,live-client,model}.ts`、`apps/web/src/components/TeamPanel.tsx`、`evals/runtime/agent-team.eval.ts` |
-| 附件 staging/claim、图片能力、PDF 文本与 Web 卡片（G-18） | `packages/contracts/src/{attachment,commands,event,projection,common}.ts`、`packages/core/src/{attachment,artifact-store,model-provider,runtime,projection}.ts`、`apps/cli/src/index.ts`、`packages/{host,sdk}/src/index.ts`、`apps/web/src/{App,client,live-client,model}.ts`、`apps/web/src/components/{AttachmentComposer,Trajectory}.tsx`、`evals/runtime/attachment-multimodal.eval.ts` |
-| Plan Mode、Todo 依赖/证据、审批与面板（G-09） | `packages/contracts/src/{todo,commands,event,projection,session}.ts`、`packages/core/src/{todo,runtime,projection,policy-engine,tool-registry}.ts`、`packages/{host,sdk}/src/index.ts`、`apps/web/src/App.tsx`、`apps/web/src/{client,live-client,model}.ts`、`apps/web/src/components/{TodoPanel,PlanApprovalBanner}.tsx` |
-| 运行中 steering、durable input queue、安全点消费与取消（G-14） | `packages/contracts/src/{steering,event,projection,commands}.ts`、`packages/core/src/{runtime,projection}.ts`、`packages/{host,sdk}/src/index.ts`、`apps/web/src/App.tsx`、`apps/web/src/{client,live-client,model}.ts`、`apps/web/src/components/SteeringComposer.tsx` |
-| Telemetry 事件/sink/config、Ledger 提交后派生、只读状态（G-15） | `packages/telemetry/src/`、`packages/contracts/src/telemetry.ts`、`packages/core/src/{runtime,runtime-telemetry}.ts`、`apps/cli/src/{index,telemetry-config}.ts`、`packages/{host,sdk}/src/index.ts`、`apps/web/src/{client.ts,live-client.ts,App.tsx}`、`apps/web/src/components/SettingsPanel.tsx` |
+| Agent 主循环、审批、Patch 提交、事件写入 | `packages/core/src/domains/runtime/runtime.ts` |
+| 新增或收紧工具契约、权限与限额 | `packages/contracts/src/{action,tool}.ts`、`packages/core/src/domains/tools/{registry,tool-output-limits}.ts`、`packages/core/src/domains/runtime/runtime.ts` |
+| 子进程 Sandbox mode/report、平台探测与 Seatbelt | `packages/contracts/src/sandbox.ts`、`packages/core/src/seams/sandbox/`、`packages/core/src/domains/runtime/runtime.ts`、`packages/core/src/domains/tools/registry.ts`、`apps/cli/src/sandbox-config.ts` |
+| 权限预设、策略规则求值、审批令牌与 Host/Web 配置（G-06） | `packages/contracts/src/{permission,action,event,projection,session}.ts`、`packages/core/src/domains/tools/{policy-engine,approval-token-store}.ts`、`packages/core/src/domains/runtime/runtime.ts`、`apps/cli/src/permission-config.ts`、`packages/{host,sdk}/src/index.ts`、`apps/web/src/live-client.ts`、`apps/web/src/App.tsx`、`apps/web/src/components/SettingsPanel.tsx` |
+| 有界子 Agent 委派、受信 profile、独立 child Session/Ledger 与只读回放（G-07） | `packages/contracts/src/{subagent,event,projection,session,steering}.ts`、`packages/core/src/domains/{subagent/subagent,runtime/runtime,evidence/projection}.ts`、`apps/cli/src/{index,subagent-config}.ts`、`packages/{host,sdk}/src/index.ts`、`apps/web/src/{client,live-client,model}.ts`、`apps/web/src/components/Trajectory.tsx`、`evals/runtime/subagent-delegation.eval.ts` |
+| Agent Team roster/mailbox/task board、heartbeat/sweep、CLI 运维入口与用户 steer/cancel（G-08） | `packages/contracts/src/{team,event,projection,action}.ts`、`packages/core/src/domains/{team/team,runtime/runtime,evidence/projection,tools/registry}.ts`、`apps/cli/src/{index,team-command}.ts`、`packages/{host,sdk}/src/index.ts`、`apps/web/src/{App,client,live-client,model}.ts`、`apps/web/src/components/TeamPanel.tsx`、`evals/runtime/agent-team.eval.ts` |
+| 附件 staging/claim、图片能力、PDF 文本与 Web 卡片（G-18） | `packages/contracts/src/{attachment,commands,event,projection,common}.ts`、`packages/core/src/domains/{evidence/{attachment,artifact-store,projection},model/model-provider,runtime/runtime}.ts`、`apps/cli/src/index.ts`、`packages/{host,sdk}/src/index.ts`、`apps/web/src/{App,client,live-client,model}.ts`、`apps/web/src/components/{AttachmentComposer,Trajectory}.tsx`、`evals/runtime/attachment-multimodal.eval.ts` |
+| Plan Mode、Todo 依赖/证据、审批与面板（G-09） | `packages/contracts/src/{todo,commands,event,projection,session}.ts`、`packages/core/src/domains/{todo/todo,runtime/runtime,evidence/projection,tools/{policy-engine,registry}}.ts`、`packages/{host,sdk}/src/index.ts`、`apps/web/src/App.tsx`、`apps/web/src/{client,live-client,model}.ts`、`apps/web/src/components/{TodoPanel,PlanApprovalBanner}.tsx` |
+| 运行中 steering、durable input queue、安全点消费与取消（G-14） | `packages/contracts/src/{steering,event,projection,commands}.ts`、`packages/core/src/domains/{runtime/runtime,evidence/projection}.ts`、`packages/{host,sdk}/src/index.ts`、`apps/web/src/App.tsx`、`apps/web/src/{client,live-client,model}.ts`、`apps/web/src/components/SteeringComposer.tsx` |
+| Telemetry 事件/sink/config、Ledger 提交后派生、只读状态（G-15） | `packages/telemetry/src/`、`packages/contracts/src/telemetry.ts`、`packages/core/src/domains/runtime/{runtime,runtime-telemetry}.ts`、`apps/cli/src/{index,telemetry-config}.ts`、`packages/{host,sdk}/src/index.ts`、`apps/web/src/{client.ts,live-client.ts,App.tsx}`、`apps/web/src/components/SettingsPanel.tsx` |
 | 离线行为/质量/性能/文档评测（G-16） | `vitest.evals.config.ts`、`tsconfig.evals.json`、`evals/{runtime,quality,perf,docs,support,baselines}/`、`packages/test-support/src/mock-provider.ts` |
-| 插件/扩展契约、可逆生命周期、Run lease、可信配置与控制面（G-17） | `packages/contracts/src/{extension,event,session}.ts`、`packages/core/src/{extension,runtime,tool-registry}.ts`、`apps/cli/src/{index,extension-config,extension-command}.ts`、`packages/{host,sdk}/src/index.ts`、`apps/web/src/{App,client,live-client,model}.ts`、`apps/web/src/components/SettingsPanel.tsx`、`evals/runtime/extension-system.eval.ts` |
-| 长期 Memory、Markdown/JSONL/BM25、引用注入与可选检索服务（G-21） | `packages/contracts/src/{memory,context,event}.ts`、`packages/core/src/{memory,context,context-compaction,runtime}.ts`、`packages/retrieval/src/`、`apps/retrieval-service/src/`、`apps/cli/src/{index,retrieval-config}.ts`、`evals/quality/retrieval-rag-quality.eval.ts` |
+| 插件/扩展契约、可逆生命周期、Run lease、可信配置与控制面（G-17） | `packages/contracts/src/{extension,event,session}.ts`、`packages/core/src/domains/{extensions/{registration,manager},runtime/runtime,tools/registry}.ts`、`apps/cli/src/{index,extension-config,extension-command}.ts`、`packages/{host,sdk}/src/index.ts`、`apps/web/src/{App,client,live-client,model}.ts`、`apps/web/src/components/SettingsPanel.tsx`、`evals/runtime/extension-system.eval.ts` |
+| 长期 Memory、Markdown/JSONL/BM25、引用注入与可选检索服务（G-21） | `packages/contracts/src/{memory,context,event}.ts`、`packages/core/src/domains/{memory/memory,context/{context,context-compaction},runtime/runtime}.ts`、`packages/retrieval/src/`、`apps/retrieval-service/src/`、`apps/cli/src/{index,retrieval-config}.ts`、`evals/quality/retrieval-rag-quality.eval.ts` |
 | CI、覆盖率、供应链与私有发布门（G-22） | `.github/workflows/{ci,release}.yml`、`vitest.coverage.config.ts`、`scripts/{clean-dist,check-coverage,verify-lockfile,verify-release}*`、`pnpm-workspace.yaml`、`.npmrc`、`evals/docs/g22-release-consistency.eval.ts` |
-| 逐事件 Trace Replay、差异、只读 capability 与 Web 时间旅行（G-23） | `packages/contracts/src/replay.ts`、`packages/core/src/{replay,runtime}.ts`、`packages/{host,sdk}/src/index.ts`、`apps/web/src/{client,live-client,model}.ts`、`apps/web/src/App.tsx`、`apps/web/src/components/ReplayBanner.tsx`、`evals/replay/time-travel.eval.ts` |
-| Context 预算、策略链、模型摘要、原文外置与 preflight token 记账 | `packages/core/src/{context,context-compaction,runtime,model-provider}.ts` + `packages/contracts/src/{context,token,event}.ts` |
-| provider usage、校准与异常 | `packages/core/src/{model-provider,token-meter,runtime}.ts` + `packages/contracts/src/token.ts` |
-| 模型提供商预设、协议适配、推理强度 | `packages/core/src/model-provider.ts` |
-| 凭据契约、存储、迁移与引用解析 | `packages/contracts/src/credentials.ts`、`packages/core/src/credentials.ts`、`apps/cli/src/model-config.ts` |
-| Session 契约、JSONL/lease、启动恢复与 resume | `packages/contracts/src/session.ts`、`packages/core/src/session-store.ts`、`session-controller.ts`、`runtime.ts` |
+| 逐事件 Trace Replay、差异、只读 capability 与 Web 时间旅行（G-23） | `packages/contracts/src/replay.ts`、`packages/core/src/domains/{evidence/replay,runtime/runtime}.ts`、`packages/{host,sdk}/src/index.ts`、`apps/web/src/{client,live-client,model}.ts`、`apps/web/src/App.tsx`、`apps/web/src/components/ReplayBanner.tsx`、`evals/replay/time-travel.eval.ts` |
+| Context 预算、策略链、模型摘要、原文外置与 preflight token 记账 | `packages/core/src/domains/{context/{context,context-compaction},runtime/runtime,model/model-provider}.ts` + `packages/contracts/src/{context,token,event}.ts` |
+| provider usage、校准与异常 | `packages/core/src/domains/{model/model-provider,context/token-meter,runtime/runtime}.ts` + `packages/contracts/src/token.ts` |
+| 模型提供商预设、协议适配、推理强度 | `packages/core/src/domains/model/model-provider.ts` |
+| 凭据契约、存储、迁移与引用解析 | `packages/contracts/src/credentials.ts`、`packages/core/src/domains/credentials/credentials.ts`、`apps/cli/src/model-config.ts` |
+| Session 契约、JSONL/lease、启动恢复与 resume | `packages/contracts/src/session.ts`、`packages/core/src/domains/session/{session-store,session-controller}.ts`、`packages/core/src/domains/runtime/runtime.ts` |
 | Session 浏览/搜索/软删除的前端入口 | `apps/web/src/components/Sidebar.tsx`、`App.tsx`、`client.ts`、`model.ts` |
-| Patch 崩溃一致性、恢复 recipe 与显式回滚 | `packages/contracts/src/{action-wal,commands,event,projection}.ts`、`packages/core/src/{action-wal,runtime,session-controller}.ts`、`packages/host/src/index.ts`、`packages/sdk/src/index.ts` |
-| 事件存储与回放 | `packages/core/src/{event-ledger,projection,artifact-store,replay}.ts`、`packages/contracts/src/replay.ts` |
+| Patch 崩溃一致性、恢复 recipe 与显式回滚 | `packages/contracts/src/{action-wal,commands,event,projection}.ts`、`packages/core/src/domains/{evidence/action-wal,runtime/runtime,session/session-controller}.ts`、`packages/host/src/index.ts`、`packages/sdk/src/index.ts` |
+| 事件存储与回放 | `packages/core/src/domains/evidence/{event-ledger,projection,artifact-store,replay}.ts`、`packages/contracts/src/replay.ts` |
 | 架构图快照与差分 | `packages/codegraph/src/analyze.ts`、`diff.ts` |
 | HTTP/SSE 路由、鉴权与脱敏 | `packages/host/src/index.ts` |
 | 前端调用后端的方式 | `packages/sdk/src/index.ts` |

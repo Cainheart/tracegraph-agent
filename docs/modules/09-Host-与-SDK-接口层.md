@@ -516,7 +516,7 @@ export async function* parseSseData(
 
 2. **批准请求同步续跑，但没有 application-level handler deadline。** `approve` 在返回前会同步续跑：
 
-```440:441:packages/core/src/runtime.ts
+```440:441:packages/core/src/domains/runtime/runtime.ts
     if (!state.stopped) await this.#continueRun(state);
     return this.getProjection(state.runId);
 ```

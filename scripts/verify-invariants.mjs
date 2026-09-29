@@ -3,8 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const DEFAULT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const LEDGER_WRITER_PATH = "packages/core/src/event-ledger.ts";
-const PROJECTION_PATH = "packages/core/src/projection.ts";
+const LEDGER_WRITER_PATH = "packages/core/src/domains/evidence/event-ledger.ts";
+const PROJECTION_PATH = "packages/core/src/domains/evidence/projection.ts";
 const WIRE_PRIVATE_FIELDS = ["attempt", "idempotency_key", "previous_event_hash", "event_hash"];
 const SOURCE_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mts", ".cts", ".mjs", ".cjs"]);
 const SKIP_DIRECTORIES = new Set([".git", "node_modules", "dist", "coverage", ".turbo", ".vite"]);

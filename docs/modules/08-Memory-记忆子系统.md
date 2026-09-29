@@ -1,7 +1,7 @@
 # 模块 08：Memory 记忆子系统
 
 > 定位：把有来源、可审计的候选事实准入为 canonical Memory，并通过有界检索把相关内容作为不可信 Context 注入模型。  
-> 代码：`packages/core/src/memory.ts`、`packages/retrieval/src/`、`apps/retrieval-service/src/`、`apps/cli/src/retrieval-config.ts`、`packages/core/src/runtime.ts`  
+> 代码：`packages/core/src/domains/memory/memory.ts`、`packages/retrieval/src/`、`apps/retrieval-service/src/`、`apps/cli/src/retrieval-config.ts`、`packages/core/src/domains/runtime/runtime.ts`<br>
 > 契约：`packages/contracts/src/memory.ts`、`event.ts`、`context.ts`  
 > 最后核对：2026-09-19  
 > 实现状态：**G-21 已实现**；默认生产路径是本地 JSONL 索引 + BM25，不是向量 RAG
@@ -133,7 +133,7 @@ G-21 当时把 Event 总数增至 68；它只追加事件枚举和 strict payloa
 ## 8. 评测与可验证证据
 
 - `packages/contracts/src/memory-g21.test.ts`：strict candidate、事件 payload、query hash、预算与 provenance 交叉约束。
-- `packages/core/src/memory-g21.test.ts`：remember 幂等/崩溃窗、store/index 边界、scope/global 合并、degraded recall、Runtime 每轮注入与 Manifest 一致性。
+- `packages/core/src/domains/memory/memory-g21.test.ts`：remember 幂等/崩溃窗、store/index 边界、scope/global 合并、degraded recall、Runtime 每轮注入与 Manifest 一致性。
 - `packages/retrieval/tests/`：分块、JSONL store、BM25、项目隔离、路径与损坏边界。
 - `apps/retrieval-service/tests/`：HTTP route、认证、大小/超时、错误映射、client unavailable 分类。
 - `apps/cli/src/retrieval-config.test.ts`：本地默认、远端 write-through、availability fallback 与 4xx fail-closed。

@@ -15,7 +15,7 @@ G-12 把语言服务器作为 Core 的语义能力 seam 接入现有 Tool/Receip
 
 ## 2. Core 客户端与 Manager
 
-`packages/core/src/lsp/client.ts` 实现单 server 的 LSP JSON-RPC：
+`packages/core/src/seams/lsp/client.ts` 实现单 server 的 LSP JSON-RPC：
 
 1. `initialize` / `initialized` 能力协商；
 2. `textDocument/didOpen`、`textDocument/didChange`、`textDocument/didClose`；
@@ -23,7 +23,7 @@ G-12 把语言服务器作为 Core 的语义能力 seam 接入现有 Tool/Receip
 4. `textDocument/definition`、`textDocument/references` 请求；
 5. Content-Length 解帧、JSON-RPC error、超时/取消与优雅停止。
 
-`packages/core/src/lsp/manager.ts` 的 `LspManager` 负责按 `(project, workspace, server)` 的懒 session，`createLspToolsExtension` 把 `get_diagnostics` 接到 ExtensionManager：
+`packages/core/src/seams/lsp/manager.ts` 的 `LspManager` 负责按 `(project, workspace, server)` 的懒 session，`createLspToolsExtension` 把 `get_diagnostics` 接到 ExtensionManager：
 
 - 通过文件扩展名选择唯一 server，读取文件前复用 `resolveWorkspacePath` 与 `assertInside`；
 - 每次诊断请求只打开显式 paths，等待一个有界 diagnostics window，再按 severity、稳定路径/位置排序；
@@ -52,9 +52,9 @@ LSP 诊断不是第二份日志，也不是静态 CodeGraph 的替代品。
 | 事实 | 代码 / 测试 |
 | --- | --- |
 | strict config/status/diagnostic/event/projection contract | `packages/contracts/src/lsp.ts`、`packages/contracts/src/lsp-g12.test.ts` |
-| Content-Length stdio、initialize、publishDiagnostics、超时与 stop | `packages/core/src/lsp/client.ts`、`packages/core/src/lsp.test.ts` |
-| lazy session、workspace containment、bounded summary、unavailable 降级 | `packages/core/src/lsp/manager.ts`、`packages/core/src/lsp.test.ts` |
-| Runtime Tool bridge 与 canonical Trace | `packages/core/src/runtime.ts`、`packages/core/src/projection.ts` |
+| Content-Length stdio、initialize、publishDiagnostics、超时与 stop | `packages/core/src/seams/lsp/client.ts`、`packages/core/src/seams/lsp/lsp.test.ts` |
+| lazy session、workspace containment、bounded summary、unavailable 降级 | `packages/core/src/seams/lsp/manager.ts`、`packages/core/src/seams/lsp/lsp.test.ts` |
+| Runtime Tool bridge 与 canonical Trace | `packages/core/src/domains/runtime/runtime.ts`、`packages/core/src/domains/evidence/projection.ts` |
 | Host/SDK status route | `packages/host/src/index.ts`、`packages/host/src/index.test.ts`、`packages/sdk/src/index.ts` |
 | CLI 装配与 Web Settings | `apps/cli/src/index.ts`、`apps/web/src/live-client.ts`、`apps/web/src/components/SettingsPanel.tsx` |
 | 文档/标识符/路由/事件一致性 | `evals/docs/implementation-consistency.eval.ts` |

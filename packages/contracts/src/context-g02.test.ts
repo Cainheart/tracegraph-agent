@@ -154,12 +154,12 @@ describe("G-02 Context compaction contracts", () => {
     expect(ContextSummarySchema.parse({
       facts: ["The runtime persists an event before exposing the result."],
       open_questions: ["Should archived evidence be encrypted at rest?"],
-      refs: [{ path: "packages/core/src/context.ts", lines: { start: 10, end: 25 } }],
+      refs: [{ path: "packages/core/src/domains/context/context.ts", lines: { start: 10, end: 25 } }],
     }).refs[0]?.lines).toEqual({ start: 10, end: 25 });
     expect(() => ContextSummarySchema.parse({
       facts: ["invalid range"],
       open_questions: [],
-      refs: [{ path: "packages/core/src/context.ts", lines: { start: 25, end: 10 } }],
+      refs: [{ path: "packages/core/src/domains/context/context.ts", lines: { start: 25, end: 10 } }],
     })).toThrow("summary reference end line must not precede its start line");
 
     expect(SpillRefSchema.parse({

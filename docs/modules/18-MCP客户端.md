@@ -40,7 +40,7 @@ McpConfigSchema 拒绝重复 server/tool policy 项、未知键、超限命令�
 
 ## 3. Core 生命周期与安全桥
 
-packages/core/src/mcp/client.ts 负责一个 server 的 JSON-RPC：
+packages/core/src/seams/mcp/client.ts 负责一个 server 的 JSON-RPC：
 
 1. initialize；
 2. notifications/initialized；
@@ -48,7 +48,7 @@ packages/core/src/mcp/client.ts 负责一个 server 的 JSON-RPC：
 4. tools/call；
 5. notifications/tools/list_changed 到达时刷新目录。
 
-`McpManager`（`packages/core/src/mcp/manager.ts`）负责多 server 编排；`createMcpToolsExtension` 把 catalog 接到 `ExtensionManager`：
+`McpManager`（`packages/core/src/seams/mcp/manager.ts`）负责多 server 编排；`createMcpToolsExtension` 把 catalog 接到 `ExtensionManager`：
 
 - optional server 启动失败只变为 degraded，Host 继续启动；required server 失败会抛 McpStartupError，错误保留 server 名和 stderr 尾部，并阻止 Host 启动。
 - ready server 的进程意外退出会撤下其旧 Tool、发 `mcp.tools_changed`，并转为 `degraded`/`mcp.server_failed`；Host 不会继续把已死亡进程伪装成 ready。
@@ -83,8 +83,8 @@ Web Settings 只显示 bounded status/tool count，并对 degraded server 显示
 | 事实 | 代码 / 测试 |
 | --- | --- |
 | strict config、secret reference、status/event payload | packages/contracts/src/mcp.ts、packages/contracts/src/mcp-g11.test.ts |
-| stdio JSON-RPC、超时、stderr tail、list_changed | packages/core/src/mcp/client.ts |
-| required/optional、工具映射、刷新、调用结果与事件 | packages/core/src/mcp/manager.ts、packages/core/src/mcp.test.ts |
+| stdio JSON-RPC、超时、stderr tail、list_changed | packages/core/src/seams/mcp/client.ts |
+| required/optional、工具映射、刷新、调用结果与事件 | packages/core/src/seams/mcp/manager.ts、packages/core/src/seams/mcp/mcp.test.ts |
 | Host status/restart 与 command-id 幂等 | packages/host/src/index.ts、packages/host/src/index.test.ts |
 | typed SDK | packages/sdk/src/index.ts、packages/sdk/src/index.test.ts |
 | CLI control plane | apps/cli/src/mcp-command.ts、apps/cli/src/mcp-command.test.ts |

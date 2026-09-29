@@ -255,6 +255,8 @@ Skill 应是“薄指针”：调用仓库脚本并解释选择，不重新实�
 7. Verification：最窄可执行命令；
 8. Known limitations：长期边界，不把普通 TODO 塞进来。
 
+`pnpm verify:package-readmes` 校验每个 `pnpm-workspace.yaml` package 的 README 必需章节与非空内容，并在 CI `typecheck` job 执行。
+
 ### 7.3 自动生成内容
 
 建议逐步生成：

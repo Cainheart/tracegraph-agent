@@ -1,7 +1,7 @@
 # 模块 03：Context 组装、策略压缩与 Token 预算
 
 > 定位：决定“模型这一轮看到了什么”，并把取舍、外置原文、摘要调用与 token 减量变成可审计事实。  
-> 代码：`packages/core/src/{context,context-compaction,memory,token-meter,model-provider,runtime}.ts`  
+> 代码：`packages/core/src/domains/{context/{context,context-compaction,token-meter},memory/memory,model/model-provider,runtime/runtime}.ts`<br>
 > 契约：`packages/contracts/src/{context,memory,token,event,action,common}.ts`  
 > 最后核对：2026-09-19  
 > 实现状态：**G-02 / G-03 / G-21 Context 注入已验证**
@@ -266,10 +266,10 @@ sum(token_estimate.per_section)
 |---|---|
 | `packages/contracts/src/context-g02.test.ts` | policy 兼容/严格性、summary refs、SpillRef locator 绑定/node、step 严格下降/连续账/策略顺序、archive scope/kind、旧 Manifest |
 | `packages/contracts/src/memory-g21.test.ts` | retrieved item/node 的 section、provenance、token 与 Manifest 双向引用约束 |
-| `packages/core/src/context-compaction.test.ts` | 严格策略顺序、独立开关、invalid/timeout 降级、locator/hash 回读、完整 tool Artifact spill、防递归 spill、300K 级预算收敛 |
-| `packages/core/src/memory-g21.test.ts` | recall 预算后命中进入真实 Context builder，Manifest 可解释 source path/lines/score/hash/token；Runtime 每轮在模型请求前自动注入 |
-| `packages/core/src/model-provider.test.ts` | OpenAI/Anthropic summary 请求、strict 输出边界、summary usage、错误/取消 |
-| `packages/core/src/tool-registry.test.ts` | run-scoped locator 分页回读、offset/limit 上界、Plain Chat 零文件能力下仍只能读本 Run archive，以及 `lists only stable paged metadata from the current Run` |
+| `packages/core/src/domains/context/context-compaction.test.ts` | 严格策略顺序、独立开关、invalid/timeout 降级、locator/hash 回读、完整 tool Artifact spill、防递归 spill、300K 级预算收敛 |
+| `packages/core/src/domains/memory/memory-g21.test.ts` | recall 预算后命中进入真实 Context builder，Manifest 可解释 source path/lines/score/hash/token；Runtime 每轮在模型请求前自动注入 |
+| `packages/core/src/domains/model/model-provider.test.ts` | OpenAI/Anthropic summary 请求、strict 输出边界、summary usage、错误/取消 |
+| `packages/core/src/domains/tools/registry.test.ts` | run-scoped locator 分页回读、offset/limit 上界、Plain Chat 零文件能力下仍只能读本 Run archive，以及 `lists only stable paged metadata from the current Run` |
 | `packages/test-support/src/runtime.integration.test.ts` | summary/Event/usage 整链、invalid/timeout fallback、spill→`read_artifact`→hash、原文不进 Ledger、300K 级连续减量账 |
 | `apps/web/src/components/ContextBudget.test.tsx` | 被压缩原文在明确 disclosure 后展开 |
 

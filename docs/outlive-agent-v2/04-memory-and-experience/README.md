@@ -101,7 +101,7 @@ DSH 当前源码给 Outlive 的可靠参照是 **Session 事件日志是一次�
 | 使用与 UI | `memory.recalled` 和 Context Manifest 已有有界 provenance，但还没有独立 Memory 管理 API/UI，也不能把检索命中简单等同于模型请求状态 | Run-scoped `MemoryUse` 绑定具体 Memory 版本与 Runtime adapter-input；UI 展示请求包含及 response/unknown 状态，不声称模型因果使用 |
 | 忘记/删除 | 当前 JSONL append-only；过期/superseded 在召回时过滤，没有“遗忘即物理擦除”能力 | 可撤销与可删正文分开定义；Artifact/密钥、索引、缓存、备份与 tombstone 需统一治理，具体加密/恢复方案先过 ADR |
 
-Current 证据详见[模块 08：Memory 记忆子系统](../../modules/08-Memory-记忆子系统.md)、`packages/core/src/memory.ts`、`packages/contracts/src/memory.ts` 与 `packages/core/src/runtime.ts`。新表中所有右栏都是提案，不是当前完成功能。
+Current 证据详见[模块 08：Memory 记忆子系统](../../modules/08-Memory-记忆子系统.md)、`packages/core/src/domains/memory/memory.ts`、`packages/contracts/src/memory.ts` 与 `packages/core/src/domains/runtime/runtime.ts`。新表中所有右栏都是提案，不是当前完成功能。
 
 在 V2 目标中，Session/Run 与 Memory 使用同一套规范 Event Ledger / event envelope、迁移和审计规则，但属于不同的 aggregate/stream；**不是**第二套互相独立的 Memory Journal，也不是把每条全局记忆复制到全部 Session。索引、列表和当前状态均为可重建投影；memory scope 必须在每次读写时重新授权。
 

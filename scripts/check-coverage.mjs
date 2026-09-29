@@ -196,13 +196,13 @@ export function evaluateCoverageSummary(summary, options) {
     && unexpectedSources.length === 0;
 
   const contractsSources = expectedSources.filter((path) => path.startsWith("packages/contracts/src/"));
-  const contextSources = expectedSources.filter((path) => path === "packages/core/src/context.ts");
-  const policySources = expectedSources.filter((path) => /^packages\/core\/src\/policy[^/]*\.tsx?$/.test(path));
+  const contextSources = expectedSources.filter((path) => path === "packages/core/src/domains/context/context.ts");
+  const policySources = expectedSources.filter((path) => path === "packages/core/src/domains/tools/policy-engine.ts");
   const gates = [
     createGate("global", COVERAGE_THRESHOLDS.global, expectedSources, coverageByFile),
     createGate("packages/contracts", COVERAGE_THRESHOLDS.contracts, contractsSources, coverageByFile),
-    createGate("packages/core/src/context.ts", COVERAGE_THRESHOLDS.context, contextSources, coverageByFile),
-    createGate("packages/core/src/policy*", COVERAGE_THRESHOLDS.policy, policySources, coverageByFile),
+    createGate("packages/core/src/domains/context/context.ts", COVERAGE_THRESHOLDS.context, contextSources, coverageByFile),
+    createGate("packages/core/src/domains/tools/policy-engine.ts", COVERAGE_THRESHOLDS.policy, policySources, coverageByFile),
   ];
 
   const errors = [];

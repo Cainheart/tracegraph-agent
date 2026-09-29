@@ -46,8 +46,8 @@ export default defineConfig({
       thresholds: {
         lines: 70,
         "packages/contracts/src/**/*.ts": { lines: 90 },
-        "packages/core/src/context.ts": { lines: 90 },
-        "packages/core/src/policy*.ts": { lines: 90 },
+        "packages/core/src/domains/context/context.ts": { lines: 90 },
+        "packages/core/src/domains/tools/policy-engine.ts": { lines: 90 },
       },
     },
   },

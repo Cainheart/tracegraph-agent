@@ -48,7 +48,7 @@ const IDENTIFIER_FACTS = [
   {
     identifier: "TeamDomainService",
     documentation: ["docs/modules/16-Agent-Team.md"],
-    implementation: "packages/core/src/team.ts",
+    implementation: "packages/core/src/domains/team/team.ts",
   },
   {
     identifier: "TeamPanel",
@@ -58,12 +58,12 @@ const IDENTIFIER_FACTS = [
   {
     identifier: "SkillRegistry",
     documentation: ["docs/modules/17-Skill系统.md"],
-    implementation: "packages/core/src/skill.ts",
+    implementation: "packages/core/src/domains/skill/skill.ts",
   },
   {
     identifier: "load_skill",
     documentation: ["docs/modules/17-Skill系统.md"],
-    implementation: "packages/core/src/tool-registry.ts",
+    implementation: "packages/core/src/domains/tools/registry.ts",
   },
   {
     identifier: "SkillProjectInspectionSchema",
@@ -83,12 +83,12 @@ const IDENTIFIER_FACTS = [
   {
     identifier: "McpManager",
     documentation: ["docs/modules/18-MCP客户端.md"],
-    implementation: "packages/core/src/mcp/manager.ts",
+    implementation: "packages/core/src/seams/mcp/manager.ts",
   },
   {
     identifier: "createMcpToolsExtension",
     documentation: ["docs/modules/18-MCP客户端.md"],
-    implementation: "packages/core/src/mcp/manager.ts",
+    implementation: "packages/core/src/seams/mcp/manager.ts",
   },
   {
     identifier: "runMcpCommand",
@@ -103,12 +103,12 @@ const IDENTIFIER_FACTS = [
   {
     identifier: "LspManager",
     documentation: ["docs/modules/19-LSP客户端.md"],
-    implementation: "packages/core/src/lsp/manager.ts",
+    implementation: "packages/core/src/seams/lsp/manager.ts",
   },
   {
     identifier: "createLspToolsExtension",
     documentation: ["docs/modules/19-LSP客户端.md"],
-    implementation: "packages/core/src/lsp/manager.ts",
+    implementation: "packages/core/src/seams/lsp/manager.ts",
   },
   {
     identifier: "runTeamCommand",
@@ -118,12 +118,12 @@ const IDENTIFIER_FACTS = [
   {
     identifier: "DeterministicContextBuilder",
     documentation: ["docs/modules/03-Context-与预算压缩.md"],
-    implementation: "packages/core/src/context.ts",
+    implementation: "packages/core/src/domains/context/context.ts",
   },
   {
     identifier: "AgentRuntime",
     documentation: ["docs/modules/05-证据链-账本投影工件.md"],
-    implementation: "packages/core/src/runtime.ts",
+    implementation: "packages/core/src/domains/runtime/runtime.ts",
   },
   {
     identifier: "analyzeCodeGraph",
@@ -467,9 +467,9 @@ describe("G16 documentation consistency", () => {
     const actionContract = await readRepositoryFile("packages/contracts/src/action.ts");
     const teamContract = await readRepositoryFile("packages/contracts/src/team.ts");
     const recoveryContract = await readRepositoryFile("packages/contracts/src/session.ts");
-    const eventLedger = await readRepositoryFile("packages/core/src/event-ledger.ts");
-    const toolRegistry = await readRepositoryFile("packages/core/src/tool-registry.ts");
-    const runtime = await readRepositoryFile("packages/core/src/runtime.ts");
+    const eventLedger = await readRepositoryFile("packages/core/src/domains/evidence/event-ledger.ts");
+    const toolRegistry = await readRepositoryFile("packages/core/src/domains/tools/registry.ts");
+    const runtime = await readRepositoryFile("packages/core/src/domains/runtime/runtime.ts");
     const ledgerModule = await readRepositoryFile("docs/modules/05-证据链-账本投影工件.md");
     const teamModule = await readRepositoryFile("docs/modules/16-Agent-Team.md");
     const g20ProjectorVersion = "tracegraph.projector.v9";

@@ -11,8 +11,8 @@ const tempDirectories: string[] = [];
 const expectedSources = [
   "apps/cli/src/index.ts",
   "packages/contracts/src/action.ts",
-  "packages/core/src/context.ts",
-  "packages/core/src/policy-engine.ts",
+  "packages/core/src/domains/context/context.ts",
+  "packages/core/src/domains/tools/policy-engine.ts",
 ];
 
 type LineCounts = { readonly total: number; readonly covered: number };
@@ -31,8 +31,8 @@ function createSummary(overrides: Partial<Record<(typeof expectedSources)[number
   const counts: Record<(typeof expectedSources)[number], LineCounts> = {
     "apps/cli/src/index.ts": { total: 100, covered: 100 },
     "packages/contracts/src/action.ts": { total: 100, covered: 90 },
-    "packages/core/src/context.ts": { total: 100, covered: 90 },
-    "packages/core/src/policy-engine.ts": { total: 100, covered: 90 },
+    "packages/core/src/domains/context/context.ts": { total: 100, covered: 90 },
+    "packages/core/src/domains/tools/policy-engine.ts": { total: 100, covered: 90 },
     ...overrides,
   };
   const total = Object.values(counts).reduce(
@@ -74,16 +74,16 @@ describe("coverage gate", () => {
     expect(result.gates.map((gate) => [gate.id, gate.status])).toEqual([
       ["global", "passed"],
       ["packages/contracts", "passed"],
-      ["packages/core/src/context.ts", "passed"],
-      ["packages/core/src/policy*", "passed"],
+      ["packages/core/src/domains/context/context.ts", "passed"],
+      ["packages/core/src/domains/tools/policy-engine.ts", "passed"],
     ]);
   });
 
   it.each([
     ["global", { "apps/cli/src/index.ts": { total: 1_000, covered: 0 } }],
     ["packages/contracts", { "packages/contracts/src/action.ts": { total: 100, covered: 89 } }],
-    ["packages/core/src/context.ts", { "packages/core/src/context.ts": { total: 100, covered: 89 } }],
-    ["packages/core/src/policy*", { "packages/core/src/policy-engine.ts": { total: 100, covered: 89 } }],
+    ["packages/core/src/domains/context/context.ts", { "packages/core/src/domains/context/context.ts": { total: 100, covered: 89 } }],
+    ["packages/core/src/domains/tools/policy-engine.ts", { "packages/core/src/domains/tools/policy-engine.ts": { total: 100, covered: 89 } }],
   ])("fails closed when the %s threshold regresses", (gateId, overrides) => {
     const result = evaluateCoverageSummary(createSummary(overrides), {
       rootDirectory: process.cwd(),
@@ -112,7 +112,7 @@ describe("coverage gate", () => {
 
   it("fails when an expected production file is omitted from the report", () => {
     const summary = createSummary();
-    delete summary["packages/core/src/context.ts"];
+    delete summary["packages/core/src/domains/context/context.ts"];
 
     const result = evaluateCoverageSummary(summary, {
       rootDirectory: process.cwd(),
@@ -120,12 +120,12 @@ describe("coverage gate", () => {
     });
 
     expect(result.result).toBe("failed");
-    expect(result.missing_sources).toEqual(["packages/core/src/context.ts"]);
+    expect(result.missing_sources).toEqual(["packages/core/src/domains/context/context.ts"]);
   });
 
   it("returns a non-zero process status for an injected regression", async () => {
     const fixture = await createFixture(createSummary({
-      "packages/core/src/policy-engine.ts": { total: 100, covered: 89 },
+      "packages/core/src/domains/tools/policy-engine.ts": { total: 100, covered: 89 },
     }));
 
     const child = spawnSync(process.execPath, [

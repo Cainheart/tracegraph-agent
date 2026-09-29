@@ -39,6 +39,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm verify:lockfile
       - run: pnpm verify:boundaries
+      - run: pnpm verify:package-readmes
       - run: pnpm graph:modules:check
       - run: pnpm verify:invariants
       - run: pnpm typecheck

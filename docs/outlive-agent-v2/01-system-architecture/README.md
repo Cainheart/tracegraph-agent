@@ -33,7 +33,7 @@ flowchart LR
 V2 架构同时解决四个问题：
 
 1. CLI、Web UI、Desktop 不能各自实现一套 Session/Run 语义；独立 API/SDK/ACP 不属于当前产品入口。
-2. 当前 `packages/core/src/runtime.ts` 超过一万行，能力边界存在于概念和文档中，却未被物理依赖守住。
+2. 当前 `packages/core/src/domains/runtime/runtime.ts` 超过一万行，能力边界存在于概念和文档中，却未被物理依赖守住。
 3. Memory 必须从已提交证据中受治理地产生，再按当前权限回到 Runtime 的 Context；它不是 Runtime 尾部的一个无条件检索 helper。
 4. 仓库需要能持续增加能力，却不让 Agent Loop、Host 和 UI 互相反向依赖。
 
@@ -275,14 +275,15 @@ traceId
 
 | 当前 | 目标 owner | 迁移方式 |
 |---|---|---|
-| `packages/core/src/event-ledger.ts`、`projection.ts`、`replay.ts`、`artifact-store.ts`、`action-wal.ts` | Evidence family | 先移入 `core/domains/evidence`，稳定后升包 |
-| `session-store.ts`、`session-controller.ts` | Session family | 与 event contracts 解耦后升包 |
-| `memory.ts` + `packages/retrieval` | Memory family | 先统一 contract 与 lifecycle，再组合 retrieval provider |
-| `context.ts`、`context-compaction.ts`、`token-meter.ts` | Context family | 拆 assembly、policy、provider |
-| `tool-registry.ts`、`policy-engine.ts`、`approval-token-store.ts` | Tool family | Definition/Executor/Policy/Approval 分离 |
-| `model-provider.ts` | LLM family | seam 与 concrete presets/providers 分离 |
-| `mcp/`、`lsp/`、`sandbox/`、`skill.ts` | Capability families | 最适合优先提取的可替换接缝 |
-| `runtime.ts` | `core/agent-loop` + feature drivers | 最后拆；只保留状态机和 orchestration |
+| `packages/core/src/domains/evidence/{event-ledger,projection,replay,artifact-store,action-wal}.ts` | Evidence family | CORE-024 已归入 `core/domains/evidence`，稳定后升包 |
+| `packages/core/src/domains/session/{session-store,session-controller}.ts` | Session family | 与 event contracts 解耦后升包 |
+| `packages/core/src/domains/memory/memory.ts` + `packages/retrieval` | Memory family | 先统一 contract 与 lifecycle，再组合 retrieval provider |
+| `packages/core/src/domains/context/{context,context-compaction,token-meter}.ts` | Context family | 拆 assembly、policy、provider |
+| `kernel/tool/definition.ts`、`domains/tools/{registry,executor,policy-engine,approval-token-store}.ts` | Tool family | CORE-022 已按 Definition/Executor/Policy/Approval 分离；CORE-024 后只由包根 barrel 保持公开 API 兼容，不保留平铺源码转发 |
+| `domains/extensions/{registration,manager}.ts` | Extension family | CORE-023 已分离 G-17 注册契约与 lifecycle manager；CORE-024 移除平铺 `extension.ts`，兼容 API 由 Core 包根 barrel 保持 |
+| `packages/core/src/domains/model/model-provider.ts` | LLM family | seam 与 concrete presets/providers 分离 |
+| `packages/core/src/seams/{mcp,lsp,sandbox}/`、`packages/core/src/domains/skill/skill.ts` | Capability families | 最适合优先提取的可替换接缝 |
+| `packages/core/src/domains/runtime/runtime.ts` | `core/agent-loop` + feature drivers | 最后拆；只保留状态机和 orchestration |
 | `packages/host`、`packages/sdk` | Host 与内部 client/protocol families | 在 Runtime 事实边界稳定后拆 controller/transport；不作为独立 API/SDK 产品发布 |
 
 ## 12. 架构级禁止项

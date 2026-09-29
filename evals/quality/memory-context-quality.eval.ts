@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { retrieveMemoryFixture } from "../../packages/core/src/memory.js";
+import { retrieveMemoryFixture } from "../../packages/core/src/domains/memory/memory.js";
 
 const FIXED_NOW = new Date("2026-09-19T02:00:00.000Z");
 const PROJECT_ID = "project:tracegraph";

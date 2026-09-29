@@ -11,6 +11,7 @@
   "scripts": {
     "clean:dist": "node scripts/clean-dist.mjs",
     "verify:boundaries": "node scripts/verify-boundaries.mjs",
+    "verify:package-readmes": "node scripts/verify-package-readmes.mjs",
     "verify:invariants": "node scripts/verify-invariants.mjs",
     "graph:modules": "node scripts/gen-module-graph.mjs",
     "graph:modules:check": "node scripts/gen-module-graph.mjs --check",

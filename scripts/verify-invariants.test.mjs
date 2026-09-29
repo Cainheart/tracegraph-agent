@@ -24,10 +24,10 @@ export function projectRun(events) { return events; }
 async function fixture(context) {
   const root = await mkdtemp(path.join(tmpdir(), "tracegraph-invariants-"));
   context.after(() => rm(root, { recursive: true, force: true }));
-  await mkdir(path.join(root, "packages/core/src"), { recursive: true });
+  await mkdir(path.join(root, "packages/core/src/domains/evidence"), { recursive: true });
   await mkdir(path.join(root, "packages/contracts/src"), { recursive: true });
-  await writeFile(path.join(root, "packages/core/src/event-ledger.ts"), CANONICAL_LEDGER);
-  await writeFile(path.join(root, "packages/core/src/projection.ts"), VALID_PROJECTION);
+  await writeFile(path.join(root, "packages/core/src/domains/evidence/event-ledger.ts"), CANONICAL_LEDGER);
+  await writeFile(path.join(root, "packages/core/src/domains/evidence/projection.ts"), VALID_PROJECTION);
   await writeFile(path.join(root, "packages/contracts/src/event.ts"), `export const WireSessionEventSchema = z.object({\n  type: z.string(),\n});\n`);
   return root;
 }
@@ -48,7 +48,7 @@ test("a second Event Ledger writer is rejected", async (context) => {
 
 test("private fields copied to wire are rejected", async (context) => {
   const root = await fixture(context);
-  const projectionPath = path.join(root, "packages/core/src/projection.ts");
+  const projectionPath = path.join(root, "packages/core/src/domains/evidence/projection.ts");
   const projection = await readFile(projectionPath, "utf8");
   await writeFile(projectionPath, projection.replace("publicEventData(event.data)", "event.data"));
   const outcome = await verifyInvariants(root);
@@ -66,7 +66,7 @@ test("persistence-only envelope fields are rejected by the wire contract", async
 
 test("I/O in Projection code is rejected", async (context) => {
   const root = await fixture(context);
-  const projectionPath = path.join(root, "packages/core/src/projection.ts");
+  const projectionPath = path.join(root, "packages/core/src/domains/evidence/projection.ts");
   const projection = await readFile(projectionPath, "utf8");
   await writeFile(projectionPath, `import { readFile } from "node:fs/promises";\n${projection}\nexport async function load() { return readFile("projection.json"); }\n`);
   const outcome = await verifyInvariants(root);
