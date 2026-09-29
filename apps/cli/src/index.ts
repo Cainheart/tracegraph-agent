@@ -10,12 +10,12 @@ import {
   CredentialNotFoundError,
   DurableSessionController,
   EnvironmentCredentialStore,
-  JsonlSessionStore,
   McpManager,
   credentialNameFromReference,
   createPlatformCredentialStore,
   createManagedWorkspaceHandle,
   createReadonlyWorkspaceHandle,
+  redactSensitiveText,
   recordCredentialMigration,
   resolveSecretReference,
   createMcpToolsExtension,
@@ -24,6 +24,7 @@ import {
   LspManager,
   readLspConfig,
 } from "@tracegraph/core";
+import { JsonlSessionStore } from "@tracegraph/session";
 import { ModelUsageReportSchema, UsageSnapshotSchema, type UsageSnapshot } from "@tracegraph/contracts";
 import { createTraceGraphHost, type RegisteredProject } from "@tracegraph/host";
 import { closeHostAndFlushTelemetry, createCodeGraphProvider } from "./composition.js";
@@ -137,6 +138,7 @@ async function runServer(args: string[]): Promise<void> {
   await extensions.manager.activate(createLspToolsExtension(lsp));
   const sessionStore = new JsonlSessionStore(sessionDir, {
     trashRoot: resolve(dirname(sessionDir), "sessions-trash"),
+    redactSensitiveText,
   });
   const managedRoot = resolve(dataDir, "projects");
   const chatRoot = resolve(dataDir, "chat-workspace");

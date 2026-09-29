@@ -291,9 +291,10 @@ tasks:
     depends_on: [CORE-028]
     outputs: [packages/evidence]
     acceptance:
-      - 先按 AGENTS 升包门槛裁决；未通过时留在内部模块并记录 Note
-      - projection 无 I/O
-      - core 只走公开 exports
+      - Evidence package 仅依赖 contracts，Core 仅经 @tracegraph/evidence 根导出依赖它
+      - Ledger/Artifact/Projection/Replay 行为通过公开 API contract tests
+      - 唯一 Ledger writer 与无 I/O Projection 门禁指向 packages/evidence 源码
+      - Core focused tests、CLI vertical E2E、Ledger replay 与架构文档验证通过
 
   - id: PKG-031
     phase: P3

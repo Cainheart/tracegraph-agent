@@ -1,9 +1,9 @@
 # 模块 02：Agent Runtime
 
-> 定位：整个系统的执行内核。模型循环、动作闸门、审批、Patch 提交、Context 组装、事件写入全部在这里发生。
-> 代码：`packages/core/src/domains/runtime/{runtime,runtime-telemetry}.ts`、`kernel/{types,crypto,workspace,registration,raw-tool-result}.ts`、`kernel/tool/definition.ts`、`domains/extensions/{registration,manager}.ts`、`domains/tools/{registry,executor,policy-engine,approval-token-store,tool-output-limits}.ts`、`domains/{context/{context,context-compaction,token-meter},credentials/credentials,evidence/{action-wal,attachment,event-ledger,projection,replay},memory/memory,model/{fake-model,model-provider},session/{session-store,session-controller},skill/skill,subagent/subagent,team/team,todo/todo}.ts`、`seams/{sandbox,lsp,mcp}/`
+> 定位：整个系统的执行内核。`AgentLoopCoordinator` 协调 Context、模型 Decision 与 Tool batch；`AgentRuntimeImpl` 保留公开 Run 命令、Ledger、审批/控制锁、workspace authority、Tool 执行与恢复。
+> 代码：`packages/core/src/domains/runtime/{agent-loop,run-state-machine,runtime-feature-drivers,runtime,runtime-telemetry,runtime-service-facades.test,runtime-feature-driver-registry.test,runtime-feature-drivers.test}.ts`、`kernel/{types,crypto,workspace,registration,raw-tool-result}.ts`、`kernel/tool/definition.ts`、`domains/extensions/{registration,manager}.ts`、`domains/tools/{registry,executor,policy-engine,approval-token-store,tool-output-limits,runtime-service}.ts`、`domains/{context/{context,context-compaction,token-meter,runtime-service},credentials/credentials,evidence/{action-wal,attachment,runtime-service},memory/memory,model/{fake-model,model-provider},session/{session-store,session-controller},skill/skill,subagent/subagent,team/team,todo/todo}.ts`、`packages/{evidence,session}/src/`、`seams/{sandbox,lsp,mcp}/`
 > 契约：`packages/contracts/src/{commands,action,tool,action-wal,event,context,memory,token,sandbox,permission,projection,session,steering,subagent,telemetry}.ts` 与 `packages/telemetry/src/`
-> 最后核对：2026-09-29（CORE-023 Extension focused 3 个文件、24 项测试通过；Core build/typecheck 通过）
+> 最后核对：2026-09-30（CORE-028 turn coordinator 与 PKG-031 Session persistence package；Core 416 项测试、Session 契约 2 项测试、CLI E2E 4 项测试）
 > 实现状态：**已验证**（当前精确用例数以 Core/Test-support 测试命令为准）
 
 ---
@@ -13,12 +13,13 @@
 | 选项 | 必填 | 默认 | 作用 |
 |---|---|---|---|
 | `dataDir` | ✓ | — | 数据根目录；ledger/artifact/WAL/recovery 分别落在 `events/artifacts/wal/recovery` |
-| `sessionStore` | | `undefined` | G-01 durable Session 索引；CLI 注入 `JsonlSessionStore`，不改变 Event Ledger 的事实源地位 |
+| `sessionStore` | | `undefined` | G-01 durable Session 索引；CLI 从 `@tracegraph/session` 构造 `JsonlSessionStore`，Core adapter 注入 canonical title redactor，不改变 Event Ledger 的事实源地位 |
 | `tokenMeter` | | `CalibratedTokenMeter(<dataDir>/token-calibration.json)` | provider/model-aware preflight、post-call 校准与异常判断；初始化失败不阻断 Agent |
 | `telemetrySink` | | `NoopTelemetrySink` | G-15 process-local 观测旁路；Runtime 用 `SafeTelemetry` 包裹并从 committed Event 白名单派生。Core 不读取 `telemetry.json`、环境变量或 authorization reference |
 | `retriever` | | `undefined` | G-21 本地或远端检索 seam；缺失时自动 turn 不检索、不追加伪造 recall 事件，显式 `recall()` 则以 degraded evidence 收口 |
 | `retrievalBudget` | | `{max_tokens:4096,max_hits:8}` | 每轮 Memory 召回进入 Context 前的独立 token/hit 上限 |
 | `memoryStore` | | `JsonlMemoryStore(<dataDir>/memory/records.jsonl)` | admitted Memory 的 canonical append-only 记录；检索索引只是可重建投影 |
+| `disabledRuntimeFeatures` | | `[]` | Host composition 可独立禁用 `memory`、`team`、`todo` 或 `attachment`；默认全部启用，未知或重复项在 Runtime 初始化前拒绝 |
 | `model` | | `DeterministicFakeModel` | 模型适配器 |
 | `now` | | `() => new Date()` | 时钟注入（可复现性） |
 | `idFactory` | | `defaultIdFactory` | ID 生成注入 |
@@ -42,7 +43,7 @@
 | `rollbackPolicy` | | `{enabled:false, allowForce:false}` | 显式 rollback 总开关及非 disposable 的 force 策略 |
 | `actionCommitFaultInjector` | | `undefined` | 仅用于自动化注入四个 commit 边界崩溃点 |
 
-```89:90:packages/core/src/domains/runtime/runtime.ts
+```436:437:packages/core/src/domains/runtime/runtime.ts
 /** Default guard against an unbounded model/tool loop. This is not a token limit. */
 export const DEFAULT_MAX_TURNS = 12;
 ```
@@ -92,9 +93,11 @@ export const DEFAULT_MAX_TURNS = 12;
 | `getTelemetryStatus()` | 返回当前进程 strict sink/status/error 快照；不是 durable Run Projection |
 | `flushTelemetry()` | best-effort flush；任何 sink failure 都被隔离，不会以 Runtime 失败向上传播 |
 
+禁用能力的 Runtime API 统一抛出 `RuntimeCommandError(code: "feature_disabled")`，对应模型 Tool 从该 Run 的工具 schema 中移除。显式模型响应仍调用禁用 Tool 时，Runtime 在 dispatch 前写 `action.rejected` 并以 `feature_disabled` 收口。禁用 Memory/Attachment 时跳过对应 Store 初始化；禁用 Attachment 且 Run 指定 staged upload 时，在 `run.created` 前拒绝。Plan mode 依赖 Todo mutation，因此关闭 `todo` 后不能启动新的 plan Run。禁用配置不会删除 Ledger、Memory JSONL 或旧附件，也不改变历史 Run 的 Projection/replay。
+
 `getProjection()`、`replay()`、`replayAt()` 与 `replayDiff()` 都直接读账本；后两者额外把 Session/Run/sequence 作为强制范围并验证 hash chain：
 
-```485:491:packages/core/src/domains/runtime/runtime.ts
+```2613:2619:packages/core/src/domains/runtime/runtime.ts
   async getProjection(runId: string): Promise<RunProjection> {
     const events = await this.#ledger.list(runId);
     if (events.length === 0) {
@@ -144,7 +147,7 @@ canonicalActionSequence ← runtime 自有动作序号（见 §6）
 
 新 Run 先通过 resolver 得到并校验 effective policy，写 `permission.configured`，再在 `run.started` 之前调用 `#recordSandboxConfiguration()`；恢复 Run 使用冻结 policy，在 `run.resumed` 之前重新记录 sandbox lifecycle。Sandbox mode 始终取自 `state.permissionPolicy.preset.sandbox_mode`：probe canonical workspace 后依次追加 `sandbox.configured {mode,platform}` 与一个结果事件。`full/partial` 使用 `sandbox.enforced {sandbox_report}`；`none` 使用 `sandbox.disabled {reason,sandbox_report}`，其中 danger 是 `explicit_danger_full_access`，受限后端不可用是 `enforcement_unavailable`。
 
-G-18 把附件认领插在 `run.created` 与上述 permission/sandbox/run.started 之间：
+Attachment driver 启用时，将附件认领插在 `run.created` 与上述 permission/sandbox/run.started 之间：
 
 ```text
 run.created
@@ -156,7 +159,7 @@ run.created
   → indexing/context/model
 ```
 
-只有存在 Run 后，超限、scope 错误或模型不支持图片才有 durable rejection；认领又必须早于首个模型请求，保证不支持图片的模型收到零 image block。成功附件生成 bounded Observation；offload 只把 `artifact:<id>` 与 PDF 抽取状态交给文本 Context，inline PNG/JPEG 只进入首次模型输入。运行中 G-14 steering 不接受 upload ids。
+启用 Attachment 后，只有存在 Run 时，超限、scope 错误或模型不支持图片才有 durable rejection；认领必须早于首个模型请求，保证不支持图片的模型收到零 image block。关闭 Attachment 时，staging/content API 不可用，带 upload ids 的新 Run 在 `run.created` 前拒绝。成功附件生成 bounded Observation；offload 只把 `artifact:<id>` 与 PDF 抽取状态交给文本 Context，inline PNG/JPEG 只进入首次模型输入。运行中 G-14 steering 不接受 upload ids。
 
 这份 Run 级报告是配置/能力事实，不代替执行期证据。`run_test` 仍须经同一个 `SandboxRunner.run()`，Runtime 再校验实际 report 的 schema 与 mode；合法报告写入 Receipt metadata、Observation facts、`tool.completed|failed` 与 `test.completed`。报告丢失、mode 不一致或非法时改写为 `sandbox_unavailable`，受限 child 不被当成已执行。该业务失败映射到通用 failure class `denied`。
 
@@ -190,13 +193,19 @@ Telemetry 不是 `RunState` 的组成部分，而是 Runtime 级的 `SafeTelemet
 
 恢复完全不读取该状态。Runtime 不从 sink 反推 Event，也不在启动时重放 Ledger 以 backfill Telemetry；`error_count`、`last_error_at` 和 OTLP queue 都只在当前进程内。Ledger 才是事实源。
 
+### CORE-027 Runtime feature contributions
+
+`RuntimeFeatureDriverRegistry` 是 Core 内部的生命周期扩展点，Runtime 注册四个内建 driver 并按注册顺序收集贡献：Memory driver 在每轮提供可选 Context hits；Team/Todo drivers 在工具执行前提供各自的窄 Tool bridge；Attachment driver 在 `run.created` 后认领 upload ids。主循环只请求通用 turn contribution，不直接分支到 Memory/Team/Todo/Attachment 实现。Tool catalog 通过 Registry 的 Tool ownership 过滤禁用项；Run-created contribution 保持原有附件事件顺序。
+
+这不是外部模块加载或独立 package API：driver 不拥有 Run/Ledger 状态，不读取 module path；持久化行为继续由 Memory、Team、Todo、Attachment 域服务负责。Subagent 生命周期仍会为 root Run 写入必要的 Team member bookkeeping；关闭 Team 后，用户/模型 Team 接口不可用，但内部 G-07 child 生命周期不被破坏。CORE-028 已把 turn orchestration 移入 `agent-loop.ts`；Runtime 通过 typed ports 继续持有 Ledger、审批、控制锁、Tool 执行和 workspace authority。
+
 ### 3.6 G-21 durable Memory 与每轮检索
 
-Runtime 初始化时默认打开 `<dataDir>/memory/records.jsonl`；它保存通过准入的完整 `MemoryRecord`，检索索引只是一份可重建投影。`remember()` 先 strict parse candidate 并校验 project/run scope，再在单进程队列内按 `candidate_id + candidate_hash` 幂等：结构非法、跨 scope 或复用 candidate id 携带不同内容会在写任何 admission 事实前失败；无来源、过期、不可信或内容+scope 重复等**合法但不应接纳**的候选会写 `memory.candidate_evaluated {accepted:false,reason}`。确认候选先提交 candidate Event，并以实际 committed Event 中的 admission id、结果 memory id 与决定时间为准，再持久化 record、尝试 ingest、写 `memory.written`，成功索引再写由该 Event 引起的 `retrieval.index_updated`。
+Runtime 默认初始化 `<dataDir>/memory/records.jsonl`；若 `disabledRuntimeFeatures` 包含 `memory` 则跳过 Memory Store 初始化且 Memory API 不可用。该文件保存通过准入的完整 `MemoryRecord`，检索索引只是一份可重建投影。`remember()` 先 strict parse candidate 并校验 project/run scope，再在单进程队列内按 `candidate_id + candidate_hash` 幂等：结构非法、跨 scope 或复用 candidate id 携带不同内容会在写任何 admission 事实前失败；无来源、过期、不可信或内容+scope 重复等**合法但不应接纳**的候选会写 `memory.candidate_evaluated {accepted:false,reason}`。确认候选先提交 candidate Event，并以实际 committed Event 中的 admission id、结果 memory id 与决定时间为准，再持久化 record、尝试 ingest、写 `memory.written`，成功索引再写由该 Event 引起的 `retrieval.index_updated`。
 
 candidate Event 已提交、record 尚未写入，或 record 已落盘、后续 Event/索引步骤崩溃时，同一 candidate 重试都会复用原 admission/memory id，不创建第二条 canonical Memory；同 candidate id 换内容则 fail-closed。索引 ingest 失败不会否定已经 durable 的 Memory，也不会伪造 `retrieval.index_updated`，因此“记录存在、索引需重建”在证据上可区分。Memory JSONL 损坏或写失败则直接失败，不从不可信索引反推 canonical record。
 
-主循环每轮在 Context build 前、仅当配置了 retriever 时调用 MemoryManager：query 是 `state.task.slice(0, 8_000)`，默认最多 8 个命中/4,096 token。project/run 记忆写入当前项目索引；global 记忆写入专用 `tracegraph:global-memory` 索引，recall 同时搜索当前项目与 global 索引并按 score/chunk id 合并去重。Retriever response 必须分别匹配所查 `project_id + sha256(query)`；`memory/<id>.md` 命中还要回查 canonical record 的 status、trust、source、expiry、project/run scope 与 superseded 状态。失败、非法响应或显式无 backend 都只产生 `memory.recalled {status:"degraded",failure_code,...}` 和空 hits，不能把未经审计的文本送入模型；自动 turn 在根本未装配 retriever 时保持旧行为，不追加无意义事件。
+启用 Memory driver 后，Registry 每轮在 Context build 前、仅当配置了 retriever 时调用 MemoryManager：query 是 `state.task.slice(0, 8_000)`，默认最多 8 个命中/4,096 token。project/run 记忆写入当前项目索引；global 记忆写入专用 `tracegraph:global-memory` 索引，recall 同时搜索当前项目与 global 索引并按 score/chunk id 合并去重。Retriever response 必须分别匹配所查 `project_id + sha256(query)`；`memory/<id>.md` 命中还要回查 canonical record 的 status、trust、source、expiry、project/run scope 与 superseded 状态。失败、非法响应或显式无 backend 都只产生 `memory.recalled {status:"degraded",failure_code,...}` 和空 hits，不能把未经审计的文本送入模型；自动 turn 在根本未装配 retriever 时保持旧行为，不追加无意义事件。关闭 Memory driver 后不执行自动 recall。
 
 通过的命中携带 rank/hit id/content hash/score/source path/start-end line/heading/token。Context builder 将它们标成 untrusted 的 `memory/retrieved` item/node，Manifest 强制 item/node/token 与 durable recall evidence 对齐。Ledger 只保存 query hash 和有界 provenance，不保存 raw query/命中正文；正文存在 canonical Memory store、检索索引与本轮 Context Manifest/Artifact 边界中。
 
@@ -226,28 +235,33 @@ Context contribution 被转成有界、untrusted 的 retrieval-style surface，�
 
 ---
 
-## 4. 主循环 `#continueRun`
+## 4. AgentLoopCoordinator
+
+`AgentRuntimeImpl.#bootstrapRun()` 完成可选基线图准备后，将 turn continuation 委托给 `AgentLoopCoordinator`（`packages/core/src/domains/runtime/agent-loop.ts`）。Runtime 在构造时绑定 typed ports；Loop 通过这些 ports 使用相同的 Ledger、per-Run control lock、事件 append、审批判断、Tool scheduler、失败收口与 workspace action path。
 
 循环条件四项同时成立才继续：
 
-```2201:2206:packages/core/src/domains/runtime/runtime.ts
+```273:279:packages/core/src/domains/runtime/agent-loop.ts
+  async continueRun(state: State): Promise<void> {
     while (
       !state.stopped
       && state.pendingPatch === undefined
       && state.pendingPlan === undefined
-      && !(await this.#isTerminal(state.runId))
-    ) {
 ```
 
 即：未停止 **且** 无待批 Patch **且** 无待批 Plan **且** 未终态。Patch 遇到 `preview_patch` 会 `return`；Plan 的 `finish` 则写入 `plan.ready`、设置 `pendingPlan` 后 `return`。两条审批路径都让模型循环物理暂停，只有对应的 Host 命令可以继续。
 
-每次进入循环后，Runtime 先证明还剩一个模型 turn，再运行 G-14 安全点：从 durable inbox 只消费 FIFO 头部一条普通输入。message/approve hint 在 `user.input_consumed` durable 后进入下一次模型请求的 history；若预算已耗尽，它会保持 pending 而不是产生“已消费但没有下一请求”的假事实。随后，已装配的 G-21 retriever 用原始 Run task 作有界 recall，成功命中作为带 provenance 的 Memory surface 交给 Context builder。cancel 由专用 durable finalizer 在工具/模型安全边界越过普通队列并直接收敛，不再发起模型调用。工具批次执行期间不会把新消息插进半轮 Decision，必须等当前安全波全部 settle；三条普通消息因此需要三个循环安全点，而不是一次清空。
+每次进入循环后，Loop 先证明还剩一个模型 turn，再通过 Runtime port 运行 G-14 安全点：从 durable inbox 只消费 FIFO 头部一条普通输入。message/approve hint 在 `user.input_consumed` durable 后进入下一次模型请求的 history；若预算已耗尽，它会保持 pending 而不是产生“已消费但没有下一请求”的假事实。随后，已装配的 G-21 retriever 用原始 Run task 作有界 recall，成功命中作为带 provenance 的 Memory surface 交给 Context builder。cancel 由专用 durable finalizer 在工具/模型安全边界越过普通队列并直接收敛，不再发起模型调用。工具批次执行期间不会把新消息插进半轮 Decision，必须等当前安全波全部 settle；三条普通消息因此需要三个循环安全点，而不是一次清空。
+
+Run/Turn/Step 的纯迁移判定位于 `domains/runtime/run-state-machine.ts`，并由 `run-state-machine.test.ts` 以表驱动用例覆盖：轮次预算映射到 root/child failure code；finish 在 pending inbox、execute 完成与 plan Todo 检查之间分支；输入步号从有效的 `user.input_consumed.at_step` 单调推进并在上限处返回 exhausted。该模块不读写 Ledger，也不持有 `RunState`。Runtime 仍负责投影读取、per-Run control mutex、取消时序、错误包装和事件 append；`state.turn` 仍在 steering 未取消后才推进。finish 仍先检查 pending input，再按需计算 Todo 投影，因此输入与终态的顺序由原控制锁和 Ledger 保证。
+
+CORE-026 为 Runtime 建立三个 curated、仅供 Core 内部使用的集成 façade：`domains/context/runtime-service.ts`、`domains/tools/runtime-service.ts` 与 `domains/evidence/runtime-service.ts`。`runtime.ts` 与 `agent-loop.ts` 从这些 façade 引入对应域的服务、类型与纯 helper；façade 只重导出 Runtime 已使用的符号，不新增 package-root exports，也不搬移实现。`runtime-service-facades.test.ts` 检查 Runtime 的 Context、Tool、Evidence 导入必须各自经过 façade。执行、审批、Event Ledger ownership 与 Projection/Replay 的既有职责保持原样。
 
 ### 4.1 一轮 turn 的完整阶段
 
 | # | 阶段 | 关键行为 |
 |---|---|---|
-| 1 | 轮次闸门 | `task.turn >= maxTurns` → `turn_budget_exhausted` 失败 |
+| 1 | 轮次闸门 | `transitionTurnStart()` 按 Run depth 将 `completedTurns >= maxTurns` 映射为 root `turn_budget_exhausted` 或 child `subagent_step_budget_exceeded`；否则给出下一 turn 编号 |
 | S | G-14 Steering 安全点 | 预算允许下一次模型请求时，从 Ledger 投影读取普通输入 FIFO 头部，每次最多写一条 `user.input_consumed`；message/approve hint 进入下一次请求 history；cancel 由独立 control lane 在安全边界处理 |
 | 2 | 分配 ID | `turnId`、`modelCallId` |
 | R | G-21 Memory recall | 若 retriever 可用，按 task query 与独立 recall budget 检索、过滤 canonical Memory scope/trust/status，先 durable 写 completed/degraded `memory.recalled`；命中正文不进该 Event |
@@ -282,7 +296,7 @@ Context contribution 被转成有界、untrusted 的 retrieval-style surface，�
 
 ### 4.2 第 12 步的凭据闸门
 
-```759:765:packages/core/src/domains/runtime/runtime.ts
+```588:594:packages/core/src/domains/runtime/agent-loop.ts
         const serializedDecision = JSON.stringify(decision);
         if (
           redactSecrets(serializedDecision) !== serializedDecision
@@ -304,7 +318,7 @@ usage append 失败不会改变已有模型响应或 Run 结果；因此它是 d
 
 ### 4.4 第 25 步的原子性
 
-```932:940:packages/core/src/domains/runtime/runtime.ts
+```6013:6019:packages/core/src/domains/runtime/runtime.ts
         state.pendingPatch = { pendingApproval, previewCall: call };
         await this.#append(state, {
           type: "approval.requested",
@@ -348,13 +362,13 @@ usage append 失败不会改变已有模型响应或 Run 结果；因此它是 d
 | 13 | 成功 → 幂等 `patch.applied`（指向 commit tool 事件）→ WAL `committed`（绑定 event/receipt id） |
 | 14 | `action.verified` → WAL `verified`；记录 `lastPatchEventId` |
 | 15 | 若有 codeGraph 与 baseGraph → 抓结果快照 → `createDelta` → **四字段交叉校验** → 落工件 → `graph.delta_created` → 更新 `baseGraph` |
-| 16 | 图失败 → `graph_delta_failed`；否则 `#continueRun(state)` |
+| 16 | 图失败 → `graph_delta_failed`；否则 Runtime 调用 `AgentLoopCoordinator.continueRun(state)` |
 
 预览过期时间是 **5 分钟**（`now + 5 * 60_000`），且 `preview.diff` 在事件里被截断到 **2 000 字符**（完整 diff 在工件里）。
 
 第 15 步的四字段校验值得单独记住：
 
-```405:412:packages/core/src/domains/runtime/runtime.ts
+```2501:2506:packages/core/src/domains/runtime/runtime.ts
         if (
           delta.project_id !== state.projectId
           || delta.base_snapshot_id !== state.baseGraph.snapshot_id
@@ -405,7 +419,7 @@ restore attempt 在真正修改 before 状态前先以 `started` 落 Recovery Le
 
 ### 6.2 动作身份由 runtime 拥有
 
-```142:148:packages/core/src/domains/runtime/runtime.ts
+```634:640:packages/core/src/domains/runtime/runtime.ts
   /**
    * Number of runtime-owned action identities minted for this run.  The model
    * supplies an action_id as a correlation hint, but the Harness owns the
@@ -419,7 +433,7 @@ restore attempt 在真正修改 before 状态前先以 `started` 落 Recovery Le
 
 ### 6.3 重复动作拦截
 
-```844:861:packages/core/src/domains/runtime/runtime.ts
+```742:751:packages/core/src/domains/runtime/agent-loop.ts
       const actionSignature = commandSignature({
         tool_name: call.tool_name,
         arguments: call.arguments,
@@ -536,7 +550,7 @@ user.input_queued  user.input_consumed
 
 2. **Action WAL 不是通用副作用事务层。** 当前只接入单目标 `commit_patch`；`run_test`、provider usage 与未来外部 Tool 不受其保护。WAL/Recovery Ledger 只有进程内串行，Session lease 也不是跨进程 target lock；启动只对仍已注册且能解析可信 workspace 的项目对账。before-image 是权限收紧的本地精确字节，不是加密备份。
 
-3. **`#continueRun` 仍是很长的单方法**，把 Context 组装、模型调用、usage 冲刷、Decision 校验、动作闸门、工具派发、预览与审批请求放在一个作用域。可读性成本高；但其中相当部分是不可拆的原子迁移（见 §4.4），可抽出的只有纯判定部分（`#repairActionIdentity` 是已有的先例）。
+3. **Loop 阶段仍集中在一个 coordinator 方法**：`AgentLoopCoordinator.continueRun()` 协调 Context 组装、模型调用、usage、Decision 校验、批动作授权与 Tool 调度。CORE-028 已将它从 Runtime 实现中移出；本任务只抽取边界，不拆分单轮各阶段，也不把 Ledger、审批或 workspace authority 移交给 Loop。
 
 4. **审批过期直接判 Run 失败。** `approval.expired` 之后立刻 `#fail("approval_expired")`，Run 无法"回到运行中让模型重新预览"。而投影层遇到 `approval.expired` 却把 `status` 退回 `running`（模块 05 §5.1），两者语义不一致：**账本说失败，投影在中转态之间短暂显示运行中**。
 

@@ -107,10 +107,10 @@ P4 与 P5 可在 P2 后并行；P6 应等待 Evidence/Session/API 边界稳定�
 | Task | 内容 | 验收 |
 |---|---|---|
 | `CORE-024` | evidence/session/context/model/memory/team 等目录化 | **已完成**：Core `src/` 顶层只保留 `index.ts` 与 `kernel/`、`domains/`、`seams/`；行为测试与 CLI E2E、Ledger replay 验证通过 |
-| `CORE-025` | 提取 Run/Turn/Step 状态机与纯函数 | canonical event 顺序不变 |
-| `CORE-026` | 提取 Tool/Context/Evidence service façade | `runtime.ts` 不访问其内部文件 |
-| `CORE-027` | feature drivers 通过扩展点注册 | 禁止新增 feature-specific loop 分支 |
-| `CORE-028` | 缩小 `runtime.ts` 为 agent-loop coordinator | 职责收敛、LOC 下降；现有 focused/CLI e2e/Ledger replay 与外部工作区结果无意外变化 |
+| `CORE-025` | 提取 Run/Turn/Step 状态机与纯函数 | **已完成**：纯迁移决策由表驱动测试覆盖；Runtime 调用点保留 Ledger authority、per-Run control mutex、取消计时与 canonical event 顺序；Core 402 项测试及 CLI E2E 4 项通过 |
+| `CORE-026` | 提取 Tool/Context/Evidence service façade | **已完成**：Context/Tool/Evidence 各有 Runtime curated façade；源码测试禁止 `runtime.ts` 深层导入实现文件；Core 403 项测试、CLI E2E 4 项测试及全量 typecheck 通过 |
+| `CORE-027` | feature drivers 通过扩展点注册 | **已完成**：Memory、Team、Todo、Attachment 改为 RuntimeFeatureDriverRegistry 生命周期贡献；`disabledRuntimeFeatures` 可逐项关闭，Turn loop 只消费通用贡献 | Core 416 项测试、CLI E2E 4 项、全 workspace typecheck 通过；feature-specific API/Tool fail-closed，Ledger/Event 顺序保持 |
+| `CORE-028` | **已完成**：提取 AgentLoopCoordinator | `agent-loop.ts` 以 typed ports 协调 Context、model Decision 与 Tool batch；Runtime 继续拥有 Ledger、审批/控制锁、workspace authority、Tool 执行和恢复。`runtime.ts` 从 10,280 降至 9,506 行；Core 416 项、CLI E2E 4 项、Ledger replay eval 1 项通过。E2E 覆盖审批前 workspace 未变、审批后补丁与 replay timeline；canonical event 顺序和审批时点保持。 |
 
 每个任务只做移动/提取；行为改进留 P4/P5。
 
@@ -120,8 +120,8 @@ P4 与 P5 可在 P2 后并行；P6 应等待 Evidence/Session/API 边界稳定�
 
 | Task | 第一批物理 family | 为什么先做 |
 |---|---|---|
-| `PKG-030` | `evidence/{event,ledger,artifact,projection,replay}` | 有独立真源和纯投影边界 |
-| `PKG-031` | `session/{format,persistence,projection,query}` | 有持久兼容责任 |
+| `PKG-030` | `packages/evidence` | **已完成**：Ledger、Artifact、Projection、Replay 经 `@tracegraph/evidence` 根 API 导出；Core 注入 canonical crypto/redaction 与 Team/Todo projectors，契约测试走公开入口；Action WAL、Recovery Ledger、Attachment 仍留 Core。设计与门槛证据见 [PKG-030 Note](../../../.agents/notes/implemented/2026-09-30-pkg-030-evidence-package-gate.md) |
+| `PKG-031` | `packages/session` | **已完成**：Session JSONL 格式、持久化、查询和 generation migration 经公开根 API 提供；Core 通过兼容 façade 注入 canonical redactor，CLI 为第二直接 consumer；Session-to-Run controller 留在 Core。见 [PKG-031 Note](../../../.agents/notes/implemented/2026-09-30-pkg-031-session-package-gate.md) |
 | `PKG-032` | `mcp`、`lsp` | 已是清晰外部 seam |
 | `PKG-033` | `tool/{tools,executor,policy,approval}` | 副作用强制点需窄 API |
 | `PKG-034` | `context/{context,compaction,spill}` | 多 Provider 与模型可见契约 |
@@ -129,7 +129,7 @@ P4 与 P5 可在 P2 后并行；P6 应等待 Evidence/Session/API 边界稳定�
 
 每升一个 package：添加 README、公开 export、依赖规则、conformance/REAL composition test，并证明旧 import 已清零。Memory family 等 contract V2 稳定后再升，不能先搬一个仍在快速变化的 API。
 
-表中的物理包名是**候选输出**，不是要求一次创建全部。`PKG-030～035` 各自先用[当前升包门槛](../03-package-topology/05-profiles-dependency-gates.md)裁决：边界不稳定、缺第二 consumer/硬隔离理由或缺 contract tests 时，任务记录 Note 并保持 core 内逻辑模块；通过门槛才创建物理包。下游依赖应消费稳定公开 seam，不应把上游“未升包”误当失败或强行制造空包。
+表中的物理包名是**候选输出**，不是要求一次创建全部。除已完成的 `PKG-030`、`PKG-031` 外，`PKG-032～035` 各自先用[当前升包门槛](../03-package-topology/05-profiles-dependency-gates.md)裁决：边界不稳定、缺第二 consumer/硬隔离理由或缺 contract tests 时，任务记录 Note 并保持 Core 内逻辑模块；通过门槛才创建物理包。下游依赖应消费稳定公开 seam，不应把上游“未升包”误当失败或强行制造空包。
 
 ## 7. Phase 4 · Memory 与 Experience 差异化
 

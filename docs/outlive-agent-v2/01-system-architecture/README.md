@@ -275,15 +275,16 @@ traceId
 
 | 当前 | 目标 owner | 迁移方式 |
 |---|---|---|
-| `packages/core/src/domains/evidence/{event-ledger,projection,replay,artifact-store,action-wal}.ts` | Evidence family | CORE-024 已归入 `core/domains/evidence`，稳定后升包 |
-| `packages/core/src/domains/session/{session-store,session-controller}.ts` | Session family | 与 event contracts 解耦后升包 |
+| `packages/evidence/src/{event-ledger,projection,replay,artifact-store}.ts` | `@tracegraph/evidence` | PKG-030 已按无环公开 API 提取；Core 通过根导出兼容适配器注入 canonical primitives 与 Team/Todo projectors |
+| `packages/core/src/domains/evidence/{action-wal,attachment}.ts` | Core Runtime authority | WAL、Recovery Ledger 与 Attachment staging 暂留 Core，维持各自副作用与恢复边界 |
+| `packages/session/src/session-store.ts` | `@tracegraph/session` | PKG-031 已提取 JSONL 格式、持久化、查询与迁移；Core 注入 canonical redactor，Session-to-Run controller 保留在 Core |
 | `packages/core/src/domains/memory/memory.ts` + `packages/retrieval` | Memory family | 先统一 contract 与 lifecycle，再组合 retrieval provider |
 | `packages/core/src/domains/context/{context,context-compaction,token-meter}.ts` | Context family | 拆 assembly、policy、provider |
 | `kernel/tool/definition.ts`、`domains/tools/{registry,executor,policy-engine,approval-token-store}.ts` | Tool family | CORE-022 已按 Definition/Executor/Policy/Approval 分离；CORE-024 后只由包根 barrel 保持公开 API 兼容，不保留平铺源码转发 |
 | `domains/extensions/{registration,manager}.ts` | Extension family | CORE-023 已分离 G-17 注册契约与 lifecycle manager；CORE-024 移除平铺 `extension.ts`，兼容 API 由 Core 包根 barrel 保持 |
 | `packages/core/src/domains/model/model-provider.ts` | LLM family | seam 与 concrete presets/providers 分离 |
 | `packages/core/src/seams/{mcp,lsp,sandbox}/`、`packages/core/src/domains/skill/skill.ts` | Capability families | 最适合优先提取的可替换接缝 |
-| `packages/core/src/domains/runtime/runtime.ts` | `core/agent-loop` + feature drivers | 最后拆；只保留状态机和 orchestration |
+| `packages/core/src/domains/runtime/{runtime.ts,runtime-feature-drivers.ts}` | `core/agent-loop` + feature-driver contributions | CORE-027 已把 Memory/Team/Todo/Attachment 接入生命周期 Registry；CORE-028 再把 Runtime 收敛为 coordinator |
 | `packages/host`、`packages/sdk` | Host 与内部 client/protocol families | 在 Runtime 事实边界稳定后拆 controller/transport；不作为独立 API/SDK 产品发布 |
 
 ## 12. 架构级禁止项

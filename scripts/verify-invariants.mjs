@@ -3,8 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const DEFAULT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const LEDGER_WRITER_PATH = "packages/core/src/domains/evidence/event-ledger.ts";
-const PROJECTION_PATH = "packages/core/src/domains/evidence/projection.ts";
+const LEDGER_WRITER_PATH = "packages/evidence/src/event-ledger.ts";
+const PROJECTION_PATH = "packages/evidence/src/projection.ts";
 const WIRE_PRIVATE_FIELDS = ["attempt", "idempotency_key", "previous_event_hash", "event_hash"];
 const SOURCE_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mts", ".cts", ".mjs", ".cjs"]);
 const SKIP_DIRECTORIES = new Set([".git", "node_modules", "dist", "coverage", ".turbo", ".vite"]);
@@ -67,10 +67,15 @@ function verifySingleEventLedgerWriter(sources, errors) {
     add(errors, "INVARIANT_LEDGER_WRITER_MISSING", LEDGER_WRITER_PATH, "Canonical JsonlEventLedger writer declaration was not found.");
   }
   for (const item of sources) {
-    if (item.path === LEDGER_WRITER_PATH) continue;
-    const declaration = /\bclass\s+([A-Za-z_$][\w$]*EventLedger)\b/u.exec(item.source);
-    if (declaration) {
-      add(errors, "INVARIANT_SECOND_LEDGER_WRITER", item.path, `Additional Event Ledger implementation ${declaration[1]} is declared outside ${LEDGER_WRITER_PATH}.`);
+    const declarations = item.source.matchAll(/\bclass\s+([A-Za-z_$][\w$]*EventLedger)\b(?:\s+extends\s+([A-Za-z_$][\w$.]*))?/gu);
+    for (const declaration of declarations) {
+      const isCanonical = item.path === LEDGER_WRITER_PATH && declaration[1] === "JsonlEventLedger";
+      // Core retains a constructor-compatible subclass that only binds the
+      // canonical primitives; all append/read logic lives in the package class.
+      const isCoreAdapter = declaration[1] === "JsonlEventLedger"
+        && declaration[2] === "EvidenceJsonlEventLedger";
+      if (isCanonical || isCoreAdapter) continue;
+      add(errors, "INVARIANT_SECOND_LEDGER_WRITER", item.path, `Additional Event Ledger implementation ${declaration[1]} is declared; canonical writer is ${LEDGER_WRITER_PATH}.`);
     }
   }
 }
@@ -81,7 +86,7 @@ function verifyWireIsolation({ path: file, source }, errors) {
     add(errors, "INVARIANT_WIRE_SCHEMA_MISSING", file, "toWireEvent must validate its output with WireSessionEventSchema.");
     return;
   }
-  if (!/data\s*:\s*redactStructuredValue\s*\(\s*publicEventData\s*\(\s*event\.data\s*\)\s*\)/u.test(wireMapper)) {
+  if (!/data\s*:\s*(?:ports\.)?redactStructuredValue\s*\(\s*publicEventData\s*\(\s*event\.data\s*\)\s*\)/u.test(wireMapper)) {
     add(errors, "INVARIANT_PRIVATE_EVENT_DATA_ON_WIRE", file, "toWireEvent must filter private event data before it reaches the wire schema.");
   }
   if (/\.\.\.\s*event\b/u.test(wireMapper)) {

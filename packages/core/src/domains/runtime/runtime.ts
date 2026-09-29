@@ -189,21 +189,27 @@ import {
   type TelemetryStatus,
 } from "@tracegraph/telemetry";
 import {
-  ApprovalTokenStore,
-  ApprovalTokenStoreError,
-} from "../tools/approval-token-store.js";
-import {
   ActionWal,
   ActionWalError,
-  RecoveryLedger,
-} from "../evidence/action-wal.js";
-import { ArtifactStore } from "../evidence/artifact-store.js";
-import {
+  ArtifactStore,
   AttachmentStore,
+  JsonlEventLedger,
+  RecoveryLedger,
+  projectRun,
+  replayDiffFromEvents,
+  replaySnapshotFromEvents,
+  type AtomicAppendResult,
+  type AtomicEventScope,
   type AttachmentContent,
   type StageAttachmentInput,
-} from "../evidence/attachment.js";
-import { DeterministicContextBuilder, estimateTokens, type ContextBuildNotice } from "../context/context.js";
+} from "../evidence/runtime-service.js";
+import {
+  CalibratedTokenMeter,
+  DeterministicContextBuilder,
+  estimateTokens,
+  type ContextBuildNotice,
+  type TokenMeter,
+} from "../context/runtime-service.js";
 import { SkillRegistry, type SkillRegistrySnapshotInternal } from "../skill/skill.js";
 import { McpManager, type McpManagerEvent } from "../../seams/mcp/index.js";
 import { createLspToolsExtension, lspResultToRaw, LspManager, type LspManagerEvent } from "../../seams/lsp/index.js";
@@ -217,11 +223,6 @@ import {
   sha256,
   stableStringify,
 } from "../../kernel/crypto.js";
-import {
-  JsonlEventLedger,
-  type AtomicAppendResult,
-  type AtomicEventScope,
-} from "../evidence/event-ledger.js";
 import {
   ExtensionManager,
   ExtensionManagerError,
@@ -238,13 +239,15 @@ import {
 } from "../memory/memory.js";
 import { DeterministicFakeModel } from "../model/fake-model.js";
 import {
-  CORE_BUILTIN_PERMISSION_PRESETS,
-  PolicyEngine,
-  approvalActionDigest,
-  createEffectivePermissionPolicy,
-} from "../tools/policy-engine.js";
-import { projectRun } from "../evidence/projection.js";
-import { replayDiffFromEvents, replaySnapshotFromEvents } from "../evidence/replay.js";
+  transitionAfterFinish,
+  transitionUserInputStep,
+} from "./run-state-machine.js";
+import {
+  normalizeDisabledRuntimeFeatures,
+  RuntimeFeatureDriverRegistry,
+  type RuntimeFeatureId,
+  type RuntimeFeatureToolContext,
+} from "./runtime-feature-drivers.js";
 import { RuntimeTelemetryProjector } from "./runtime-telemetry.js";
 import { createSandboxRunner, type SandboxRunner } from "../../seams/sandbox/runner.js";
 import {
@@ -252,7 +255,6 @@ import {
   type SessionLease,
   type SessionStore,
 } from "../session/session-store.js";
-import { CalibratedTokenMeter, type TokenMeter } from "../context/token-meter.js";
 import {
   DEFAULT_MAX_SUBAGENT_DEPTH,
   SubagentDomainError,
@@ -273,20 +275,24 @@ import {
 } from "../team/team.js";
 import {
   ActionRejectedError,
+  ApprovalTokenStore,
+  ApprovalTokenStoreError,
+  CORE_BUILTIN_PERMISSION_PRESETS,
   CommitPatchInputSchema,
   PatchInputSchema,
+  PolicyEngine,
+  TEAM_READ_MODEL_EXCERPT_BYTES,
+  TODO_READ_MODEL_EXCERPT_BYTES,
   ToolRegistry,
+  approvalActionDigest,
   createArtifactToolsExtension,
   createCoreToolRegistry,
+  createEffectivePermissionPolicy,
   createRunStateToolsExtension,
   executeToolDefinition,
   resolvePatchTarget,
   validateToolCall,
-} from "../tools/index.js";
-import {
-  TEAM_READ_MODEL_EXCERPT_BYTES,
-  TODO_READ_MODEL_EXCERPT_BYTES,
-} from "../tools/tool-output-limits.js";
+} from "../tools/runtime-service.js";
 import {
   ModelRequestError,
   type CodeGraphProvider,
@@ -303,6 +309,22 @@ import {
   type ToolCancellationShield,
   type ToolDefinition,
 } from "../../kernel/types.js";
+import {
+  AgentLoopCoordinator,
+  type ActionIdentityRepair,
+  type ApprovedOnceToolExecutionBinding,
+  type ExecutedTool,
+  type PendingToolExecution,
+  type PolicyAllowedToolExecutionBinding,
+  type PreparedToolCall,
+  type ScheduledToolResult,
+  type ToolBatchScheduleResult,
+  type ToolExecutionBinding,
+  type ValidatedToolCall,
+} from "./agent-loop.js";
+
+export { RUNTIME_FEATURE_IDS } from "./runtime-feature-drivers.js";
+export type { RuntimeFeatureDriver, RuntimeFeatureId } from "./runtime-feature-drivers.js";
 
 export type ActionCommitFaultPoint =
   | "after_prepare_before_apply"
@@ -367,6 +389,8 @@ export interface AgentRuntimeOptions {
   retrievalBudget?: MemoryRecallBudget;
   /** Injectable canonical store for failure and durability tests. */
   memoryStore?: MemoryRecordStore;
+  /** Host composition can disable built-in Runtime feature contributions independently. */
+  disabledRuntimeFeatures?: readonly RuntimeFeatureId[];
   maxTurns?: number;
   /** Maximum number of explicitly concurrency-safe tool calls run at once. */
   maxToolConcurrency?: number;
@@ -616,12 +640,6 @@ interface RunState extends SessionScopedState {
   canonicalActionSequence: number;
 }
 
-interface ActionIdentityRepair {
-  readonly code: "action_id_conflict";
-  readonly modelActionId: string;
-  readonly canonicalActionId: string;
-}
-
 interface PendingModelSurface {
   readonly runId: string;
   readonly projectId: string;
@@ -641,69 +659,6 @@ interface InputCommandBinding {
   result: Promise<SubmitUserInputResult>;
 }
 
-interface ExecutedTool {
-  receipt: Receipt;
-  observation: Observation;
-  raw: RawToolResult;
-  artifactRefs: ArtifactRef[];
-  event: SessionEvent;
-  sandboxReport?: SandboxReport;
-  walRecord?: ActionWalRecord;
-  walTransactionId?: string;
-}
-
-type ValidatedToolCall = ReturnType<typeof validateToolCall>;
-
-interface PreparedToolCall {
-  readonly index: number;
-  readonly call: ToolCall;
-  readonly validated: ValidatedToolCall;
-  readonly policyDecision: PolicyDecision;
-  readonly executionBinding: ToolExecutionBinding;
-  readonly serializedReason?: "approval_required" | "concurrency_unsafe" | "write_side_effect";
-}
-
-interface PendingToolExecution extends Omit<ExecutedTool, "event"> {
-  readonly refetchedContextArtifact?: ArtifactRef;
-  readonly refetchedContextRange?: {
-    readonly offset: number;
-    readonly returnedBytes: number;
-    readonly totalBytes: number;
-    readonly nextOffset?: number;
-    readonly truncated: boolean;
-  };
-}
-
-interface ScheduledToolResult {
-  readonly prepared: PreparedToolCall;
-  readonly executed: ExecutedTool;
-}
-
-interface ToolBatchScheduleResult {
-  readonly completed: readonly ScheduledToolResult[];
-  readonly actualPeakConcurrency: number;
-}
-
-interface PolicyAllowedToolExecutionBinding {
-  readonly kind: "policy-allow";
-  readonly actionDigest: string;
-  readonly policyDigest: string;
-  readonly canonicalTargetDigest?: string;
-}
-
-interface ApprovedOnceToolExecutionBinding {
-  readonly kind: "approved-once";
-  readonly actionDigest: string;
-  readonly policyDigest: string;
-  readonly canonicalTargetDigest?: string;
-  readonly approvalId: string;
-  readonly approvalTokenId: string;
-}
-
-type ToolExecutionBinding =
-  | PolicyAllowedToolExecutionBinding
-  | ApprovedOnceToolExecutionBinding;
-
 type RuntimeEventProposal = Omit<
   SessionEventProposal,
   "project_id" | "run_id" | "attempt" | "artifact_refs"
@@ -722,6 +677,7 @@ export async function createAgentRuntime(options: AgentRuntimeOptions): Promise<
       `maxToolConcurrency must be an integer between 1 and ${MAX_TOOL_CALLS_PER_DECISION}`,
     );
   }
+  const disabledRuntimeFeatures = normalizeDisabledRuntimeFeatures(options.disabledRuntimeFeatures);
   await mkdir(options.dataDir, { recursive: true });
   const now = options.now ?? (() => new Date());
   const idFactory = options.idFactory ?? defaultIdFactory;
@@ -771,7 +727,7 @@ export async function createAgentRuntime(options: AgentRuntimeOptions): Promise<
   await Promise.all([
     ledger.initialize(),
     artifacts.initialize(),
-    attachmentStore.initialize(),
+    ...(disabledRuntimeFeatures.has("attachment") ? [] : [attachmentStore.initialize()]),
     options.sessionStore?.initialize(),
     // Token accounting is optional evidence, not a startup dependency. An
     // unsafe/corrupt calibration store remains rejected by the meter itself,
@@ -781,10 +737,11 @@ export async function createAgentRuntime(options: AgentRuntimeOptions): Promise<
     // A writable Runtime must never silently bypass its action journal.
     actionWal.initialize(),
     recoveryLedger.initialize(),
-    memoryStore.initialize(),
+    ...(disabledRuntimeFeatures.has("memory") ? [] : [memoryStore.initialize()]),
   ]);
   return new AgentRuntimeImpl({
     ...options,
+    disabledRuntimeFeatures: [...disabledRuntimeFeatures],
     maxToolConcurrency,
     sandboxMode,
     sandboxRunner: options.sandboxRunner ?? createSandboxRunner(),
@@ -827,6 +784,8 @@ class AgentRuntimeImpl implements AgentRuntime {
   readonly #codeGraph: CodeGraphProvider | undefined;
   readonly #contextPolicy: ContextPolicy | undefined;
   readonly #memory: MemoryManager;
+  readonly #featureDrivers: RuntimeFeatureDriverRegistry;
+  readonly #agentLoop: AgentLoopCoordinator<RunState>;
   readonly #skillRegistry: SkillRegistry;
   readonly #mcpManager: McpManager | undefined;
   readonly #mcpLifecycleEvents: McpManagerEvent[];
@@ -988,6 +947,49 @@ class AgentRuntimeImpl implements AgentRuntime {
       idFactory: this.#idFactory,
       estimateTokens,
     });
+    this.#featureDrivers = new RuntimeFeatureDriverRegistry(options.disabledRuntimeFeatures);
+    this.#featureDrivers.register({
+      id: "memory",
+      contributeTurn: async ({ projectId, runId, sessionId, task, signal }) => ({
+        retrievedMemory: this.#memory.retrievalAvailable
+          ? (await this.#memory.recall({
+            projectId,
+            runId,
+            sessionId,
+            query: task.slice(0, MAX_MEMORY_QUERY_CHARS),
+            budget: this.#retrievalBudget,
+            signal,
+          })).hits
+          : [],
+      }),
+    });
+    this.#featureDrivers.register({
+      id: "team",
+      tools: ["team_read", "team_task_write", "team_mailbox_send", "team_mailbox_claim", "team_heartbeat"],
+      contributeToolContext: async (context) => ({ team: this.#teamToolBridge(context) }),
+    });
+    this.#featureDrivers.register({
+      id: "todo",
+      tools: ["todo_read", "todo_write"],
+      contributeToolContext: async ({ projectId, runId, sessionId, actionId }) => ({
+        todos: {
+          read: () => this.#todos.read(runId),
+          write: (input) => this.#todos.write({
+            projectId,
+            runId,
+            sessionId,
+            updatedBy: "model",
+            idempotencyKey: `todo-action:${sha256(actionId)}`,
+          }, input),
+        },
+      }),
+    });
+    this.#featureDrivers.register({
+      id: "attachment",
+      onRunCreated: async ({ uploadIds, claimAttachments }) => {
+        if (uploadIds.length > 0) await claimAttachments();
+      },
+    });
     this.#skillRegistry = options.skillRegistry;
     this.#mcpManager = options.mcpManager;
     this.#mcpLifecycleEvents = (options.mcpManager?.history() ?? []).filter((event) => event.type !== "mcp.tool_called");
@@ -1015,10 +1017,86 @@ class AgentRuntimeImpl implements AgentRuntime {
       idFactory: this.#idFactory,
       tokenMeter: this.#tokenMeter,
     });
+    this.#agentLoop = new AgentLoopCoordinator<RunState>({
+      append: (state, proposal) => this.#append(state, proposal),
+      appendExtensionError: (state, error, sourceEvent) => this.#appendExtensionError(state, error, sourceEvent),
+      appendPolicyDecision: (state, actionId, decision) => this.#appendPolicyDecision(state, actionId, decision),
+      appendPolicyDenied: (state, actionId, decision, code) => this.#appendPolicyDenied(state, actionId, decision, code),
+      answerPolicyApproval: (state, call, decision) => this.#answerPolicyApproval(state, call, decision),
+      artifacts: this.#artifacts,
+      chargeSubagentBudget: (state, tokens, reports, decision) => (
+        this.#chargeSubagentBudget(state, tokens, reports, decision)
+      ),
+      contextBuilder: this.#contextBuilder,
+      contextPolicy: this.#contextPolicy,
+      consumeNextUserInput: (state, atStep) => this.#consumeNextUserInput(state, atStep),
+      createCommandError: (code, message) => new RuntimeCommandError(code, message),
+      createPendingPatch: (state, call, executed) => this.#createPendingPatch(state, call, executed),
+      effectiveToolAllowlist: (state) => this.#effectiveToolAllowlist(state),
+      extensionManager: this.#extensionManager,
+      fail: (state, code, summary, data) => this.#fail(state, code, summary, data),
+      featureDrivers: this.#featureDrivers,
+      flushModelSurfaceForCall: (runId, modelCallId, status, plan) => (
+        this.#flushModelSurfaceForCall(runId, modelCallId, status, plan)
+      ),
+      flushModelUsage: (state, turnId, modelCallId, manifestId, tokens, reports) => (
+        this.#flushModelUsage(state, turnId, modelCallId, manifestId, tokens, reports)
+      ),
+      helpers: {
+        abortable,
+        actionRejectionFailureCode,
+        commandSignature,
+        contextBuildNoticeSummary,
+        contextCompactionCompletedSummary,
+        contextCompactionStartedSummary,
+        decisionToolCalls,
+        isPlanModeDefinitionAllowed,
+        isPlanModeToolAllowed,
+        modelRequestSummary,
+        modelUsageIdentity,
+        observationWithEligibleEvidence,
+        plannedToolConcurrency,
+        policyDenialCode,
+        policyTargetForCall,
+        publicDecisionActivity,
+        publicError,
+        publicModelRequestMetadata,
+        publicPlanForDecision,
+        toolBatchFailureCode,
+        toolBypassesWorkspaceCapabilities,
+        toolSerializationReason,
+      },
+      idFactory: this.#idFactory,
+      isTerminal: (runId) => this.#isTerminal(runId),
+      ledger: this.#ledger,
+      maxToolConcurrency: this.#maxToolConcurrency,
+      now: this.#now,
+      planModeDenialDecision: (state, call, definition, digest) => (
+        this.#planModeDenialDecision(state, call, definition, digest)
+      ),
+      queueModelSurface: (state, modelCallId, update) => this.#queueModelSurface(state, modelCallId, update),
+      repairActionIdentities: (state, decision) => this.#repairActionIdentities(state, decision),
+      scheduleToolCalls: (state, calls) => this.#scheduleToolCalls(state, calls),
+      skillAllowlistDenialDecision: (state, call, sideEffect, digest) => (
+        this.#skillAllowlistDenialDecision(state, call, sideEffect, digest)
+      ),
+      subagentAllowlistDenialDecision: (state, call, sideEffect, digest) => (
+        this.#subagentAllowlistDenialDecision(state, call, sideEffect, digest)
+      ),
+      toolRegistry: this.#toolRegistry,
+      transitionAfterFinish: (state, outcome) => this.#transitionAfterFinish(state, outcome),
+      withRunControl: (runId, operation) => this.#withRunControl(runId, operation),
+    });
   }
 
   getTelemetryStatus(): TelemetryStatus {
     return this.#telemetry.status();
+  }
+
+  #requireRuntimeFeature(feature: RuntimeFeatureId): void {
+    if (!this.#featureDrivers.isEnabled(feature)) {
+      throw new RuntimeCommandError("feature_disabled", `Runtime feature '${feature}' is disabled`);
+    }
   }
 
   async flushTelemetry(): Promise<void> {
@@ -1042,6 +1120,7 @@ class AgentRuntimeImpl implements AgentRuntime {
   }
 
   async stageAttachment(input: StageAttachmentInput): Promise<AttachmentStageReceipt> {
+    this.#requireRuntimeFeature("attachment");
     return this.#attachmentStore.stageAttachment(input);
   }
 
@@ -1052,6 +1131,10 @@ class AgentRuntimeImpl implements AgentRuntime {
       if (input.project_id !== input.workspace.project_id) {
         throw new RuntimeCommandError("workspace_project_mismatch", "WorkspaceHandle belongs to another project");
       }
+      if ((input.attachment_upload_ids?.length ?? 0) > 0) {
+        this.#requireRuntimeFeature("attachment");
+      }
+      if (input.mode === "plan") this.#requireRuntimeFeature("todo");
       const workspace = WorkspaceHandleSchema.parse(input.workspace);
       const extensionLease = this.#extensionManager.acquireRunLease();
       const extensionSnapshot = extensionLease.snapshot;
@@ -1160,7 +1243,13 @@ class AgentRuntimeImpl implements AgentRuntime {
             subagent_limits: this.#subagentLimits,
           },
         });
-        await this.#claimRunAttachments(state, input.attachment_upload_ids ?? []);
+        await this.#featureDrivers.onRunCreated({
+          projectId: state.projectId,
+          runId: state.runId,
+          sessionId: state.sessionId,
+          uploadIds: input.attachment_upload_ids ?? [],
+          claimAttachments: () => this.#claimRunAttachments(state, input.attachment_upload_ids ?? []),
+        });
         if (session.created) {
           await this.#append(state, {
             type: "session.opened",
@@ -1747,13 +1836,14 @@ class AgentRuntimeImpl implements AgentRuntime {
         && state.workspace.capabilities.index
         && state.baseGraph === undefined
           ? this.#bootstrapRun(state)
-          : this.#continueRun(state)
+          : this.#agentLoop.continueRun(state)
       ));
       return projection;
     });
   }
 
   async readTodos(runIdValue: string, projectIdValue: string): Promise<TodoList> {
+    this.#requireRuntimeFeature("todo");
     const runId = IdentifierSchema.parse(runIdValue);
     const projectId = IdentifierSchema.parse(projectIdValue);
     const events = await this.#ledger.list(runId);
@@ -1762,6 +1852,7 @@ class AgentRuntimeImpl implements AgentRuntime {
   }
 
   async writeTodo(inputValue: UserTodoWriteCommand): Promise<TodoMutationResult> {
+    this.#requireRuntimeFeature("todo");
     const commandId = IdentifierSchema.parse(inputValue.command_id);
     const projectId = IdentifierSchema.parse(inputValue.project_id);
     const runId = IdentifierSchema.parse(inputValue.run_id);
@@ -1826,6 +1917,7 @@ class AgentRuntimeImpl implements AgentRuntime {
   }
 
   async readTeam(runIdValue: string, projectIdValue: string): Promise<TeamReadResponse> {
+    this.#requireRuntimeFeature("team");
     const runId = IdentifierSchema.parse(runIdValue);
     const projectId = IdentifierSchema.parse(projectIdValue);
     const events = await this.#ledger.list(runId);
@@ -1838,6 +1930,7 @@ class AgentRuntimeImpl implements AgentRuntime {
     projectIdValue: string,
     requestValue: CreateTeamRequest,
   ): Promise<TeamMutationResult> {
+    this.#requireRuntimeFeature("team");
     const request = CreateTeamRequestSchema.parse(requestValue);
     assertExternalTeamCommandId(request.command_id);
     const runId = IdentifierSchema.parse(runIdValue);
@@ -1991,6 +2084,7 @@ class AgentRuntimeImpl implements AgentRuntime {
     projectIdValue: string,
     requestValue: TeamSweepLostMembersRequest,
   ): Promise<TeamMutationResult> {
+    this.#requireRuntimeFeature("team");
     const request = TeamSweepLostMembersRequestSchema.parse(requestValue);
     assertExternalTeamCommandId(request.command_id);
     const runId = IdentifierSchema.parse(runIdValue);
@@ -2017,6 +2111,7 @@ class AgentRuntimeImpl implements AgentRuntime {
     actor: TeamCommandScope["actor"],
     command: Parameters<TeamDomainService["execute"]>[1],
   ): Promise<TeamMutationResult> {
+    this.#requireRuntimeFeature("team");
     assertExternalTeamCommandId(commandId);
     const runId = IdentifierSchema.parse(runIdValue);
     const projectId = IdentifierSchema.parse(projectIdValue);
@@ -2036,6 +2131,7 @@ class AgentRuntimeImpl implements AgentRuntime {
   }
 
   async remember(runIdValue: string, candidate: MemoryCandidate): Promise<MemoryRememberResult> {
+    this.#requireRuntimeFeature("memory");
     const runId = IdentifierSchema.parse(runIdValue);
     const events = await this.#ledger.list(runId);
     const first = events[0];
@@ -2058,6 +2154,7 @@ class AgentRuntimeImpl implements AgentRuntime {
     query: string,
     budget?: MemoryRecallBudget,
   ): Promise<MemoryRecallResult> {
+    this.#requireRuntimeFeature("memory");
     const runId = IdentifierSchema.parse(runIdValue);
     const events = await this.#ledger.list(runId);
     const first = events[0];
@@ -2450,7 +2547,7 @@ class AgentRuntimeImpl implements AgentRuntime {
         return this.getProjection(state.runId);
       }
     }
-    if (!state.stopped) await this.#continueRun(state);
+    if (!state.stopped) await this.#agentLoop.continueRun(state);
     return this.getProjection(state.runId);
   }
 
@@ -3430,6 +3527,7 @@ class AgentRuntimeImpl implements AgentRuntime {
     runId: string;
     projectId: string;
   }): Promise<AttachmentContent> {
+    this.#requireRuntimeFeature("attachment");
     const projection = await this.getProjection(input.runId);
     const item = projection.attachments.items.find((candidate) => {
       if (candidate.status === "rejected") return false;
@@ -3458,22 +3556,22 @@ class AgentRuntimeImpl implements AgentRuntime {
     return content;
   }
 
-  #teamToolBridge(state: RunState, actionId: string): TeamToolBridge {
-    const delegation = state.orchestration.delegation;
-    const rootRunId = delegation?.link.parent_run_id ?? state.runId;
-    const rootSessionId = delegation?.link.parent_session_id ?? state.sessionId;
+  #teamToolBridge(context: RuntimeFeatureToolContext): TeamToolBridge {
+    const delegation = context.delegation;
+    const rootRunId = delegation?.link.parent_run_id ?? context.runId;
+    const rootSessionId = delegation?.link.parent_session_id ?? context.sessionId;
     const actor: TeamCommandScope["actor"] = delegation === undefined
       ? { kind: "lead" }
       : { kind: "member", subagent_id: delegation.link.subagent_id };
     const scope: TeamCommandScope = {
-      projectId: state.projectId,
+      projectId: context.projectId,
       runId: rootRunId,
       sessionId: rootSessionId,
       actor,
-      ...(delegation === undefined ? {} : { evidenceBeforeActionId: actionId }),
+      ...(delegation === undefined ? {} : { evidenceBeforeActionId: context.actionId }),
     };
     const commandId = (operation: string) => (
-      `team-tool:${sha256(`${rootRunId}:${state.runId}:${actionId}:${operation}`)}`
+      `team-tool:${sha256(`${rootRunId}:${context.runId}:${context.actionId}:${operation}`)}`
     );
     const mutate = async (command: TeamCommand): Promise<TeamMutationResult> => {
       return this.#withRunControl(rootRunId, async () => {
@@ -4377,7 +4475,9 @@ class AgentRuntimeImpl implements AgentRuntime {
       if (
         toolBypassesWorkspaceCapabilities(definition.name)
         || state.workspace.capabilities[definition.capability]
-      ) workspace.add(definition.name);
+      ) {
+        if (this.#featureDrivers.isToolEnabled(definition.name)) workspace.add(definition.name);
+      }
     }
 
     const parent = state.toolAllowlist;
@@ -4421,7 +4521,7 @@ class AgentRuntimeImpl implements AgentRuntime {
     }
     if (state.stopped) return;
     try {
-      await this.#continueRun(state);
+      await this.#agentLoop.continueRun(state);
     } catch (error) {
       if (!state.stopped && !(await this.#isTerminal(state.runId))) {
         await this.#fail(state, "runtime_failed", publicError(error));
@@ -4429,779 +4529,6 @@ class AgentRuntimeImpl implements AgentRuntime {
     }
   }
 
-  async #continueRun(state: RunState): Promise<void> {
-    while (
-      !state.stopped
-      && state.pendingPatch === undefined
-      && state.pendingPlan === undefined
-      && !(await this.#isTerminal(state.runId))
-    ) {
-      if (state.turn >= state.maxTurns) {
-        await this.#fail(
-          state,
-          state.orchestration.depth > 0 ? "subagent_step_budget_exceeded" : "turn_budget_exhausted",
-          `Run exceeded the deterministic turn budget after ${state.turn} model turns (limit: ${state.maxTurns})`,
-          { turns_completed: state.turn, max_turns: state.maxTurns },
-        );
-        return;
-      }
-      const steering = await this.#consumeNextUserInput(state, state.turn + 1);
-      if (steering === "cancelled" || state.stopped) return;
-      state.turn += 1;
-      const turnId = this.#idFactory("turn");
-      const modelCallId = this.#idFactory("model-call");
-      const tokenMeterIdentity = modelUsageIdentity(state.model);
-      const summaryUsage = new Map<string, Map<string, ModelUsageReport>>();
-      let contextCompactionStarted = false;
-      const retrievedMemory = this.#memory.retrievalAvailable
-        ? (await this.#memory.recall({
-          projectId: state.projectId,
-          runId: state.runId,
-          sessionId: state.sessionId,
-          query: state.task.slice(0, MAX_MEMORY_QUERY_CHARS),
-          budget: this.#retrievalBudget,
-          signal: state.abortController.signal,
-        })).hits
-        : [];
-      const extensionSourceEvent = (await this.#ledger.list(state.runId)).at(-1);
-      if (extensionSourceEvent === undefined) {
-        throw new RuntimeCommandError("run_not_found", "Run is unavailable for extension Context strategies");
-      }
-      const extensionContext = await this.#extensionManager.collectContextContributions({
-        projectId: state.projectId,
-        runId: state.runId,
-        task: state.task,
-        turn: state.turn,
-      });
-      for (const error of extensionContext.errors) {
-        await this.#appendExtensionError(state, error, extensionSourceEvent);
-      }
-      const extensionObservations = extensionContext.contributions.map((item) => ObservationSchema.parse({
-        observation_id: this.#idFactory("extension-observation"),
-        action_id: this.#idFactory("extension-context"),
-        receipt_id: this.#idFactory("extension-receipt"),
-        status: "success",
-        summary: item.contribution.summary,
-        facts: redactStructuredValue({
-          ...(item.contribution.facts ?? {}),
-          extension_name: item.extensionName,
-          strategy_name: item.strategyName,
-        }),
-        artifact_refs: [],
-        created_at: this.#now().toISOString(),
-      }));
-      const built = await this.#contextBuilder.buildWithStrategies({
-        projectId: state.projectId,
-        runId: state.runId,
-        turnId,
-        modelCallId,
-        task: state.task,
-        workspaceKind: state.workspace.workspace_kind,
-        conversationHistory: state.conversationHistory ?? [],
-        observations: [...state.observations, ...extensionObservations],
-        skillCatalog: state.skills.skills.map(({ name, description, version, allowed_tools, source }) => ({
-          name,
-          description,
-          version,
-          allowed_tools,
-          source,
-        })),
-        retrievedMemory,
-        tokenMeterIdentity,
-        ...(this.#contextPolicy === undefined ? {} : { contextPolicy: this.#contextPolicy }),
-      }, {
-        artifactStore: this.#artifacts,
-        signal: state.abortController.signal,
-        onCompactionStarted: async (details) => {
-          if (contextCompactionStarted) return;
-          contextCompactionStarted = true;
-          await this.#append(state, {
-            type: "context.compaction_started",
-            summary: contextCompactionStartedSummary(details),
-            turn_id: turnId,
-            model_call_id: modelCallId,
-            data: { ...details },
-          });
-        },
-        ...(state.orchestration.depth > 0 || state.model.summarizeContext === undefined ? {} : {
-          summarize: async (summaryInput) => state.model.summarizeContext!({
-            ...summaryInput,
-            onUsage: (usageValue) => {
-              const parsed = ModelUsageReportSchema.safeParse(usageValue);
-              if (!parsed.success || parsed.data.request_kind !== "summary") return;
-              const reports = summaryUsage.get(summaryInput.modelCallId) ?? new Map<string, ModelUsageReport>();
-              if (reports.size >= 16) return;
-              const key = `${parsed.data.request_kind}:${parsed.data.request_sequence}`;
-              if (!reports.has(key)) reports.set(key, parsed.data);
-              summaryUsage.set(summaryInput.modelCallId, reports);
-            },
-          }),
-        }),
-      });
-      const contextBudget = built.manifest.budget;
-      const contextCompression = built.manifest.compression;
-      const contextSteps = built.manifest.compaction_steps ?? [];
-      const archivedContextArtifacts = [...new Map(
-        contextSteps
-          .flatMap((step) => step.archived_artifact_refs)
-          .map((ref) => [ref.artifact_id, ref]),
-      ).values()];
-      const manifestArtifact = await this.#artifacts.put({
-        projectId: state.projectId,
-        runId: state.runId,
-        kind: "context_manifest",
-        mimeType: "application/json",
-        content: JSON.stringify(built.manifest, null, 2),
-      });
-      for (const notice of built.notices) {
-        const noticeModelCallId = notice.type === "context.summary_created" || notice.type === "context.summary_failed"
-          ? notice.data.summary_model_call_id
-          : notice.model_call_id;
-        await this.#append(state, {
-          type: notice.type,
-          summary: contextBuildNoticeSummary(notice),
-          turn_id: turnId,
-          model_call_id: noticeModelCallId,
-          context_manifest_ref: built.manifest.manifest_id,
-          ...(notice.type === "context.summary_failed" ? {} : { artifact_refs: [notice.artifact_ref] }),
-          data: notice.data,
-        });
-      }
-      for (const [summaryModelCallId, reports] of summaryUsage) {
-        const sourceTokens = built.notices.find((notice) => (
-          (notice.type === "context.summary_created" || notice.type === "context.summary_failed")
-          && notice.data.summary_model_call_id === summaryModelCallId
-        ));
-        await this.#flushModelUsage(
-          state,
-          turnId,
-          summaryModelCallId,
-          built.manifest.manifest_id,
-          sourceTokens?.type === "context.summary_created" ? sourceTokens.data.source_tokens : 0,
-          [...reports.values()],
-        );
-      }
-      if (
-        contextCompression !== undefined
-        && (contextCompression.applied_strategy !== "none" || contextCompactionStarted)
-      ) {
-        await this.#append(state, {
-          type: "context.compaction_completed",
-          summary: contextCompactionCompletedSummary(contextCompression),
-          turn_id: turnId,
-          model_call_id: modelCallId,
-          context_manifest_ref: built.manifest.manifest_id,
-          artifact_refs: [manifestArtifact, ...archivedContextArtifacts],
-          data: {
-            strategy: contextCompression.strategy,
-            applied_strategy: contextCompression.applied_strategy,
-            trigger: contextCompression.trigger,
-            before_tokens: contextCompression.before_tokens,
-            after_tokens: contextCompression.after_tokens,
-            checkpoint_tokens: contextCompression.checkpoint_tokens,
-            preserved_recent_message_count: contextCompression.preserved_recent_message_count,
-            compacted_history_message_count: contextCompression.compacted_history_message_count,
-            steps: contextSteps,
-          },
-        });
-      }
-      if (contextBudget?.status === "warning") {
-        await this.#append(state, {
-          type: "context.budget_warning",
-          summary: `Context is at ${built.manifest.input_tokens} of ${contextBudget.input_budget_tokens} estimated input tokens; compression begins at ${contextBudget.compression_threshold_tokens}`,
-          turn_id: turnId,
-          model_call_id: modelCallId,
-          context_manifest_ref: built.manifest.manifest_id,
-          artifact_refs: [manifestArtifact],
-          data: {
-            input_tokens: built.manifest.input_tokens,
-            input_budget_tokens: contextBudget.input_budget_tokens,
-            warning_threshold_tokens: contextBudget.warning_threshold_tokens,
-            compression_threshold_tokens: contextBudget.compression_threshold_tokens,
-            token_estimator: contextBudget.token_estimator,
-          },
-        });
-      }
-      await this.#append(state, {
-        type: "context.built",
-        summary: `Context built with ${built.manifest.input_tokens} input tokens`,
-        turn_id: turnId,
-        model_call_id: modelCallId,
-        context_manifest_ref: built.manifest.manifest_id,
-        artifact_refs: [manifestArtifact],
-        data: {
-          manifest_id: built.manifest.manifest_id,
-          input_tokens: built.manifest.input_tokens,
-          token_limit: built.manifest.token_limit,
-          reserved_output_tokens: built.manifest.reserved_output_tokens,
-          ...(built.manifest.token_estimate === undefined ? {} : {
-            token_estimate: {
-              estimator_id: built.manifest.token_estimate.estimator_id,
-              confidence: built.manifest.token_estimate.confidence,
-              input_tokens: built.manifest.token_estimate.input_tokens,
-              output_tokens: built.manifest.token_estimate.output_tokens,
-              ...(built.manifest.token_estimate.cached_tokens === undefined
-                ? {}
-                : { cached_tokens: built.manifest.token_estimate.cached_tokens }),
-              per_section: built.manifest.token_estimate.per_section,
-            },
-          }),
-          ...(contextBudget === undefined ? {} : {
-            input_budget_tokens: contextBudget.input_budget_tokens,
-            warning_threshold_tokens: contextBudget.warning_threshold_tokens,
-            compression_threshold_tokens: contextBudget.compression_threshold_tokens,
-            token_estimator: contextBudget.token_estimator,
-            context_status: contextBudget.status,
-          }),
-          ...(contextCompression === undefined ? {} : {
-            compression: {
-              strategy: contextCompression.strategy,
-              applied_strategy: contextCompression.applied_strategy,
-              trigger: contextCompression.trigger,
-              before_tokens: contextCompression.before_tokens,
-              after_tokens: contextCompression.after_tokens,
-              checkpoint_tokens: contextCompression.checkpoint_tokens,
-              preserved_recent_message_count: contextCompression.preserved_recent_message_count,
-              compacted_history_message_count: contextCompression.compacted_history_message_count,
-              steps: contextSteps,
-            },
-          }),
-        },
-      });
-      if (state.stopped) return;
-
-      const remainingSubagentTokens = state.subagentBudget === undefined
-        ? undefined
-        : state.subagentBudget.maxTokens
-          - state.subagentBudget.inputTokens
-          - state.subagentBudget.outputTokens
-          - built.manifest.input_tokens;
-      if (remainingSubagentTokens !== undefined && remainingSubagentTokens < 1) {
-        await this.#fail(
-          state,
-          "subagent_token_budget_exceeded",
-          "Subagent token budget was exhausted before the next model request",
-          {
-            max_tokens: state.subagentBudget!.maxTokens,
-            consumed_tokens: state.subagentBudget!.inputTokens + state.subagentBudget!.outputTokens,
-            next_input_tokens: built.manifest.input_tokens,
-          },
-        );
-        return;
-      }
-
-      const reportedUsage = new Map<string, ModelUsageReport>();
-      const modelInput: ModelInput = {
-        projectId: state.projectId,
-        runId: state.runId,
-        task: state.task,
-        mode: state.mode,
-        reasoningEffort: state.reasoningEffort,
-        turn: state.turn,
-        context: built.modelContext,
-        contextManifest: ContextManifestSchema.parse(built.manifest),
-        ...(state.turn === 1 && state.modelImages.length > 0
-          ? { images: state.modelImages.map((image) => ({ ...image })) }
-          : {}),
-        observations: built.modelObservations,
-        toolSchemas: this.#toolRegistry.modelSchemas(this.#effectiveToolAllowlist(state)),
-        ...(state.rolePrompt === undefined ? {} : { rolePrompt: state.rolePrompt }),
-        ...(remainingSubagentTokens === undefined ? {} : { maxOutputTokens: remainingSubagentTokens }),
-        signal: state.abortController.signal,
-        onUsage: (usageValue) => {
-          if (reportedUsage.size >= 16) return;
-          const parsed = ModelUsageReportSchema.safeParse(usageValue);
-          if (!parsed.success) return;
-          const key = `${parsed.data.request_kind}:${parsed.data.request_sequence}`;
-          if (!reportedUsage.has(key)) reportedUsage.set(key, parsed.data);
-        },
-      };
-      // Keep raw image bytes only in this request object. They must not remain
-      // attached to long-lived Run state after the first request is assembled.
-      if (modelInput.images !== undefined) state.modelImages.length = 0;
-      const modelRequest = publicModelRequestMetadata(state.model, modelInput);
-      await this.#append(state, {
-        type: "model.request_started",
-        summary: modelRequestSummary(modelRequest),
-        turn_id: turnId,
-        model_call_id: modelCallId,
-        context_manifest_ref: built.manifest.manifest_id,
-        data: { ...modelRequest },
-      });
-      if (state.stopped) return;
-
-      modelInput.onPublicProgress = (update) => {
-        if (state.stopped) return;
-        this.#queueModelSurface(state, modelCallId, update);
-      };
-
-      let decision;
-      try {
-        decision = DecisionSchema.parse(await abortable(
-          state.model.decide(modelInput),
-          state.abortController.signal,
-        ));
-        const serializedDecision = JSON.stringify(decision);
-        if (
-          redactSecrets(serializedDecision) !== serializedDecision
-          || containsSensitiveStructuredData(decision)
-        ) {
-          throw new Error("Decision contained credential-like material");
-        }
-      } catch (error) {
-        this.#flushModelSurfaceForCall(
-          state.runId,
-          modelCallId,
-          state.stopped ? "cancelled" : "failed",
-        );
-        await this.#flushModelUsage(
-          state,
-          turnId,
-          modelCallId,
-          built.manifest.manifest_id,
-          built.manifest.input_tokens,
-          [...reportedUsage.values()],
-        );
-        if (state.stopped) return;
-        const requestFailed = error instanceof ModelRequestError;
-        const errorMessage = publicError(error);
-        await this.#append(state, {
-          type: requestFailed ? "model.request_failed" : "model.output_invalid",
-          summary: requestFailed ? errorMessage : "Model output failed canonical Decision validation",
-          turn_id: turnId,
-          model_call_id: modelCallId,
-          context_manifest_ref: built.manifest.manifest_id,
-          data: {
-            error: errorMessage,
-            ...modelRequest,
-            ...(requestFailed ? { code: error.code } : {}),
-          },
-        });
-        await this.#fail(
-          state,
-          requestFailed ? "model_request_failed" : "model_output_invalid",
-          requestFailed ? errorMessage : "Model output was not a valid Decision",
-        );
-        return;
-      }
-      await this.#flushModelUsage(
-        state,
-        turnId,
-        modelCallId,
-        built.manifest.manifest_id,
-        built.manifest.input_tokens,
-        [...reportedUsage.values()],
-      );
-      if (state.stopped) {
-        this.#flushModelSurfaceForCall(state.runId, modelCallId, "cancelled");
-        await this.#append(state, {
-          type: "action.late_ignored",
-          summary: "Model result ignored because the run was stopped",
-          turn_id: turnId,
-          model_call_id: modelCallId,
-          context_manifest_ref: built.manifest.manifest_id,
-          data: { phase: "model" },
-        });
-        return;
-      }
-      if (!this.#chargeSubagentBudget(
-        state,
-        built.manifest.input_tokens,
-        [...reportedUsage.values()],
-        decision,
-      )) {
-        this.#flushModelSurfaceForCall(state.runId, modelCallId, "failed");
-        await this.#fail(
-          state,
-          "subagent_token_budget_exceeded",
-          "Subagent provider usage exceeded its hard token budget",
-          {
-            max_tokens: state.subagentBudget!.maxTokens,
-            consumed_tokens: state.subagentBudget!.inputTokens + state.subagentBudget!.outputTokens,
-          },
-        );
-        return;
-      }
-      // Provider/tool-call IDs are correlation hints, not an idempotency
-      // boundary.  DeepSeek-compatible providers and local JSON adapters may
-      // reuse a short id such as `action:1` on the next model turn even when
-      // the tool or arguments changed.  Normalize that collision before the
-      // decision is written or executed.  The original id is retained only as
-      // redacted audit metadata; all receipts/observations use the canonical
-      // runtime-owned id.
-      const actionRepair = this.#repairActionIdentities(state, decision);
-      decision = actionRepair.decision;
-      const decisionCalls = decisionToolCalls(decision);
-      // A public preview becomes complete only after the complete Decision has
-      // passed both schema and credential checks. Before this point it remains
-      // an untrusted, volatile preview rather than a completed answer.
-      // Replace the volatile provider preview with the same short, safe public
-      // plan once the full Decision is validated. Providers sometimes echo
-      // the answer into `public_reason`; keeping that text would make the UI
-      // look as if it were exposing model chain-of-thought. Do not synthesize
-      // a plan when the provider did not publish one.
-      this.#flushModelSurfaceForCall(
-        state.runId,
-        modelCallId,
-        "completed",
-        publicPlanForDecision(decision),
-      );
-      const publicDecision = publicDecisionActivity(decision);
-      await this.#append(state, {
-        type: "model.decision",
-        summary: publicDecision.summary,
-        turn_id: turnId,
-        model_call_id: modelCallId,
-        context_manifest_ref: built.manifest.manifest_id,
-        ...(decisionCalls.length === 1 ? { action_id: decisionCalls[0]!.action_id } : {}),
-        data: {
-          ...publicDecision.data,
-          ...modelRequest,
-          ...(state.subagentBudget === undefined ? {} : {
-            _internal_subagent_budget: {
-              max_tokens: state.subagentBudget.maxTokens,
-              input_tokens: state.subagentBudget.inputTokens,
-              output_tokens: state.subagentBudget.outputTokens,
-              confidence: state.subagentBudget.confidence,
-            },
-          }),
-          ...(actionRepair.repairs.length === 0 ? {} : {
-            action_id_repaired: true,
-            action_id_repairs: actionRepair.repairs.map((repair) => ({
-              model_action_id: redactSensitiveText(repair.modelActionId).slice(0, 160),
-              canonical_action_id: repair.canonicalActionId,
-              code: repair.code,
-            })),
-            ...(actionRepair.repairs.length !== 1 ? {} : {
-              model_action_id: redactSensitiveText(actionRepair.repairs[0]!.modelActionId).slice(0, 160),
-              canonical_action_id: actionRepair.repairs[0]!.canonicalActionId,
-              action_id_repair_code: actionRepair.repairs[0]!.code,
-            }),
-          }),
-        },
-      });
-      if (decision.kind === "finish") {
-        const outcome = decision.final_answer ?? "Run completed";
-        if (await this.#transitionAfterFinish(state, outcome)) return;
-        continue;
-      }
-      if (decisionCalls.length === 0) {
-        await this.#fail(state, "missing_tool_call", "Tool Decision did not include a ToolCall");
-        return;
-      }
-
-      // Validate the complete batch before starting any member. A denied or
-      // malformed later call must never arrive after an earlier side effect.
-      const preparedCalls: PreparedToolCall[] = [];
-      const signatures: Array<{ actionId: string; signature: string }> = [];
-      for (const [index, call] of decisionCalls.entries()) {
-        const actionSignature = commandSignature({
-          tool_name: call.tool_name,
-          arguments: call.arguments,
-        });
-        const priorActionSignature = state.actionSignatures.get(call.action_id);
-        if (priorActionSignature !== undefined) {
-          const code = priorActionSignature === actionSignature
-            ? "action_id_duplicate"
-            : "action_id_conflict";
-          await this.#append(state, {
-            type: "action.rejected",
-            summary: "Model reused an action_id; duplicate tool execution was blocked",
-            action_id: call.action_id,
-            data: { code },
-          });
-          await this.#fail(state, code, "Model action_id values must be unique within a Run");
-          return;
-        }
-        try {
-          const registeredDefinition = this.#toolRegistry.get(call.tool_name);
-          if (state.skillToolAllowlist !== undefined && !state.skillToolAllowlist.has(call.tool_name)) {
-            const actionDigest = approvalActionDigest({
-              projectId: state.projectId,
-              runId: state.runId,
-              actionId: call.action_id,
-              toolName: call.tool_name,
-              workspaceHandleId: state.workspace.handle_id,
-              policyDigest: state.permissionPolicy.policy_digest,
-              arguments: call.arguments,
-              scope: ["."],
-            });
-            const denial = this.#skillAllowlistDenialDecision(
-              state,
-              call,
-              registeredDefinition?.sideEffect ?? "none",
-              actionDigest,
-            );
-            await this.#appendPolicyDecision(state, call.action_id, denial);
-            await this.#appendPolicyDenied(state, call.action_id, denial, "skill_tool_denied");
-            await this.#fail(state, "skill_tool_denied", denial.explanation);
-            return;
-          }
-          if (state.toolAllowlist !== undefined && !state.toolAllowlist.has(call.tool_name)) {
-            const actionDigest = approvalActionDigest({
-              projectId: state.projectId,
-              runId: state.runId,
-              actionId: call.action_id,
-              toolName: call.tool_name,
-              workspaceHandleId: state.workspace.handle_id,
-              policyDigest: state.permissionPolicy.policy_digest,
-              arguments: call.arguments,
-              scope: ["."],
-            });
-            const denial = this.#subagentAllowlistDenialDecision(
-              state,
-              call,
-              registeredDefinition?.sideEffect ?? "none",
-              actionDigest,
-            );
-            await this.#appendPolicyDecision(state, call.action_id, denial);
-            await this.#appendPolicyDenied(state, call.action_id, denial, "subagent_tool_denied");
-            await this.#fail(state, "subagent_tool_denied", denial.explanation);
-            return;
-          }
-          if (
-            state.mode === "plan"
-            && registeredDefinition !== undefined
-            && !isPlanModeDefinitionAllowed(registeredDefinition)
-          ) {
-            // Plan authority is decided from trusted registry metadata before
-            // parsing provider-supplied arguments. A malformed write/execute
-            // payload must not disguise the more important plan-mode denial.
-            const actionDigest = approvalActionDigest({
-              projectId: state.projectId,
-              runId: state.runId,
-              actionId: call.action_id,
-              toolName: call.tool_name,
-              workspaceHandleId: state.workspace.handle_id,
-              policyDigest: state.permissionPolicy.policy_digest,
-              arguments: call.arguments,
-              scope: ["."],
-            });
-            const denial = this.#planModeDenialDecision(
-              state,
-              call,
-              registeredDefinition,
-              actionDigest,
-            );
-            await this.#appendPolicyDecision(state, call.action_id, denial);
-            await this.#appendPolicyDenied(state, call.action_id, denial, "plan_mode_denied");
-            await this.#fail(state, "plan_mode_denied", denial.explanation);
-            return;
-          }
-          const validated = validateToolCall({
-            call,
-            registry: this.#toolRegistry,
-            projectId: state.projectId,
-            runId: state.runId,
-            workspace: state.workspace,
-            mode: state.mode,
-            sandboxMode: state.permissionPolicy.preset.sandbox_mode,
-            now: this.#now(),
-            policyPrevalidated: true,
-          });
-          const policyTarget = policyTargetForCall(validated.parsedInput);
-          const actionDigest = approvalActionDigest({
-            projectId: state.projectId,
-            runId: state.runId,
-            actionId: call.action_id,
-            toolName: call.tool_name,
-            workspaceHandleId: state.workspace.handle_id,
-            policyDigest: state.permissionPolicy.policy_digest,
-            arguments: call.arguments,
-            ...(policyTarget.path === undefined ? {} : { path: policyTarget.path }),
-            scope: policyTarget.path === undefined ? ["."] : [policyTarget.path],
-          });
-          if (state.mode === "plan" && !isPlanModeToolAllowed(validated)) {
-            const denial = this.#planModeDenialDecision(state, call, validated.definition, actionDigest);
-            await this.#appendPolicyDecision(state, call.action_id, denial);
-            await this.#appendPolicyDenied(state, call.action_id, denial, "plan_mode_denied");
-            await this.#fail(state, "plan_mode_denied", denial.explanation);
-            return;
-          }
-          const capabilityAllowed = toolBypassesWorkspaceCapabilities(call.tool_name)
-            || state.workspace.capabilities[validated.definition.capability];
-          const policyDecision = state.policyEngine.evaluate({
-            toolName: call.tool_name,
-            sideEffect: validated.definition.sideEffect,
-            capabilityAllowed,
-            runMode: state.mode,
-            ...(policyTarget.path === undefined ? {} : { path: policyTarget.path }),
-            ...(policyTarget.diffLines === undefined ? {} : { diffLines: policyTarget.diffLines }),
-            actionDigest,
-          });
-          await this.#appendPolicyDecision(state, call.action_id, policyDecision);
-          if (policyDecision.kind === "deny") {
-            const denialCode = policyDenialCode(policyDecision);
-            await this.#appendPolicyDenied(state, call.action_id, policyDecision, denialCode);
-            await this.#fail(state, denialCode, policyDecision.explanation);
-            return;
-          }
-          if (call.tool_name === "commit_patch") {
-            await this.#append(state, {
-              type: "action.rejected",
-              summary: "commit_patch requires a Runtime-created preview and bound one-time authorization",
-              action_id: call.action_id,
-              data: { code: "approval_preview_required", failure_class: "denied" },
-            });
-            await this.#fail(state, "approval_preview_required", "Direct commit_patch calls are not allowed");
-            return;
-          }
-          const executionBinding = policyDecision.kind === "ask"
-            ? await this.#answerPolicyApproval(state, call, policyDecision)
-            : {
-                kind: "policy-allow" as const,
-                actionDigest,
-                policyDigest: state.permissionPolicy.policy_digest,
-              };
-          if (executionBinding === undefined) return;
-          preparedCalls.push({
-            index,
-            call,
-            validated,
-            policyDecision,
-            executionBinding,
-            ...toolSerializationReason(validated, policyDecision),
-          });
-          signatures.push({ actionId: call.action_id, signature: actionSignature });
-        } catch (error) {
-          if (!(error instanceof ActionRejectedError)) throw error;
-          await this.#append(state, {
-            type: error.code === "capability_denied"
-              || error.code === "plan_mode_denied"
-              || error.code === "sandbox_denied"
-              ? "policy.denied"
-              : "action.rejected",
-            summary: error.message,
-            action_id: call.action_id,
-            data: {
-              code: error.code,
-              failure_class: actionRejectionFailureCode(error.code),
-            },
-          });
-          await this.#fail(state, error.code, error.message);
-          return;
-        }
-      }
-      for (const { actionId, signature } of signatures) state.actionSignatures.set(actionId, signature);
-
-      const isBatch = decision.tool_calls !== undefined;
-      const batchId = isBatch ? this.#idFactory("tool-batch") : undefined;
-      const actionIds = preparedCalls.map(({ call }) => call.action_id);
-      const plannedEffectiveConcurrency = plannedToolConcurrency(preparedCalls, this.#maxToolConcurrency);
-      const serializedActions = preparedCalls.flatMap(({ call, serializedReason }) => (
-        serializedReason === undefined ? [] : [{ action_id: call.action_id, reason: serializedReason }]
-      ));
-      let batchStartedEvent: SessionEvent | undefined;
-      const batchStartedAt = this.#now();
-      if (batchId !== undefined) {
-        const data = ToolBatchStartedDataSchema.parse({
-          batch_id: batchId,
-          requested_count: preparedCalls.length,
-          max_concurrency: this.#maxToolConcurrency,
-          effective_concurrency: plannedEffectiveConcurrency,
-          action_ids: actionIds,
-          parallel_action_ids: preparedCalls
-            .filter(({ serializedReason }) => serializedReason === undefined)
-            .map(({ call }) => call.action_id),
-          serialized_actions: serializedActions,
-        });
-        batchStartedEvent = await this.#withRunControl(state.runId, async () => {
-          const events = await this.#ledger.list(state.runId);
-          if (
-            events.some((event) => isTerminalEventType(event.type))
-            || state.stopped
-            || state.cancelInputId !== undefined
-            || projectRun(events).input_queue.pending.some((input) => input.kind === "cancel")
-          ) return undefined;
-          return this.#append(state, {
-            type: "tool.batch_started",
-            summary: `Started a checked batch of ${preparedCalls.length} tool calls`,
-            operation_id: batchId,
-            data,
-          });
-        });
-        // Cancellation and batch publication share the control gate. If the
-        // durable cancel wins, no new batch authority or scheduler work starts;
-        // if the batch wins, its already-started work may settle normally.
-        if (batchStartedEvent === undefined) return;
-      }
-
-      const scheduled = await this.#scheduleToolCalls(state, preparedCalls);
-      for (const { prepared, executed } of scheduled.completed) {
-        state.observations.push(observationWithEligibleEvidence(executed.observation, executed.event));
-        if (prepared.call.tool_name === "run_test") {
-          await this.#append(state, {
-            type: "test.completed",
-            summary: executed.raw.summary,
-            action_id: prepared.call.action_id,
-            ...(state.lastPatchEventId === undefined
-              ? {}
-              : { patch_event_id: state.lastPatchEventId }),
-            test_receipt_id: executed.receipt.receipt_id,
-            artifact_refs: executed.artifactRefs,
-            data: {
-              receipt: executed.receipt,
-              ...(executed.sandboxReport === undefined
-                ? {}
-                : { sandbox_report: executed.sandboxReport }),
-            },
-          });
-        }
-      }
-      const firstFailure = scheduled.completed.find(({ executed }) => executed.raw.status !== "success");
-      const preview = scheduled.completed.find(({ prepared, executed }) => (
-        prepared.call.tool_name === "preview_patch" && executed.raw.status === "success"
-      ));
-      if (batchId !== undefined) {
-        const completedAt = this.#now();
-        const results = scheduled.completed.map(({ prepared, executed }) => ({
-          action_id: prepared.call.action_id,
-          status: executed.raw.status,
-          duration_ms: executed.receipt.duration_ms,
-          code: executed.raw.code,
-          ...(executed.raw.status === "success" ? {} : { failure_code: toolBatchFailureCode(executed.raw) }),
-        }));
-        const data = ToolBatchCompletedDataSchema.parse({
-          batch_id: batchId,
-          requested_count: preparedCalls.length,
-          completed_count: results.length,
-          failed_count: results.filter(({ status }) => status !== "success").length,
-          max_concurrency: this.#maxToolConcurrency,
-          effective_concurrency: scheduled.actualPeakConcurrency,
-          total_duration_ms: Math.max(0, completedAt.getTime() - batchStartedAt.getTime()),
-          action_ids: actionIds,
-          results,
-        });
-        await this.#append(state, {
-          type: "tool.batch_completed",
-          summary: `Completed ${results.length} of ${preparedCalls.length} checked tool calls`,
-          operation_id: batchId,
-          ...(batchStartedEvent === undefined ? {} : { caused_by_event_id: batchStartedEvent.event_id }),
-          data,
-        });
-      }
-      if (state.stopped) return;
-      if (preview !== undefined) {
-        await this.#createPendingPatch(state, preview.prepared.call, preview.executed);
-      }
-      if (state.stopped) return;
-      if (firstFailure?.executed.raw.code === "subagent_recovery_pending") {
-        // The parent must remain nonterminal while its child link is active.
-        // Startup reconciliation will close the child and append the
-        // hash-linked parent receipt before marking the parent interrupted.
-        return;
-      }
-      if (firstFailure?.executed.raw.status === "unknown") {
-        await this.#fail(state, "unknown_side_effect", "Tool outcome is unknown; automatic retry is disabled");
-        return;
-      }
-      if (firstFailure !== undefined) {
-        await this.#fail(state, firstFailure.executed.raw.code, firstFailure.executed.raw.summary);
-        return;
-      }
-      if (preview !== undefined) return;
-    }
-  }
 
   /**
    * Atomically decide whether a validated finish Decision may transition the
@@ -5213,11 +4540,21 @@ class AgentRuntimeImpl implements AgentRuntime {
     return this.#withRunControl(state.runId, async () => {
       const events = await this.#ledger.list(state.runId);
       if (events.some((event) => isTerminalEventType(event.type))) return true;
-      if (projectRun(events).input_queue.pending.length > 0) return false;
+      const pendingInputCount = projectRun(events).input_queue.pending.length;
+      const finishTransition = transitionAfterFinish({
+        mode: state.mode,
+        pendingInputCount,
+      });
+      if (finishTransition.kind === "continue_for_input") return false;
 
-      if (state.mode === "plan") {
+      if (finishTransition.kind === "inspect_plan_todos") {
         const todos = projectTodos(events);
-        if (todos.items.length === 0) {
+        const planTransition = transitionAfterFinish({
+          mode: state.mode,
+          pendingInputCount,
+          todoCount: todos.items.length,
+        });
+        if (planTransition.kind === "plan_missing_todos") {
           await this.#appendTerminalLocked(
             state,
             "run.failed",
@@ -5560,6 +4897,16 @@ class AgentRuntimeImpl implements AgentRuntime {
       ? createToolCancellationShield()
       : undefined;
     try {
+      const featureToolContext = await this.#featureDrivers.contributeToolContext({
+        projectId: state.projectId,
+        runId: state.runId,
+        sessionId: state.sessionId,
+        workspace: state.workspace,
+        actionId: call.action_id,
+        ...(state.orchestration.delegation === undefined
+          ? {}
+          : { delegation: state.orchestration.delegation }),
+      });
       raw = await executeToolDefinition(validated.definition, validated.parsedInput, {
         projectId: state.projectId,
         runId: state.runId,
@@ -5567,23 +4914,13 @@ class AgentRuntimeImpl implements AgentRuntime {
         signal: state.abortController.signal,
         sandboxMode: state.permissionPolicy.preset.sandbox_mode,
         sandboxRunner: this.#sandboxRunner,
-        todos: {
-          read: () => this.#todos.read(state.runId),
-          write: (input) => this.#todos.write({
-            projectId: state.projectId,
-            runId: state.runId,
-            sessionId: state.sessionId,
-            updatedBy: "model",
-            idempotencyKey: `todo-action:${sha256(call.action_id)}`,
-          }, input),
-        },
+        ...featureToolContext,
         subagents: {
           spawn: (input, control) => this.#spawnSubagent(state, input, call.action_id, control),
           sendMessage: (input) => this.#sendSubagentMessage(state, input),
           list: (input) => this.#listSubagents(state, input),
           interrupt: (input) => this.#interruptSubagent(state, input),
         },
-        team: this.#teamToolBridge(state, call.action_id),
         skills: this.#skillToolBridge(state),
         ...(this.#mcpManager === undefined ? {} : {
           mcp: {
@@ -9883,17 +9220,11 @@ function materializeUserInput(
 }
 
 function nextUserInputStep(events: readonly SessionEvent[], proposed: number): number {
-  let lastStep = 0;
-  for (const event of events) {
-    if (event.type !== "user.input_consumed") continue;
-    const parsed = UserInputConsumedDataSchema.safeParse(event.data);
-    if (parsed.success) lastStep = Math.max(lastStep, parsed.data.at_step);
-  }
-  const next = Math.max(1, Math.trunc(proposed), lastStep + 1);
-  if (next > 1_000_000) {
+  const transition = transitionUserInputStep(events, proposed);
+  if (transition.kind === "step_range_exhausted") {
     throw new RuntimeCommandError("input_step_exhausted", "User input step range is exhausted");
   }
-  return next;
+  return transition.step;
 }
 
 function userInputConsumedEventKey(runId: string, inputId: string): string {

@@ -277,8 +277,8 @@ Diagnostics 报告是查询结果，不修复状态；自动修复需要独立�
 2. **提取纯函数**：id、排序、budget、fingerprint、error classification。
 3. **提取 service façade**：Context、Evidence writer、Tool executor，不改变行为。
 4. **提取 Run/Turn state machine**，Runtime class 只做协调。
-5. **将 feature driver 插件化**：memory recall、team、todo、plan、attachments。
-6. **最后缩小 agent-loop**，不能从最复杂主循环第一刀开切。
+5. **CORE-027 已完成：将 feature driver 注册为生命周期贡献**。Memory 在 turn Context 接缝贡献 retrieval hits；Team/Todo 在 Tool execution 接缝贡献窄 bridge；Attachment 在 `run.created` 后贡献 claim。`disabledRuntimeFeatures` 可逐项关闭 Memory、Team、Todo、Attachment；新 plan Run 依赖 Todo。第三方模块加载与热卸载仍由 G-17 extension lifecycle 管理，不在本任务新增。
+6. **CORE-028 已完成：提取 AgentLoopCoordinator**。`agent-loop.ts` 通过 typed Runtime ports 协调 turn、Context、Decision 与 Tool batch；`runtime.ts` 保留公开 Run 命令、Ledger、审批与控制锁、workspace authority、Tool 执行和恢复。提取使 `runtime.ts` 减少 774 行，没有改变 Event、审批时点或外部副作用路径。
 
 每一步必须保持 canonical event 顺序、公开 API 和 snapshot 不变；行为改进另开任务。
 

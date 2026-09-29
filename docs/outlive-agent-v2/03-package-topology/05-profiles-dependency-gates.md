@@ -73,7 +73,7 @@ sequenceDiagram
 
 ## 5. 门禁实现
 
-**DEC-01 已接受 `architecture-policy.yaml` 作为唯一机器可读策略源**，与 [roadmap.yaml](../roadmap.yaml) 的任务输出保持一致；不另建 `architecture-rules.yaml` 形成双真源。`scripts/verify-boundaries.mjs` 实际读取该文件，核对 workspace 包清单、manifest 与源码依赖、公开 `exports`、跨包相对路径和依赖环。`managed` 包的违规阻断检查；`legacy` 包的违规以 warning 报告且必须登记 `migration_owner`。策略或清单错误仍阻断。例外必须提供唯一 ID、owner、Note 路径和有效期。根 CI 的 `typecheck` job 运行 `pnpm verify:boundaries`，工程测试验证 managed/legacy 失败语义。当前策略覆盖仓库现有 12 个 workspace packages；动态注册和更细粒度的逻辑模块治理不在此检查器范围内。升包仍须按 DEC-01 提供边界稳定、消费者/隔离理由和契约测试证据。策略文件与检查器已由 `ARCH-010/013` 交付；本设计文档其余目标仍为 `proposed`。
+**DEC-01 已接受 `architecture-policy.yaml` 作为唯一机器可读策略源**，与 [roadmap.yaml](../roadmap.yaml) 的任务输出保持一致；不另建 `architecture-rules.yaml` 形成双真源。`scripts/verify-boundaries.mjs` 实际读取该文件，核对 workspace 包清单、manifest 与源码依赖、公开 `exports`、跨包相对路径和依赖环。`managed` 包的违规阻断检查；`legacy` 包的违规以 warning 报告且必须登记 `migration_owner`。策略或清单错误仍阻断。例外必须提供唯一 ID、owner、Note 路径和有效期。根 CI 的 `typecheck` job 运行 `pnpm verify:boundaries`，工程测试验证 managed/legacy 失败语义。当前策略覆盖仓库现有 14 个 workspace packages；动态注册和更细粒度的逻辑模块治理不在此检查器范围内。升包仍须按 DEC-01 提供边界稳定、消费者/隔离理由和契约测试证据。策略文件与检查器已由 `ARCH-010/013` 交付；本设计文档其余目标仍为 `proposed`。
 
 ## 6. Profile 与 Bundle
 
