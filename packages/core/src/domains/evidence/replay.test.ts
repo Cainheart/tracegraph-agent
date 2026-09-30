@@ -24,6 +24,24 @@ const SESSION_ID = "session:replay";
 const RUN_ID = "run:replay";
 const PROJECT_ID = "project:replay";
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Drains nonblocking background work so temporary data directories can be removed safely. */
+async function drainTrackedRuntimes(): Promise<void> {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
+}
+
+/** Registers a Runtime so teardown can drain its background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 describe("G23 sequence-bounded replay", () => {
   it("replays every valid sequence and keeps historical hashes stable as the head advances", () => {
     const events = replayLedger();
@@ -198,7 +216,7 @@ describe("G23 sequence-bounded replay", () => {
   it("exposes bounded replay and same-read diff through AgentRuntime while preserving latest replay", async () => {
     const dataDir = await mkdtemp(join(tmpdir(), "tracegraph-g23-runtime-"));
     try {
-      const runtime = await createAgentRuntime({ dataDir });
+      const runtime = await createTrackedRuntime({ dataDir });
       const ledger = new JsonlEventLedger(join(dataDir, "events"), {
         now: () => new Date("2026-09-19T12:00:00.000Z"),
         idFactory: sequentialIdFactory(),
@@ -240,6 +258,7 @@ describe("G23 sequence-bounded replay", () => {
       expect(diff.events.added.map(({ sequence }) => sequence)).toEqual([2]);
       expect(latest.last_sequence).toBe(2);
     } finally {
+      await drainTrackedRuntimes();
       await rm(dataDir, { recursive: true, force: true });
     }
   });

@@ -53,6 +53,14 @@ import {
   TeamTaskWriteRequestSchema,
   TelemetryStatusSchema,
   UsageSnapshotSchema,
+  MemoryCandidateCreateRequestSchema,
+  MemoryControlItemSchema,
+  MemoryControlListResponseSchema,
+  MemoryCorrectionRequestSchema,
+  MemoryDeleteRequestSchema,
+  MemoryDeleteResponseSchema,
+  MemoryReviewRequestSchema,
+  MemoryRevokeRequestSchema,
   TodoListSchema,
   TodoMutationResultSchema,
   TodoWriteRequestSchema,
@@ -105,6 +113,12 @@ import {
   type TeamTaskWriteRequest,
   type TelemetryStatus,
   type UsageSnapshot,
+  type MemoryCandidateCreateRequest,
+  type MemoryControlItem,
+  type MemoryControlListResponse,
+  type MemoryCorrectionRequest,
+  type MemoryReviewRequest,
+  type MemoryRevokeRequest,
   type TodoList,
   type TodoMutationResult,
   type TodoWriteInput,
@@ -396,6 +410,53 @@ export class TraceGraphClient {
     return LspStatusSnapshotSchema.parse(
       await this.#requestUnknown("/api/lsp"),
     );
+  }
+
+  async listMemoryControl(): Promise<MemoryControlListResponse> {
+    return MemoryControlListResponseSchema.parse(await this.#requestUnknown("/api/memory"));
+  }
+
+  async createMemoryCandidate(
+    input: Omit<MemoryCandidateCreateRequest, "command_id"> & { command_id?: string },
+  ): Promise<MemoryControlItem> {
+    const body = MemoryCandidateCreateRequestSchema.parse({ ...input, command_id: input.command_id ?? createCommandId() });
+    return MemoryControlItemSchema.parse(await this.#command("/api/memory", body));
+  }
+
+  async reviewMemory(
+    memoryId: string,
+    input: Omit<MemoryReviewRequest, "command_id"> & { command_id?: string },
+  ): Promise<MemoryControlItem> {
+    const body = MemoryReviewRequestSchema.parse({ ...input, command_id: input.command_id ?? createCommandId() });
+    return MemoryControlItemSchema.parse(await this.#command(`/api/memory/${encodeURIComponent(memoryId)}/review`, body));
+  }
+
+  async correctMemory(
+    memoryId: string,
+    input: Omit<MemoryCorrectionRequest, "command_id"> & { command_id?: string },
+  ): Promise<MemoryControlItem> {
+    const body = MemoryCorrectionRequestSchema.parse({ ...input, command_id: input.command_id ?? createCommandId() });
+    return MemoryControlItemSchema.parse(await this.#command(`/api/memory/${encodeURIComponent(memoryId)}/correct`, body));
+  }
+
+  async revokeMemory(
+    memoryId: string,
+    input: { expected_sequence: number; command_id?: string },
+  ): Promise<MemoryControlItem> {
+    const body = MemoryRevokeRequestSchema.parse({ ...input, command_id: input.command_id ?? createCommandId() });
+    return MemoryControlItemSchema.parse(await this.#command(`/api/memory/${encodeURIComponent(memoryId)}/revoke`, body));
+  }
+
+  async deleteMemory(memoryId: string, commandId = createCommandId()): Promise<{ deletedMemoryIds: readonly string[] }> {
+    const body = MemoryDeleteRequestSchema.parse({ command_id: commandId });
+    return MemoryDeleteResponseSchema.parse(await this.#requestUnknown(`/api/memory/${encodeURIComponent(memoryId)}`, {
+      method: "DELETE",
+      headers: {
+        "content-type": "application/json",
+        "x-tracegraph-command-id": commandId,
+      },
+      body: JSON.stringify(body),
+    }));
   }
 
   async restartMcpServer(

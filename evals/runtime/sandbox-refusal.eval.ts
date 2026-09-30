@@ -16,6 +16,24 @@ import {
 } from "../../packages/test-support/dist/index.js";
 import { eventIndex, startEvalInput, waitForEvalStatus } from "./helpers.js";
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Drains nonblocking background work so temporary data directories can be removed safely. */
+async function drainTrackedRuntimes(): Promise<void> {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
+}
+
+/** Registers a Runtime so teardown can drain its background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 describe("runtime behavior: sandbox refusal", () => {
   it("permits a reviewable preview but rejects mutation before approval in read-only mode", async () => {
     const fixture = await createFailingTypescriptFixture("eval-sandbox-refusal");
@@ -40,7 +58,7 @@ describe("runtime behavior: sandbox refusal", () => {
           },
         })],
       });
-      const runtime = await createAgentRuntime({
+      const runtime = await createTrackedRuntime({
         dataDir: data.path,
         model: provider,
         sandboxMode: "read-only",
@@ -65,6 +83,7 @@ describe("runtime behavior: sandbox refusal", () => {
       expect(await readFile(join(fixture.handle.real_root, "src/add.ts"), "utf8"))
         .toContain("return left - right;");
     } finally {
+      await drainTrackedRuntimes();
       await Promise.all([fixture.cleanup(), data.cleanup()]);
     }
   });

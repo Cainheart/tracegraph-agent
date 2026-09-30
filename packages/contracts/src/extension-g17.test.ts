@@ -151,7 +151,7 @@ describe("G17 extension contracts", () => {
   });
 
   it("preserves extension.error while later append-only facts advance the projector", () => {
-    expect(EventTypeSchema.options).toHaveLength(102);
+    expect(EventTypeSchema.options).toHaveLength(103);
     expect(EventTypeSchema.options).toContain("extension.error");
     expect(PROJECTOR_VERSION).toBe("tracegraph.projector.v9");
   });

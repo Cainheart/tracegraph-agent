@@ -279,11 +279,12 @@ traceId
 | `packages/core/src/domains/evidence/{action-wal,attachment}.ts` | Core Runtime authority | WAL、Recovery Ledger 与 Attachment staging 暂留 Core，维持各自副作用与恢复边界 |
 | `packages/session/src/session-store.ts` | `@tracegraph/session` | PKG-031 已提取 JSONL 格式、持久化、查询与迁移；Core 注入 canonical redactor，Session-to-Run controller 保留在 Core |
 | `packages/core/src/domains/memory/memory.ts` + `packages/retrieval` | Memory family | 先统一 contract 与 lifecycle，再组合 retrieval provider |
-| `packages/core/src/domains/context/{context,context-compaction,token-meter}.ts` | Context family | 拆 assembly、policy、provider |
-| `kernel/tool/definition.ts`、`domains/tools/{registry,executor,policy-engine,approval-token-store}.ts` | Tool family | CORE-022 已按 Definition/Executor/Policy/Approval 分离；CORE-024 后只由包根 barrel 保持公开 API 兼容，不保留平铺源码转发 |
+| `packages/context/src/{context,context-compaction}.ts` + `packages/core/src/domains/context/token-meter.ts` | `@tracegraph/context` + Core token-meter implementation | **PKG-034 已提取 Context projection/compaction；校准 meter 留 Core，待 LLM family** |
+| `packages/tool/src/{definition,registry,executor,policy-engine,approval-token-store}.ts` | `@tracegraph/tool` + Core composition | **PKG-033 已完成**：generic enforcement mechanism 经包根公开；Core 内置定义、ExtensionManager、Runtime policy snapshot、Workspace/Sandbox authority、Action WAL 与 Receipt/Observation 留在 Core；兼容入口只 re-export 包根 |
 | `domains/extensions/{registration,manager}.ts` | Extension family | CORE-023 已分离 G-17 注册契约与 lifecycle manager；CORE-024 移除平铺 `extension.ts`，兼容 API 由 Core 包根 barrel 保持 |
 | `packages/core/src/domains/model/model-provider.ts` | LLM family | seam 与 concrete presets/providers 分离 |
-| `packages/core/src/seams/{mcp,lsp,sandbox}/`、`packages/core/src/domains/skill/skill.ts` | Capability families | 最适合优先提取的可替换接缝 |
+| `packages/mcp/src/`、`packages/lsp/src/` | `@tracegraph/mcp`、`@tracegraph/lsp` | PKG-032 已按独立 stdio 进程协议/生命周期硬隔离提取；Core 只保留端口与 Tool 适配器 |
+| `packages/core/src/seams/sandbox/`、`packages/core/src/domains/skill/skill.ts` | Capability families | 仍留在 Core 的可替换接缝，升包按稳定边界与门槛另行评审 |
 | `packages/core/src/domains/runtime/{runtime.ts,runtime-feature-drivers.ts}` | `core/agent-loop` + feature-driver contributions | CORE-027 已把 Memory/Team/Todo/Attachment 接入生命周期 Registry；CORE-028 再把 Runtime 收敛为 coordinator |
 | `packages/host`、`packages/sdk` | Host 与内部 client/protocol families | 在 Runtime 事实边界稳定后拆 controller/transport；不作为独立 API/SDK 产品发布 |
 

@@ -6,6 +6,7 @@ import {
   Sha256Schema,
   SourceRefSchema,
   TrustLevelSchema,
+  ArtifactRefSchema,
 } from "./common.js";
 
 export const MemoryScopeSchema = z.object({
@@ -37,7 +38,8 @@ export const MemoryStatusSchema = z.enum([
   "expired",
 ]);
 
-export const MemoryRecordSchema = z.object({
+/** The unversioned G-21 record shape retained for compatibility reads/writes. */
+const memoryRecordV1Fields = {
   memory_id: IdentifierSchema,
   content: NonEmptyStringSchema.max(8_000),
   scope: MemoryScopeSchema,
@@ -48,7 +50,6 @@ export const MemoryRecordSchema = z.object({
   source_refs: z.array(SourceRefSchema).min(1),
   created_at: IsoDateTimeSchema,
   expires_at: IsoDateTimeSchema.optional(),
-  supersedes: z.array(IdentifierSchema).default([]),
   content_hash: Sha256Schema.optional(),
   /** Optional only for replaying records written before G-21. */
   candidate_id: IdentifierSchema.optional(),
@@ -56,8 +57,415 @@ export const MemoryRecordSchema = z.object({
   admission_id: IdentifierSchema.optional(),
   admitted_at: IsoDateTimeSchema.optional(),
   admission_reason: NonEmptyStringSchema.max(2_000).optional(),
+};
+
+/** Raw V1 row shape used only to preserve omitted/defaulted keys in migration. */
+export const MemoryRecordV1SourceSchema = z.object({
+  ...memoryRecordV1Fields,
+  supersedes: z.array(IdentifierSchema).optional(),
 }).strict();
-export type MemoryRecord = z.infer<typeof MemoryRecordSchema>;
+export type MemoryRecordV1Source = z.infer<typeof MemoryRecordV1SourceSchema>;
+
+/** V1 reader schema remains a ZodObject and keeps its historical default. */
+export const MemoryRecordV1Schema = z.object({
+  ...memoryRecordV1Fields,
+  supersedes: z.array(IdentifierSchema).default([]),
+}).strict();
+export type MemoryRecordV1 = z.infer<typeof MemoryRecordV1Schema>;
+
+/**
+ * Compatibility name used by the current G-21 Runtime. MEM-040 deliberately
+ * keeps this alias on V1 until a later lifecycle task performs a reviewed
+ * canonical-store cutover.
+ */
+export const MemoryRecordSchema = MemoryRecordV1Schema;
+export type MemoryRecord = MemoryRecordV1;
+
+export const MemoryKindV2Schema = z.enum([
+  "declared_identity",
+  "preference",
+  "fact",
+  "decision",
+  "procedure",
+  "lesson",
+  "relationship",
+  /** Used only while importing a legacy row whose semantic kind is unknown. */
+  "legacy_unclassified",
+]);
+export type MemoryKindV2 = z.infer<typeof MemoryKindV2Schema>;
+
+export const MemoryStatusV2Schema = z.enum([
+  "candidate",
+  "active",
+  "disputed",
+  "superseded",
+  "revoked",
+  "expired",
+]);
+export type MemoryStatusV2 = z.infer<typeof MemoryStatusV2Schema>;
+
+export const MemoryLifecycleActionSchema = z.enum([
+  "review_activate",
+  "review_reject",
+  "dispute",
+  "resolve_active",
+  "resolve_superseded",
+  "supersede",
+  "revoke",
+  "expire",
+  "revalidate",
+]);
+export type MemoryLifecycleAction = z.infer<typeof MemoryLifecycleActionSchema>;
+
+function memoryLifecycleEdge(
+  from: readonly MemoryStatusV2[],
+  to: MemoryStatusV2,
+): { readonly from: readonly MemoryStatusV2[]; readonly to: MemoryStatusV2 } {
+  return Object.freeze({ from: Object.freeze([...from]), to });
+}
+
+export const MEMORY_LIFECYCLE_TRANSITIONS: Readonly<Record<
+  MemoryLifecycleAction,
+  { readonly from: readonly MemoryStatusV2[]; readonly to: MemoryStatusV2 }
+>> = Object.freeze({
+  review_activate: memoryLifecycleEdge(["candidate"], "active"),
+  review_reject: memoryLifecycleEdge(["candidate"], "revoked"),
+  dispute: memoryLifecycleEdge(["active"], "disputed"),
+  resolve_active: memoryLifecycleEdge(["disputed"], "active"),
+  resolve_superseded: memoryLifecycleEdge(["disputed"], "superseded"),
+  supersede: memoryLifecycleEdge(["active"], "superseded"),
+  revoke: memoryLifecycleEdge(["active", "disputed", "superseded", "expired"], "revoked"),
+  expire: memoryLifecycleEdge(["active"], "expired"),
+  revalidate: memoryLifecycleEdge(["expired"], "candidate"),
+});
+
+export const MemoryLifecycleReasonCodeSchema = z.enum([
+  "review_accepted",
+  "review_rejected",
+  "conflicting_evidence",
+  "user_challenge",
+  "resolution_confirmed",
+  "correction_accepted",
+  "replacement_accepted",
+  "user_requested_forget",
+  "policy_withdrawn",
+  "retention_elapsed",
+  "policy_expired",
+  "revalidated_by_user",
+]);
+export type MemoryLifecycleReasonCode = z.infer<typeof MemoryLifecycleReasonCodeSchema>;
+
+export const MemoryLifecycleActorSchema = z.object({
+  type: z.enum(["user", "system"]),
+  id: IdentifierSchema,
+}).strict();
+export type MemoryLifecycleActor = z.infer<typeof MemoryLifecycleActorSchema>;
+
+const memoryLifecycleReasonByAction: Record<MemoryLifecycleAction, readonly MemoryLifecycleReasonCode[]> = {
+  review_activate: ["review_accepted"],
+  review_reject: ["review_rejected"],
+  dispute: ["conflicting_evidence", "user_challenge"],
+  resolve_active: ["resolution_confirmed"],
+  resolve_superseded: ["correction_accepted"],
+  supersede: ["replacement_accepted"],
+  revoke: ["user_requested_forget", "policy_withdrawn"],
+  expire: ["retention_elapsed", "policy_expired"],
+  revalidate: ["revalidated_by_user"],
+};
+
+function refineMemoryLifecycleIntent(
+  value: {
+    action: MemoryLifecycleAction;
+    actor: z.infer<typeof MemoryLifecycleActorSchema>;
+    reasonCode: MemoryLifecycleReasonCode;
+    relatedMemoryId?: string | undefined;
+    memoryId: string;
+    validUntil?: string | undefined;
+    occurredAt?: string | undefined;
+  },
+  context: z.RefinementCtx,
+): void {
+  const requiresRelatedMemory = value.action === "supersede" || value.action === "resolve_superseded";
+  if (requiresRelatedMemory !== (value.relatedMemoryId !== undefined)) {
+    context.addIssue({ code: "custom", path: ["relatedMemoryId"], message: "related memory identity does not match the lifecycle action" });
+  }
+  if (value.relatedMemoryId === value.memoryId) {
+    context.addIssue({ code: "custom", path: ["relatedMemoryId"], message: "a memory cannot supersede itself" });
+  }
+  if ((value.action === "revalidate") !== (value.validUntil !== undefined)) {
+    context.addIssue({ code: "custom", path: ["validUntil"], message: "only revalidation carries a renewed validity end" });
+  }
+  if (value.validUntil !== undefined && value.occurredAt !== undefined
+    && Date.parse(value.validUntil) <= Date.parse(value.occurredAt)) {
+    context.addIssue({ code: "custom", path: ["validUntil"], message: "revalidated memory must have a future validity end" });
+  }
+  if (!memoryLifecycleReasonByAction[value.action].includes(value.reasonCode)) {
+    context.addIssue({ code: "custom", path: ["reasonCode"], message: "reason code does not match the lifecycle action" });
+  }
+  const requiredActor = value.action === "expire"
+    || (value.action === "revoke" && value.reasonCode === "policy_withdrawn")
+    ? "system"
+    : value.action === "dispute"
+      ? undefined
+      : "user";
+  if (requiredActor !== undefined && value.actor.type !== requiredActor) {
+    context.addIssue({ code: "custom", path: ["actor", "type"], message: "actor type is not authorized for the lifecycle action" });
+  }
+}
+
+export const MemoryLifecycleCommandSchema = z.object({
+  ownerId: IdentifierSchema,
+  memoryId: IdentifierSchema,
+  memoryVersion: z.number().int().positive(),
+  expectedSequence: z.number().int().nonnegative(),
+  action: MemoryLifecycleActionSchema,
+  actor: MemoryLifecycleActorSchema,
+  reasonCode: MemoryLifecycleReasonCodeSchema,
+  relatedMemoryId: IdentifierSchema.optional(),
+  validUntil: IsoDateTimeSchema.optional(),
+  idempotencyKey: IdentifierSchema,
+}).strict().superRefine((value, context) => refineMemoryLifecycleIntent(value, context));
+export type MemoryLifecycleCommand = z.infer<typeof MemoryLifecycleCommandSchema>;
+
+const memoryLifecycleDraftFields = {
+  schemaVersion: z.literal("tracegraph.memory-lifecycle-event.v1"),
+  eventType: z.literal("memory.lifecycle.transitioned"),
+  ownerId: IdentifierSchema,
+  memoryId: IdentifierSchema,
+  memoryVersion: z.number().int().positive(),
+  action: MemoryLifecycleActionSchema,
+  fromStatus: MemoryStatusV2Schema,
+  toStatus: MemoryStatusV2Schema,
+  actor: MemoryLifecycleActorSchema,
+  reasonCode: MemoryLifecycleReasonCodeSchema,
+  relatedMemoryId: IdentifierSchema.optional(),
+  /** Required only when an expired record is explicitly revalidated. */
+  validUntil: IsoDateTimeSchema.optional(),
+  idempotencyKey: IdentifierSchema,
+  occurredAt: IsoDateTimeSchema,
+};
+
+const memoryLifecycleEventFields = {
+  ...memoryLifecycleDraftFields,
+  eventId: IdentifierSchema,
+  sequence: z.number().int().positive(),
+  previousEventHash: Sha256Schema.optional(),
+  eventHash: Sha256Schema,
+};
+
+function refineMemoryLifecycleEvent(
+  value: z.infer<z.ZodObject<typeof memoryLifecycleEventFields>>,
+  context: z.RefinementCtx,
+): void {
+  const transition = MEMORY_LIFECYCLE_TRANSITIONS[value.action];
+  if (!transition.from.includes(value.fromStatus) || transition.to !== value.toStatus) {
+    context.addIssue({ code: "custom", path: ["action"], message: "action does not match the lifecycle status transition" });
+  }
+  refineMemoryLifecycleIntent(value, context);
+}
+
+export const MemoryLifecycleEventDraftSchema = z.object({
+  ...memoryLifecycleDraftFields,
+  expectedSequence: z.number().int().nonnegative(),
+}).strict();
+export type MemoryLifecycleEventDraft = z.infer<typeof MemoryLifecycleEventDraftSchema>;
+
+export const MemoryLifecycleEventSchema = z.object(memoryLifecycleEventFields)
+  .strict()
+  .superRefine(refineMemoryLifecycleEvent);
+export type MemoryLifecycleEvent = z.infer<typeof MemoryLifecycleEventSchema>;
+
+/** Exact pointer to a canonical, hash-validated Run event used as evidence. */
+export const MemoryRunEvidenceRefSchema = z.object({
+  kind: z.literal("run_event"),
+  projectId: IdentifierSchema,
+  runId: IdentifierSchema,
+  sessionId: IdentifierSchema.optional(),
+  eventId: IdentifierSchema,
+  sequence: z.number().int().positive(),
+  eventType: z.string().min(1).max(100),
+  eventHash: Sha256Schema,
+}).strict();
+export type MemoryRunEvidenceRef = z.infer<typeof MemoryRunEvidenceRefSchema>;
+
+export const MemoryProvenanceEvidenceRefSchema = z.union([
+  SourceRefSchema,
+  MemoryRunEvidenceRefSchema,
+]);
+export type MemoryProvenanceEvidenceRef = z.infer<typeof MemoryProvenanceEvidenceRefSchema>;
+
+export const MemoryRecordV2Schema = z.object({
+  schemaVersion: z.literal(2),
+  memoryId: IdentifierSchema,
+  version: z.number().int().positive(),
+  kind: MemoryKindV2Schema,
+  claim: NonEmptyStringSchema.max(8_000),
+  contentArtifactRef: ArtifactRefSchema.optional(),
+  contentDigest: Sha256Schema.optional(),
+  normalizedKey: NonEmptyStringSchema.max(500).optional(),
+  status: MemoryStatusV2Schema,
+  scope: z.object({
+    ownerId: IdentifierSchema,
+    workspaceId: IdentifierSchema.optional(),
+    projectId: IdentifierSchema.optional(),
+    sessionId: IdentifierSchema.optional(),
+    /** Retains narrow G-21 Run scope during review-gated migration. */
+    runId: IdentifierSchema.optional(),
+    visibility: z.enum(["private", "workspace", "exportable"]),
+  }).strict().superRefine((value, context) => {
+    if (value.visibility === "workspace" && value.workspaceId === undefined) {
+      context.addIssue({ code: "custom", path: ["workspaceId"], message: "workspace visibility requires a workspace id" });
+    }
+    if (value.runId !== undefined && value.projectId === undefined) {
+      context.addIssue({ code: "custom", path: ["projectId"], message: "Run scope requires a project id" });
+    }
+  }),
+  provenance: z.object({
+    origin: z.enum(["user", "repository", "tool", "external", "system", "model_inference", "fixture"]),
+    evidenceRefs: z.array(MemoryProvenanceEvidenceRefSchema),
+    createdBy: z.object({
+      type: z.enum(["user", "tool", "model", "system", "unknown"]),
+      id: IdentifierSchema,
+    }).strict(),
+    createdFromEpisode: IdentifierSchema.optional(),
+  }).strict(),
+  assessment: z.object({
+    sourceTrust: z.enum(["authoritative", "trusted", "untrusted", "unknown"]),
+    inferenceConfidence: z.number().finite().min(0).max(1).optional(),
+    verification: z.enum(["verified", "corroborated", "asserted", "inferred", "unclassified"]),
+  }).strict(),
+  validity: z.object({
+    validFrom: IsoDateTimeSchema,
+    validUntil: IsoDateTimeSchema.optional(),
+    applicability: z.array(NonEmptyStringSchema.max(500)),
+    invalidators: z.array(NonEmptyStringSchema.max(500)),
+  }).strict().superRefine((value, context) => {
+    if (value.validUntil !== undefined && Date.parse(value.validUntil) < Date.parse(value.validFrom)) {
+      context.addIssue({ code: "custom", path: ["validUntil"], message: "validUntil cannot precede validFrom" });
+    }
+  }),
+  governance: z.object({
+    sensitivity: z.enum(["public", "internal", "personal", "secret", "unknown"]),
+    consent: z.enum(["explicit", "policy", "none"]),
+    retentionPolicy: NonEmptyStringSchema.max(200),
+    allowModelUse: z.boolean(),
+    allowExport: z.boolean(),
+  }).strict().superRefine((value, context) => {
+    if (value.consent === "none" && (value.allowModelUse || value.allowExport)) {
+      context.addIssue({ code: "custom", path: ["consent"], message: "without consent, model use and export must be disabled" });
+    }
+    if ((value.sensitivity === "secret" || value.sensitivity === "unknown") && (value.allowModelUse || value.allowExport)) {
+      context.addIssue({ code: "custom", path: ["sensitivity"], message: "secret or unclassified memory cannot be used or exported" });
+    }
+  }),
+  lineage: z.object({
+    supersedes: z.array(IdentifierSchema),
+    contradictedBy: z.array(IdentifierSchema),
+    derivedFrom: z.array(IdentifierSchema),
+  }).strict(),
+  createdAt: IsoDateTimeSchema,
+  updatedAt: IsoDateTimeSchema,
+}).strict().superRefine((value, context) => {
+  if (Date.parse(value.updatedAt) < Date.parse(value.createdAt)) {
+    context.addIssue({ code: "custom", path: ["updatedAt"], message: "updatedAt cannot precede createdAt" });
+  }
+  if (value.kind === "legacy_unclassified"
+    && (value.status !== "candidate" && value.status !== "revoked"
+      || value.governance.allowModelUse || value.governance.allowExport)) {
+    context.addIssue({ code: "custom", path: ["kind"], message: "legacy unclassified memory must remain a non-usable candidate or revoked record" });
+  }
+  if (value.kind === "declared_identity" && value.provenance.origin !== "user") {
+    context.addIssue({ code: "custom", path: ["provenance", "origin"], message: "declared identity must originate from the user" });
+  }
+  if (value.provenance.origin === "model_inference" && value.provenance.evidenceRefs.length === 0) {
+    context.addIssue({ code: "custom", path: ["provenance", "evidenceRefs"], message: "model inference requires evidence" });
+  }
+  for (const [name, ids] of Object.entries(value.lineage)) {
+    if (new Set(ids).size !== ids.length) {
+      context.addIssue({ code: "custom", path: ["lineage", name], message: "lineage ids must be unique" });
+    }
+    if (ids.includes(value.memoryId)) {
+      context.addIssue({ code: "custom", path: ["lineage", name], message: "lineage cannot reference the same memory" });
+    }
+  }
+});
+export type MemoryRecordV2 = z.infer<typeof MemoryRecordV2Schema>;
+
+/** A review-gated, lossless migration artifact; it is not a canonical record. */
+export const MemoryRecordV1MigrationEnvelopeSchema = z.object({
+  schemaVersion: z.literal("tracegraph.memory-migration.v2"),
+  record: MemoryRecordV2Schema,
+  source: z.object({
+    schemaVersion: z.literal("tracegraph.memory-record.v1"),
+    record: MemoryRecordV1SourceSchema,
+  }).strict(),
+  reviewRequired: z.literal(true),
+  migratedAt: IsoDateTimeSchema,
+}).strict();
+export type MemoryRecordV1MigrationEnvelope = z.infer<typeof MemoryRecordV1MigrationEnvelopeSchema>;
+
+export function migrateMemoryRecordV1ToV2(
+  recordValue: unknown,
+  options: { ownerId: string; migratedAt: string },
+): MemoryRecordV1MigrationEnvelope {
+  const sourceSnapshot = MemoryRecordV1SourceSchema.parse(recordValue);
+  const sourceRecord = MemoryRecordV1Schema.parse(sourceSnapshot);
+  const ownerId = IdentifierSchema.parse(options.ownerId);
+  const migratedAt = IsoDateTimeSchema.parse(options.migratedAt);
+  const record = MemoryRecordV2Schema.parse({
+    schemaVersion: 2,
+    memoryId: sourceRecord.memory_id,
+    version: sourceRecord.version,
+    kind: "legacy_unclassified",
+    claim: sourceRecord.content,
+    ...(sourceRecord.content_hash === undefined ? {} : { contentDigest: sourceRecord.content_hash }),
+    // Imported content stays a candidate until a user reviews the source and
+    // supplies the missing V2 kind, consent, and usage policy.
+    status: "candidate",
+    scope: {
+      ownerId,
+      ...(sourceRecord.scope.project_id === undefined ? {} : { projectId: sourceRecord.scope.project_id }),
+      ...(sourceRecord.scope.run_id === undefined ? {} : { runId: sourceRecord.scope.run_id }),
+      visibility: "private",
+    },
+    provenance: {
+      origin: sourceRecord.origin,
+      evidenceRefs: sourceRecord.source_refs,
+      createdBy: { type: "unknown", id: "actor:legacy-unknown" },
+    },
+    assessment: {
+      sourceTrust: sourceRecord.trust === "quarantined" ? "unknown" : sourceRecord.trust,
+      verification: "unclassified",
+    },
+    validity: {
+      validFrom: sourceRecord.created_at,
+      ...(sourceRecord.expires_at === undefined ? {} : { validUntil: sourceRecord.expires_at }),
+      applicability: [],
+      invalidators: [],
+    },
+    governance: {
+      sensitivity: "unknown",
+      consent: "none",
+      retentionPolicy: "legacy-unreviewed",
+      allowModelUse: false,
+      allowExport: false,
+    },
+    lineage: {
+      supersedes: sourceRecord.supersedes,
+      contradictedBy: [],
+      derivedFrom: [],
+    },
+    createdAt: sourceRecord.created_at,
+    updatedAt: sourceRecord.created_at,
+  });
+  return MemoryRecordV1MigrationEnvelopeSchema.parse({
+    schemaVersion: "tracegraph.memory-migration.v2",
+    record,
+    source: { schemaVersion: "tracegraph.memory-record.v1", record: sourceSnapshot },
+    reviewRequired: true,
+    migratedAt,
+  });
+}
 
 export const MemoryCandidateSchema = z.object({
   candidate_id: IdentifierSchema,
@@ -142,6 +550,25 @@ export const RetrievalSearchResponseSchema = z.object({
 }).strict();
 export type RetrievalSearchResponse = z.infer<typeof RetrievalSearchResponseSchema>;
 
+/** Evidence identity copied into Context without copying source descriptions. */
+export const MemoryEvidenceReferenceSchema = z.object({
+  source_id: IdentifierSchema,
+  source_type: SourceRefSchema.shape.source_type,
+  trust: TrustLevelSchema,
+  artifact_ref: ArtifactRefSchema.optional(),
+}).strict();
+export type MemoryEvidenceReference = z.infer<typeof MemoryEvidenceReferenceSchema>;
+
+/** Exact immutable Memory record version that supplied a retrieved chunk. */
+export const MemoryVersionReferenceSchema = z.object({
+  record_schema_version: z.enum(["tracegraph.memory-record.v1", "tracegraph.memory-record.v2"]),
+  memory_id: IdentifierSchema,
+  version: z.number().int().positive(),
+  content_hash: Sha256Schema,
+  evidence_refs: z.array(MemoryEvidenceReferenceSchema).min(1).max(128),
+}).strict();
+export type MemoryVersionReference = z.infer<typeof MemoryVersionReferenceSchema>;
+
 /** Provenance copied into both the Context manifest and the recall Event. */
 export const RetrievalAttributionSchema = z.object({
   rank: z.number().int().positive(),
@@ -153,9 +580,30 @@ export const RetrievalAttributionSchema = z.object({
   end_line: z.number().int().positive(),
   heading_path: z.array(NonEmptyStringSchema.max(500)).max(6),
   injected_tokens: z.number().int().positive(),
+  /** Present only when the indexed source resolves to an admitted Memory record. */
+  memory_ref: MemoryVersionReferenceSchema.optional(),
 }).strict().superRefine((value, context) => {
   if (value.end_line < value.start_line) {
     context.addIssue({ code: "custom", path: ["end_line"], message: "end line cannot precede start line" });
+  }
+  if (value.source_path.startsWith("memory/")) {
+    const memoryRefPath = value.memory_ref === undefined
+      ? undefined
+      : `memory/${encodeURIComponent(value.memory_ref.memory_id)}.md`;
+    if (memoryRefPath === undefined || memoryRefPath !== value.source_path) {
+      context.addIssue({
+        code: "custom",
+        path: ["memory_ref"],
+        message: "indexed Memory sources require the exact canonical record identity and version",
+      });
+    }
+  }
+  if (value.memory_ref !== undefined && !value.source_path.startsWith("memory/")) {
+    context.addIssue({
+      code: "custom",
+      path: ["memory_ref"],
+      message: "canonical Memory identity cannot be attached to a non-Memory source path",
+    });
   }
 });
 export type RetrievalAttribution = z.infer<typeof RetrievalAttributionSchema>;

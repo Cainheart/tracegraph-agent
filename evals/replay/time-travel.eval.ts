@@ -16,6 +16,24 @@ const SESSION_ID = "session:eval:replay";
 const RUN_ID = "run:eval:replay";
 const PROJECT_ID = "project:eval:replay";
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Drains nonblocking background work so temporary data directories can be removed safely. */
+async function drainTrackedRuntimes(): Promise<void> {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
+}
+
+/** Registers a Runtime so teardown can drain its background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 describe("G23 replay: deterministic time travel", () => {
   it("rebuilds every recorded sequence with the same canonical projection hash after restart", async () => {
     const data = await createTemporaryDataDir();
@@ -40,7 +58,7 @@ describe("G23 replay: deterministic time travel", () => {
 
       // A fresh Runtime proves replay is based on the durable Ledger rather
       // than the process that originally observed each live projection.
-      const restarted = await createAgentRuntime({ dataDir: data.path });
+      const restarted = await createTrackedRuntime({ dataDir: data.path });
       for (const expected of recorded) {
         const replayed = await restarted.replayAt({
           session_id: SESSION_ID,
@@ -67,6 +85,7 @@ describe("G23 replay: deterministic time travel", () => {
       // Read-only replay must not append an event or invoke a model/tool path.
       expect(await ledger.list(RUN_ID)).toEqual(canonicalBeforeReplay);
     } finally {
+      await drainTrackedRuntimes();
       await data.cleanup();
     }
   });

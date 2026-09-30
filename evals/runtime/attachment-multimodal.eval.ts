@@ -15,12 +15,30 @@ import {
 } from "../../packages/test-support/dist/index.js";
 import { eventIndex, startEvalInput, waitForEvalStatus } from "./helpers.js";
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Drains nonblocking background work so temporary data directories can be removed safely. */
+async function drainTrackedRuntimes(): Promise<void> {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
+}
+
+/** Registers a Runtime so teardown can drain its background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 describe("runtime behavior: attachments and multimodal input", () => {
   it("recovers a staged >5 MiB rejection and records it before Run/model execution", async () => {
     const fixture = await createFailingTypescriptFixture("eval-attachment-oversized");
     const data = await createTemporaryDataDir();
     try {
-      const stagingRuntime = await createAgentRuntime({
+      const stagingRuntime = await createTrackedRuntime({
         dataDir: data.path,
         model: new CapturingFinishModel(false),
       });
@@ -35,7 +53,7 @@ describe("runtime behavior: attachments and multimodal input", () => {
       // A fresh Runtime proves that the rejected receipt is durable rather than
       // being an in-memory result passed directly from staging to claim.
       const model = new CapturingFinishModel(false);
-      const runtime = await createAgentRuntime({ dataDir: data.path, model });
+      const runtime = await createTrackedRuntime({ dataDir: data.path, model });
       const started = await runtime.startRun({
         ...startEvalInput(
           fixture.handle,
@@ -61,6 +79,7 @@ describe("runtime behavior: attachments and multimodal input", () => {
         .toBeLessThan(eventIndex(completed, "model.request_started"));
       expect(model.inputs[0]?.images).toBeUndefined();
     } finally {
+      await drainTrackedRuntimes();
       await Promise.all([fixture.cleanup(), data.cleanup()]);
     }
   });
@@ -70,7 +89,7 @@ describe("runtime behavior: attachments and multimodal input", () => {
     const data = await createTemporaryDataDir();
     try {
       const model = new CapturingFinishModel(false);
-      const runtime = await createAgentRuntime({ dataDir: data.path, model });
+      const runtime = await createTrackedRuntime({ dataDir: data.path, model });
       const staged = await runtime.stageAttachment({
         commandId: "command:eval:attachment-unsupported-image-upload",
         projectId: fixture.handle.project_id,
@@ -104,6 +123,7 @@ describe("runtime behavior: attachments and multimodal input", () => {
         Buffer.from(png()).toString("base64"),
       );
     } finally {
+      await drainTrackedRuntimes();
       await Promise.all([fixture.cleanup(), data.cleanup()]);
     }
   });
@@ -113,7 +133,7 @@ describe("runtime behavior: attachments and multimodal input", () => {
     const data = await createTemporaryDataDir();
     try {
       const model = new CapturingFinishModel(true);
-      const runtime = await createAgentRuntime({ dataDir: data.path, model });
+      const runtime = await createTrackedRuntime({ dataDir: data.path, model });
       const staged = await runtime.stageAttachment({
         commandId: "command:eval:attachment-pdf-fallback-upload",
         projectId: fixture.handle.project_id,
@@ -160,6 +180,7 @@ describe("runtime behavior: attachments and multimodal input", () => {
         }),
       ]);
     } finally {
+      await drainTrackedRuntimes();
       await Promise.all([fixture.cleanup(), data.cleanup()]);
     }
   });

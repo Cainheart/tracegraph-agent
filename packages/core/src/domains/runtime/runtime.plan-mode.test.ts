@@ -17,7 +17,21 @@ import type { ModelAdapter } from "../../kernel/types.js";
 const roots: string[] = [];
 const HASH = `sha256:${"0".repeat(64)}`;
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Registers a Runtime so teardown drains its nonblocking background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 afterEach(async () => {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 
@@ -36,7 +50,7 @@ describe("G09 Runtime Plan Mode", () => {
         });
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: harness.dataDir, model });
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
 
     const started = await runtime.startRun(startInput(harness.workspace));
     const failed = await waitForStatus(runtime, started.run_id, "failed");
@@ -81,7 +95,7 @@ describe("G09 Runtime Plan Mode", () => {
           );
         },
       };
-      const runtime = await createAgentRuntime({
+      const runtime = await createTrackedRuntime({
         dataDir: harness.dataDir,
         model,
         toolRegistry: registry,
@@ -138,7 +152,7 @@ describe("G09 Runtime Plan Mode", () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       model,
       toolRegistry: registry,
@@ -159,7 +173,7 @@ describe("G09 Runtime Plan Mode", () => {
   it("keeps one run_id across plan, revision-bound approval, execution, and Todo completion", async () => {
     const harness = await createHarness("approve-execute");
     const model = planThenExecuteModel();
-    const runtime = await createAgentRuntime({ dataDir: harness.dataDir, model });
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
 
     const started = await runtime.startRun(startInput(harness.workspace));
     const waiting = await waitForStatus(runtime, started.run_id, "awaiting_plan_approval");
@@ -243,7 +257,7 @@ describe("G09 Runtime Plan Mode", () => {
 
   it("repairs a Todo-after-plan crash gap before rejecting the stale approval", async () => {
     const harness = await createHarness("stale-crash-gap");
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       model: planThenExecuteModel(),
     });
@@ -299,7 +313,7 @@ describe("G09 Runtime Plan Mode", () => {
   it("rejects new user Todo mutations while recovery or manual review is required", async () => {
     for (const eventType of ["run.interrupted", "action.diverged"] as const) {
       const harness = await createHarness(`todo-state-${eventType.replace(".", "-")}`);
-      const runtime = await createAgentRuntime({
+      const runtime = await createTrackedRuntime({
         dataDir: harness.dataDir,
         model: planThenExecuteModel(),
       });
@@ -359,7 +373,7 @@ describe("G09 Runtime Plan Mode", () => {
         return finishDecision("decision:visible-finish", "The structured plan is visible.");
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: harness.dataDir, model });
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
 
     const started = await runtime.startRun(startInput(harness.workspace));
     await waitForStatus(runtime, started.run_id, "awaiting_plan_approval");
@@ -431,7 +445,7 @@ describe("G09 Runtime Plan Mode", () => {
         return finishDecision("decision:large-visible-finish", "The oversized plan remains refetchable.");
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: harness.dataDir, model });
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
 
     const started = await runtime.startRun(startInput(harness.workspace));
     await waitForStatus(runtime, started.run_id, "awaiting_plan_approval");
@@ -528,7 +542,7 @@ describe("G09 Runtime Plan Mode", () => {
         return finishDecision("decision:paged-plan-finish", "Every Todo page remains reachable.");
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: harness.dataDir, model });
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
     const started = await runtime.startRun(startInput(harness.workspace));
     await secondDecisionStarted;
 
@@ -581,7 +595,7 @@ describe("G09 Runtime Plan Mode", () => {
       now: () => now,
       pid: 2_147_483_646,
     });
-    const firstRuntime = await createAgentRuntime({
+    const firstRuntime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: firstStore,
       model,
@@ -595,7 +609,7 @@ describe("G09 Runtime Plan Mode", () => {
 
     now = new Date("2026-09-19T00:02:00.000Z");
     const restartedStore = new JsonlSessionStore(harness.sessionsRoot, { now: () => now });
-    const restarted = await createAgentRuntime({
+    const restarted = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: restartedStore,
       model,

@@ -4,12 +4,26 @@ import { join } from "node:path";
 import { WorkspaceHandleSchema, type WorkspaceHandle } from "@tracegraph/contracts";
 import { afterEach, describe, expect, it } from "vitest";
 import { createAgentRuntime, type AgentRuntime } from "./runtime.js";
-import type { TokenMeter } from "../context/token-meter.js";
+import type { TokenMeter } from "@tracegraph/context";
 import { ModelRequestError, type ModelAdapter } from "../../kernel/types.js";
 
 const cleanups: Array<() => Promise<void>> = [];
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Registers a Runtime so teardown drains its nonblocking background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 afterEach(async () => {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
   await Promise.all(cleanups.splice(0).map((cleanup) => cleanup()));
 });
 
@@ -24,7 +38,7 @@ describe("runtime provider usage accounting", () => {
         return finishDecision("plain-chat-catalog");
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: harness.dataDir, model });
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
 
     const started = await runtime.startRun(startInput(harness.workspace, "command:plain-chat-catalog"));
     const completed = await waitForTerminal(runtime, started.run_id);
@@ -73,7 +87,7 @@ describe("runtime provider usage accounting", () => {
         return finishDecision("usage-success");
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: harness.dataDir, model });
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
 
     const started = await runtime.startRun(startInput(harness.workspace, "command:usage-success"));
     const completed = await waitForTerminal(runtime, started.run_id);
@@ -139,7 +153,7 @@ describe("runtime provider usage accounting", () => {
         return finishDecision("usage-absent");
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: harness.dataDir, model });
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
 
     const started = await runtime.startRun(startInput(harness.workspace, "command:usage-absent"));
     const completed = await waitForTerminal(runtime, started.run_id);
@@ -173,7 +187,7 @@ describe("runtime provider usage accounting", () => {
         return finishDecision("meter-unavailable");
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       model,
       tokenMeter: unavailableMeter,
@@ -219,7 +233,7 @@ describe("runtime provider usage accounting", () => {
         throw new ModelRequestError("model_http_503", "Provider unavailable");
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: harness.dataDir, model });
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
 
     const started = await runtime.startRun(startInput(harness.workspace, "command:usage-failure"));
     const failed = await waitForTerminal(runtime, started.run_id);

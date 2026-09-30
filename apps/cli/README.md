@@ -8,7 +8,7 @@ Start and configure the local TraceGraph Host, compose the Runtime with model, w
 
 ## Public API
 
-The package exposes the `tracegraph` executable through `apps/cli/package.json`; it is an application entry point, not a reusable TypeScript library. Current commands include `serve`, `extensions`, `team`, `skills`, and `mcp`.
+The package exposes the `tracegraph` executable through `apps/cli/package.json`; it is an application entry point, not a reusable TypeScript library. Current commands include `serve`, `extensions`, `team`, `skills`, `mcp`, and `memory` (list/show/candidate/review/correct/revoke/delete through the Host SDK).
 
 ## Dependencies
 

@@ -10,7 +10,6 @@ import {
   CredentialNotFoundError,
   DurableSessionController,
   EnvironmentCredentialStore,
-  McpManager,
   credentialNameFromReference,
   createPlatformCredentialStore,
   createManagedWorkspaceHandle,
@@ -19,15 +18,15 @@ import {
   recordCredentialMigration,
   resolveSecretReference,
   createMcpToolsExtension,
-  readMcpConfig,
   createLspToolsExtension,
-  LspManager,
-  readLspConfig,
 } from "@tracegraph/core";
+import { McpManager, readMcpConfig } from "@tracegraph/mcp";
+import { LspManager, readLspConfig } from "@tracegraph/lsp";
 import { JsonlSessionStore } from "@tracegraph/session";
 import { ModelUsageReportSchema, UsageSnapshotSchema, type UsageSnapshot } from "@tracegraph/contracts";
 import { createTraceGraphHost, type RegisteredProject } from "@tracegraph/host";
 import { closeHostAndFlushTelemetry, createCodeGraphProvider } from "./composition.js";
+import { resolveCliProfile } from "./boot/profile.js";
 import { runExtensionsCommand } from "./extension-command.js";
 import {
   acknowledgeCredentialMigration,
@@ -48,6 +47,7 @@ import { createConfiguredSubagents } from "./subagent-config.js";
 import { runTeamCommand } from "./team-command.js";
 import { runSkillsCommand } from "./skill-command.js";
 import { runMcpCommand } from "./mcp-command.js";
+import { runMemoryCommand } from "./memory-command.js";
 import { HostExtensionController } from "./extension-config.js";
 
 const command = process.argv[2] ?? "serve";
@@ -62,9 +62,11 @@ if (command === "serve") {
   await runSkillsCommand(process.argv.slice(3));
 } else if (command === "mcp") {
   await runMcpCommand(process.argv.slice(3));
+} else if (command === "memory") {
+  await runMemoryCommand(process.argv.slice(3));
 } else {
   process.stderr.write(`Unknown command: ${command}\n`);
-  process.stderr.write("Usage: tracegraph serve [...] | tracegraph extensions ... | tracegraph team ... | tracegraph skills list|validate [...] | tracegraph mcp list|restart <server>\n");
+  process.stderr.write("Usage: tracegraph serve [...] | tracegraph extensions ... | tracegraph team ... | tracegraph skills list|validate [...] | tracegraph mcp list|restart <server> | tracegraph memory list|show|candidate|review|correct|revoke|delete [...]\n");
   process.exitCode = 2;
 }
 
@@ -122,16 +124,18 @@ async function runServer(args: string[]): Promise<void> {
   });
   const retrieval = createConfiguredRetrieval({ dataDir, environment: process.env });
   const extensions = await HostExtensionController.open(extensionConfigPath);
+  const mcpConfig = await readMcpConfig(mcpConfigPath);
   const mcp = new McpManager({
-    config: await readMcpConfig(mcpConfigPath),
+    config: mcpConfig,
     cwd: repositoryRoot,
     environment: process.env,
     resolveSecret: async (reference) => (await resolveSecretReference(reference, credentialStore)).value,
   });
   await mcp.start();
   await extensions.manager.activate(createMcpToolsExtension(mcp));
+  const lspConfig = await readLspConfig(lspConfigPath);
   const lsp = new LspManager({
-    config: await readLspConfig(lspConfigPath),
+    config: lspConfig,
     cwd: repositoryRoot,
     environment: process.env,
   });
@@ -198,12 +202,13 @@ async function runServer(args: string[]): Promise<void> {
       throw new CredentialNotFoundError(name);
     }
   }
+  const modelImageInput = parseOptInBoolean(
+    process.env.TRACEGRAPH_MODEL_IMAGE_INPUT,
+    "TRACEGRAPH_MODEL_IMAGE_INPUT",
+  );
   const model = new ConfigurableModelAdapter({
     capabilities: {
-      image_input: parseOptInBoolean(
-        process.env.TRACEGRAPH_MODEL_IMAGE_INPUT,
-        "TRACEGRAPH_MODEL_IMAGE_INPUT",
-      ),
+      image_input: modelImageInput,
     },
     resolveCredential: async (reference) => {
       if (environmentConfig?.config.credentialRef === reference) {
@@ -223,6 +228,35 @@ async function runServer(args: string[]): Promise<void> {
   const initialConfig = environmentConfig ?? persistedConfig;
   let activeModelConfig = initialConfig;
   if (initialConfig) model.configure(initialConfig.config);
+  const maxTurns = parsePositiveInteger(process.env.TRACEGRAPH_MAX_TURNS) ?? 12;
+  const rollbackPolicy = {
+    enabled: process.env.TRACEGRAPH_ROLLBACK_ENABLED === "true",
+    allowForce: process.env.TRACEGRAPH_ROLLBACK_ALLOW_FORCE === "true",
+  };
+  const resolvedProfile = resolveCliProfile({
+    permission: {
+      selectedPreset: initialPermission.selected_preset_key,
+      sandboxMode: initialPermission.selected_preset.sandbox_mode,
+    },
+    runtime: {
+      maxTurns,
+      rollbackPolicy,
+      imageInput: modelImageInput,
+    },
+    model: initialConfig === undefined
+      ? null
+      : {
+          provider: initialConfig.config.provider,
+          protocol: initialConfig.config.protocol,
+          model: initialConfig.config.model,
+        },
+    telemetrySink: telemetrySink.kind,
+    retrievalMode: retrieval.mode,
+    subagents: { profiles: subagents.profiles, limits: subagents.limits },
+    mcpServers: mcpConfig.servers,
+    lspServers: lspConfig.servers,
+    extensions: extensions.list(),
+  });
   const runtime = await createAgentRuntime({
     dataDir,
     telemetrySink,
@@ -233,16 +267,13 @@ async function runServer(args: string[]): Promise<void> {
     extensionManager: extensions.manager,
     mcpManager: mcp,
     lspManager: lsp,
-    maxTurns: parsePositiveInteger(process.env.TRACEGRAPH_MAX_TURNS) ?? 12,
+    maxTurns: resolvedProfile.selections.runtime.max_turns,
     subagentRegistry: subagents.registry,
     maxParallelSubagents: subagents.limits.max_parallel_subagents,
     maxSubagentDepth: subagents.limits.max_depth,
-    sandboxMode: initialPermission.selected_preset.sandbox_mode,
+    sandboxMode: resolvedProfile.selections.permission.sandbox_mode,
     permissionPolicyResolver: (workspace) => permissionConfig.resolveProject(workspace.real_root),
-    rollbackPolicy: {
-      enabled: process.env.TRACEGRAPH_ROLLBACK_ENABLED === "true",
-      allowForce: process.env.TRACEGRAPH_ROLLBACK_ALLOW_FORCE === "true",
-    },
+    rollbackPolicy: resolvedProfile.selections.runtime.rollback_policy,
   });
   process.stderr.write(
     initialPermission.selected_preset.sandbox_mode === "danger-full-access"

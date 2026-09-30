@@ -22,7 +22,21 @@ import type { ModelAdapter, ToolDefinition } from "../../kernel/types.js";
 
 const roots: string[] = [];
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Registers a Runtime so teardown drains its nonblocking background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 afterEach(async () => {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 
@@ -49,7 +63,7 @@ describe("G17 Runtime extension integration", () => {
         return finishDecision("decision:extension-finish");
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       extensionManager: manager,
       model,
@@ -91,7 +105,7 @@ describe("G17 Runtime extension integration", () => {
         },
       });
     }));
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       extensionManager: manager,
       model: finishModel("context-error-model"),
@@ -131,7 +145,7 @@ describe("G17 Runtime extension integration", () => {
       });
     }));
     let observedFacts: Readonly<Record<string, unknown>> | undefined;
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       extensionManager: manager,
       model: {
@@ -168,7 +182,7 @@ describe("G17 Runtime extension integration", () => {
         return finishDecision(`decision:finish:${schemas.length}`);
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       extensionManager: manager,
       model,
@@ -222,7 +236,7 @@ describe("G17 Runtime extension integration", () => {
         return finishDecision("decision:plan-ready");
       },
     };
-    const firstRuntime = await createAgentRuntime({
+    const firstRuntime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       extensionManager: firstManager,
       sessionStore: firstStore,
@@ -243,7 +257,7 @@ describe("G17 Runtime extension integration", () => {
       createArtifactToolsExtension(),
     ]);
     now = new Date("2026-09-19T00:02:00.000Z");
-    const restarted = await createAgentRuntime({
+    const restarted = await createTrackedRuntime({
       dataDir: harness.dataDir,
       extensionManager: restartedManager,
       sessionStore: new JsonlSessionStore(join(harness.dataDir, "sessions"), { now: () => now }),

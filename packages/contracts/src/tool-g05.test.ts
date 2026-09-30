@@ -7,6 +7,7 @@ import {
   MAX_TOOL_CALLS_PER_DECISION,
   MODEL_TOOL_SCHEMA_KEYS,
   ModelToolSchema,
+  RawToolResultSchema,
   ToolBatchCompletedDataSchema,
   ToolBatchStartedDataSchema,
   ToolDescriptorSchema,
@@ -57,6 +58,16 @@ function call(actionId: string, toolName: "read_file" | "search" = "read_file") 
 }
 
 describe("G05 Tool contracts", () => {
+  it("shares the strict raw Tool result envelope with provider packages", () => {
+    expect(RawToolResultSchema.parse({ status: "success", code: "done", summary: "completed" })).toEqual({
+      status: "success",
+      code: "done",
+      summary: "completed",
+    });
+    expect(() => RawToolResultSchema.parse({ status: "success", code: "", summary: "completed" })).toThrow();
+    expect(() => RawToolResultSchema.parse({ status: "success", code: "done", summary: "completed", secret: "x" })).toThrow();
+  });
+
   it("projects only the explicit model-visible descriptor whitelist", () => {
     const hostDescriptor = {
       ...descriptor(),

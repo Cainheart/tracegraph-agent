@@ -23,7 +23,21 @@ import {
 
 const roots: string[] = [];
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Registers a Runtime so teardown drains its nonblocking background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 afterEach(async () => {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
   await Promise.all(roots.splice(0).map(removeControlledTemporaryDirectory));
 });
 
@@ -33,7 +47,7 @@ describe("Runtime feature-driver contributions", () => {
     async (disabledFeature) => {
       const harness = await createHarness(disabledFeature);
       const model = new CapturingModel();
-      const runtime = await createAgentRuntime({
+      const runtime = await createTrackedRuntime({
         dataDir: harness.dataDir,
         model,
         disabledRuntimeFeatures: [disabledFeature],
@@ -110,7 +124,7 @@ describe("Runtime feature-driver contributions", () => {
 
   it("rejects a model-emitted Tool owned by a disabled driver before dispatch", async () => {
     const harness = await createHarness("disabled-tool-call");
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       disabledRuntimeFeatures: ["team"],
       model: {
@@ -156,7 +170,7 @@ describe("Runtime feature-driver contributions", () => {
 
   it("rejects invalid disable configuration before constructing the Runtime", async () => {
     const harness = await createHarness("invalid-config");
-    await expect(createAgentRuntime({
+    await expect(createTrackedRuntime({
       dataDir: harness.dataDir,
       disabledRuntimeFeatures: ["filesystem" as RuntimeFeatureId],
     })).rejects.toThrow("Unknown Runtime feature: filesystem");

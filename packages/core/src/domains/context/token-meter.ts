@@ -26,8 +26,8 @@ import {
   type TokenSectionCounts,
   type TokenUsageObservation,
 } from "@tracegraph/contracts";
-import { estimateTokens } from "./context.js";
-import { sha256, stableStringify } from "../../kernel/crypto.js";
+import { estimateTokens, type TokenMeter } from "@tracegraph/context";
+import { sha256, stableStringify } from "@tracegraph/tool";
 
 const MAX_CALIBRATION_BYTES = 1024 * 1024;
 const SECTION_ORDER = ["system", "goal", "history", "tool", "repo", "memory"] as const;
@@ -37,18 +37,6 @@ export interface TokenCounter {
   supports(provider: string, model: string): boolean;
   /** Return null when this request is unsupported. Throwing also degrades safely. */
   countTokens(content: string): number | null;
-}
-
-export interface TokenMeter {
-  initialize(): Promise<void>;
-  estimate(input: TokenMeterInput): TokenEstimate;
-  observeUsage(
-    modelCallId: string,
-    usage: ModelUsageReport,
-    estimatedInputTokens: number,
-  ): Promise<TokenUsageObservation>;
-  /** Changes only when calibration changes; consumers may key derived caches by it. */
-  revision(): number;
 }
 
 export interface CalibratedTokenMeterOptions {

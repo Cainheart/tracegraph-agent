@@ -40,6 +40,7 @@ export function Sidebar({
   onOpenLocal,
   onPreviewState,
   onOpenSettings,
+  onOpenMemory,
   readOnly = false,
 }: {
   snapshot: WorkbenchSnapshot;
@@ -54,6 +55,7 @@ export function Sidebar({
   onOpenLocal?: (access: "read_write" | "read_only") => Promise<void>;
   onPreviewState: (status: RunStatus) => void;
   onOpenSettings?: () => void;
+  onOpenMemory?: () => void;
   readOnly?: boolean;
 }) {
   const { t } = useI18n();
@@ -138,6 +140,12 @@ export function Sidebar({
             <Icon name="message" size={15} />
             <span>{t("New chat")}</span>
           </button>
+          {onOpenMemory && <button
+            className="sidebar-new-chat memory-control-trigger"
+            disabled={readOnly || snapshot.connection.state !== "live"}
+            onClick={onOpenMemory}
+            type="button"
+          ><Icon name="layers" size={15} /><span>{t("Memory")}</span></button>}
         </nav>
         <SectionLabel>{t("Project")}</SectionLabel>
 

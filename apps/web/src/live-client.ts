@@ -22,6 +22,8 @@ import {
   TodoWriteInputSchema,
   TokenEstimateSchema,
   UsageSnapshotSchema,
+  MemoryControlItemSchema,
+  MemoryControlListResponseSchema,
   UserInputConsumedDataSchema,
   UserInputQueuedDataSchema,
   WireSessionEventSchema,
@@ -61,6 +63,12 @@ import {
   type TeamTaskWriteRequest,
   type TelemetryStatus,
   type UsageSnapshot,
+  type MemoryCandidateCreateRequest,
+  type MemoryControlItem,
+  type MemoryControlListResponse,
+  type MemoryCorrectionRequest,
+  type MemoryReviewRequest,
+  type MemoryRevokeRequest,
   type UserInputKind,
   type WireSessionEvent,
 } from "@tracegraph/contracts";
@@ -140,6 +148,12 @@ export interface TraceGraphSdkPort {
   getMcpStatus?(): Promise<McpStatusSnapshot>;
   restartMcpServer?(serverName: string, input?: { command_id?: string }): Promise<McpServerStatus>;
   getLspStatus?(): Promise<LspStatusSnapshot>;
+  listMemoryControl?(): Promise<MemoryControlListResponse>;
+  createMemoryCandidate?(input: Omit<MemoryCandidateCreateRequest, "command_id"> & { command_id?: string }): Promise<MemoryControlItem>;
+  reviewMemory?(memoryId: string, input: Omit<MemoryReviewRequest, "command_id"> & { command_id?: string }): Promise<MemoryControlItem>;
+  correctMemory?(memoryId: string, input: Omit<MemoryCorrectionRequest, "command_id"> & { command_id?: string }): Promise<MemoryControlItem>;
+  revokeMemory?(memoryId: string, input: Omit<MemoryRevokeRequest, "command_id"> & { command_id?: string }): Promise<MemoryControlItem>;
+  deleteMemory?(memoryId: string): Promise<{ deletedMemoryIds: readonly string[] }>;
   uploadAttachment?(input: {
     command_id?: string;
     session_id?: string;
@@ -792,6 +806,47 @@ export class LiveTraceGraphClient implements WorkbenchClient {
     await this.initialize();
     if (!this.sdk.getLspStatus) throw new Error("This Host client does not support LSP status");
     return LspStatusSnapshotSchema.parse(await this.sdk.getLspStatus());
+  }
+
+  async listMemoryControl(): Promise<MemoryControlListResponse> {
+    await this.initialize();
+    if (!this.sdk.listMemoryControl) throw new Error("This Host client does not support Memory control");
+    return MemoryControlListResponseSchema.parse(await this.sdk.listMemoryControl());
+  }
+
+  async createMemoryCandidate(input: Omit<MemoryCandidateCreateRequest, "command_id"> & { command_id?: string }): Promise<MemoryControlItem> {
+    await this.initialize();
+    this.assertLiveWritable("Creating a Memory candidate");
+    if (!this.sdk.createMemoryCandidate) throw new Error("This Host client does not support Memory control");
+    return MemoryControlItemSchema.parse(await this.sdk.createMemoryCandidate(input));
+  }
+
+  async reviewMemory(memoryId: string, input: Omit<MemoryReviewRequest, "command_id"> & { command_id?: string }): Promise<MemoryControlItem> {
+    await this.initialize();
+    this.assertLiveWritable("Reviewing Memory");
+    if (!this.sdk.reviewMemory) throw new Error("This Host client does not support Memory control");
+    return MemoryControlItemSchema.parse(await this.sdk.reviewMemory(memoryId, input));
+  }
+
+  async correctMemory(memoryId: string, input: Omit<MemoryCorrectionRequest, "command_id"> & { command_id?: string }): Promise<MemoryControlItem> {
+    await this.initialize();
+    this.assertLiveWritable("Correcting Memory");
+    if (!this.sdk.correctMemory) throw new Error("This Host client does not support Memory control");
+    return MemoryControlItemSchema.parse(await this.sdk.correctMemory(memoryId, input));
+  }
+
+  async revokeMemory(memoryId: string, input: Omit<MemoryRevokeRequest, "command_id"> & { command_id?: string }): Promise<MemoryControlItem> {
+    await this.initialize();
+    this.assertLiveWritable("Revoking Memory");
+    if (!this.sdk.revokeMemory) throw new Error("This Host client does not support Memory control");
+    return MemoryControlItemSchema.parse(await this.sdk.revokeMemory(memoryId, input));
+  }
+
+  async deleteMemory(memoryId: string): Promise<{ deletedMemoryIds: readonly string[] }> {
+    await this.initialize();
+    this.assertLiveWritable("Deleting Memory");
+    if (!this.sdk.deleteMemory) throw new Error("This Host client does not support Memory control");
+    return this.sdk.deleteMemory(memoryId);
   }
 
   async loadContextArchive(runId: string, artifactId: string): Promise<ContextArchiveLoadResult> {

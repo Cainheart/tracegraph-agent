@@ -15,7 +15,21 @@ import { createFailingTypescriptFixture, createTemporaryDataDir } from "./index.
 
 const cleanups: Array<() => Promise<void>> = [];
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Registers a Runtime so teardown drains its nonblocking background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 afterEach(async () => {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
   await Promise.all(cleanups.splice(0).map((cleanup) => cleanup()));
 });
 
@@ -55,7 +69,7 @@ describe("G13 sandbox runtime integration", () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: data.path,
       model,
       sandboxMode: "workspace-write",
@@ -85,7 +99,7 @@ describe("G13 sandbox runtime integration", () => {
     const { fixture, data } = await setup();
     const sandboxReport = unavailableReport("workspace-write");
     const runner = new RecordingSandboxRunner(sandboxReport, () => unavailableExecution(sandboxReport));
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: data.path,
       model: runTestModel(),
       sandboxMode: "workspace-write",
@@ -130,7 +144,7 @@ describe("G13 sandbox runtime integration", () => {
       truncated: false,
       aborted: false,
     }));
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: data.path,
       model: runTestModel(),
       sandboxMode: "workspace-write",
@@ -161,7 +175,7 @@ describe("G13 sandbox runtime integration", () => {
       truncated: false,
       aborted: false,
     }));
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: data.path,
       model: runTestModel(),
       sandboxMode: "danger-full-access",
@@ -211,7 +225,7 @@ describe("G13 sandbox runtime integration", () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: data.path,
       model,
       sandboxMode: "read-only",

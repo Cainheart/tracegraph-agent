@@ -33,7 +33,26 @@ const createAgentRuntime: typeof createAgentRuntimeWithNativeSandbox = (options)
 const roots: string[] = [];
 const DURABILITY_TEST_TIMEOUT_MS = 30_000;
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Drains nonblocking background work so temporary data directories can be removed safely. */
+async function drainTrackedRuntimes(): Promise<void> {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
+}
+
+/** Registers a Runtime so teardown can drain its background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 afterEach(async () => {
+  await drainTrackedRuntimes();
   await Promise.all(roots.splice(0).map(removeControlledTemporaryDirectory));
 });
 
@@ -495,7 +514,7 @@ async function completeApprovedPatch(options: {
     workspace_kind: options.workspaceKind ?? "disposable_fixture",
   });
   const store = new JsonlSessionStore(harness.sessionsRoot, { now: () => harness.now });
-  const runtime = await createAgentRuntime({
+  const runtime = await createTrackedRuntime({
     dataDir: harness.dataDir,
     sessionStore: store,
     idFactory: harness.idFactory,
@@ -551,7 +570,7 @@ async function restartCompletedPatch(
 }> {
   const now = new Date("2026-09-18T00:02:00.000Z");
   const store = new JsonlSessionStore(completed.sessionsRoot, { now: () => now });
-  const runtime = await createAgentRuntime({
+  const runtime = await createTrackedRuntime({
     dataDir: completed.dataDir,
     sessionStore: store,
     idFactory: completed.idFactory,
@@ -588,7 +607,7 @@ async function crashApprovedPatchAt(point: ActionCommitFaultPoint): Promise<Cras
     // The restart sees this writer as dead even though the test process remains.
     pid: 2_147_483_646,
   });
-  const runtime = await createAgentRuntime({
+  const runtime = await createTrackedRuntime({
     dataDir: harness.dataDir,
     sessionStore: firstStore,
     idFactory: harness.idFactory,
@@ -647,7 +666,7 @@ async function restartRuntimeOnly(crashed: CrashedPatch): Promise<{
 }> {
   crashed.now = new Date("2026-09-18T00:02:00.000Z");
   const store = new JsonlSessionStore(crashed.sessionsRoot, { now: () => crashed.now });
-  const runtime = await createAgentRuntime({
+  const runtime = await createTrackedRuntime({
     dataDir: crashed.dataDir,
     sessionStore: store,
     idFactory: crashed.idFactory,

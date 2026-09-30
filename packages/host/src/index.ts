@@ -45,6 +45,13 @@ import {
   TodoMutationResultSchema,
   TodoWriteRequestSchema,
   UsageSnapshotSchema,
+  MemoryCandidateCreateRequestSchema,
+  MemoryControlListResponseSchema,
+  MemoryCorrectionRequestSchema,
+  MemoryDeleteRequestSchema,
+  MemoryDeleteResponseSchema,
+  MemoryReviewRequestSchema,
+  MemoryRevokeRequestSchema,
   LivePublicActivitySchema,
   MCP_SERVER_NAME_SCHEMA,
   ModelSurfaceEventSchema,
@@ -751,6 +758,7 @@ export async function createTraceGraphHost(
       model: input.model,
       ...(input.api_key === undefined ? {} : { apiKey: input.api_key }),
     });
+    await options.runtime.resumeMemoryExtraction?.();
     reply.header("cache-control", "no-store");
     return parsePublicModelConfigResponse(await options.modelSettings.get());
   });
@@ -782,6 +790,47 @@ export async function createTraceGraphHost(
       });
     }
     return UsageSnapshotSchema.parse(await options.usage.get());
+  });
+
+  const memoryScope = () => ({ allowedScopeIds: [...visibleProjects.keys()] });
+  app.get("/api/memory", async (_request, reply) => {
+    reply.header("cache-control", "no-store");
+    return MemoryControlListResponseSchema.parse(await options.runtime.listMemoryControl(memoryScope()));
+  });
+
+  app.post("/api/memory", async (request, reply) => {
+    const input = MemoryCandidateCreateRequestSchema.parse(request.body);
+    assertCommandId(request, input.command_id);
+    const created = await options.runtime.createMemoryCandidate(input, memoryScope());
+    return reply.status(201).send(created);
+  });
+
+  app.post<{ Params: { memoryId: string } }>("/api/memory/:memoryId/review", async (request) => {
+    const input = MemoryReviewRequestSchema.parse(request.body);
+    assertCommandId(request, input.command_id);
+    return options.runtime.reviewMemory(IdentifierSchema.parse(request.params.memoryId), input, memoryScope());
+  });
+
+  app.post<{ Params: { memoryId: string } }>("/api/memory/:memoryId/correct", async (request) => {
+    const input = MemoryCorrectionRequestSchema.parse(request.body);
+    assertCommandId(request, input.command_id);
+    return options.runtime.correctMemory(IdentifierSchema.parse(request.params.memoryId), input, memoryScope());
+  });
+
+  app.post<{ Params: { memoryId: string } }>("/api/memory/:memoryId/revoke", async (request) => {
+    const input = MemoryRevokeRequestSchema.parse(request.body);
+    assertCommandId(request, input.command_id);
+    return options.runtime.revokeMemory(IdentifierSchema.parse(request.params.memoryId), input, memoryScope());
+  });
+
+  app.delete<{ Params: { memoryId: string } }>("/api/memory/:memoryId", async (request) => {
+    const input = MemoryDeleteRequestSchema.parse(request.body);
+    assertCommandId(request, input.command_id);
+    return MemoryDeleteResponseSchema.parse(await options.runtime.deleteMemory(
+      IdentifierSchema.parse(request.params.memoryId),
+      input.command_id,
+      memoryScope(),
+    ));
   });
 
   app.post("/api/permission-config", async (request, reply) => {
@@ -2068,6 +2117,7 @@ export async function createTraceGraphHost(
     },
     async close() {
       await app.close();
+      await options.runtime.shutdownBackgroundWork?.();
     },
   };
 }

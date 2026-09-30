@@ -1915,6 +1915,58 @@ code, pre { font-family: var(--font-mono); }
 }
 .app.theme-light .sidebar,
 .app.theme-light .settings-sidebar { background: linear-gradient(160deg, #edf3fc, #e6edf8 58%, #dfe8f5); box-shadow: inset -1px 0 rgba(45, 70, 110, .07), 12px 0 28px rgba(77, 105, 146, .045); }
+
+.memory-control-backdrop { position: fixed; z-index: 89; inset: 0; border: 0; background: color-mix(in srgb, #050b18 58%, transparent); backdrop-filter: blur(6px); }
+.memory-control-panel { position: fixed; z-index: 90; inset: 5vh 5vw; display: flex; flex-direction: column; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 18px; color: var(--text); background: var(--panel); box-shadow: 0 30px 100px rgba(0,0,0,.36); }
+.memory-control-panel > header { min-height: 68px; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; border-bottom: 1px solid var(--line); }
+.memory-control-panel > header h2 { margin: 2px 0 0; font-size: 17px; }
+.memory-control-body { display: grid; grid-template-columns: minmax(260px, 330px) minmax(0, 1fr); gap: 20px; min-height: 0; padding: 20px; overflow: auto; }
+.memory-candidate-form { align-self: start; display: grid; gap: 12px; padding: 16px; border: 1px solid var(--line); border-radius: 13px; background: var(--panel-raised); }
+.memory-candidate-form h3, .memory-list-heading h3 { margin: 0; font-size: 13px; }
+.memory-candidate-form label { display: grid; gap: 6px; color: var(--text-soft); font-size: 11px; }
+.memory-candidate-form textarea, .memory-candidate-form input, .memory-candidate-form select, .memory-correction-row textarea { width: 100%; border: 1px solid var(--line-strong); border-radius: 8px; padding: 9px 10px; color: var(--text); background: var(--bg); font: inherit; font-size: 11px; }
+.memory-candidate-form textarea { min-height: 112px; resize: vertical; }
+.memory-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.memory-checkbox { display: flex !important; grid-template-columns: auto 1fr; align-items: center; gap: 8px !important; line-height: 1.5; }
+.memory-checkbox input { width: auto; }
+.memory-control-note { margin: 0; color: var(--faint); font-size: 10px; line-height: 1.5; }
+.memory-control-error { grid-column: 1 / -1; padding: 10px 12px; border: 1px solid color-mix(in srgb, var(--red) 42%, var(--line)); border-radius: 9px; color: var(--red); background: color-mix(in srgb, var(--red) 9%, var(--panel)); font-size: 11px; }
+.memory-record-list { min-width: 0; display: grid; align-content: start; gap: 11px; }
+.memory-list-heading { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1px; }
+.memory-conflicts { display: grid; gap: 8px; padding: 11px 12px; border: 1px solid color-mix(in srgb, var(--yellow) 42%, var(--line)); border-radius: 10px; background: color-mix(in srgb, var(--yellow) 7%, var(--panel)); font-size: 10px; }
+.memory-conflicts h4, .memory-conflicts p { margin: 0; }
+.memory-conflicts h4 { color: var(--yellow); font-size: 11px; }
+.memory-conflict { display: grid; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
+.memory-conflict ul { display: grid; gap: 3px; margin: 0; padding-left: 18px; color: var(--text-soft); }
+.memory-conflicts > p { color: var(--muted); line-height: 1.5; }
+.memory-record-card { display: grid; gap: 10px; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel-raised); }
+.memory-record-card > header { display: flex; align-items: center; justify-content: space-between; }
+.memory-record-card > header code, .memory-record-meta code, .memory-use-list code { color: var(--faint); font-family: var(--font-mono); font-size: 9px; }
+.memory-status { display: inline-flex; align-items: center; min-height: 22px; padding: 0 8px; border-radius: 999px; color: var(--text-soft); background: var(--panel-hover); font-size: 10px; font-weight: 650; }
+.memory-status-active { color: var(--green); background: color-mix(in srgb, var(--green) 12%, var(--panel)); }
+.memory-status-candidate { color: var(--accent-bright); background: color-mix(in srgb, var(--accent) 12%, var(--panel)); }
+.memory-status-disputed, .memory-status-expired { color: var(--yellow); background: color-mix(in srgb, var(--yellow) 12%, var(--panel)); }
+.memory-status-revoked, .memory-status-superseded { color: var(--faint); }
+.memory-record-claim { margin: 0; color: var(--text); font-size: 12px; line-height: 1.65; white-space: pre-wrap; overflow-wrap: anywhere; }
+.memory-record-meta { display: grid; gap: 5px; color: var(--muted); font-size: 10px; line-height: 1.5; overflow-wrap: anywhere; }
+.memory-pending-review { color: var(--yellow); }
+.memory-use-list { display: grid; gap: 6px; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); font-size: 10px; }
+.memory-use-list > div { display: flex; justify-content: space-between; gap: 12px; color: var(--text-soft); overflow-wrap: anywhere; }
+.memory-record-actions { display: flex; flex-wrap: wrap; gap: 7px; padding-top: 2px; }
+.memory-correction-row { display: grid; gap: 7px; border-top: 1px solid var(--line); padding-top: 9px; }
+.memory-correction-row textarea { min-height: 58px; resize: vertical; }
+.memory-correction-row .button { justify-self: start; }
+.memory-delete-confirm { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; padding: 10px; border: 1px solid color-mix(in srgb, var(--red) 40%, var(--line)); border-radius: 9px; background: color-mix(in srgb, var(--red) 7%, var(--panel)); font-size: 10px; }
+.memory-empty { margin: 0; padding: 20px; border: 1px dashed var(--line-strong); border-radius: 10px; color: var(--muted); text-align: center; font-size: 11px; }
+.memory-control-trigger { border-color: transparent; background: transparent; }
+.memory-control-trigger:hover:not(:disabled) { background: var(--sidebar-hover); }
+
+@media (max-width: 900px) {
+  .memory-control-panel { inset: 2vh 2vw; }
+  .memory-control-body { grid-template-columns: 1fr; }
+  .memory-candidate-form { order: 0; }
+  .memory-record-list { order: 1; }
+}
 .sidebar-footer { border-top-color: var(--line-strong); background: color-mix(in srgb, var(--sidebar-bg) 92%, transparent); }
 .sidebar-scroll { padding: 20px 14px 18px; }
 

@@ -41,7 +41,21 @@ const createAgentRuntime: typeof createAgentRuntimeWithNativeSandbox = (options)
 
 const cleanups: Array<() => Promise<void>> = [];
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Registers a Runtime so teardown drains its nonblocking background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 afterEach(async () => {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
   await Promise.all(cleanups.splice(0).map((cleanup) => cleanup()));
 });
 
@@ -80,7 +94,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, model });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, model });
 
     const started = await runtime.startRun({
       ...startInput(fixture.handle),
@@ -114,7 +128,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, model });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, model });
 
     const started = await runtime.startRun(startInput(fixture.handle));
     const result = await waitForTerminal(runtime, started.run_id);
@@ -170,7 +184,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, model });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, model });
     const started = await runtime.startRun({
       ...startInput(fixture.handle),
       reasoning_effort: "xhigh",
@@ -229,7 +243,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, model });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, model });
     const started = await runtime.startRun({
       ...startInput(fixture.handle),
       mode: "execute",
@@ -279,7 +293,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, model });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, model });
     const started = await runtime.startRun({ ...startInput(fixture.handle), mode: "execute" });
     await decisionStarted;
     const received: Array<{ cursor: number; status: string; text: string }> = [];
@@ -365,7 +379,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: data.path,
       model,
       toolRegistry: registry,
@@ -482,7 +496,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    runtime = await createAgentRuntime({
+    runtime = await createTrackedRuntime({
       dataDir: data.path,
       model,
       contextPolicy: g02ContextPolicy({
@@ -582,7 +596,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: data.path,
       model,
       contextPolicy: {
@@ -724,7 +738,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: data.path,
       model,
       toolRegistry: registry,
@@ -805,7 +819,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, model });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, model });
     const started = await runtime.startRun(startInput(fixture.handle));
     const result = await waitForTerminal(runtime, started.run_id);
     const decision = runtime.listLiveActivities(started.run_id)
@@ -842,7 +856,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, model });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, model });
     const started = await runtime.startRun({
       ...startInput(fixture.handle),
       mode: "execute",
@@ -917,7 +931,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
       },
     };
     const sessionStore = new JsonlSessionStore(join(data.path, "sessions"));
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: data.path,
       model,
       toolRegistry: registry,
@@ -1042,7 +1056,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: data.path,
       model,
       toolRegistry: registry,
@@ -1096,7 +1110,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, model, toolRegistry: registry });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, model, toolRegistry: registry });
 
     const started = await runtime.startRun({ ...startInput(fixture.handle), mode: "execute" });
     const result = await waitForStatus(runtime, started.run_id, "failed");
@@ -1145,7 +1159,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, model, toolRegistry: registry });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, model, toolRegistry: registry });
 
     const started = await runtime.startRun(startInput(fixture.handle));
     const result = await waitForStatus(runtime, started.run_id, "awaiting_approval");
@@ -1197,7 +1211,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, model, toolRegistry: registry });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, model, toolRegistry: registry });
 
     const started = await runtime.startRun({ ...startInput(fixture.handle), mode: "execute" });
     const result = await waitForStatus(runtime, started.run_id, "failed");
@@ -1246,7 +1260,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, model, toolRegistry: registry });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, model, toolRegistry: registry });
     const started = await runtime.startRun({ ...startInput(fixture.handle), mode: "execute" });
     let stopPromise: Promise<Awaited<ReturnType<AgentRuntime["getProjection"]>>> | undefined;
     const unsubscribe = runtime.subscribe(started.run_id, (event) => {
@@ -1292,7 +1306,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
     const appliedBoundaryGate = new Promise<void>((resolve) => {
       releaseAppliedBoundary = resolve;
     });
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: data.path,
       async actionCommitFaultInjector(point) {
         if (point !== "after_apply_before_applied") return;
@@ -1369,7 +1383,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
     const appliedBoundaryGate = new Promise<void>((resolve) => {
       releaseAppliedBoundary = resolve;
     });
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: data.path,
       toolRegistry: registry,
       async actionCommitFaultInjector(point) {
@@ -1448,7 +1462,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, model, toolRegistry: registry });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, model, toolRegistry: registry });
 
     const started = await runtime.startRun({ ...startInput(fixture.handle), mode: "execute" });
     const result = await waitForStatus(runtime, started.run_id, "failed");
@@ -1494,7 +1508,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, model, toolRegistry: registry });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, model, toolRegistry: registry });
 
     const started = await runtime.startRun({ ...startInput(fixture.handle), mode: "execute" });
     const result = await waitForStatus(runtime, started.run_id, "failed");
@@ -1551,7 +1565,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, model });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, model });
 
     const started = await runtime.startRun({ ...startInput(workspace), mode: "execute" });
     const result = await waitForStatus(runtime, started.run_id, "completed");
@@ -1638,7 +1652,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, model });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, model });
 
     const started = await runtime.startRun({ ...startInput(fixture.handle), mode: "execute" });
     const result = await waitForTerminal(runtime, started.run_id);
@@ -1752,7 +1766,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
     const data = await createTemporaryDataDir();
     cleanups.push(fixture.cleanup, data.cleanup);
     let now = new Date("2026-09-16T00:00:00.000Z");
-    const runtime = await createAgentRuntime({ dataDir: data.path, now: () => now });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, now: () => now });
     const started = await runtime.startRun(startInput(fixture.handle));
     const waiting = await waitForStatus(runtime, started.run_id, "awaiting_approval");
     const pending = waiting.pending_approval!;
@@ -1788,7 +1802,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         return { status: "unknown", code: "external_state_unknown", summary: "Search transport state is unknown" };
       },
     } as ToolDefinition);
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: data.path,
       toolRegistry: registry,
       idFactory: createSequentialIdFactory(),
@@ -1839,7 +1853,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         },
       } as ToolDefinition);
     }
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: data.path,
       toolRegistry: registry,
       idFactory: createSequentialIdFactory(),
@@ -1870,7 +1884,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
       name: "slow-model",
       decide: async () => new Promise<never>(() => undefined),
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, model });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, model });
 
     const started = await Promise.race([
       runtime.startRun(startInput(fixture.handle)),
@@ -1918,7 +1932,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         return commit.execute(input, context);
       },
     } as ToolDefinition);
-    const runtime = await createAgentRuntime({ dataDir: data.path, toolRegistry: registry });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, toolRegistry: registry });
     const started = await runtime.startRun(startInput(fixture.handle));
     const waiting = await waitForStatus(runtime, started.run_id, "awaiting_approval");
     const pending = waiting.pending_approval!;
@@ -2054,7 +2068,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, model });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, model });
 
     const started = await runtime.startRun(startInput(fixture.handle));
     const result = await waitForStatus(runtime, started.run_id, "failed");
@@ -2089,7 +2103,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, model });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, model });
 
     const started = await runtime.startRun(startInput(fixture.handle));
     const result = await waitForStatus(runtime, started.run_id, "failed");
@@ -2123,7 +2137,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, model });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, model });
 
     const started = await runtime.startRun(startInput(fixture.handle));
     const result = await waitForStatus(runtime, started.run_id, "failed");
@@ -2178,7 +2192,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, model });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, model });
 
     const started = await runtime.startRun(startInput(fixture.handle));
     const result = await waitForStatus(runtime, started.run_id, "completed");
@@ -2230,7 +2244,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, model, toolRegistry: registry });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, model, toolRegistry: registry });
 
     const started = await runtime.startRun(startInput(fixture.handle));
     const result = await waitForStatus(runtime, started.run_id, "failed");
@@ -2289,7 +2303,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, model });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, model });
 
     const started = await runtime.startRun(startInput(fixture.handle));
     const result = await waitForStatus(runtime, started.run_id, "completed");
@@ -2318,7 +2332,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
       createSnapshot: async () => new Promise<never>(() => undefined),
       createDelta: async () => { throw new Error("not reached"); },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, codeGraph });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, codeGraph });
     const started = await runtime.startRun(startInput(fixture.handle));
 
     const stopped = await Promise.race([
@@ -2369,7 +2383,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, codeGraph, model });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, codeGraph, model });
     const workspace = {
       ...fixture.handle,
       workspace_kind: "readonly_local" as const,
@@ -2428,7 +2442,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
       createSnapshot: async () => ({ project_id: fixture.handle.project_id } as never),
       createDelta: async () => { throw new Error("not reached"); },
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, codeGraph });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, codeGraph });
 
     const started = await runtime.startRun(startInput(fixture.handle));
     const result = await waitForStatus(runtime, started.run_id, "failed");
@@ -2457,7 +2471,7 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
       },
       createDelta: async () => ({ change: "invented" } as never),
     };
-    const runtime = await createAgentRuntime({ dataDir: data.path, codeGraph });
+    const runtime = await createTrackedRuntime({ dataDir: data.path, codeGraph });
     const started = await runtime.startRun(startInput(fixture.handle));
     const waiting = await waitForStatus(runtime, started.run_id, "awaiting_approval");
     const pending = waiting.pending_approval!;
@@ -2481,7 +2495,7 @@ async function setupRuntime() {
   const fixture = await createFailingTypescriptFixture();
   const data = await createTemporaryDataDir();
   cleanups.push(fixture.cleanup, data.cleanup);
-  const runtime = await createAgentRuntime({
+  const runtime = await createTrackedRuntime({
     dataDir: data.path,
     idFactory: createSequentialIdFactory(),
     // This legacy vertical-flow helper verifies orchestration rather than the
@@ -2559,7 +2573,7 @@ async function runSummaryFallbackCase(
       };
     },
   };
-  const runtime = await createAgentRuntime({
+  const runtime = await createTrackedRuntime({
     dataDir: data.path,
     model,
     contextPolicy: {

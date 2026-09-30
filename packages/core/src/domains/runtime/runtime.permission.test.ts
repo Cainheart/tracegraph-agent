@@ -41,7 +41,21 @@ const createAgentRuntime: typeof createAgentRuntimeWithNativeSandbox = (options)
 
 const roots: string[] = [];
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Registers a Runtime so teardown drains its nonblocking background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 afterEach(async () => {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
   await Promise.all(roots.splice(0).map(removeControlledTemporaryDirectory));
 });
 
@@ -64,7 +78,7 @@ describe("G06 Runtime permission integration", () => {
         explanation: "Higher-priority search denial",
       }],
     });
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       idFactory: harness.idFactory,
       now: harness.clock.now,
@@ -99,7 +113,7 @@ describe("G06 Runtime permission integration", () => {
     const permissionPolicy = createEffectivePermissionPolicy({
       preset: CORE_BUILTIN_PERMISSION_PRESETS["read-only"],
     });
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       idFactory: harness.idFactory,
       now: harness.clock.now,
@@ -141,7 +155,7 @@ describe("G06 Runtime permission integration", () => {
       preset: CORE_BUILTIN_PERMISSION_PRESETS["full-write"],
     });
     const tokenStore = new ApprovalTokenStore({ now: harness.clock.now });
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       idFactory: harness.idFactory,
       now: harness.clock.now,
@@ -187,7 +201,7 @@ describe("G06 Runtime permission integration", () => {
         explanation: "Search requires a trusted one-time answer",
       }],
     });
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       idFactory: harness.idFactory,
       now: harness.clock.now,
@@ -221,7 +235,7 @@ describe("G06 Runtime permission integration", () => {
   it("carries a non-Patch ask approval binding through the final execution gate", async () => {
     const harness = await createHarness("answerer-allowed");
     const tokenStore = new ApprovalTokenStore({ now: harness.clock.now });
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       idFactory: harness.idFactory,
       now: harness.clock.now,
@@ -270,7 +284,7 @@ describe("G06 Runtime permission integration", () => {
     const toolRegistry = createDefaultToolRegistry();
     const searchDefinition = toolRegistry.get("search")!;
     const tokenStore = new ApprovalTokenStore({ now: harness.clock.now });
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       idFactory: harness.idFactory,
       now: harness.clock.now,
@@ -323,7 +337,7 @@ describe("G06 Runtime permission integration", () => {
       now: harness.clock.now,
       idFactory: () => "approval-token:manual",
     });
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       idFactory: harness.idFactory,
       now: harness.clock.now,
@@ -375,7 +389,7 @@ describe("G06 Runtime permission integration", () => {
     const firstTarget = join(harness.workspace.real_root, "src", "target-a.ts");
     const secondTarget = join(harness.workspace.real_root, "src", "target-b.ts");
     const tokenStore = new ApprovalTokenStore({ now: harness.clock.now });
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       idFactory: harness.idFactory,
       now: harness.clock.now,
@@ -423,7 +437,7 @@ describe("G06 Runtime permission integration", () => {
     const secondTarget = join(harness.workspace.real_root, "src", "target-b.ts");
     const original = await readFile(sourcePath);
     const tokenStore = new ApprovalTokenStore({ now: harness.clock.now });
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       idFactory: harness.idFactory,
       now: harness.clock.now,
@@ -477,7 +491,7 @@ describe("G06 Runtime permission integration", () => {
     const toolRegistry = createDefaultToolRegistry();
     const commitDefinition = toolRegistry.get("commit_patch")!;
     const tokenStore = new ApprovalTokenStore({ now: harness.clock.now });
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       idFactory: harness.idFactory,
       now: harness.clock.now,
@@ -538,7 +552,7 @@ describe("G06 Runtime permission integration", () => {
       now: harness.clock.now,
       pid: 2_147_483_646,
     });
-    const firstRuntime = await createAgentRuntime({
+    const firstRuntime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: firstStore,
       idFactory: harness.idFactory,
@@ -569,7 +583,7 @@ describe("G06 Runtime permission integration", () => {
     });
 
     harness.clock.value = new Date("2026-09-19T00:02:00.000Z");
-    const restartedRuntime = await createAgentRuntime({
+    const restartedRuntime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: new JsonlSessionStore(harness.sessionsRoot, { now: harness.clock.now }),
       idFactory: harness.idFactory,

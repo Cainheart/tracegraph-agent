@@ -59,7 +59,26 @@ beforeAll(async () => {
   await Promise.all(PERFORMANCE_METRIC_NAMES.map((name) => recordEvalMetric(observations[name])));
 });
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Drains nonblocking background work so temporary data directories can be removed safely. */
+async function drainTrackedRuntimes(): Promise<void> {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
+}
+
+/** Registers a Runtime so teardown can drain its background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 afterAll(async () => {
+  await drainTrackedRuntimes();
   await cleanup?.();
 });
 
@@ -129,7 +148,7 @@ async function measureRepresentativePath(): Promise<{
       };
     },
   };
-  const runtime = await createAgentRuntime({
+  const runtime = await createTrackedRuntime({
     dataDir,
     model,
     now: () => FIXED_NOW,

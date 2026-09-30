@@ -8,6 +8,7 @@ import {
 import {
   ContextManifestSchema,
   DecisionSchema,
+  MemoryUseEventDataSchema,
   ModelUsageReportSchema,
   ObservationSchema,
   ToolBatchCompletedDataSchema,
@@ -15,10 +16,12 @@ import {
   isTerminalEventType,
   type ArtifactRef,
   type ContextCompression,
+  type ContextManifest,
   type ContextPolicy,
   type Decision,
   type EffectivePermissionPolicy,
   type ModelUsageReport,
+  type MemoryUseEventData,
   type ModelImageInput,
   type Observation,
   type PolicyDecision,
@@ -32,7 +35,7 @@ import {
   type ToolName,
   type WorkspaceHandle,
 } from "@tracegraph/contracts";
-import { containsSensitiveStructuredData, redactSecrets, redactSensitiveText, redactStructuredValue } from "../../kernel/crypto.js";
+import { containsSensitiveStructuredData, redactSecrets, redactSensitiveText, redactStructuredValue, sha256 } from "../../kernel/crypto.js";
 import {
   ModelRequestError,
   type ModelAdapter,
@@ -564,6 +567,19 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
       // attached to long-lived Run state after the first request is assembled.
       if (modelInput.images !== undefined) state.modelImages.length = 0;
       const modelRequest = this.#ports.helpers.publicModelRequestMetadata(state.model, modelInput);
+      const memoryUseIntent = createMemoryUseDispatchIntent(built.manifest);
+      const appendMemoryUseStatus = memoryUseIntent === undefined
+        ? undefined
+        : async (data: MemoryUseEventData): Promise<void> => {
+          await this.#ports.append(state, {
+            type: "memory.use_status",
+            summary: `MemoryUse ${data.stage}`,
+            turn_id: turnId,
+            model_call_id: modelCallId,
+            context_manifest_ref: built.manifest.manifest_id,
+            data,
+          });
+        };
       await this.#ports.append(state, {
         type: "model.request_started",
         summary: this.#ports.helpers.modelRequestSummary(modelRequest),
@@ -573,6 +589,17 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
         data: { ...modelRequest },
       });
       if (state.stopped) return;
+      if (memoryUseIntent !== undefined) {
+        await appendMemoryUseStatus!(memoryUseIntent);
+        if (state.stopped) {
+          await appendMemoryUseStatus!(MemoryUseEventDataSchema.parse({
+            memory_use_id: memoryUseIntent.memory_use_id,
+            stage: "unknown",
+            reason: "run_interrupted",
+          }));
+          return;
+        }
+      }
 
       modelInput.onPublicProgress = (update) => {
         if (state.stopped) return;
@@ -580,17 +607,44 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
       };
 
       let decision;
+      let adapterReturned = false;
+      let adapterAttempted = false;
+      let adapterInvocationRecorded = false;
       try {
-        decision = DecisionSchema.parse(await this.#ports.helpers.abortable(
-          state.model.decide(modelInput),
+        adapterAttempted = true;
+        const adapterResponse = state.model.decide(modelInput);
+        const settledAdapterResponse = adapterResponse.then(
+          (value) => ({ status: "response" as const, value }),
+          (error: unknown) => ({ status: "error" as const, error }),
+        );
+        if (appendMemoryUseStatus !== undefined && memoryUseIntent !== undefined) {
+          await appendMemoryUseStatus(MemoryUseEventDataSchema.parse({
+            memory_use_id: memoryUseIntent.memory_use_id,
+            stage: "adapter_invoked",
+            adapter_name: modelRequest.adapter,
+          }));
+            adapterInvocationRecorded = true;
+        }
+        const settled = await this.#ports.helpers.abortable(
+          settledAdapterResponse,
           state.abortController.signal,
-        ));
+        );
+        if (settled.status === "error") throw settled.error;
+        const rawResponse = settled.value;
+        adapterReturned = true;
+        decision = DecisionSchema.parse(rawResponse);
         const serializedDecision = JSON.stringify(decision);
         if (
           redactSecrets(serializedDecision) !== serializedDecision
           || containsSensitiveStructuredData(decision)
         ) {
           throw new Error("Decision contained credential-like material");
+        }
+        if (appendMemoryUseStatus !== undefined && memoryUseIntent !== undefined) {
+          await appendMemoryUseStatus(MemoryUseEventDataSchema.parse({
+            memory_use_id: memoryUseIntent.memory_use_id,
+            stage: "response",
+          }));
         }
       } catch (error) {
         this.#ports.flushModelSurfaceForCall(
@@ -606,8 +660,35 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
           built.manifest.input_tokens,
           [...reportedUsage.values()],
         );
-        if (state.stopped) return;
         const requestFailed = error instanceof ModelRequestError;
+        if (appendMemoryUseStatus !== undefined && memoryUseIntent !== undefined) {
+          if (adapterAttempted && !adapterInvocationRecorded) {
+            await appendMemoryUseStatus(MemoryUseEventDataSchema.parse({
+              memory_use_id: memoryUseIntent.memory_use_id,
+              stage: "adapter_invoked",
+              adapter_name: modelRequest.adapter,
+            }));
+            adapterInvocationRecorded = true;
+          }
+          await appendMemoryUseStatus(state.stopped
+            ? MemoryUseEventDataSchema.parse({
+              memory_use_id: memoryUseIntent.memory_use_id,
+              stage: "unknown",
+              reason: "run_interrupted",
+            })
+            : state.abortController.signal.aborted
+            ? MemoryUseEventDataSchema.parse({
+              memory_use_id: memoryUseIntent.memory_use_id,
+              stage: "unknown",
+              reason: "aborted",
+            })
+            : MemoryUseEventDataSchema.parse({
+              memory_use_id: memoryUseIntent.memory_use_id,
+              stage: "failed",
+              reason: requestFailed ? "request_failed" : adapterReturned ? "invalid_response" : "adapter_error",
+            }));
+        }
+        if (state.stopped) return;
         const errorMessage = this.#ports.helpers.publicError(error);
         await this.#ports.append(state, {
           type: requestFailed ? "model.request_failed" : "model.output_invalid",
@@ -1058,4 +1139,36 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
       if (preview !== undefined) return;
     }
   }
+}
+
+function createMemoryUseDispatchIntent(
+  manifest: ContextManifest,
+): Extract<MemoryUseEventData, { stage: "dispatch_intent" }> | undefined {
+  const memoryItems = manifest.items
+    .filter((item) => (
+      item.section === "memory"
+      && item.retrieval?.memory_ref !== undefined
+      && item.content !== undefined
+      && item.included_tokens > 0
+    ))
+    .map((item) => ({
+      context_item_id: item.item_id,
+      memory_ref: item.retrieval!.memory_ref!,
+      retrieval: item.retrieval!,
+      content_digest: sha256(item.content!),
+      included_tokens: item.included_tokens,
+    }));
+  if (memoryItems.length === 0) return undefined;
+  if (manifest.rendered_context_digest === undefined || manifest.token_estimate === undefined) {
+    throw new TypeError("MemoryUse requires a ContextManifest with rendered digest and token estimate");
+  }
+  const memoryUseId = `memory-use:${sha256(manifest.manifest_id).slice(7)}`;
+  return MemoryUseEventDataSchema.parse({
+    memory_use_id: memoryUseId,
+    stage: "dispatch_intent",
+    manifest_id: manifest.manifest_id,
+    rendered_context_digest: manifest.rendered_context_digest,
+    token_estimate: manifest.token_estimate,
+    memory_items: memoryItems,
+  }) as Extract<MemoryUseEventData, { stage: "dispatch_intent" }>;
 }

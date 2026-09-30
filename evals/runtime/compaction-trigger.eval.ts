@@ -12,6 +12,24 @@ import {
 } from "../../packages/test-support/dist/index.js";
 import { eventIndex, finishDecision, startEvalInput, waitForEvalStatus } from "./helpers.js";
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Drains nonblocking background work so temporary data directories can be removed safely. */
+async function drainTrackedRuntimes(): Promise<void> {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
+}
+
+/** Registers a Runtime so teardown can drain its background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 describe("runtime behavior: compaction trigger", () => {
   it("crosses the hard budget and records a strictly reducing strategy chain", async () => {
     const fixture = await createFailingTypescriptFixture("eval-compaction-trigger");
@@ -47,7 +65,7 @@ describe("runtime behavior: compaction trigger", () => {
           mockDecision(finishDecision("eval-compaction-finish", "Compaction preserved a bounded context.")),
         ],
       });
-      const runtime = await createAgentRuntime({
+      const runtime = await createTrackedRuntime({
         dataDir: data.path,
         model: provider,
         toolRegistry: registry,
@@ -98,6 +116,7 @@ describe("runtime behavior: compaction trigger", () => {
       expect(steps?.every((step) => step.tokens_after < step.tokens_before)).toBe(true);
       expect(completed.timeline.filter(({ type }) => type === "model.request_started")).toHaveLength(2);
     } finally {
+      await drainTrackedRuntimes();
       await Promise.all([fixture.cleanup(), data.cleanup()]);
     }
   });

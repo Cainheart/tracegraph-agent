@@ -17,7 +17,21 @@ import { removeControlledTemporaryDirectory } from "../../kernel/workspace.js";
 
 const roots: string[] = [];
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Registers a Runtime so teardown drains its nonblocking background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 afterEach(async () => {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
   await Promise.all(roots.splice(0).map(removeControlledTemporaryDirectory));
 });
 
@@ -176,7 +190,7 @@ async function createHarness(name: string, imageInput: boolean): Promise<{
     created_at: now().toISOString(),
   });
   const model = new CapturingModel({ image_input: imageInput }, idFactory);
-  const runtime = await createAgentRuntime({ dataDir, now, idFactory, model });
+  const runtime = await createTrackedRuntime({ dataDir, now, idFactory, model });
   return { dataDir, workspace, runtime, model };
 }
 

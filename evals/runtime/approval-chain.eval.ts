@@ -10,6 +10,24 @@ import {
 } from "../../packages/test-support/dist/index.js";
 import { eventIndex, finishDecision, startEvalInput, waitForEvalStatus } from "./helpers.js";
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Drains nonblocking background work so temporary data directories can be removed safely. */
+async function drainTrackedRuntimes(): Promise<void> {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
+}
+
+/** Registers a Runtime so teardown can drain its background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 describe("runtime behavior: approval chain", () => {
   it("binds one approval to the previewed patch before applying it", async () => {
     const fixture = await createFailingTypescriptFixture("eval-approval-chain");
@@ -37,7 +55,7 @@ describe("runtime behavior: approval chain", () => {
           mockDecision(finishDecision("eval-approval-finish", "The approved patch was applied.")),
         ],
       });
-      const runtime = await createAgentRuntime({ dataDir: data.path, model: provider });
+      const runtime = await createTrackedRuntime({ dataDir: data.path, model: provider });
       const started = await runtime.startRun(startEvalInput(
         fixture.handle,
         "approval-chain",
@@ -73,6 +91,7 @@ describe("runtime behavior: approval chain", () => {
       expect(completed.timeline.filter(({ type }) => type === "approval.granted")).toHaveLength(1);
       expect(provider.remaining()).toEqual({ decisions: 0, summaries: 0 });
     } finally {
+      await drainTrackedRuntimes();
       await Promise.all([fixture.cleanup(), data.cleanup()]);
     }
   });

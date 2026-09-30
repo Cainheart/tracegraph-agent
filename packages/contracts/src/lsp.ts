@@ -197,6 +197,13 @@ export const LspServerUnavailableDataSchema = z.object({
 }).strict();
 export type LspServerUnavailableData = z.infer<typeof LspServerUnavailableDataSchema>;
 
+/** Process-local LSP provider event consumed by Core-owned Runtime ports. */
+export interface LspManagerEvent {
+  readonly type: "lsp.diagnostics_received" | "lsp.server_unavailable";
+  readonly occurred_at: string;
+  readonly data: Record<string, unknown>;
+}
+
 export const LspLocationSchema = z.object({
   path: RelativePathSchema,
   range: LspRangeSchema,

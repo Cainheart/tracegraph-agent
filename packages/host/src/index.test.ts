@@ -193,6 +193,12 @@ function fakeRuntime(telemetryStatus: unknown = {
     expireTeamMembers: vi.fn(async () => {
       throw new Error("expireTeamMembers not configured by this test");
     }),
+    listMemoryControl: vi.fn(async () => ({ items: [], conflicts: [] })),
+    createMemoryCandidate: vi.fn(async () => { throw new Error("createMemoryCandidate not configured by this test"); }),
+    reviewMemory: vi.fn(async () => { throw new Error("reviewMemory not configured by this test"); }),
+    correctMemory: vi.fn(async () => { throw new Error("correctMemory not configured by this test"); }),
+    revokeMemory: vi.fn(async () => { throw new Error("revokeMemory not configured by this test"); }),
+    deleteMemory: vi.fn(async () => { throw new Error("deleteMemory not configured by this test"); }),
     writeTodo: vi.fn(async (input) => ({
       todo: {
         todo_id: input.input.todo_id,
@@ -843,6 +849,57 @@ describe("TraceGraph Host", () => {
         diagnostics: [],
       },
     }]);
+    await host.close();
+  });
+
+  it("authenticates Memory control and supplies Host-derived visible scopes to commands", async () => {
+    const runtime = fakeRuntime();
+    vi.mocked(runtime.createMemoryCandidate).mockResolvedValue({} as never);
+    const writableWorkspace = {
+      ...startInput.workspace,
+      workspace_kind: "managed_local" as const,
+      capabilities: MANAGED_LOCAL_CAPABILITIES,
+    };
+    const host = await createTraceGraphHost({
+      runtime,
+      projects: [{ label: "Visible project", workspace: writableWorkspace }],
+      capabilityToken: token,
+      now: () => now,
+    });
+
+    const unauthenticated = await host.app.inject({ method: "GET", url: "/api/memory" });
+    expect(unauthenticated.statusCode).toBe(401);
+
+    const listed = await host.app.inject({
+      method: "GET",
+      url: "/api/memory",
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(listed.statusCode).toBe(200);
+    expect(listed.headers["cache-control"]).toBe("no-store");
+    expect(listed.json()).toEqual({ items: [], conflicts: [] });
+    expect(runtime.listMemoryControl).toHaveBeenCalledWith({ allowedScopeIds: ["project-demo"] });
+
+    const created = await host.app.inject({
+      method: "POST",
+      url: "/api/memory",
+      headers: {
+        origin,
+        authorization: `Bearer ${token}`,
+        "x-tracegraph-command-id": "command:host-memory",
+      },
+      payload: {
+        command_id: "command:host-memory",
+        kind: "fact",
+        claim: "Host scope is enforced.",
+        project_id: "project-demo",
+      },
+    });
+    expect(created.statusCode).toBe(201);
+    expect(runtime.createMemoryCandidate).toHaveBeenCalledWith(
+      expect.objectContaining({ project_id: "project-demo" }),
+      { allowedScopeIds: ["project-demo"] },
+    );
     await host.close();
   });
 

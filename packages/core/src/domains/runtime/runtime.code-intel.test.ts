@@ -36,7 +36,21 @@ const createAgentRuntime: typeof createAgentRuntimeWithNativeSandbox = (options)
 
 const roots: string[] = [];
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Registers a Runtime so teardown drains its nonblocking background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 afterEach(async () => {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
   await Promise.all(roots.splice(0).map(removeControlledTemporaryDirectory));
 });
 
@@ -46,7 +60,7 @@ describe("G20 CodeGraph approval fence", { timeout: 15_000 }, () => {
     const git = {
       current: gitContext("a".repeat(40), "sha256:1111111111111111111111111111111111111111111111111111111111111111"),
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       idFactory: harness.idFactory,
       now: harness.clock.now,
@@ -169,7 +183,7 @@ describe("G20 CodeGraph approval fence", { timeout: 15_000 }, () => {
         fingerprint("1"),
       ),
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       idFactory: harness.idFactory,
       now: harness.clock.now,

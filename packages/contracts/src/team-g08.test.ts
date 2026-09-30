@@ -392,7 +392,7 @@ describe("G-08 Agent Team contracts", () => {
       "team.sweep_completed",
     ] as const;
     for (const eventType of teamEvents) expect(EventTypeSchema.parse(eventType)).toBe(eventType);
-    expect(EventTypeSchema.options).toHaveLength(102);
+    expect(EventTypeSchema.options).toHaveLength(103);
     const teamStart = EventTypeSchema.options.indexOf(teamEvents[0]);
     expect(teamStart).toBeGreaterThanOrEqual(0);
     expect(EventTypeSchema.options.slice(teamStart, teamStart + teamEvents.length)).toEqual(teamEvents);

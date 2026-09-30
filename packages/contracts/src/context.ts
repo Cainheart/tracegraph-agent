@@ -362,6 +362,8 @@ export const ContextManifestSchema = z.object({
   token_limit: z.number().int().positive(),
   reserved_output_tokens: z.number().int().nonnegative(),
   input_tokens: z.number().int().nonnegative(),
+  /** SHA-256 of the exact rendered string handed to ModelAdapter.decide. */
+  rendered_context_digest: Sha256Schema.optional(),
   /**
    * Applied preflight estimate. Provider-reported post-call usage is immutable
    * follow-up evidence in `model.usage_reported`, not a rewrite of this manifest.
@@ -376,6 +378,13 @@ export const ContextManifestSchema = z.object({
   created_at: IsoDateTimeSchema,
   artifact_ref: ArtifactRefSchema.optional(),
 }).superRefine((value, context) => {
+  if (value.rendered_context_digest !== undefined && value.token_estimate === undefined) {
+    context.addIssue({
+      code: "custom",
+      path: ["token_estimate"],
+      message: "a rendered Context digest must be bound to its token estimate",
+    });
+  }
   const compactionSteps = value.compaction_steps ?? [];
   const nodes = value.nodes ?? [];
   const availableInput = value.token_limit - value.reserved_output_tokens;

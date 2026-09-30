@@ -35,6 +35,12 @@ import {
   MAX_TOOL_CALLS_PER_DECISION,
   ModelUsageReportSchema,
   MemoryRecallBudgetSchema,
+  type MemoryControlListResponse,
+  type MemoryControlItem,
+  type MemoryCandidateCreateRequest,
+  type MemoryCorrectionRequest,
+  type MemoryReviewRequest,
+  type MemoryRevokeRequest,
   ModelSurfaceEventSchema,
   PendingUserInputSchema,
   ObservationSchema,
@@ -211,8 +217,9 @@ import {
   type TokenMeter,
 } from "../context/runtime-service.js";
 import { SkillRegistry, type SkillRegistrySnapshotInternal } from "../skill/skill.js";
-import { McpManager, type McpManagerEvent } from "../../seams/mcp/index.js";
-import { createLspToolsExtension, lspResultToRaw, LspManager, type LspManagerEvent } from "../../seams/lsp/index.js";
+import { type McpRuntimePort } from "../../seams/mcp/index.js";
+import { createLspToolsExtension, lspResultToRaw, type LspRuntimePort } from "../../seams/lsp/index.js";
+import type { LspManagerEvent, McpManagerEvent } from "@tracegraph/contracts";
 import {
   containsSensitiveStructuredData,
   defaultIdFactory,
@@ -237,6 +244,18 @@ import {
   type MemoryRecordStore,
   type MemoryRetriever,
 } from "../memory/memory.js";
+import {
+  JsonlMemoryV2RecordStore,
+  MemoryControlService,
+  type MemoryControlScope,
+  type MemoryV2RecordStore,
+} from "../memory/memory-control.js";
+import { MemoryLifecycleService } from "../memory/memory-lifecycle.js";
+import {
+  MemoryBackgroundPipeline,
+  createModelMemoryEpisodeExtractor,
+  type MemoryEpisodeExtractor,
+} from "../memory/memory-background-pipeline.js";
 import { DeterministicFakeModel } from "../model/fake-model.js";
 import {
   transitionAfterFinish,
@@ -374,9 +393,9 @@ export interface AgentRuntimeOptions {
   /** Project/user Skill registry; only SKILL.md metadata and bodies are read. */
   skillRegistry?: SkillRegistry;
   /** Optional process-local MCP lifecycle and Tool bridge. */
-  mcpManager?: McpManager | undefined;
+  mcpManager?: McpRuntimePort | undefined;
   /** Optional process-local LSP lifecycle, semantic diagnostics and Tool bridge. */
-  lspManager?: LspManager | undefined;
+  lspManager?: LspRuntimePort | undefined;
   codeGraph?: CodeGraphProvider;
   /**
    * Host-selected Context budget policy.  It is passed to every deterministic
@@ -389,6 +408,12 @@ export interface AgentRuntimeOptions {
   retrievalBudget?: MemoryRecallBudget;
   /** Injectable canonical store for failure and durability tests. */
   memoryStore?: MemoryRecordStore;
+  /** Stable local identity for owner-scoped V2 Memory control commands. */
+  memoryControlOwnerId?: string;
+  /** Injectable V2 payload store for tests and in-process embedding. */
+  memoryV2RecordStore?: MemoryV2RecordStore;
+  /** Optional trusted extractor override; defaults to the configured ModelAdapter capability. */
+  memoryEpisodeExtractor?: MemoryEpisodeExtractor;
   /** Host composition can disable built-in Runtime feature contributions independently. */
   disabledRuntimeFeatures?: readonly RuntimeFeatureId[];
   maxTurns?: number;
@@ -442,6 +467,9 @@ export interface AgentRuntime {
   getTelemetryStatus(): TelemetryStatus;
   /** Explicit best-effort export boundary. This method never rejects. */
   flushTelemetry(): Promise<void>;
+  /** Administrative lifecycle hooks for nonblocking background Memory work. */
+  shutdownBackgroundWork?(): Promise<void>;
+  resumeMemoryExtraction?(): Promise<void>;
   /** Read-only inspection used by CLI/Host settings; no Run is created. */
   inspectSkills(workspace: WorkspaceHandle): Promise<SkillProjectInspection>;
   /** Stage opaque attachment bytes before a Run exists. This writes no Run event. */
@@ -496,6 +524,12 @@ export interface AgentRuntime {
   ): Promise<TeamMutationResult>;
   remember(runId: string, candidate: MemoryCandidate): Promise<MemoryRememberResult>;
   recall(runId: string, query: string, budget?: MemoryRecallBudget): Promise<MemoryRecallResult>;
+  listMemoryControl(scope: MemoryControlScope): Promise<MemoryControlListResponse>;
+  createMemoryCandidate(input: MemoryCandidateCreateRequest, scope: MemoryControlScope): Promise<MemoryControlItem>;
+  reviewMemory(memoryId: string, input: MemoryReviewRequest, scope: MemoryControlScope): Promise<MemoryControlItem>;
+  correctMemory(memoryId: string, input: MemoryCorrectionRequest, scope: MemoryControlScope): Promise<MemoryControlItem>;
+  revokeMemory(memoryId: string, input: MemoryRevokeRequest, scope: MemoryControlScope): Promise<MemoryControlItem>;
+  deleteMemory(memoryId: string, commandId: string, scope: MemoryControlScope): Promise<{ deletedMemoryIds: readonly string[] }>;
   approve(command: ApprovalCommand): Promise<RunProjection>;
   reject(command: ApprovalCommand): Promise<RunProjection>;
   stop(command: StopRunCommand): Promise<RunProjection>;
@@ -694,6 +728,8 @@ export async function createAgentRuntime(options: AgentRuntimeOptions): Promise<
     ?? new RecoveryLedger(join(options.dataDir, "recovery"), { now, idFactory });
   const memoryStore = options.memoryStore
     ?? new JsonlMemoryStore(join(options.dataDir, "memory", "records.jsonl"));
+  const memoryV2RecordStore = options.memoryV2RecordStore
+    ?? new JsonlMemoryV2RecordStore(join(options.dataDir, "memory-v2"));
   const model = options.model ?? new DeterministicFakeModel({ idFactory });
   const skillRegistry = options.skillRegistry ?? new SkillRegistry();
   const subagentLimits = SubagentLimitsSchema.parse({
@@ -738,6 +774,7 @@ export async function createAgentRuntime(options: AgentRuntimeOptions): Promise<
     actionWal.initialize(),
     recoveryLedger.initialize(),
     ...(disabledRuntimeFeatures.has("memory") ? [] : [memoryStore.initialize()]),
+    memoryV2RecordStore.initialize(),
   ]);
   return new AgentRuntimeImpl({
     ...options,
@@ -754,6 +791,7 @@ export async function createAgentRuntime(options: AgentRuntimeOptions): Promise<
     actionWal,
     recoveryLedger,
     memoryStore,
+    memoryV2RecordStore,
     skillRegistry,
     mcpManager: options.mcpManager,
     lspManager: options.lspManager,
@@ -784,13 +822,16 @@ class AgentRuntimeImpl implements AgentRuntime {
   readonly #codeGraph: CodeGraphProvider | undefined;
   readonly #contextPolicy: ContextPolicy | undefined;
   readonly #memory: MemoryManager;
+  readonly #memoryControl: MemoryControlService;
+  readonly #memoryBackgroundPipeline: MemoryBackgroundPipeline;
+  readonly #memoryBackgroundUnsubscribe: () => void;
   readonly #featureDrivers: RuntimeFeatureDriverRegistry;
   readonly #agentLoop: AgentLoopCoordinator<RunState>;
   readonly #skillRegistry: SkillRegistry;
-  readonly #mcpManager: McpManager | undefined;
+  readonly #mcpManager: McpRuntimePort | undefined;
   readonly #mcpLifecycleEvents: McpManagerEvent[];
   readonly #mcpListener: { dispose(): void | Promise<void> } | undefined;
-  readonly #lspManager: LspManager | undefined;
+  readonly #lspManager: LspRuntimePort | undefined;
   readonly #lspListener: { dispose(): void | Promise<void> } | undefined;
   readonly #retrievalBudget: MemoryRecallBudget;
   readonly #maxTurns: number;
@@ -836,14 +877,15 @@ class AgentRuntimeImpl implements AgentRuntime {
     actionWal: ActionWal;
     recoveryLedger: RecoveryLedger;
     memoryStore: MemoryRecordStore;
+    memoryV2RecordStore: MemoryV2RecordStore;
     skillRegistry: SkillRegistry;
     model: ModelAdapter;
     subagentRegistry: SubagentRegistry;
     subagentLimits: SubagentLimits;
     toolRegistry: ToolRegistry;
     extensionManager: ExtensionManager;
-    mcpManager?: McpManager | undefined;
-    lspManager?: LspManager | undefined;
+    mcpManager?: McpRuntimePort | undefined;
+    lspManager?: LspRuntimePort | undefined;
   }) {
     this.#now = options.now;
     this.#idFactory = options.idFactory;
@@ -947,6 +989,28 @@ class AgentRuntimeImpl implements AgentRuntime {
       idFactory: this.#idFactory,
       estimateTokens,
     });
+    const memoryOwnerId = IdentifierSchema.parse(options.memoryControlOwnerId ?? "local-owner:default");
+    this.#memoryControl = new MemoryControlService({
+      ownerId: memoryOwnerId,
+      actorId: memoryOwnerId,
+      records: options.memoryV2RecordStore,
+      journal: options.ledger,
+      lifecycle: new MemoryLifecycleService({ journal: options.ledger, now: this.#now }),
+      now: this.#now,
+    });
+    const memoryEpisodeExtractor = options.memoryEpisodeExtractor ?? createModelMemoryEpisodeExtractor(options.model);
+    this.#memoryBackgroundPipeline = new MemoryBackgroundPipeline({
+      root: join(options.dataDir, "memory-v2", "background"),
+      ownerId: memoryOwnerId,
+      ledger: options.ledger,
+      control: this.#memoryControl,
+      ...(memoryEpisodeExtractor === undefined ? {} : { extractor: memoryEpisodeExtractor }),
+      now: this.#now,
+    });
+    this.#memoryBackgroundUnsubscribe = options.ledger.subscribe((event) => {
+      this.#memoryBackgroundPipeline.scheduleSettledRun(event);
+    });
+    void this.#memoryBackgroundPipeline.recoverSettledRuns().catch(() => undefined);
     this.#featureDrivers = new RuntimeFeatureDriverRegistry(options.disabledRuntimeFeatures);
     this.#featureDrivers.register({
       id: "memory",
@@ -1091,6 +1155,15 @@ class AgentRuntimeImpl implements AgentRuntime {
 
   getTelemetryStatus(): TelemetryStatus {
     return this.#telemetry.status();
+  }
+
+  async shutdownBackgroundWork(): Promise<void> {
+    this.#memoryBackgroundUnsubscribe();
+    await this.#memoryBackgroundPipeline.shutdown();
+  }
+
+  async resumeMemoryExtraction(): Promise<void> {
+    await this.#memoryBackgroundPipeline.resumeWaiting();
   }
 
   #requireRuntimeFeature(feature: RuntimeFeatureId): void {
@@ -2169,6 +2242,36 @@ class AgentRuntimeImpl implements AgentRuntime {
       query,
       budget: budget ?? this.#retrievalBudget,
     });
+  }
+
+  listMemoryControl(scope: MemoryControlScope): Promise<MemoryControlListResponse> {
+    this.#requireRuntimeFeature("memory");
+    return this.#memoryControl.list(scope);
+  }
+
+  createMemoryCandidate(input: MemoryCandidateCreateRequest, scope: MemoryControlScope): Promise<MemoryControlItem> {
+    this.#requireRuntimeFeature("memory");
+    return this.#memoryControl.createCandidate(input, scope);
+  }
+
+  reviewMemory(memoryId: string, input: MemoryReviewRequest, scope: MemoryControlScope): Promise<MemoryControlItem> {
+    this.#requireRuntimeFeature("memory");
+    return this.#memoryControl.review(IdentifierSchema.parse(memoryId), input, scope);
+  }
+
+  correctMemory(memoryId: string, input: MemoryCorrectionRequest, scope: MemoryControlScope): Promise<MemoryControlItem> {
+    this.#requireRuntimeFeature("memory");
+    return this.#memoryControl.correct(IdentifierSchema.parse(memoryId), input, scope);
+  }
+
+  revokeMemory(memoryId: string, input: MemoryRevokeRequest, scope: MemoryControlScope): Promise<MemoryControlItem> {
+    this.#requireRuntimeFeature("memory");
+    return this.#memoryControl.revoke(IdentifierSchema.parse(memoryId), input, scope);
+  }
+
+  deleteMemory(memoryId: string, commandId: string, scope: MemoryControlScope): Promise<{ deletedMemoryIds: readonly string[] }> {
+    this.#requireRuntimeFeature("memory");
+    return this.#memoryControl.delete(IdentifierSchema.parse(memoryId), IdentifierSchema.parse(commandId), scope);
   }
 
   async #ensurePlanReadyAfterTodo(

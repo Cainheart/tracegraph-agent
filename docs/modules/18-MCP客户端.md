@@ -10,7 +10,7 @@ G-11 的目标是让外部能力进入现有 Tool/Policy/Receipt/Observation/Ses
 - 传输：只接受 transport: "stdio"；进程以 shell: false 启动，stdout 使用有界 JSON-RPC 行协议，stderr 只保留 4 KiB 尾部。
 - 生命周期：spawning → initializing → ready → degraded → stopped。
 - 工具模式：当前交付的是 native bridge——tools/list 的每个 MCP tool 映射为一个动态内部 Tool；PTC（脚本/子进程内的 Programmatic Tool Calling）没有假装启用，未来必须复用 G-13 沙箱与 G-05 批调度后再开放。
-- 事件：mcp.server_started、mcp.server_failed、mcp.server_stopped、mcp.tools_changed、mcp.tool_called 追加到 canonical EventTypeSchema；随后 G-12 追加两个 `lsp.*`、G-20 追加两个 `code.*` 事件，当前总数为 102；事件账本仍是唯一事实源。
+- 事件：mcp.server_started、mcp.server_failed、mcp.server_stopped、mcp.tools_changed、mcp.tool_called 追加到 canonical EventTypeSchema；随后 G-12 追加两个 `lsp.*`、G-20 追加两个 `code.*`，MEM-042 追加 `memory.use_status`，当前总数为 103；事件账本仍是唯一事实源。
 - 版本边界：`SCHEMA_VERSION = "tracegraph.session-event.v1"` 保持不变；G-20 的可选 `code_intel` 使当前 `PROJECTOR_VERSION = "tracegraph.projector.v9"`；`MCP_CONFIG_VERSION = "tracegraph.mcp.v1"` 只约束 MCP 配置 envelope。
 
 ## 2. 配置与密钥
@@ -40,7 +40,7 @@ McpConfigSchema 拒绝重复 server/tool policy 项、未知键、超限命令�
 
 ## 3. Core 生命周期与安全桥
 
-packages/core/src/seams/mcp/client.ts 负责一个 server 的 JSON-RPC：
+`packages/mcp/src/client.ts` 负责一个 server 的 JSON-RPC：
 
 1. initialize；
 2. notifications/initialized；
@@ -48,7 +48,7 @@ packages/core/src/seams/mcp/client.ts 负责一个 server 的 JSON-RPC：
 4. tools/call；
 5. notifications/tools/list_changed 到达时刷新目录。
 
-`McpManager`（`packages/core/src/seams/mcp/manager.ts`）负责多 server 编排；`createMcpToolsExtension` 把 catalog 接到 `ExtensionManager`：
+`McpManager`（`packages/mcp/src/manager.ts`）负责多 server 编排。Core 自有的 [`McpRuntimePort`](../../packages/core/src/seams/mcp/ports.ts) 与 [`createMcpToolsExtension`](../../packages/core/src/seams/mcp/tool-extension.ts) 把 catalog 接到 `ExtensionManager`：
 
 - optional server 启动失败只变为 degraded，Host 继续启动；required server 失败会抛 McpStartupError，错误保留 server 名和 stderr 尾部，并阻止 Host 启动。
 - ready server 的进程意外退出会撤下其旧 Tool、发 `mcp.tools_changed`，并转为 `degraded`/`mcp.server_failed`；Host 不会继续把已死亡进程伪装成 ready。
@@ -83,8 +83,9 @@ Web Settings 只显示 bounded status/tool count，并对 degraded server 显示
 | 事实 | 代码 / 测试 |
 | --- | --- |
 | strict config、secret reference、status/event payload | packages/contracts/src/mcp.ts、packages/contracts/src/mcp-g11.test.ts |
-| stdio JSON-RPC、超时、stderr tail、list_changed | packages/core/src/seams/mcp/client.ts |
-| required/optional、工具映射、刷新、调用结果与事件 | packages/core/src/seams/mcp/manager.ts、packages/core/src/seams/mcp/mcp.test.ts |
+| stdio JSON-RPC、超时、stderr tail、list_changed | `packages/mcp/src/client.ts`、`packages/mcp/src/mcp.test.ts` |
+| required/optional、刷新、调用结果与事件 | `packages/mcp/src/manager.ts`、`packages/mcp/src/mcp.test.ts` |
+| Core 动态 Tool 注册与 Runtime 端口 | `packages/core/src/seams/mcp/tool-extension.ts`、`ports.ts`、`tool-extension.test.ts` |
 | Host status/restart 与 command-id 幂等 | packages/host/src/index.ts、packages/host/src/index.test.ts |
 | typed SDK | packages/sdk/src/index.ts、packages/sdk/src/index.test.ts |
 | CLI control plane | apps/cli/src/mcp-command.ts、apps/cli/src/mcp-command.test.ts |

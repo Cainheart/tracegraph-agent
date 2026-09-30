@@ -7,6 +7,7 @@ import {
   MemoryRecallBudgetSchema,
   MemoryRecallResultSchema,
   MemoryRecordSchema,
+  MemoryVersionReferenceSchema,
   MemoryRememberResultSchema,
   MemoryRecalledDataSchema,
   MemoryWrittenDataSchema,
@@ -403,6 +404,7 @@ export class MemoryManager {
           const rawHits = responses.flatMap(({ parsed }) => (
             parsed.success ? parsed.data.hits : []
           ));
+          const recordsByPath = new Map(records.map((record) => [memorySourcePath(record.memory_id), record]));
           const scoped = filterScopedMemoryHits(
             rawHits,
             records,
@@ -410,7 +412,7 @@ export class MemoryManager {
             input.runId,
             this.#now(),
           );
-          const hits = selectRetrievedHits(scoped.hits, budget, this.#estimateTokens);
+          const hits = selectRetrievedHits(scoped.hits, budget, this.#estimateTokens, recordsByPath);
           const attributions = hits.map((hit) => hit.attribution);
           const data = MemoryRecalledDataSchema.parse({
             retrieval_id: retrievalId,
@@ -524,6 +526,7 @@ function selectRetrievedHits(
   rawHits: readonly ReturnType<typeof RetrievalSearchResponseSchema.parse>["hits"][number][],
   budget: MemoryRecallBudget,
   estimate: (content: string) => number,
+  recordsByPath: ReadonlyMap<string, MemoryRecord>,
 ): MemoryRecallResult["hits"] {
   const unique = new Map<string, (typeof rawHits)[number]>();
   for (const hit of rawHits) {
@@ -542,6 +545,19 @@ function selectRetrievedHits(
     if (content === undefined) continue;
     const injectedTokens = estimate(content);
     const includedLineCount = content.split("\n").length;
+    const record = recordsByPath.get(hit.source_path);
+    const memoryRef = record === undefined ? undefined : MemoryVersionReferenceSchema.parse({
+      record_schema_version: "tracegraph.memory-record.v1",
+      memory_id: record.memory_id,
+      version: record.version,
+      content_hash: record.content_hash ?? sha256(record.content),
+      evidence_refs: record.source_refs.map(({ source_id, source_type, trust, artifact_ref }) => ({
+        source_id,
+        source_type,
+        trust,
+        ...(artifact_ref === undefined ? {} : { artifact_ref }),
+      })),
+    });
     selected.push({
       content,
       attribution: {
@@ -554,6 +570,7 @@ function selectRetrievedHits(
         end_line: Math.min(hit.end_line, hit.start_line + includedLineCount - 1),
         heading_path: hit.heading_path,
         injected_tokens: injectedTokens,
+        ...(memoryRef === undefined ? {} : { memory_ref: memoryRef }),
       },
     });
     used += injectedTokens;

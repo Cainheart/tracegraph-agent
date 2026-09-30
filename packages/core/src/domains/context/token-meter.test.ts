@@ -3,6 +3,7 @@ import {
   lstat,
   mkdir,
   mkdtemp,
+  rm,
   readFile,
   readdir,
   symlink,
@@ -17,7 +18,6 @@ import {
   TokenCalibrationStoreError,
   type TokenCounter,
 } from "./token-meter.js";
-import { removeControlledTemporaryDirectory } from "../../kernel/workspace.js";
 
 const cleanups: Array<() => Promise<void>> = [];
 
@@ -379,7 +379,7 @@ async function temporaryCalibration(): Promise<{
   path: string;
 }> {
   const root = await mkdtemp(join(tmpdir(), "tracegraph-token-meter-"));
-  cleanups.push(() => removeControlledTemporaryDirectory(root));
+  cleanups.push(() => rm(root, { recursive: true, force: true }));
   const directory = join(root, "state");
   await mkdir(directory, { mode: 0o700 });
   return { root, directory, path: join(directory, "token-calibration.json") };

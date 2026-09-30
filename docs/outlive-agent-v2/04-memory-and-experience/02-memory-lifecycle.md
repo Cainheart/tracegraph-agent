@@ -5,7 +5,7 @@ status: proposed
 scope: memory-lifecycle
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-28
+last_reviewed: 2026-09-30
 ---
 
 # Memory 生命周期设计
@@ -31,19 +31,23 @@ Memory 是带 scope、证据和生命周期的主张，不是聊天片段。只�
 
 ### 1.1 真相事件与投影边界
 
-以下事件名是 V2 设计词汇，不是当前代码中的既有事件名；最终 schema 由 `MEM-040` 定义。原则上，记忆生命周期事件写入 Memory aggregate stream，单次执行中的上下文与调用状态写入对应 Run stream：
+以下事件名有的是完整 V2 目标词汇，有的是当前真实实现；MEM-041 已实现 `memory.lifecycle.transitioned`；MEM-042 已实现 Run-scoped MemoryUse 状态；MEM-045 已实现独立的 `memory.feedback` owner+memory+version stream；MEM-046 已实现 `memory.control.commanded` 创建/纠正/删除事实，以及统一 inspect/review/correct/revoke/delete 控制服务。后台候选提取、显式 conflict lifecycle event 与密钥/备份删除治理仍属后续任务。原则上，记忆生命周期事件写入 Memory aggregate stream，单次执行中的上下文与调用状态写入对应 Run stream：
 
 | 事件族（提案） | 真相域 | 用途 |
 |---|---|---|
 | `memory.candidate.proposed` | Memory stream | 持久化待审候选 ID、scope、来源 refs、加密正文引用和提取器版本 |
 | `memory.candidate.reviewed` | Memory stream | 记录用户接受/编辑/拒绝及 actor、理由和审阅时的版本 |
 | `memory.version.admitted` / `memory.version.superseded` | Memory stream | 建立可版本化的 active claim 与修订 lineage |
-| `memory.conflict.opened` / `memory.conflict.resolved` | Memory stream | 显式保存冲突状态及解决依据，不做 last-write-wins |
+| `memory.conflict.opened` / `memory.conflict.resolved` | Memory stream（目标） | 显式保存冲突状态及解决依据，不做 last-write-wins；MEM-045 当前只派生无正文 conflict group，不追加这类状态事件 |
 | `memory.version.revoked` / `memory.content.deleted` | Memory stream | 撤销检索资格；必要时删除正文/密钥并留下无原文 tombstone |
-| `context.manifest.created` / `memory.use.dispatch_intent` | Run stream | 固定 Runtime 请求中的 memory ID/version、rendered digest、token estimate，并先记录调用意图 |
-| `memory.use.adapter_invoked` / `memory.use.response_received` / `memory.use.outcome_unknown` | Run stream | 记录 Adapter 调用与可观察响应状态，不推断远端内部消费或回答因果 |
+| `memory.control.commanded`（MEM-046） | Memory control stream | 当前真实事件：create/correct/delete 写无 claim 正文的控制事实；删除 tombstone 包含被删除的 lineage IDs 与 scope IDs；review/revoke 状态仍由 lifecycle event 表达 |
+| `context.manifest.created` / `memory.use.dispatch_intent` | Run stream | 固定 Runtime 请求中的 memory ID/version、rendered digest、token estimate，并先记录调用意图（MEM-042） |
+| `memory.use.adapter_invoked` / `memory.use.response_received` / `memory.use.outcome_unknown` | Run stream | 记录 Adapter 调用与可观察响应状态，不推断远端内部消费或回答因果（MEM-042） |
+| `memory.feedback` | Memory feedback stream | 按 owner + memory version 记录 response-backed helpful/irrelevant/incorrect/stale 与 review dismissal；不复制 claim 正文（MEM-045） |
 
-Memory 当前态、review queue、冲突集和检索索引是 Memory 生命周期事件的 **Memory 状态投影**；MemoryUse 等使用统计则从 Run stream 事件派生，属于另一种读模型。客户端只能发领域命令，不能直接改状态投影/索引。跨流关系用稳定 ID/refs 连接，不复制敏感正文。
+MEM-041/046 的已交付 lifecycle/control stream 位于 canonical Evidence Event Ledger 的独立 owner+memory 命名空间中，不混入 Run `SessionEvent` 顺序或 Projection。V2 正文保存在本地 immutable candidate seed store；Core 通过 seed record + lifecycle transition events 重建状态。Host/SDK、CLI 与 Web 共用一项 `MemoryControlService`；本仓没有 Desktop client。详细当前行为见[模块 08](../../modules/08-Memory-记忆子系统.md)、[MEM-041 Note](../../../.agents/notes/implemented/2026-09-30-mem-041-memory-lifecycle.md)与[MEM-046 Note](../../../.agents/notes/implemented/2026-09-30-mem-046-memory-control-plane.md)。
+
+Memory 当前态和检索索引是 lifecycle 事件的 **Memory 状态投影**；MEM-045 冲突集从显式 V2 record 快照派生，反馈 review/count 从独立 feedback stream replay；MemoryUse 等请求统计从 Run stream 派生，属于不同读模型。客户端只能发领域命令，不能直接改状态投影/索引。跨流关系用稳定 ID/refs 连接，不复制敏感正文。
 
 ## 2. MemoryRecord
 
@@ -99,6 +103,8 @@ DEC-02 已接受：V2 MVP 的所有抽取结果都进入可检查队列，须经
 
 ## 4. 冲突与修订
 
+MEM-045 当前派生冲突组：只有同 owner、显式 `normalizedKey` 相同（NFKC、trim、大小写与空白规范化）、有效时间重叠、scope 重叠且 claim digest 不同的 active/disputed 记录才冲突。算法不做语义推断，不产生 lifecycle transition，不自动选择权威一方；召回资格门会阻断该组全部参与者。`validUntil <= now` 的记录即时被排除，因此无需等待单独写入 `expire` transition 才失去 V2 召回资格。V1 Recall 逻辑保持不变。
+
 | 情况 | 行为 |
 |---|---|
 | 完全重复 | 合并支持 evidence，不新建并列 active claim |
@@ -107,7 +113,11 @@ DEC-02 已接受：V2 MVP 的所有抽取结果都进入可检查队列，须经
 | 证据矛盾 | 两者进入/保持 disputed，展示冲突，不用分数静默决定 |
 | 用户纠正 | 用户决定优先作为治理事件，但事实类仍保留证据差异；创建新版本而不是覆写历史 |
 
+MEM-045 的 `incorrect` / `stale` feedback 会让对应确切版本待复核并暂时退出 V2 资格门。Feedback 必须绑定 response-backed V2 MemoryUse 的 schema/version/content digest、Run、use ID 和 Manifest；同一用户对同一 use/version 只计一次，相同内容重试幂等。对误报追加 review dismissal 仅关闭该 feedback gate；它不会改写 claim 或等同于纠正。实际纠正仍须通过新版本/lifecycle 命令，由 MEM-046 控制面承接。
+
 ## 5. 遗忘语义
+
+**当前 MEM-046 实现范围：**在删除 lineage 的全部 content-free tombstone durable commit 后，重写并 fsync V2 owner 的 `records.jsonl`，清除本地 V2 canonical candidate 正文；读取和重复创建会 fail closed，控制重试返回同一删除家族。该实现不擦除 G-21 V1 store、Run/feedback/lifecycle/control 审计事件、备份/快照、外部 Artifact、SSD/文件系统取证残留，也不提供加密密钥销毁。以下流程仍是完整目标要求，未被当前本地文件删除所替代。
 
 删除流程：记录授权的删除命令 → 立即停止检索/注入 → 删除或加密销毁真源内容 → 清除检索索引/缓存/本地导出临时件 → 重建受影响的 Memory 状态视图与检索索引 → 写不含原文的 deletion receipt。Run 中既有 MemoryUse 仅可保留必要的 ID/digest 与“内容已删除”状态；不得保留明文副本。若备份无法立即物理删除，必须公开保留窗口，并在恢复时先重放 tombstone 再开放检索。
 

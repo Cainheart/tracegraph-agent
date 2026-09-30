@@ -92,8 +92,8 @@ flowchart LR
 | `evidence/` | ledger、receipt、artifact、projection、replay、WAL、bundle | P0 | `packages/evidence` 与 `packages/core/src/domains/evidence/{action-wal,attachment}.ts` |
 | `session/` | session model、format、persistence、query、migration | P0 | `packages/session` 与 `packages/core/src/domains/session/session-controller.ts` |
 | `core/` | Agent/Run/Turn/Step、scope、最小 loop | P0 | `core/runtime.ts` |
-| `tool/` | registry、executor、policy、approval、output | P0 | `core/kernel/tool/`、`core/domains/tools/`（CORE-022）；尚未提升为物理包 |
-| `context/` | assembly、provenance、token、compaction、spill | P1 | `context*.ts` |
+| `tool/` | generic definition、registry/validation、executor、policy、approval、bounded output | P0 | `@tracegraph/tool`（PKG-033 已完成）；Core 保留 built-in Tool definitions、Runtime/WAL 与 Receipt/Observation composition |
+| `context/` | assembly、provenance、budget port、compaction、spill | P1 | `@tracegraph/context`（PKG-034 已完成）；Core 保留校准 meter implementation |
 | `memory/` | lifecycle、retrieval、experience、context bridge、export | P1 差异化 | `memory.ts` + retrieval |
 | `llm/` | model seam、provider adapters、retry、usage | P1 | `model-provider.ts` |
 | execution families | fs、shell、terminal、sandbox、subprocess | P1 | 当前 tool/runtime/sandbox |
@@ -199,21 +199,24 @@ Memory、MCP、LSP、Team、Web、Desktop 均通过已记录扩展点接入，�
 ## 9. Tool family
 
 ```text
-packages/tool/
-├── tools/              registry + definition contract
-├── tool-executor/      validate → authorize → dispatch → settle
-├── tool-policy/        hard constraints + layered rules
-├── tool-approval/      one-shot bounded approval tokens
-├── tool-receipt/       receipt normalization + observation mapping
-├── tool-output/        spill/truncate/presentation budgets
-└── tool-present/       model/UI presentation, no execution
+packages/tool/src/
+├── definition.ts           structural contract and Host-provided bridges
+├── registry.ts             generic registry, schema projection, call validation
+├── executor.ts             the single bounded Tool execution point
+├── policy-engine.ts        hard constraints and layered rule evaluation
+├── approval-token-store.ts one-shot approval capability lifecycle
+└── tool-output-limits.ts   bounded result and compaction policy
 ```
+
+PKG-033 has extracted this narrow enforcement kernel as `@tracegraph/tool`. Core owns the twenty built-in implementations, registry composition, ExtensionManager, effective per-Run policy snapshot, Workspace/Sandbox providers, Action WAL and Receipt/Observation mapping. Receipt normalization and model/UI presentation remain deferred to future family work; the package is an in-process enforcement boundary, not an OS sandbox.
 
 每个工具定义至少声明：input/output schema、read-only/destructive、side-effect scope、并发模式、timeout、cancel、最大输出、idempotency/reconcile 能力和权限需求。
 
-`tool-executor` 是强制点；Prompt、schema omission、UI 隐藏和 hook 都不能替代它。
+`@tracegraph/tool` 的唯一 executor 是强制点；Prompt、schema omission、UI 隐藏和 hook 都不能替代它。PKG-033 的硬隔离理由是让机器依赖策略可阻止 enforcement kernel 反向依赖 Core orchestration；升包证据不把 Core 内部组合路径冒称为第二个独立产品 consumer。
 
 ## 10. Context family
+
+PKG-034 已将 builder、Manifest 投影/重建与 compaction 算法实现为 `@tracegraph/context`；目前只有 Core Runtime 是生产 consumer，因此升包证据采用模型可见信任边界的硬隔离理由，不把 Runtime 内部调用计作多个 consumer。新包只依赖 contracts、Tool 的共享 digest/ID/输出阈值和 Node API。校准 meter 的具体实现留在 Core，后续随 LLM family 评审；以下多子包分解仍是 proposed target，不代表当前已全部建包。
 
 ```text
 packages/context/
@@ -342,6 +345,8 @@ packages/client/
 
 ## 17. Bundle/Profile，不再用 CLI 手工装全部依赖
 
+以下文件树与 CompositionPlan 是 V2 target。PKG-035 当前交付仅在 CLI 内部生成安全、可 dump/hash 的 resolved profile projection；物理 Boot package 与跨应用 Profile/Bundle loader 因稳定契约和第二个真实 app consumer 尚缺而暂缓，见[门槛 Note](../../../.agents/notes/implemented/2026-09-30-pkg-035-boot-profile-gate.md)。
+
 ```text
 profiles/
 ├── base.yaml
@@ -361,6 +366,7 @@ Bundle 可以贡献一组能力，例如 `coding-base`、`memory-local`、`web-a
 |---|---|---|
 | `@tracegraph/contracts` | 保持，分 canonical/wire/config 子入口 | foundation/contracts |
 | `@tracegraph/core` | `kernel/domains/seams` 内部治理 | core + evidence/session/tool/context/memory 等 families |
+| `@tracegraph/tool` | 已承载 generic Tool enforcement kernel；Core 兼容入口只 re-export | tool definition/registry/executor/policy/approval/output |
 | `@tracegraph/retrieval` | 保持独立 | memory/memory-retrieval-bm25 |
 | `@tracegraph/codegraph` | 保持当前实现与验证事实 | 不迁入 Outlive Agent V2 内建能力；未来若需纳入，另行评审 Note |
 | `@tracegraph/telemetry` | 保持独立 | support/telemetry |

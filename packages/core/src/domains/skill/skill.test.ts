@@ -10,7 +10,21 @@ import type { ModelAdapter, ModelInput } from "../../kernel/types.js";
 
 const roots: string[] = [];
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Registers a Runtime so teardown drains its nonblocking background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 afterEach(async () => {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 
@@ -91,7 +105,7 @@ describe("G10 Skill registry", () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir,
       model,
       skillRegistry: new SkillRegistry({ userSkillsRoot: userRoot }),
@@ -134,7 +148,7 @@ describe("G10 Skill registry", () => {
           : toolDecision("decision:forged", "action:forged", "search", { pattern: "secret" });
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: join(root, "data"), model, skillRegistry: new SkillRegistry({ userSkillsRoot: join(root, "user") }) });
+    const runtime = await createTrackedRuntime({ dataDir: join(root, "data"), model, skillRegistry: new SkillRegistry({ userSkillsRoot: join(root, "user") }) });
     const started = await runtime.startRun({ command_id: "command:skill-deny", project_id: workspace.project_id, task: "Read", mode: "execute", workspace });
     const failed = await waitForStatus(runtime, started.run_id, "failed");
     expect(failed.failure_code).toBe("skill_tool_denied");

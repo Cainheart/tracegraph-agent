@@ -32,4 +32,4 @@ Run `pnpm run build && pnpm --filter @tracegraph/web test:unit` from the reposit
 
 ## Known limitations
 
-The workbench requires a compatible local Host and cannot provide Runtime capabilities the Host did not compose. It does not own Memory or retrieval-index management, and a client-to-Host command is not evidence of a completed business action until the resulting canonical state is read back.
+The workbench requires a compatible local Host and cannot provide Runtime capabilities the Host did not compose. Its Memory control panel reads and writes through the shared Host/SDK seam; it does not own canonical Memory state or the retrieval index. A client-to-Host command is not evidence of a completed business action until canonical state is read back.

@@ -19,6 +19,12 @@ import type {
   TaskBoardItem,
   TodoWriteInput,
   UserInputKind,
+  MemoryCandidateCreateRequest,
+  MemoryControlItem,
+  MemoryControlListResponse,
+  MemoryCorrectionRequest,
+  MemoryReviewRequest,
+  MemoryRevokeRequest,
 } from "@tracegraph/contracts";
 import { createDemoSnapshot } from "./demo";
 import type { AttachmentPreviewContent, ContextArchiveLoadResult, PendingAttachment, ReasoningEffort, RunMode, RunStatus, WorkbenchSnapshot, WorkspaceKind } from "./model";
@@ -72,6 +78,12 @@ export interface WorkbenchClient {
   getMcpStatus(): Promise<McpStatusSnapshotView>;
   restartMcpServer(serverName: string): Promise<McpServerStatusView>;
   getLspStatus(): Promise<LspStatusSnapshotView>;
+  listMemoryControl(): Promise<MemoryControlListResponse>;
+  createMemoryCandidate(input: Omit<MemoryCandidateCreateRequest, "command_id"> & { command_id?: string }): Promise<MemoryControlItem>;
+  reviewMemory(memoryId: string, input: Omit<MemoryReviewRequest, "command_id"> & { command_id?: string }): Promise<MemoryControlItem>;
+  correctMemory(memoryId: string, input: Omit<MemoryCorrectionRequest, "command_id"> & { command_id?: string }): Promise<MemoryControlItem>;
+  revokeMemory(memoryId: string, input: Omit<MemoryRevokeRequest, "command_id"> & { command_id?: string }): Promise<MemoryControlItem>;
+  deleteMemory(memoryId: string): Promise<{ deletedMemoryIds: readonly string[] }>;
 }
 
 export type PermissionConfigSnapshot = PermissionSettingsResponse;
@@ -482,6 +494,30 @@ export class DemoTraceGraphClient implements WorkbenchClient {
       servers: [],
       updated_at: new Date().toISOString(),
     };
+  }
+
+  async listMemoryControl(): Promise<MemoryControlListResponse> {
+    return { items: [], conflicts: [] };
+  }
+
+  async createMemoryCandidate(_input: Omit<MemoryCandidateCreateRequest, "command_id"> & { command_id?: string }): Promise<MemoryControlItem> {
+    throw new Error("Memory control is unavailable in browser demo mode");
+  }
+
+  async reviewMemory(_memoryId: string, _input: Omit<MemoryReviewRequest, "command_id"> & { command_id?: string }): Promise<MemoryControlItem> {
+    throw new Error("Memory control is unavailable in browser demo mode");
+  }
+
+  async correctMemory(_memoryId: string, _input: Omit<MemoryCorrectionRequest, "command_id"> & { command_id?: string }): Promise<MemoryControlItem> {
+    throw new Error("Memory control is unavailable in browser demo mode");
+  }
+
+  async revokeMemory(_memoryId: string, _input: Omit<MemoryRevokeRequest, "command_id"> & { command_id?: string }): Promise<MemoryControlItem> {
+    throw new Error("Memory control is unavailable in browser demo mode");
+  }
+
+  async deleteMemory(_memoryId: string): Promise<{ deletedMemoryIds: readonly string[] }> {
+    throw new Error("Memory control is unavailable in browser demo mode");
   }
 
   private commit(snapshot: WorkbenchSnapshot): void {

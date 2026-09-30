@@ -10,6 +10,24 @@ import {
 } from "../../packages/test-support/dist/index.js";
 import { finishDecision, startEvalInput, waitForEvalStatus } from "./helpers.js";
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Drains nonblocking background work so temporary data directories can be removed safely. */
+async function drainTrackedRuntimes(): Promise<void> {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
+}
+
+/** Registers a Runtime so teardown can drain its background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 describe("runtime behavior: crash recovery", () => {
   it("renews stale approval authority after restart and resumes the same ledger", async () => {
     const fixture = await createFailingTypescriptFixture("eval-crash-recovery");
@@ -35,7 +53,7 @@ describe("runtime behavior: crash recovery", () => {
         })],
       });
       const firstStore = new JsonlSessionStore(sessionsRoot, { pid: 2_147_483_646 });
-      const firstRuntime = await createAgentRuntime({
+      const firstRuntime = await createTrackedRuntime({
         dataDir: data.path,
         model: firstProvider,
         sessionStore: firstStore,
@@ -55,7 +73,7 @@ describe("runtime behavior: crash recovery", () => {
           "The recovered patch was approved with fresh authority.",
         ))],
       });
-      const restartedRuntime = await createAgentRuntime({
+      const restartedRuntime = await createTrackedRuntime({
         dataDir: data.path,
         model: resumedProvider,
         sessionStore: new JsonlSessionStore(sessionsRoot),
@@ -104,6 +122,7 @@ describe("runtime behavior: crash recovery", () => {
       expect(await readFile(join(fixture.handle.real_root, "src/add.ts"), "utf8"))
         .toContain("return left + right;");
     } finally {
+      await drainTrackedRuntimes();
       await Promise.all([fixture.cleanup(), data.cleanup()]);
     }
   });

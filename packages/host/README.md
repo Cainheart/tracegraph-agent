@@ -4,11 +4,11 @@ Local HTTP/SSE transport around a composed TraceGraph Runtime. See [module 09](.
 
 ## Purpose
 
-Expose Host-owned project, Session, Run, artifact, command, and stream operations over Fastify, applying local request, origin, capability-token, and schema checks at the transport boundary.
+Expose Host-owned project, Session, Run, artifact, Memory control, command, and stream operations over Fastify, applying local request, origin, capability-token, and schema checks at the transport boundary.
 
 ## Public API
 
-The package root exports `createTraceGraphHost` and the Host option, controller, project, and lifecycle types. The package also has a development entry point; the regular public export is `.`.
+The package root exports `createTraceGraphHost` and the Host option, controller, project, and lifecycle types. Memory control routes delegate to Runtime's single Core command/query service and derive scope from the Host-visible project registry. The package also has a development entry point; the regular public export is `.`.
 
 ## Dependencies
 
@@ -32,4 +32,4 @@ Run `pnpm run build && pnpm --filter @tracegraph/host test:unit` from the reposi
 
 ## Known limitations
 
-The Host is single-process, single-user, and restricted to loopback addresses. Its request timeout limits request receipt, not Runtime handler execution; a client disconnect does not imply that an accepted operation was rolled back.
+The Host is single-process, single-user, and restricted to loopback addresses. Its local capability does not provide multi-user identity. Its request timeout limits request receipt, not Runtime handler execution; a client disconnect does not imply that an accepted operation was rolled back.

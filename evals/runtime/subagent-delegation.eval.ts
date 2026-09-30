@@ -11,6 +11,24 @@ import {
 } from "../../packages/test-support/dist/index.js";
 import { finishDecision, startEvalInput, waitForEvalStatus } from "./helpers.js";
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Drains nonblocking background work so temporary data directories can be removed safely. */
+async function drainTrackedRuntimes(): Promise<void> {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
+}
+
+/** Registers a Runtime so teardown can drain its background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 describe("runtime behavior: subagent delegation", () => {
   it("records six parent receipts for two children whose ledgers replay completely", async () => {
     const fixture = await createFailingTypescriptFixture("eval-subagent-delegation");
@@ -82,7 +100,7 @@ describe("runtime behavior: subagent delegation", () => {
         budgetCeiling: { max_steps: 4, max_tokens: 4_000 },
         model: childProvider,
       }]);
-      const runtime = await createAgentRuntime({
+      const runtime = await createTrackedRuntime({
         dataDir: data.path,
         model: parentProvider,
         subagentRegistry: registry,
@@ -129,6 +147,7 @@ describe("runtime behavior: subagent delegation", () => {
       expect(parentProvider.remaining()).toEqual({ decisions: 0, summaries: 0 });
       expect(childProvider.remaining()).toEqual({ decisions: 0, summaries: 0 });
     } finally {
+      await drainTrackedRuntimes();
       await Promise.all([fixture.cleanup(), data.cleanup()]);
     }
   });

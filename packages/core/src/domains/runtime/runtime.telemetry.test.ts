@@ -24,14 +24,28 @@ import type { ModelAdapter } from "../../kernel/types.js";
 
 const cleanups: Array<() => Promise<void>> = [];
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Registers a Runtime so teardown drains its nonblocking background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 afterEach(async () => {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
   await Promise.all(cleanups.splice(0).map((cleanup) => cleanup()));
 });
 
 describe("runtime telemetry", () => {
   it("defaults to a disabled zero-I/O sink", async () => {
     const harness = await createHarness("noop");
-    const runtime = await createAgentRuntime({ dataDir: harness.dataDir });
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir });
 
     expect(runtime.getTelemetryStatus()).toEqual({
       schema_version: "tracegraph.telemetry-status.v1",
@@ -103,7 +117,7 @@ describe("runtime telemetry", () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       telemetrySink: sink,
       model,
@@ -187,7 +201,7 @@ describe("runtime telemetry", () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       telemetrySink: sink,
       model,
@@ -234,7 +248,7 @@ describe("runtime telemetry", () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: failing.store,
       telemetrySink: sink,

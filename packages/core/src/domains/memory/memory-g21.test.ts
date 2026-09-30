@@ -4,6 +4,7 @@ import { join } from "node:path";
 import {
   MemoryCandidateEvaluatedDataSchema,
   MemoryRecalledDataSchema,
+  MemoryRecordSchema,
   WorkspaceHandleSchema,
   type ContextManifest,
   type MemoryCandidate,
@@ -11,7 +12,7 @@ import {
   type SessionEventProposal,
 } from "@tracegraph/contracts";
 import { afterEach, describe, expect, it } from "vitest";
-import { DeterministicContextBuilder } from "../context/context.js";
+import { DeterministicContextBuilder, reconstructModelContext } from "@tracegraph/context";
 import { sha256 } from "../../kernel/crypto.js";
 import { JsonlEventLedger } from "../evidence/event-ledger.js";
 import {
@@ -20,13 +21,28 @@ import {
   type MemoryRecordStore,
   type MemoryRetriever,
 } from "./memory.js";
+import { replayMemoryUseStatus } from "./memory-use.js";
 import { projectRun } from "../evidence/projection.js";
 import { createAgentRuntime, type AgentRuntime } from "../runtime/runtime.js";
 import type { ModelAdapter } from "../../kernel/types.js";
 
 const cleanups: Array<() => Promise<void>> = [];
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Registers a Runtime so teardown drains its nonblocking background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 afterEach(async () => {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
   await Promise.all(cleanups.splice(0).map((cleanup) => cleanup()));
 });
 
@@ -135,6 +151,55 @@ describe("G-21 memory manager", () => {
     const reopened = new JsonlEventLedger(harness.eventsDir);
     const projectionAfter = projectRun(await reopened.list("run:one"));
     expect(projectionAfter).toEqual(projectionBefore);
+  });
+
+  it("binds a canonical Memory hit to its exact record version and evidence refs", async () => {
+    const harness = await createHarness("versioned-recall");
+    const retriever = new StoredMemoryRetriever();
+    const manager = managerFor(harness.ledger, harness.store, retriever, sequenceIds());
+    const remembered = await manager.remember({
+      projectId: "project:one",
+      runId: "run:one",
+      sessionId: "session:one",
+      candidate: candidate(),
+    });
+    const record = remembered.record;
+    expect(record).toBeDefined();
+
+    const recalled = await manager.recall({
+      projectId: "project:one",
+      runId: "run:one",
+      sessionId: "session:one",
+      query: "durable fact",
+    });
+    expect(recalled.hits[0]?.attribution.memory_ref).toEqual({
+      record_schema_version: "tracegraph.memory-record.v1",
+      memory_id: record!.memory_id,
+      version: record!.version,
+      content_hash: record!.content_hash,
+      evidence_refs: [{
+        source_id: "user:message:1",
+        source_type: "user",
+        trust: "trusted",
+      }],
+    });
+
+    const built = new DeterministicContextBuilder({ idFactory: sequenceIds() }).build({
+      projectId: "project:one",
+      runId: "run:one",
+      turnId: "turn:versioned-recall",
+      modelCallId: "model-call:versioned-recall",
+      task: "Use the durable fact",
+      workspaceKind: "readonly_local",
+      observations: [],
+      retrievedMemory: recalled.hits,
+      tokenLimit: 4_000,
+      reservedOutputTokens: 512,
+    });
+    const memoryItem = built.manifest.items.find(({ section }) => section === "memory");
+    expect(memoryItem?.retrieval?.memory_ref?.memory_id).toBe(record!.memory_id);
+    expect(memoryItem?.retrieval?.memory_ref?.version).toBe(record!.version);
+    expect(built.manifest.rendered_context_digest).toBe(sha256(built.modelContext));
   });
 
   it("recovers an admitted record after a crash seam without creating a second memory", async () => {
@@ -279,11 +344,33 @@ describe("G-21 memory manager", () => {
     cleanups.push(() => rm(root, { recursive: true, force: true }));
     const workspaceRoot = join(root, "workspace");
     await mkdir(workspaceRoot, { recursive: true });
+    const memoryContent = "A durable preference from an approved source, versioned for this Run.";
+    const record = MemoryRecordSchema.parse({
+      memory_id: "memory:g21-runtime",
+      content: memoryContent,
+      scope: { kind: "project", project_id: "project:one" },
+      origin: "user",
+      trust: "trusted",
+      version: 4,
+      status: "confirmed",
+      source_refs: [{ source_id: "user:approved-source", source_type: "user", trust: "trusted" }],
+      created_at: "2026-09-19T00:00:00.000Z",
+      content_hash: sha256(memoryContent),
+      supersedes: [],
+    });
+    const memoryStore = new SingleMemoryRecordStore(record);
+    const dataDir = join(root, "data");
+    const observedLedger = new JsonlEventLedger(join(dataDir, "events"));
     let seenManifest: ContextManifest | undefined;
     const model: ModelAdapter = {
       name: "g21-capture-model",
       async decide(input) {
+        const persisted = await observedLedger.list(input.runId);
+        expect(persisted.filter((event) => event.type === "memory.use_status").map((event) => event.data.stage))
+          .toEqual(["dispatch_intent"]);
         seenManifest = input.contextManifest;
+        expect(sha256(input.context)).toBe(input.contextManifest.rendered_context_digest);
+        expect(reconstructModelContext(input.contextManifest)).toBe(input.context);
         return {
           decision_id: "decision:g21-finish",
           kind: "finish",
@@ -294,10 +381,11 @@ describe("G-21 memory manager", () => {
         };
       },
     };
-    const runtime = await createAgentRuntime({
-      dataDir: join(root, "data"),
+    const runtime = await createTrackedRuntime({
+      dataDir,
       model,
-      retriever: new FixtureRetriever(),
+      memoryStore,
+      retriever: new CanonicalMemoryRetriever(record),
       retrievalBudget: { max_tokens: 64, max_hits: 2 },
     });
     const workspace = WorkspaceHandleSchema.parse({
@@ -329,9 +417,171 @@ describe("G-21 memory manager", () => {
     expect(completed.timeline.findIndex((event) => event.type === "memory.recalled"))
       .toBeLessThan(completed.timeline.findIndex((event) => event.type === "context.built"));
     expect(seenManifest?.items.some((item) => (
-      item.section === "memory" && item.action === "retrieved" && item.retrieval?.source_path === "docs/guide.md"
+      item.section === "memory"
+      && item.action === "retrieved"
+      && item.retrieval?.memory_ref?.memory_id === record.memory_id
+      && item.retrieval.memory_ref.version === record.version
     ))).toBe(true);
     expect(seenManifest?.nodes?.some((node) => node.kind === "retrieved")).toBe(true);
+    expect(seenManifest?.rendered_context_digest).toBe(
+      seenManifest === undefined ? undefined : sha256(reconstructModelContext(seenManifest)),
+    );
+
+    const useEvents = completed.timeline.filter((event) => event.type === "memory.use_status");
+    expect(useEvents.map((event) => event.data.stage)).toEqual([
+      "dispatch_intent",
+      "adapter_invoked",
+      "response",
+    ]);
+    expect(useEvents[0]?.data).toMatchObject({
+      stage: "dispatch_intent",
+      rendered_context_digest: seenManifest?.rendered_context_digest,
+      memory_items: [{
+        memory_ref: { memory_id: record.memory_id, version: record.version },
+        retrieval: { source_path: `memory/${encodeURIComponent(record.memory_id)}.md` },
+      }],
+    });
+    expect(JSON.stringify(useEvents)).not.toContain(memoryContent);
+    expect(replayMemoryUseStatus(completed.timeline)).toMatchObject([{
+      status: "response",
+      dispatchIntent: { manifest_id: seenManifest?.manifest_id },
+    }]);
+    expect(() => replayMemoryUseStatus([...completed.timeline, useEvents[2]!])).toThrow(/illegal status transition/u);
+  });
+
+  it("appends a failed MemoryUse outcome when the invoked adapter rejects", async () => {
+    const root = await mkdtemp(join(tmpdir(), "tracegraph-memory-use-failed-"));
+    cleanups.push(() => rm(root, { recursive: true, force: true }));
+    const workspaceRoot = join(root, "workspace");
+    await mkdir(workspaceRoot, { recursive: true });
+    const memoryContent = "A durable preference from an approved source, versioned for this Run.";
+    const record = MemoryRecordSchema.parse({
+      memory_id: "memory:g21-failed",
+      content: memoryContent,
+      scope: { kind: "project", project_id: "project:one" },
+      origin: "user",
+      trust: "trusted",
+      version: 2,
+      status: "confirmed",
+      source_refs: [{ source_id: "user:approved-source", source_type: "user", trust: "trusted" }],
+      created_at: "2026-09-19T00:00:00.000Z",
+      content_hash: sha256(memoryContent),
+      supersedes: [],
+    });
+    const runtime = await createTrackedRuntime({
+      dataDir: join(root, "data"),
+      model: {
+        name: "g21-failing-model",
+        async decide() {
+          throw new Error("injected adapter failure");
+        },
+      },
+      memoryStore: new SingleMemoryRecordStore(record),
+      retriever: new CanonicalMemoryRetriever(record),
+    });
+    const workspace = WorkspaceHandleSchema.parse({
+      handle_id: "workspace:g21-failed",
+      project_id: "project:one",
+      real_root: workspaceRoot,
+      workspace_kind: "readonly_local",
+      capabilities: {
+        index: false,
+        read: false,
+        search: false,
+        run_command: false,
+        preview_patch: false,
+        commit_patch: false,
+        test: false,
+      },
+      created_at: "2026-09-19T00:00:00.000Z",
+    });
+    const started = await runtime.startRun({
+      command_id: "command:g21-failed",
+      project_id: workspace.project_id,
+      task: "Use the durable fact from memory.",
+      mode: "execute",
+      workspace,
+    });
+    const failed = await waitForTerminal(runtime, started.run_id);
+    expect(failed.status).toBe("failed");
+    expect(failed.timeline.filter((event) => event.type === "memory.use_status").map((event) => event.data.stage))
+      .toEqual(["dispatch_intent", "adapter_invoked", "failed"]);
+    expect(failed.timeline.find((event) => (
+      event.type === "memory.use_status" && event.data.stage === "failed"
+    ))?.data).toMatchObject({ reason: "adapter_error" });
+    expect(replayMemoryUseStatus(failed.timeline)).toMatchObject([{ status: "failed" }]);
+  });
+
+  it("records an unknown MemoryUse outcome when an in-flight adapter is interrupted", async () => {
+    const root = await mkdtemp(join(tmpdir(), "tracegraph-memory-use-unknown-"));
+    cleanups.push(() => rm(root, { recursive: true, force: true }));
+    const workspaceRoot = join(root, "workspace");
+    await mkdir(workspaceRoot, { recursive: true });
+    const memoryContent = "A durable preference from an approved source, versioned for this Run.";
+    const record = MemoryRecordSchema.parse({
+      memory_id: "memory:g21-unknown",
+      content: memoryContent,
+      scope: { kind: "project", project_id: "project:one" },
+      origin: "user",
+      trust: "trusted",
+      version: 1,
+      status: "confirmed",
+      source_refs: [{ source_id: "user:approved-source", source_type: "user", trust: "trusted" }],
+      created_at: "2026-09-19T00:00:00.000Z",
+      content_hash: sha256(memoryContent),
+      supersedes: [],
+    });
+    const runtime = await createTrackedRuntime({
+      dataDir: join(root, "data"),
+      model: {
+        name: "g21-pending-model",
+        async decide() {
+          return new Promise<never>(() => undefined);
+        },
+      },
+      memoryStore: new SingleMemoryRecordStore(record),
+      retriever: new CanonicalMemoryRetriever(record),
+    });
+    const workspace = WorkspaceHandleSchema.parse({
+      handle_id: "workspace:g21-unknown",
+      project_id: "project:one",
+      real_root: workspaceRoot,
+      workspace_kind: "readonly_local",
+      capabilities: {
+        index: false,
+        read: false,
+        search: false,
+        run_command: false,
+        preview_patch: false,
+        commit_patch: false,
+        test: false,
+      },
+      created_at: "2026-09-19T00:00:00.000Z",
+    });
+    const started = await runtime.startRun({
+      command_id: "command:g21-unknown",
+      project_id: workspace.project_id,
+      task: "Use the durable fact from memory.",
+      mode: "execute",
+      workspace,
+    });
+    await waitForMemoryUseStage(runtime, started.run_id, "adapter_invoked");
+    const cancelled = await runtime.stop({
+      type: "stop",
+      command_id: "command:g21-stop-unknown",
+      project_id: started.project_id,
+      run_id: started.run_id,
+      reason: "Interrupt the pending adapter request",
+    });
+    await waitForMemoryUseStage(runtime, started.run_id, "unknown");
+    const afterStop = await runtime.getProjection(started.run_id);
+    expect(cancelled.status).toBe("cancelled");
+    expect(afterStop.timeline.filter((event) => event.type === "memory.use_status").map((event) => event.data.stage))
+      .toEqual(["dispatch_intent", "adapter_invoked", "unknown"]);
+    expect(replayMemoryUseStatus(afterStop.timeline)).toMatchObject([{
+      status: "unknown",
+      dispatchIntent: { manifest_id: expect.any(String) },
+    }]);
   });
 });
 
@@ -368,6 +618,58 @@ class FixtureRetriever implements MemoryRetriever {
         content,
       }],
     };
+  }
+}
+
+class SingleMemoryRecordStore implements MemoryRecordStore {
+  constructor(readonly record: MemoryRecord) {}
+
+  async initialize(): Promise<void> {}
+
+  async list(): Promise<readonly MemoryRecord[]> {
+    return [this.record];
+  }
+
+  async write(record: MemoryRecord): Promise<void> {
+    if (record.memory_id !== this.record.memory_id) throw new Error("unexpected Memory write in fixture");
+  }
+}
+
+class CanonicalMemoryRetriever implements MemoryRetriever {
+  constructor(readonly record: MemoryRecord) {}
+
+  async ingest(input: { project_id: string; source_path: string; content: string }) {
+    return {
+      schema_version: "tracegraph.retrieval.v1",
+      project_id: input.project_id,
+      source_path: input.source_path,
+      document_hash: sha256(input.content),
+      status: "updated",
+      generation: 1,
+      source_chunk_count: 1,
+      total_indexed_chunks: 1,
+    } as const;
+  }
+
+  async search(input: { project_id: string; query: string; top_k?: number }) {
+    const content = this.record.content;
+    return {
+      schema_version: "tracegraph.retrieval.v1",
+      project_id: input.project_id,
+      query_hash: sha256(input.query),
+      total_indexed_chunks: 1,
+      hits: [{
+        rank: 1,
+        chunk_id: "chunk:canonical-memory",
+        content_hash: sha256(content),
+        score: 7.5,
+        source_path: `memory/${encodeURIComponent(this.record.memory_id)}.md`,
+        start_line: 1,
+        end_line: 1,
+        heading_path: [],
+        content,
+      }],
+    } as const;
   }
 }
 
@@ -567,4 +869,18 @@ async function waitForTerminal(runtime: AgentRuntime, runId: string) {
     await new Promise((resolve) => setTimeout(resolve, 5));
   }
   throw new Error("Timed out waiting for G-21 runtime completion");
+}
+
+async function waitForMemoryUseStage(
+  runtime: AgentRuntime,
+  runId: string,
+  stage: "dispatch_intent" | "adapter_invoked" | "response" | "failed" | "unknown",
+): Promise<void> {
+  const deadline = Date.now() + 5_000;
+  while (Date.now() < deadline) {
+    const projection = await runtime.getProjection(runId);
+    if (projection.timeline.some((event) => event.type === "memory.use_status" && event.data.stage === stage)) return;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  throw new Error(`MemoryUse stage ${stage} was not observed for Run ${runId}`);
 }

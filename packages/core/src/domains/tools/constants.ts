@@ -1,1 +1,2 @@
-export const MIN_TOOL_RESULT_ENVELOPE_BYTES = 256;
+/** Core compatibility path; Tool output bounds are owned by @tracegraph/tool. */
+export * from "@tracegraph/tool";

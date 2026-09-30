@@ -38,7 +38,26 @@ const createAgentRuntime: typeof createAgentRuntimeWithNativeSandbox = (options)
 
 const cleanups: Array<() => Promise<void>> = [];
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Drains nonblocking background work so temporary data directories can be removed safely. */
+async function drainTrackedRuntimes(): Promise<void> {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
+}
+
+/** Registers a Runtime so teardown can drain its background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 afterEach(async () => {
+  await drainTrackedRuntimes();
   await Promise.all(cleanups.splice(0).map((cleanup) => cleanup()));
 });
 
@@ -58,7 +77,7 @@ describe("durable Session runtime recovery", { timeout: 15_000 }, () => {
       },
     };
     const firstStore = deadWriterStore(harness.sessionsRoot, () => harness.now);
-    const firstRuntime = await createAgentRuntime({
+    const firstRuntime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: firstStore,
       idFactory,
@@ -88,7 +107,7 @@ describe("durable Session runtime recovery", { timeout: 15_000 }, () => {
 
     harness.now = new Date("2026-09-18T00:02:00.000Z");
     const restartedStore = new JsonlSessionStore(harness.sessionsRoot, { now: () => harness.now });
-    const restartedRuntime = await createAgentRuntime({
+    const restartedRuntime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: restartedStore,
       idFactory,
@@ -229,7 +248,7 @@ describe("durable Session runtime recovery", { timeout: 15_000 }, () => {
     const harness = await createHarness();
     const idFactory = sequentialIdFactory();
     const firstStore = new JsonlSessionStore(harness.sessionsRoot, { now: () => harness.now });
-    const firstRuntime = await createAgentRuntime({
+    const firstRuntime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: firstStore,
       idFactory,
@@ -238,7 +257,7 @@ describe("durable Session runtime recovery", { timeout: 15_000 }, () => {
     const started = await firstRuntime.startRun(startInput(harness.workspace));
     const waiting = await waitForStatus(firstRuntime, started.run_id, "awaiting_approval");
     await waitForSessionIndex(firstStore, waiting.session_id!, waiting.timeline.length);
-    const contender = await createAgentRuntime({
+    const contender = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: new JsonlSessionStore(harness.sessionsRoot, { now: () => harness.now }),
       idFactory,
@@ -264,7 +283,7 @@ describe("durable Session runtime recovery", { timeout: 15_000 }, () => {
     const harness = await createHarness();
     const idFactory = sequentialIdFactory();
     const firstStore = deadWriterStore(harness.sessionsRoot, () => harness.now);
-    const firstRuntime = await createAgentRuntime({
+    const firstRuntime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: firstStore,
       idFactory,
@@ -278,7 +297,7 @@ describe("durable Session runtime recovery", { timeout: 15_000 }, () => {
 
     harness.now = new Date("2026-09-18T00:03:00.000Z");
     const restartedStore = new JsonlSessionStore(harness.sessionsRoot, { now: () => harness.now });
-    const restartedRuntime = await createAgentRuntime({
+    const restartedRuntime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: restartedStore,
       idFactory,
@@ -316,7 +335,7 @@ describe("durable Session runtime recovery", { timeout: 15_000 }, () => {
     const harness = await createHarness();
     const idFactory = sequentialIdFactory();
     const firstStore = deadWriterStore(harness.sessionsRoot, () => harness.now);
-    const firstRuntime = await createAgentRuntime({
+    const firstRuntime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: firstStore,
       idFactory,
@@ -330,7 +349,7 @@ describe("durable Session runtime recovery", { timeout: 15_000 }, () => {
     // two unfinished Runs referenced by one Session after successive process
     // deaths. Startup recovery must not inspect only run_ids.at(-1).
     const secondStore = deadWriterStore(harness.sessionsRoot, () => harness.now, 2_147_483_645);
-    const secondRuntime = await createAgentRuntime({
+    const secondRuntime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: secondStore,
       idFactory,
@@ -349,7 +368,7 @@ describe("durable Session runtime recovery", { timeout: 15_000 }, () => {
     );
 
     const restartedStore = new JsonlSessionStore(harness.sessionsRoot, { now: () => harness.now });
-    const restartedRuntime = await createAgentRuntime({
+    const restartedRuntime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: restartedStore,
       idFactory,
@@ -375,7 +394,7 @@ describe("durable Session runtime recovery", { timeout: 15_000 }, () => {
     const harness = await createHarness();
     const idFactory = sequentialIdFactory();
     const store = new JsonlSessionStore(harness.sessionsRoot, { now: () => harness.now });
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: store,
       idFactory,
@@ -419,7 +438,7 @@ async function createInterruptedRun() {
   const harness = await createHarness();
   const idFactory = sequentialIdFactory();
   const firstStore = deadWriterStore(harness.sessionsRoot, () => harness.now);
-  const firstRuntime = await createAgentRuntime({
+  const firstRuntime = await createTrackedRuntime({
     dataDir: harness.dataDir,
     sessionStore: firstStore,
     idFactory,
@@ -429,7 +448,7 @@ async function createInterruptedRun() {
   const waiting = await waitForStatus(firstRuntime, started.run_id, "awaiting_approval");
   await waitForSessionIndex(firstStore, waiting.session_id!, waiting.timeline.length);
   harness.now = new Date("2026-09-18T00:02:00.000Z");
-  const runtime = await createAgentRuntime({
+  const runtime = await createTrackedRuntime({
     dataDir: harness.dataDir,
     sessionStore: new JsonlSessionStore(harness.sessionsRoot, { now: () => harness.now }),
     idFactory,

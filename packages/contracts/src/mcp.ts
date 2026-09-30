@@ -176,4 +176,16 @@ export type McpServerStoppedData = z.infer<typeof McpServerStoppedDataSchema>;
 export type McpToolsChangedData = z.infer<typeof McpToolsChangedDataSchema>;
 export type McpToolCalledData = z.infer<typeof McpToolCalledDataSchema>;
 
+/** Process-local MCP provider event consumed by Core-owned Runtime ports. */
+export interface McpManagerEvent {
+  readonly type:
+    | "mcp.server_started"
+    | "mcp.server_failed"
+    | "mcp.server_stopped"
+    | "mcp.tools_changed"
+    | "mcp.tool_called";
+  readonly occurred_at: string;
+  readonly data: Record<string, unknown>;
+}
+
 export type McpJsonSchema = BoundedJsonSchema;

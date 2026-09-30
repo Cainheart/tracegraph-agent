@@ -9,6 +9,9 @@ export type {
   AtomicAppendResult,
   AtomicEventScope,
   JsonlEventLedgerOptions,
+  MemoryFeedbackAppendResult,
+  MemoryControlAppendResult,
+  MemoryLifecycleAppendResult,
 } from "./event-ledger.js";
 export { projectRun, ProjectionError, toWireEvent } from "./projection.js";
 export {

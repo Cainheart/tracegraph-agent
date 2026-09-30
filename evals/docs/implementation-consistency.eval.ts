@@ -66,6 +66,26 @@ const IDENTIFIER_FACTS = [
     implementation: "packages/core/src/domains/tools/registry.ts",
   },
   {
+    identifier: "ToolRegistry",
+    documentation: ["docs/modules/04-工具与策略审批.md"],
+    implementation: "packages/tool/src/registry.ts",
+  },
+  {
+    identifier: "executeToolDefinition",
+    documentation: ["docs/modules/04-工具与策略审批.md"],
+    implementation: "packages/tool/src/executor.ts",
+  },
+  {
+    identifier: "PolicyEngine",
+    documentation: ["docs/modules/04-工具与策略审批.md"],
+    implementation: "packages/tool/src/policy-engine.ts",
+  },
+  {
+    identifier: "ApprovalTokenStore",
+    documentation: ["docs/modules/04-工具与策略审批.md"],
+    implementation: "packages/tool/src/approval-token-store.ts",
+  },
+  {
     identifier: "SkillProjectInspectionSchema",
     documentation: ["docs/modules/17-Skill系统.md"],
     implementation: "packages/contracts/src/skill.ts",
@@ -83,12 +103,12 @@ const IDENTIFIER_FACTS = [
   {
     identifier: "McpManager",
     documentation: ["docs/modules/18-MCP客户端.md"],
-    implementation: "packages/core/src/seams/mcp/manager.ts",
+    implementation: "packages/mcp/src/manager.ts",
   },
   {
     identifier: "createMcpToolsExtension",
     documentation: ["docs/modules/18-MCP客户端.md"],
-    implementation: "packages/core/src/seams/mcp/manager.ts",
+    implementation: "packages/core/src/seams/mcp/tool-extension.ts",
   },
   {
     identifier: "runMcpCommand",
@@ -103,12 +123,12 @@ const IDENTIFIER_FACTS = [
   {
     identifier: "LspManager",
     documentation: ["docs/modules/19-LSP客户端.md"],
-    implementation: "packages/core/src/seams/lsp/manager.ts",
+    implementation: "packages/lsp/src/manager.ts",
   },
   {
     identifier: "createLspToolsExtension",
     documentation: ["docs/modules/19-LSP客户端.md"],
-    implementation: "packages/core/src/seams/lsp/manager.ts",
+    implementation: "packages/core/src/seams/lsp/tool-extension.ts",
   },
   {
     identifier: "runTeamCommand",
@@ -118,7 +138,7 @@ const IDENTIFIER_FACTS = [
   {
     identifier: "DeterministicContextBuilder",
     documentation: ["docs/modules/03-Context-与预算压缩.md"],
-    implementation: "packages/core/src/domains/context/context.ts",
+    implementation: "packages/context/src/context.ts",
   },
   {
     identifier: "AgentRuntime",
@@ -461,7 +481,7 @@ describe("G16 documentation consistency", () => {
     }
   });
 
-  it("pins the current G20 rollout to 102 events, projector v9, 20 built-in tools, and recovery v5", async () => {
+  it("pins the post-MEM-042 Event set while preserving G20 projector, tools, and recovery versions", async () => {
     const commonContract = await readRepositoryFile("packages/contracts/src/common.ts");
     const eventContract = await readRepositoryFile("packages/contracts/src/event.ts");
     const actionContract = await readRepositoryFile("packages/contracts/src/action.ts");
@@ -476,7 +496,8 @@ describe("G16 documentation consistency", () => {
     const eventTypes = assignedStringArray(eventContract, "EventTypeSchema");
 
     expect(assignedConstantLiteral(commonContract, "PROJECTOR_VERSION")).toBe(g20ProjectorVersion);
-    expect(eventTypes).toHaveLength(102);
+    expect(eventTypes).toHaveLength(103);
+    expect(eventTypes).toContain("memory.use_status");
     expect(eventTypes.filter((event) => event.startsWith("team."))).toHaveLength(13);
     expect(eventTypes.filter((event) => event.startsWith("skill."))).toHaveLength(3);
     expect(eventTypes.filter((event) => event.startsWith("lsp."))).toHaveLength(2);
@@ -496,7 +517,7 @@ describe("G16 documentation consistency", () => {
     expect(recoveryContract.slice(recoveryV5Start, recoveryV5Start + 500))
       .toMatch(/version:\s*z\.literal\(5\)/u);
 
-    expect(teamModule).toMatch(/canonical Event 当前共 102 种/u);
+    expect(teamModule).toMatch(/canonical Event 当前共 103 种/u);
     expect(teamModule).toMatch(/Run recovery 仍为 v5/u);
     expect(teamModule).toMatch(/内置 run-state 扩展中新增以下五个 Tool/u);
     expect(teamModule).not.toMatch(/内置 Tool 总数从 \d+ 增到 \d+/u);

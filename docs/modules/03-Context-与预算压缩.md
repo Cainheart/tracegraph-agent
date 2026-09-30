@@ -1,10 +1,10 @@
 # 模块 03：Context 组装、策略压缩与 Token 预算
 
 > 定位：决定“模型这一轮看到了什么”，并把取舍、外置原文、摘要调用与 token 减量变成可审计事实。  
-> 代码：`packages/core/src/domains/{context/{context,context-compaction,token-meter},memory/memory,model/model-provider,runtime/runtime}.ts`<br>
+> 代码：`packages/context/src/{context,context-compaction}.ts`、`packages/core/src/domains/context/token-meter.ts`、`packages/core/src/domains/{memory/memory,model/model-provider,runtime/runtime}.ts`<br>
 > 契约：`packages/contracts/src/{context,memory,token,event,action,common}.ts`  
-> 最后核对：2026-09-19  
-> 实现状态：**G-02 / G-03 / G-21 Context 注入已验证**
+> 最后核对：2026-09-30
+> 实现状态：**G-02 / G-03 / G-21 Context 注入已验证；PKG-034 已提取 `@tracegraph/context`；MEM-042 已绑定 canonical Memory provenance 与 Run MemoryUse 状态**
 
 ---
 
@@ -32,6 +32,8 @@ G-02 引入了模型摘要，因此这条路径不再是全程纯函数。可重
 |---|---|
 | `build(input)` | 旧的同步、确定性兼容路径；供存量测试与嵌入调用使用 |
 | `buildWithStrategies(input, dependencies)` | Runtime 主路径；可持久化 Artifact、调用 `summarizeContext()`、接收 AbortSignal，返回 `notices` 供 Runtime 落账 |
+
+PKG-034 将 builder 与 compaction 算法放入 `@tracegraph/context`。公开的 `reconstructModelContext(manifest)` 按 Manifest item 顺序重建模型可见字符串；Core 仍持有校准 meter 的本地实现、ArtifactStore、summary provider 与 Ledger 事件生命周期。
 
 `DEFAULT_CONTEXT_POLICY` 的总体预算仍是：
 
@@ -72,6 +74,14 @@ Runtime 在每轮调用 builder 前完成 recall。MemoryManager 已先执行 `m
 
 `retrieval` 同时保存 rank、hit id、源内容 hash、BM25 score、source path、heading、起止行与最终 `injected_tokens`。若 builder 因总预算再次截短正文，会同步收窄 `end_line` 和 token；契约要求 item/node 的 hit id、content hash 和 token 账一致。该 source 被标记为 `untrusted`，检索排名不会把仓库/记忆文本提升成 system instruction。
 
+### 3.2 精确请求摘要与 Memory 来源
+
+每个新建 `ContextManifest` 都保存 `rendered_context_digest = SHA-256(modelContext)` 与同一可见内容的 `token_estimate`。`reconstructModelContext(manifest)` 按 item 顺序重建相同字符串；Runtime 将这份字符串直接交给 `ModelAdapter.decide()`，不在 Adapter 边界重新渲染。
+
+对于来源路径为 `memory/<encoded-memory-id>.md` 的 canonical G-21 记录，retrieval attribution 还携带 `memory_ref`：V1 record schema、准确的 `memory_id` / `version` / record content hash，以及去掉自由描述文本后的 evidence ref IDs、类型、trust 和可选 ArtifactRef。普通索引文档保留 chunk hash、path 和行区间，但不会伪装成有 Memory record version。
+
+Run Ledger 的 `memory.use_status` 阶段把三个事实分开：`memory.recalled` 表示 retrieved；Manifest 中有正 token 且带 canonical Memory ref 的条目被写入 `dispatch_intent`，表示 selected；Runtime 调用 `ModelAdapter.decide()` 后追加 `adapter_invoked`，并继续追加 `response`、`failed` 或 `unknown`。dispatch intent 先于 Adapter 调用持久化。MemoryUse 只证明 Runtime 将含有这些版本的已摘要请求交给 Adapter，不表示远端接收，也不声称模型内部实际读取/使用。
+
 ---
 
 ## 4. 默认策略链
@@ -93,7 +103,7 @@ hard-budget force fit（仅在仍未收敛时）
 | 策略 | 默认配置 | 作用 |
 |---|---|---|
 | `tool_output_pruner` | 阈值 3,000，目标 1,500 | 保留 status/summary、有界标量 facts、observation/receipt id 和 fact keys；只有真实减量才记 step |
-| `spill` | 阈值 12,000，预览 800 | 将完整工具原文写为 `spilled_tool_output`，prompt 只保留 head/tail 预览、字节数、hash 绑定 locator；默认阈值与 G-05 从 `tool-output-limits.ts` 共享 |
+| `spill` | 阈值 12,000，预览 800 | 将完整工具原文写为 `spilled_tool_output`，prompt 只保留 head/tail 预览、字节数、hash 绑定 locator；默认阈值与 G-05 从 `packages/tool/src/tool-output-limits.ts` 共享 |
 | `model_summary` | 阈值 24,000，目标 4,096，15s | 摘要最近 16 条之前的 history；同时在全局达到压缩阈值时可触发 |
 | `tiered_checkpoint` | 阈值 24,000，目标 4,096 | summary 失败、早期历史过大或总体超预算时的确定性兜底 |
 
@@ -217,6 +227,8 @@ context.compaction_started
 
 这里的“先”是副作用边界：Runtime 在任何 archive `put()` 或 summary provider 调用之前就提交 `context.compaction_started`。因此进程若在外置/摘要期间崩溃，Ledger 不会只剩无法解释的 Artifact/provider 副作用。无压缩时不发这对事件。
 
+`ContextManifest.items` 中 `included_tokens > 0` 且带 `content` 的条目按原顺序构成模型输入；`reconstructModelContext()` 是包根公开重建入口，builder 返回的 `modelContext` 直接由它从 Manifest 生成。Context builder/compaction 属于 `@tracegraph/context` 与 `@tracegraph/contracts` 边界；Runtime 仍决定何时持久化事件和 Artifact。
+
 ---
 
 ## 8. G-03 preflight 与 provider usage 分账
@@ -238,6 +250,8 @@ sum(token_estimate.per_section)
 ```
 
 `heuristic_v2` 对 CJK 按每字 1 token、连续拉丁段按约 3.5 字符/token，符号与空白分别加权，比简单“字符数/4”更保守。有历史 provider usage 时会按 `(provider,model)` 校准；但它仍不包含 provider-owned system prompt、JSON envelope 与完整 wire framing，所以不能称为 provider-exact 逐 section 计费。
+
+Context package 只暴露消费方 `TokenMeter` port；当前 `CalibratedTokenMeter` 文件存储实现仍归 Core，符合拓扑中后续 LLM family 的提取范围。
 
 ---
 
@@ -266,8 +280,10 @@ sum(token_estimate.per_section)
 |---|---|
 | `packages/contracts/src/context-g02.test.ts` | policy 兼容/严格性、summary refs、SpillRef locator 绑定/node、step 严格下降/连续账/策略顺序、archive scope/kind、旧 Manifest |
 | `packages/contracts/src/memory-g21.test.ts` | retrieved item/node 的 section、provenance、token 与 Manifest 双向引用约束 |
-| `packages/core/src/domains/context/context-compaction.test.ts` | 严格策略顺序、独立开关、invalid/timeout 降级、locator/hash 回读、完整 tool Artifact spill、防递归 spill、300K 级预算收敛 |
-| `packages/core/src/domains/memory/memory-g21.test.ts` | recall 预算后命中进入真实 Context builder，Manifest 可解释 source path/lines/score/hash/token；Runtime 每轮在模型请求前自动注入 |
+| `packages/context/src/context.test.ts`、`context-compaction.test.ts` | 包根确定性组装与 Manifest 重建、严格策略顺序、独立开关、invalid/timeout/cancel 降级、locator/hash 回读、完整 tool Artifact spill、防递归 spill、300K 级预算收敛 |
+| `packages/core/src/domains/context/context-package.integration.test.ts` | 真实 Core ArtifactStore 与包根 Context 组合、spill/refetch 与 Manifest 重建 |
+| `packages/core/src/domains/context/token-meter.test.ts` | provider/model 校准、文件安全与持久化（实现留在 Core） |
+| `packages/core/src/domains/memory/memory-g21.test.ts` | recall 预算后命中进入 `@tracegraph/context` builder，Manifest 可解释 source path/lines/score/hash/token；Runtime 每轮在模型请求前自动注入 |
 | `packages/core/src/domains/model/model-provider.test.ts` | OpenAI/Anthropic summary 请求、strict 输出边界、summary usage、错误/取消 |
 | `packages/core/src/domains/tools/registry.test.ts` | run-scoped locator 分页回读、offset/limit 上界、Plain Chat 零文件能力下仍只能读本 Run archive，以及 `lists only stable paged metadata from the current Run` |
 | `packages/test-support/src/runtime.integration.test.ts` | summary/Event/usage 整链、invalid/timeout fallback、spill→`read_artifact`→hash、原文不进 Ledger、300K 级连续减量账 |

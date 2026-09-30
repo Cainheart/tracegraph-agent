@@ -17,7 +17,21 @@ import type { ModelAdapter } from "../../kernel/types.js";
 
 const roots: string[] = [];
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Registers a Runtime so teardown drains its nonblocking background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 afterEach(async () => {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
   await Promise.all(roots.splice(0).map((root) => rm(root, { recursive: true, force: true })));
 });
 
@@ -90,7 +104,7 @@ describe("G-08 Runtime team integration", () => {
         return finishDecision("decision:team-page-refetch-done", "Exact Team page was refetched.");
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       model: rootModel,
       idFactory: sequentialIdFactory(),
@@ -226,7 +240,7 @@ describe("G-08 Runtime team integration", () => {
       "team_mailbox_claim",
       "team_heartbeat",
     ];
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       model: rootModel,
       subagentRegistry: new SubagentRegistry([{
@@ -379,7 +393,7 @@ describe("G-08 Runtime team integration", () => {
         return finishDecision(`decision:child:done:${input.runId}`, `${input.task} done.`);
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       model: rootModel,
       subagentRegistry: new SubagentRegistry([{
@@ -548,7 +562,7 @@ describe("G-08 Runtime team integration", () => {
           : finishDecision("decision:late-team-root-done", "Late team backfill completed.");
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       model: rootModel,
       subagentRegistry: new SubagentRegistry([{
@@ -619,7 +633,7 @@ describe("G-08 Runtime team integration", () => {
         return finishDecision("decision:team-receipts", "Concurrent receipts verified.");
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       model: rootModel,
       idFactory: sequentialIdFactory(),

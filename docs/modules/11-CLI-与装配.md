@@ -1,9 +1,9 @@
 # 模块 11：CLI 与装配
 
 > 定位：唯一的"可运行入口"。把 Core / CodeGraph / Retrieval / Telemetry / Host 装配成一个本地服务，并管理数据目录、项目注册表与模型凭据。
-> 代码：`apps/cli/src/index.ts`、`extension-config.ts`、`extension-command.ts`、`team-command.ts`、`permission-config.ts`、`sandbox-config.ts`（legacy seam）、`model-config.ts`、`telemetry-config.ts`、`retrieval-config.ts`、`subagent-config.ts`、`project-registry.ts`、`composition.ts`；扩展生命周期、凭据、Permission、Sandbox、Memory、Subagent 与 Session 实现在 `packages/core`，本地检索在 `packages/retrieval`，可选 HTTP 服务/client 在 `apps/retrieval-service`，Telemetry sink 在 `packages/telemetry`
-> 最后核对：2026-09-19
-> 实现状态：**已验证**（包括 `extension-config.test.ts`、`extension-command.test.ts`、`team-command.test.ts`、`retrieval-config.test.ts`、`subagent-config.test.ts` 与 retrieval-service 单元/集成测试）
+> 代码：`apps/cli/src/index.ts`、`boot/profile.ts`、`profiles/cli.ts`、`extension-config.ts`、`extension-command.ts`、`team-command.ts`、`permission-config.ts`、`sandbox-config.ts`（legacy seam）、`model-config.ts`、`telemetry-config.ts`、`retrieval-config.ts`、`subagent-config.ts`、`project-registry.ts`、`composition.ts`；扩展生命周期、凭据、Permission、Sandbox、Memory、Subagent 与 Session 实现在 `packages/core`，本地检索在 `packages/retrieval`，可选 HTTP 服务/client 在 `apps/retrieval-service`，Telemetry sink 在 `packages/telemetry`
+> 最后核对：2026-09-30
+> 实现状态：**已验证**（包括 CLI resolved profile 的 dump/hash contract tests，以及 `extension-config.test.ts`、`extension-command.test.ts`、`team-command.test.ts`、`retrieval-config.test.ts`、`subagent-config.test.ts` 与 retrieval-service 单元/集成测试）
 
 ---
 
@@ -68,7 +68,8 @@ operator 应使用自己稳定且无内部前缀的 id。`team-expire:`、`team-
 
 ## 2. 启动顺序
 
-```151:168:apps/cli/src/index.ts
+```ts
+  const resolvedProfile = resolveCliProfile(/* allowlisted resolved CLI selections */);
   const runtime = await createAgentRuntime({
     dataDir,
     telemetrySink,
@@ -76,13 +77,10 @@ operator 应使用自己稳定且无内部前缀的 id。`team-expire:`、`team-
     codeGraph: createCodeGraphProvider(),
     retriever: retrieval.retriever,
     model,
-    maxTurns: parsePositiveInteger(process.env.TRACEGRAPH_MAX_TURNS) ?? 12,
-    sandboxMode: initialPermission.selected_preset.sandbox_mode,
+    maxTurns: resolvedProfile.selections.runtime.max_turns,
+    sandboxMode: resolvedProfile.selections.permission.sandbox_mode,
     permissionPolicyResolver: (workspace) => permissionConfig.resolveProject(workspace.real_root),
-    rollbackPolicy: {
-      enabled: process.env.TRACEGRAPH_ROLLBACK_ENABLED === "true",
-      allowForce: process.env.TRACEGRAPH_ROLLBACK_ALLOW_FORCE === "true",
-    },
+    rollbackPolicy: resolvedProfile.selections.runtime.rollback_policy,
   });
   // ...
   const host = await createTraceGraphHost({
@@ -217,6 +215,14 @@ CLI retrieval 配置只有三个环境输入：
 `subagent-config.ts` 内置 `readonly`、`code-explorer`、`evidence-reviewer` 三个只读 profile。默认只启用 `readonly`；`--subagent-profiles` / `TRACEGRAPH_SUBAGENT_PROFILES` 只能从这三个名字中选取和去重，未知名直接阻止启动。三个 profile 的实际 provider key 固定为 `parent`，role prompt/version 与 tool allowlist 都在 composition root 中定义；CLI/env 不能注入 prompt、provider 或 authority。
 
 parallel 允许 1–16、depth 允许 1–4、steps 允许 1–1000、tokens 允许正安全整数，非法值 fail-closed。配置形成 Runtime 的全局 orchestration limits 与每个 profile 的 default/ceiling；模型侧 `spawn_subagent` 仍只能请求不高于 ceiling 的 budget。默认 `parallel=2`、`depth=1`、`steps=6`、`tokens=16000`。G-08 复用这条 bounded delegation seam：root Ledger 已有 roster/mailbox/task board，Host/SDK/Web 有 Team 控制面，CLI 也提供上述连接已运行 Host 的 `tracegraph team` 薄客户端。单个 `spawn_subagent` 仍同步等 child 终态，worker 并行只来自 G-05 batch 并受这里的 permit 限制。
+
+### 2.6 PKG-035：当前 CLI resolved profile
+
+`apps/cli/src/profiles/cli.ts` 声明唯一当前应用入口 `tracegraph.cli@1`；`apps/cli/src/boot/profile.ts` 从启动时已解析的 permission preset、sandbox、Runtime switches、非秘密 model labels、Telemetry sink、Retrieval mode、可信 subagent profiles、MCP/LSP 配置选择和 extension 状态构造 `tracegraph.resolved-cli-profile.v1`。`dumpResolvedCliProfile()` 输出稳定 JSON，`hashResolvedCliProfile()` 校验内容并返回相同的 `sha256:` digest；Runtime 使用该快照中的 max turns、sandbox mode 与 rollback policy。
+
+Dump 和 digest 只覆盖显式 allowlist。它们不含 credential 值/引用、model base URL、路径、进程命令/参数/environment、远端 endpoint、raw role prompt、错误正文、stderr 或时间戳；subagent prompt 只以已有版本/hash 与安全 schema 字段呈现。该 digest 是可审查的 CLI 配置投影指纹，不是完整 composition identity、授权凭证或 Run manifest，也没有写入 Ledger。
+
+PKG-035 本轮**没有创建 `@tracegraph/boot`**：目前只有 CLI 是真实组合消费者，通用跨应用 Profile/Bundle contract 尚未稳定；Web 不装配 providers，Desktop 入口也未实现。CLI 内部模块与测试已交付，跨应用 profile tree 和完整 CompositionPlan 仍是 V2 target。裁决和再评估条件见 [PKG-035 Note](../../.agents/notes/implemented/2026-09-30-pkg-035-boot-profile-gate.zh.md)。
 
 ---
 

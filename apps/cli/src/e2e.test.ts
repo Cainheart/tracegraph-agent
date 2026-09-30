@@ -16,17 +16,36 @@ import { afterEach, describe, expect, it } from "vitest";
 import { createCodeGraphProvider } from "./composition.js";
 import { createConfiguredTelemetry } from "./telemetry-config.js";
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Drains nonblocking background work so temporary data directories can be removed safely. */
+async function drainTrackedRuntimes(): Promise<void> {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
+}
+
+/** Registers a Runtime so teardown can drain its background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 describe("TraceGraph vertical slice", () => {
   const cleanups: Array<() => Promise<void>> = [];
 
   afterEach(async () => {
+    await drainTrackedRuntimes();
     await Promise.allSettled(cleanups.splice(0).map((cleanup) => cleanup()));
   });
 
   it("reads the Runtime-owned default noop telemetry status through Host and SDK", async () => {
     const data = await createTemporaryDataDir();
     cleanups.push(data.cleanup);
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: data.path,
       sandboxMode: "danger-full-access",
     });
@@ -61,7 +80,7 @@ describe("TraceGraph vertical slice", () => {
       dataDir: data.path,
       credentialStore: emptyCredentialStore(),
     });
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: data.path,
       telemetrySink,
       sandboxMode: "danger-full-access",
@@ -89,7 +108,7 @@ describe("TraceGraph vertical slice", () => {
     const fixture = await createFailingTypescriptFixture("fixture-e2e");
     cleanups.push(data.cleanup, fixture.cleanup);
 
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: data.path,
       codeGraph: createCodeGraphProvider(),
       // Keep the transport/approval E2E portable; native sandbox behaviour is
@@ -251,7 +270,7 @@ describe("TraceGraph vertical slice", () => {
       staleLeaseTimeoutMs: 30_000,
       heartbeatIntervalMs: 10_000,
     });
-    const firstRuntime = await createAgentRuntime({
+    const firstRuntime = await createTrackedRuntime({
       dataDir: data.path,
       sessionStore: firstStore,
       codeGraph: createCodeGraphProvider(),
@@ -289,7 +308,7 @@ describe("TraceGraph vertical slice", () => {
     await firstHost.close();
 
     const restartedStore = new JsonlSessionStore(sessionsRoot);
-    const restartedRuntime = await createAgentRuntime({
+    const restartedRuntime = await createTrackedRuntime({
       dataDir: data.path,
       sessionStore: restartedStore,
       codeGraph: createCodeGraphProvider(),

@@ -19,6 +19,24 @@ import {
 } from "../../packages/test-support/dist/index.js";
 import { startEvalInput, waitForEvalStatus } from "./helpers.js";
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Drains nonblocking background work so temporary data directories can be removed safely. */
+async function drainTrackedRuntimes(): Promise<void> {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
+}
+
+/** Registers a Runtime so teardown can drain its background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 describe("runtime behavior: extension system", () => {
   it("isolates a throwing event hook and records one non-recursive extension.error", async () => {
     const fixture = await createFailingTypescriptFixture("eval-extension-hook-isolation");
@@ -34,7 +52,7 @@ describe("runtime behavior: extension system", () => {
           });
         },
       });
-      const runtime = await createAgentRuntime({
+      const runtime = await createTrackedRuntime({
         dataDir: data.path,
         model: new CapturingFinishModel(),
         extensionManager: manager,
@@ -58,6 +76,7 @@ describe("runtime behavior: extension system", () => {
       });
       expect(manager.activeLeaseCount).toBe(0);
     } finally {
+      await drainTrackedRuntimes();
       await Promise.all([fixture.cleanup(), data.cleanup()]);
     }
   });
@@ -68,7 +87,7 @@ describe("runtime behavior: extension system", () => {
     try {
       const manager = await managerWithBuiltinExtensions();
       const model = new CapturingFinishModel();
-      const runtime = await createAgentRuntime({
+      const runtime = await createTrackedRuntime({
         dataDir: data.path,
         model,
         extensionManager: manager,
@@ -110,6 +129,7 @@ describe("runtime behavior: extension system", () => {
       expect(secondTools).toEqual(expect.arrayContaining(["todo_read", "spawn_subagent"]));
       expect(manager.activeLeaseCount).toBe(0);
     } finally {
+      await drainTrackedRuntimes();
       await Promise.all([fixture.cleanup(), data.cleanup()]);
     }
   });

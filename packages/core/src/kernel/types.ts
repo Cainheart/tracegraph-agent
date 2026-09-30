@@ -12,6 +12,8 @@ import type {
   ReasoningEffort,
   RunMode,
   ToolCall,
+  MemoryEpisodeExtractionInput,
+  MemoryEpisodeExtractionResult,
 } from "@tracegraph/contracts";
 
 export interface ModelInput {
@@ -101,6 +103,10 @@ export interface ModelAdapter {
    * provider.  Callers must validate the unknown result before using it.
    */
   summarizeContext?(input: ContextSummaryInput): Promise<unknown>;
+  /** Optional background-only extraction capability; output is still untrusted and review-gated. */
+  extractMemoryEpisode?(input: MemoryEpisodeExtractionInput, options?: { signal?: AbortSignal }): Promise<MemoryEpisodeExtractionResult>;
+  /** Lets the background scheduler avoid retrying an unconfigured optional capability. */
+  canExtractMemoryEpisode?(): boolean;
 }
 
 export class ModelRequestError extends Error {

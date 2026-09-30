@@ -12,6 +12,24 @@ import {
 } from "../../packages/test-support/dist/index.js";
 import { finishDecision, startEvalInput, waitForEvalStatus } from "./helpers.js";
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Drains nonblocking background work so temporary data directories can be removed safely. */
+async function drainTrackedRuntimes(): Promise<void> {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
+}
+
+/** Registers a Runtime so teardown can drain its background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 describe("runtime behavior: parallel tools", () => {
   it("executes one safe batch concurrently while preserving requested observation order", async () => {
     const fixture = await createFailingTypescriptFixture("eval-tool-parallel");
@@ -54,7 +72,7 @@ describe("runtime behavior: parallel tools", () => {
           mockDecision(finishDecision("eval-parallel-finish", "Parallel evidence collection completed.")),
         ],
       });
-      const runtime = await createAgentRuntime({
+      const runtime = await createTrackedRuntime({
         dataDir: data.path,
         model: provider,
         toolRegistry: registry,
@@ -85,6 +103,7 @@ describe("runtime behavior: parallel tools", () => {
       });
       expect(provider.calls().map(({ channel }) => channel)).toEqual(["decision", "decision"]);
     } finally {
+      await drainTrackedRuntimes();
       await Promise.all([fixture.cleanup(), data.cleanup()]);
     }
   });

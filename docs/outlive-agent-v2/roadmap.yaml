@@ -327,7 +327,10 @@ tasks:
     outputs: [packages/tool]
     acceptance:
       - 先按 AGENTS 升包门槛裁决；未通过时保留内部 seam 并记录 Note
-      - denial 在 dispatch/WAL/mutation 前发生
+      - "@tracegraph/tool 仅依赖 contracts、zod 与 Node APIs；Core 内置定义和 Runtime/WAL/Receipt authority 留在 Core"
+      - 包根 contract tests 覆盖 schema、Registry、bounded output、cancel/timeout、Policy deny 与 approval-token failure
+      - Core Runtime integration 证明最终 deny 在 tool.started、Action WAL intent 与 mutation 前发生，且保持唯一 executor
+      - boundary、README、module graph 与行为文档门禁通过
 
   - id: PKG-034
     phase: P3
@@ -339,6 +342,9 @@ tasks:
     acceptance:
       - 先按 AGENTS 升包门槛裁决；未通过时保留内部 seam 并记录 Note
       - model-visible context 可由 manifest 重建
+      - "@tracegraph/context 仅依赖 contracts、tool shared helpers 与 Node APIs；Core Runtime 是唯一生产 consumer，Note 记录模型可见信任边界硬隔离理由"
+      - 包根 contract tests 覆盖构建/压缩/manifest 重建/取消与 spill；Core integration 使用真实 ArtifactStore
+      - managed boundary、README、当前模块文档与 module graph 门禁通过
 
   - id: PKG-035
     phase: P3
@@ -346,10 +352,13 @@ tasks:
     owner: composition
     change_type: refactor
     depends_on: [PKG-031, PKG-033, PKG-034]
-    outputs: [packages/boot, profiles]
+    outputs: [apps/cli/src/boot, apps/cli/src/profiles]
     acceptance:
-      - boot 物理包通过升包门槛；否则保留组合根内部模块并记录 Note
-      - resolved profile 可 dump/hash
+      - 升包门槛已裁决：当前只有 CLI 一个真实应用 consumer，跨应用 Profile contract 未稳定；本轮不创建物理 boot 包并以双语 Note 记录回退决定
+      - CLI 内部 resolved profile 从已解析启动选择构造，可确定性 JSON dump/hash；digest 仅绑定明确允许的安全投影
+      - focused tests 证明 dump/hash 稳定、profile 选择变化会反映到 digest、列表顺序保留、secret/path/command/endpoint/prompt 正文不泄漏
+      - Runtime 实际消费快照中的 max turns、sandbox 与 rollback settings；现有 CLI composition behavior 不变
+      - CLI 当前模块文档与 V2 roadmap 区分当前安全投影和 proposed 的跨应用 Profile/Bundle/CompositionPlan
 
   - id: MEM-040
     phase: P4
@@ -359,8 +368,10 @@ tasks:
     depends_on: [CORE-028]
     outputs: [memory-v2-contract, adjacent-migration]
     acceptance:
-      - v1 数据无损读取
-      - status/scope/provenance/validity/governance/lineage 有 schema tests
+      - MemoryRecordV1Schema 保持 strict 兼容读取；V2 contract 独立版本化，不切换现有 Runtime canonical store
+      - V1 到 V2 相邻迁移需显式 owner、保留完整 source row、保持旧 scope、所有迁移项待审核且默认禁模型使用/导出
+      - 迁移全量校验后独占发布 sidecar；已有目标、坏行或无效 owner 均失败，原始 records.jsonl 不变
+      - status/scope/provenance/validity/governance/lineage 有 schema tests；Memory owner identity 不绑定来源 Session/Run
 
   - id: MEM-041
     phase: P4
@@ -370,7 +381,9 @@ tasks:
     depends_on: [MEM-040]
     outputs: [memory-lifecycle]
     acceptance:
-      - 非法转移拒绝且每次转移有 event
+      - V2 生命周期图覆盖 candidate review/activate/reject、dispute/resolve、supersede、revoke、expire 与 revalidate；非法转移和无效激活 fail closed
+      - 每个合法转移产生 owner-scoped、content-free append-only event；sequence CAS、idempotency 与 hash-chain replay 可检查
+      - lifecycle projection 可从 candidate seed 与完整事件重建；Runtime 的 V1 store 不被隐式切换
 
   - id: MEM-042
     phase: P4
@@ -417,7 +430,12 @@ tasks:
     depends_on: [MEM-041, MEM-042]
     outputs: [memory-conflict-feedback]
     acceptance:
-      - unresolved conflict 不静默注入
+      - 同 owner、显式 normalizedKey、scope 重叠且 claim 不同的未解决冲突组全部被 V2 recall eligibility gate 阻断
+      - validFrom/validUntil、owner/scope、status、governance 与 source trust 在 V2 recall eligibility gate 中 fail closed
+      - helpful/irrelevant/incorrect/stale feedback 绑定 exact Memory version、response-backed MemoryUse 与 ContextManifest
+      - 同一用户针对一个 MemoryUse/version 最多一个反馈；相同评价重试幂等
+      - incorrect/stale feedback 在明确 review dismissal 前阻断对应 Memory version；replay 校验 append-only hash chain
+      - feedback events 不含 Memory claim、Context 正文或 Provider 响应；G-21 V1 Runtime 不被切换
 
   - id: MEM-046
     phase: P4

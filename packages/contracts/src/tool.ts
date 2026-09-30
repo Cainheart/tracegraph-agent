@@ -95,6 +95,17 @@ const RootObjectJsonSchemaSchema = BoundedJsonSchemaSchema.refine(
 export const ToolSideEffectSchema = z.enum(["none", "read", "write", "execute"]);
 export type ToolSideEffect = z.infer<typeof ToolSideEffectSchema>;
 
+/** Strict, bounded envelope returned by Core-owned Tool adapters. */
+export const RawToolResultSchema = z.object({
+  status: ReceiptStatusSchema,
+  code: NonEmptyStringSchema.max(160),
+  summary: NonEmptyStringSchema.max(2_000),
+  content: z.string().optional(),
+  mimeType: NonEmptyStringSchema.max(160).optional(),
+  facts: z.record(z.string(), z.unknown()).optional(),
+}).strict();
+export type RawToolResult = z.infer<typeof RawToolResultSchema>;
+
 export const ToolFailureCodeSchema = z.enum([
   "invalid_arguments",
   "timeout",

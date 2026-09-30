@@ -9,9 +9,16 @@ the `@tracegraph/contracts` event model and does not own Runtime policy.
 ## Public API
 
 The package root exports `JsonlEventLedger`, `ArtifactStore`, `projectRun`,
-`toWireEvent`, and the replay functions/errors. Host composition supplies the
-typed `EvidencePrimitives` and pure Team/Todo projection contributors. There
-are no supported deep imports.
+`toWireEvent`, and the replay functions/errors. `JsonlEventLedger` also owns
+owner-scoped Memory lifecycle, control/tombstone, and versioned feedback
+aggregate streams in separate hashed namespaces under the same Ledger root;
+these Events do not enter a Run's SessionEvent sequence. Feedback is scoped to
+one owner, Memory ID, and immutable version, with CAS, idempotency, and an
+independent hash chain. Content-free control tombstones bind deleted lineage and
+scope IDs. The Ledger also derives exact-version MemoryUse request summaries
+from Run events. Host
+composition supplies the typed `EvidencePrimitives` and pure Team/Todo projection
+contributors. There are no supported deep imports.
 
 ## Dependencies
 
@@ -21,8 +28,10 @@ does not import Core, Runtime, Team, Todo, Host, or application packages.
 ## State ownership
 
 Ledger and Artifact bytes live under caller-provided local filesystem roots.
-The package validates event order, hash-chain integrity, artifact scope, and
-content hashes. The Event Ledger remains the durable source of Run facts.
+The package validates Run and Memory aggregate event order, hash-chain
+integrity, artifact scope, and content hashes. The Event Ledger remains the
+durable source of Run facts and owner-scoped Memory lifecycle, control, and
+feedback facts.
 
 ## Extension points
 

@@ -66,6 +66,101 @@ describe("@tracegraph/evidence public contract", () => {
     })).toMatchObject({ status: "available", artifact });
   });
 
+  it("persists owner/version-scoped Memory feedback with CAS, idempotency, and a separate hash chain", async () => {
+    const root = await temporaryRoot();
+    const ledger = new JsonlEventLedger(join(root, "events"), { primitives });
+    const reported = await ledger.appendMemoryFeedback({
+      schemaVersion: "tracegraph.memory-feedback.v1",
+      eventType: "memory.feedback",
+      ownerId: "owner:one",
+      memoryId: "memory:one",
+      memoryVersion: 3,
+      expectedSequence: 0,
+      action: "reported",
+      runId: "run:one",
+      memoryUseId: "memory-use:one",
+      contextManifestId: "context:one",
+      feedback: "incorrect",
+      actor: { type: "user", id: "user:one" },
+      idempotencyKey: "feedback:incorrect:one",
+      occurredAt: "2026-09-30T00:00:00.000Z",
+    });
+    const retry = await ledger.appendMemoryFeedback({
+      schemaVersion: "tracegraph.memory-feedback.v1",
+      eventType: "memory.feedback",
+      ownerId: "owner:one",
+      memoryId: "memory:one",
+      memoryVersion: 3,
+      expectedSequence: 0,
+      action: "reported",
+      runId: "run:one",
+      memoryUseId: "memory-use:one",
+      contextManifestId: "context:one",
+      feedback: "incorrect",
+      actor: { type: "user", id: "user:one" },
+      idempotencyKey: "feedback:incorrect:one",
+      occurredAt: "2026-09-30T00:05:00.000Z",
+    });
+    expect(retry).toEqual({ event: reported.event, replayed: true });
+    expect(await ledger.listMemoryFeedback("owner:one", "memory:one", 3)).toEqual([reported.event]);
+    expect(await ledger.listMemoryFeedback("owner:other", "memory:one", 3)).toEqual([]);
+    expect(await ledger.listMemoryFeedback("owner:one", "memory:one", 4)).toEqual([]);
+
+    await expect(ledger.appendMemoryFeedback({
+      schemaVersion: "tracegraph.memory-feedback.v1",
+      eventType: "memory.feedback",
+      ownerId: "owner:one",
+      memoryId: "memory:one",
+      memoryVersion: 3,
+      expectedSequence: 0,
+      action: "reported",
+      runId: "run:two",
+      memoryUseId: "memory-use:two",
+      contextManifestId: "context:two",
+      feedback: "helpful",
+      actor: { type: "user", id: "user:one" },
+      idempotencyKey: "feedback:stale-sequence",
+      occurredAt: "2026-09-30T00:06:00.000Z",
+    })).rejects.toThrow(/sequence conflict/u);
+
+    await expect(ledger.appendMemoryFeedback({
+      schemaVersion: "tracegraph.memory-feedback.v1",
+      eventType: "memory.feedback",
+      ownerId: "owner:one",
+      memoryId: "memory:one",
+      memoryVersion: 3,
+      expectedSequence: 1,
+      action: "reported",
+      runId: "run:one",
+      memoryUseId: "memory-use:one",
+      contextManifestId: "context:one",
+      feedback: "helpful",
+      actor: { type: "user", id: "user:one" },
+      idempotencyKey: "feedback:incorrect:replacement",
+      occurredAt: "2026-09-30T00:07:00.000Z",
+    })).rejects.toThrow(/only once/u);
+
+    const dismissed = await ledger.appendMemoryFeedback({
+      schemaVersion: "tracegraph.memory-feedback.v1",
+      eventType: "memory.feedback",
+      ownerId: "owner:one",
+      memoryId: "memory:one",
+      memoryVersion: 3,
+      expectedSequence: 1,
+      action: "review_dismissed",
+      feedbackEventId: reported.event.eventId,
+      actor: { type: "user", id: "user:one" },
+      idempotencyKey: "feedback:review:one",
+      occurredAt: "2026-09-30T00:10:00.000Z",
+    });
+    expect(dismissed.event.previousEventHash).toBe(reported.event.eventHash);
+    const restarted = new JsonlEventLedger(join(root, "events"), { primitives });
+    expect(await restarted.listMemoryFeedback("owner:one", "memory:one", 3)).toEqual([
+      reported.event,
+      dismissed.event,
+    ]);
+  });
+
   it("keeps Projection in-memory and replays an anchored hash through the package root", async () => {
     const root = await temporaryRoot();
     const ledger = new JsonlEventLedger(join(root, "events"), { primitives });

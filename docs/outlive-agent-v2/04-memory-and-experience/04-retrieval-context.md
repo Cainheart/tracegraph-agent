@@ -5,7 +5,7 @@ status: proposed
 scope: memory-retrieval
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-26
+last_reviewed: 2026-09-30
 ---
 
 # 记忆检索与上下文注入设计
@@ -28,6 +28,12 @@ flowchart LR
 ```
 
 检索结果不是 system instruction。它是带来源、scope、置信和状态的 context segment；Context Builder 决定如何呈现，Runtime/Policy 决定是否允许使用。三阶段不可混称：`retrieved` 是搜索命中，`selected` 是通过过滤和预算后进入待发请求，`adapter_invoked` 表示 Runtime 已把含该 segment 的请求交给 Provider Adapter。它不证明远端 Provider 接受或模型内部读取/使用了该内容。
+
+### 1.1 已实现的 V2 资格门（MEM-045）
+
+Core 的 `evaluateMemoryRecallEligibility()` 接收调用方提供的完整、单 owner、每个 ID 一个当前版本的 V2 snapshot 与请求 scope；它返回 ID/version 列表、阻断原因、冲突组和待复核 feedback，不包含 Memory 正文。它要求记录为 `active`、当前有效（`validFrom <= now < validUntil`，未设置 `validUntil` 时没有上界）、owner/scope 匹配、consent 与 allowModelUse 允许、sensitivity 可用且来源 trusted/authoritative。
+
+`detectMemoryConflicts()` 只识别同 owner、规范化显式 key、相交 scope、claim digest 不同且当前有效的 active/disputed 项；不会推断语义冲突。任何 unresolved conflict 的所有参与者均被阻断。待复核的 `incorrect` / `stale` 反馈同样阻断对应版本；用户显式 dismiss 只关闭该 review gate。`helpful` / `irrelevant` 仅统计，不更改真值或排序。MEM-045 尚未接入 G-21 V1 `recall()`、V2 canonical record store 或 UI，因此本节后续 Runtime 时序仍是目标架构。
 
 ## 2. 查询模型
 
@@ -80,7 +86,7 @@ type MemoryUse = {
 };
 ```
 
-`MemoryUse` 是 Run-scoped 执行事实，并与该轮 Context Manifest 同处当前执行事实域；`dispatch_intent` 在调用 Provider 前持久化，适配器调用/响应通过后续事件表达。崩溃或超时发生在边界附近时允许 `unknown`，不得臆断发送成功。Manifest 精确到 Runtime 提交给 adapter 的内容；Provider SDK 若另行变换 wire payload，除非 adapter 能给出证据，否则不声称日志等同远端收到的字节。不在长期 Memory stream 里累计一个可能失真的 `use_count`；计数与检索分析从已提交的 Run/MemoryUse 事件派生。模型侧明确标注“历史资料，可能过期，不覆盖当前用户命令与 policy”。冲突记录成组展示，不能只展示得分最高的一边。
+`MemoryUse` 是 Run-scoped 执行事实，并与该轮 Context Manifest 同处当前执行事实域；`dispatch_intent` 在调用 Provider 前持久化，适配器调用/响应通过后续事件表达。崩溃或超时发生在边界附近时允许 `unknown`，不得臆断发送成功。Manifest 精确到 Runtime 提交给 adapter 的内容；Provider SDK 若另行变换 wire payload，除非 adapter 能给出证据，否则不声称日志等同远端收到的字节。不在长期 Memory stream 里累计一个可能失真的 `use_count`；计数与检索分析从已提交的 Run/MemoryUse 事件派生。MEM-045 反馈还要求对应 V2 MemoryUse 已到 `response`，且 schema/version/content digest 完全匹配；同一用户对同一次使用只能提交一个评价。反馈按准确版本存为独立追加事实。模型侧明确标注“历史资料，可能过期，不覆盖当前用户命令与 policy”。冲突记录成组展示，不能只展示得分最高的一边。
 
 ## 5. 检索时序
 

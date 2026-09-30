@@ -29,6 +29,8 @@ flowchart LR
 
 Episode 是从已提交历史得到的**可重建经历派生物**，用来给学习和评审建立边界。它不等于 Session/Run 页面查询读模型，也不等于供 LLM 使用的模型消息历史或跨 Session Memory 状态投影。它不修改原始 Session，也不能凭摘要新增事实。Episode 默认属于其源 Session/Run 的证据范围；跨 Session 经验通过显式 EvidenceRef 连接多个 Episode，不把来源执行流改造成长期 Memory 的所有者。候选必须到可查看/修改/接受/拒绝的控制面后，才可进入独立的 Memory aggregate stream。
 
+**当前实现切片（MEM-043，focused/runtime 验证通过）：**Core 对一个完整 terminal Run 生成一个确定性 Episode projection，不另存 canonical Episode；校验单 Run scope、连续 sequence、成功/失败/放弃结果、唯一 terminal event 与整条 hash chain。后台 sidecar 在 owner 级 lease 下串行扫描/恢复 terminal Runs，状态文件只保留 run ID、source digest、attempt、next retry 和错误码。可选提取器只收到 allowlist + redaction 后的有界 JSON，输出候选必须引用模型实际收到且仍匹配 Ledger 的事件。Focused 和 Runtime 测试覆盖恢复、重试/幂等、跨进程与过期 lease、来源不匹配/删除、取消 fail-closed、review-gated 候选及 V2 Recall 关闭。候选进入 MEM-046 控制面并保持 candidate；不做跨 Run 切分/合并、Experience Case、active Memory 改写或 V2 Recall。
+
 ## 2. Episode 数据模型
 
 ```ts
@@ -59,7 +61,7 @@ type Episode = {
 | 长时间空档或上下文压缩 | 弱 | 仅作候选，不能单独决定语义边界 |
 | 模型话题分类 | 弱 | 必须保留 confidence 和解释 |
 
-边界可重叠引用，但一个事件在同一 Episode scheme/version 下只归属一个主 Episode；跨 Episode 的公共证据通过 ref 复用。
+目标模型允许边界按证据重叠引用，但当前 MEM-043 只按单个 Run terminal 生成一个 Episode；跨 Episode 的公共证据通过 ref 复用仍属后续扩展。
 
 ## 4. Episode 生成与重建流程
 
@@ -83,6 +85,8 @@ sequenceDiagram
 ```
 
 投影失败只推进到最后完整 Episode；恢复时从 source cursor 重跑。旧 projector 结果可保留用于对比，但 active view 只指向一个版本。
+
+当前实现以整个 Run 的 `sourceDigest` 作为重建身份，source stream 改变或 Evidence 引用不匹配时 fail closed；任务 sidecar 使用有界重试/租约恢复，不持久化模型摘要或候选正文。
 
 ## 5. 关键参数
 

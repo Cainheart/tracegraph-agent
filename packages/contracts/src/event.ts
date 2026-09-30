@@ -7,6 +7,7 @@ import {
   SCHEMA_VERSION,
   Sha256Schema,
 } from "./common.js";
+import { MemoryUseEventDataSchema } from "./memory-use.js";
 
 export const terminalEventTypes = ["run.completed", "run.failed", "run.cancelled"] as const;
 
@@ -70,6 +71,7 @@ export const EventTypeSchema = z.enum([
   "memory.candidate_evaluated",
   "memory.written",
   "memory.recalled",
+  "memory.use_status",
   "retrieval.index_updated",
   "subagent.started",
   "subagent.message_sent",
@@ -156,7 +158,15 @@ export const SessionEventSchema = z.discriminatedUnion("type", eventVariants as 
   (typeof eventVariants)[number],
   (typeof eventVariants)[number],
   ...(typeof eventVariants)[number][],
-]);
+]).superRefine((event, context) => {
+  if (event.type !== "memory.use_status") return;
+  const parsed = MemoryUseEventDataSchema.safeParse(event.data);
+  if (!parsed.success) {
+    for (const issue of parsed.error.issues) {
+      context.addIssue({ ...issue, path: ["data", ...issue.path] });
+    }
+  }
+});
 export type SessionEvent = z.infer<typeof SessionEventSchema>;
 
 export const SessionEventProposalSchema = z.object({
@@ -204,5 +214,13 @@ export const WireSessionEventSchema = z.object({
   graph_delta_id: IdentifierSchema.optional(),
   test_receipt_id: IdentifierSchema.optional(),
   data: z.record(z.string(), z.unknown()),
+}).superRefine((event, context) => {
+  if (event.type !== "memory.use_status") return;
+  const parsed = MemoryUseEventDataSchema.safeParse(event.data);
+  if (!parsed.success) {
+    for (const issue of parsed.error.issues) {
+      context.addIssue({ ...issue, path: ["data", ...issue.path] });
+    }
+  }
 });
 export type WireSessionEvent = z.infer<typeof WireSessionEventSchema>;

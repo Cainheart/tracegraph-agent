@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { constants as fsConstants } from "node:fs";
-import { mkdir, open, readFile, rename, unlink } from "node:fs/promises";
+import { mkdir, open, opendir, readFile, readdir, rename, unlink } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 import {
   SCHEMA_VERSION,
@@ -9,7 +9,24 @@ import {
   ExtensionErrorDataSchema,
   TeamMemberLostDataSchema,
   TeamSweepCompletedDataSchema,
+  IdentifierSchema,
+  MemoryFeedbackEventDraftSchema,
+  MemoryFeedbackEventSchema,
+  MemoryControlEventDraftSchema,
+  MemoryControlEventSchema,
+  MemoryLifecycleEventDraftSchema,
+  MemoryLifecycleEventSchema,
+  MemoryUseEventDataSchema,
+  MemoryUseRequestSummarySchema,
+  Sha256Schema,
   isTerminalEventType,
+  type MemoryFeedbackEvent,
+  type MemoryFeedbackEventDraft,
+  type MemoryControlEvent,
+  type MemoryControlEventDraft,
+  type MemoryLifecycleEvent,
+  type MemoryLifecycleEventDraft,
+  type MemoryUseRequestSummary,
   type SessionEvent,
   type SessionEventProposal,
 } from "@tracegraph/contracts";
@@ -28,6 +45,22 @@ export interface AtomicAppendResult {
   readonly events: readonly SessionEvent[];
   /** Events newly committed by this transaction; duplicates are omitted. */
   readonly appended: readonly SessionEvent[];
+}
+
+export interface MemoryLifecycleAppendResult {
+  readonly event: MemoryLifecycleEvent;
+  /** True when the idempotency key resolved to an event committed earlier. */
+  readonly replayed: boolean;
+}
+
+export interface MemoryFeedbackAppendResult {
+  readonly event: MemoryFeedbackEvent;
+  readonly replayed: boolean;
+}
+
+export interface MemoryControlAppendResult {
+  readonly event: MemoryControlEvent;
+  readonly replayed: boolean;
 }
 
 export interface JsonlEventLedgerOptions {
@@ -77,6 +110,272 @@ export class JsonlEventLedger {
       );
       this.#notify(staged.event);
       return staged.event;
+    });
+  }
+
+  /**
+   * Read an owner-scoped Memory aggregate stream from the canonical Evidence
+   * Ledger namespace. This is separate from, and never mixed into, a Run's
+   * SessionEvent sequence.
+   */
+  async listMemoryLifecycle(ownerIdValue: string, memoryIdValue: string): Promise<MemoryLifecycleEvent[]> {
+    const ownerId = IdentifierSchema.parse(ownerIdValue);
+    const memoryId = IdentifierSchema.parse(memoryIdValue);
+    await this.#queue;
+    return this.#readMemoryLifecycleList(ownerId, memoryId);
+  }
+
+  async listMemoryControl(ownerIdValue: string, memoryIdValue: string): Promise<MemoryControlEvent[]> {
+    const ownerId = IdentifierSchema.parse(ownerIdValue);
+    const memoryId = IdentifierSchema.parse(memoryIdValue);
+    await this.#queue;
+    return this.#readMemoryControlList(ownerId, memoryId);
+  }
+
+  /** Append a content-free create/correct/delete command fact to the Memory Ledger. */
+  appendMemoryControl(draftValue: MemoryControlEventDraft): Promise<MemoryControlAppendResult> {
+    const draft = MemoryControlEventDraftSchema.parse(draftValue);
+    const ownerId = IdentifierSchema.parse(draft.ownerId);
+    const memoryId = IdentifierSchema.parse(draft.memoryId);
+    return this.#serialize(async () => {
+      const events = await this.#readMemoryControlList(ownerId, memoryId);
+      const duplicate = events.find((event) => event.idempotencyKey === draft.idempotencyKey);
+      if (duplicate !== undefined) {
+        if (!sameMemoryControlIntent(duplicate, draft)) {
+          throw new EventInvariantError("Memory control idempotency key conflicts with a committed command");
+        }
+        return { event: duplicate, replayed: true };
+      }
+      if (draft.expectedSequence !== events.length) {
+        throw new EventInvariantError(
+          `Memory control sequence conflict: expected ${draft.expectedSequence}, found ${events.length}`,
+        );
+      }
+      if (events.some((event) => event.action === "deleted")) {
+        throw new EventInvariantError("Deleted Memory identity is terminal and cannot be changed");
+      }
+      if (isMemoryControlCreation(draft.action)
+        && events.some((event) => isMemoryControlCreation(event.action))) {
+        throw new EventInvariantError("Memory identity already has a content creation fact");
+      }
+      const previous = events.at(-1);
+      const { expectedSequence: _expectedSequence, ...draftBody } = draft;
+      const body = {
+        ...draftBody,
+        eventId: this.#idFactory("memory-control"),
+        sequence: events.length + 1,
+        ...(previous === undefined ? {} : { previousEventHash: previous.eventHash }),
+      };
+      if (events.some((event) => event.eventId === body.eventId)) {
+        throw new EventInvariantError("Memory control event id factory returned a duplicate identity");
+      }
+      const event = MemoryControlEventSchema.parse({
+        ...body,
+        eventHash: this.#primitives.sha256(this.#primitives.stableStringify(body)),
+      });
+      const path = this.#memoryControlPath(ownerId, memoryId);
+      await mkdir(dirname(path), { recursive: true, mode: 0o700 });
+      await this.#replaceDurably(path, `${[...events, event].map((item) => JSON.stringify(item)).join("\n")}\n`);
+      return { event, replayed: false };
+    });
+  }
+
+  /** Read response/failed/unknown state for content-matched MemoryUse requests. */
+  async listMemoryUseRequests(
+    memoryIdValue: string,
+    memoryVersionValue: number,
+    contentDigestValue: string,
+  ): Promise<MemoryUseRequestSummary[]> {
+    const memoryId = IdentifierSchema.parse(memoryIdValue);
+    if (!Number.isSafeInteger(memoryVersionValue) || memoryVersionValue < 1) {
+      throw new TypeError("MemoryUse version must be a positive safe integer");
+    }
+    const contentDigest = Sha256Schema.parse(contentDigestValue);
+    const files = await readdir(this.#root, { withFileTypes: true });
+    const requests = new Map<string, MemoryUseRequestSummary>();
+    for (const file of files) {
+      if (!file.isFile() || !file.name.endsWith(".jsonl")) continue;
+      const runId = file.name.slice(0, -".jsonl".length);
+      let events: SessionEvent[];
+      try {
+        events = await this.list(runId);
+      } catch (error) {
+        // A corrupt Run stream must not be converted into apparently complete
+        // Memory-use evidence. Fail the read instead of silently skipping it.
+        throw error;
+      }
+      for (const event of events) {
+        if (event.type !== "memory.use_status") continue;
+        const data = MemoryUseEventDataSchema.parse(event.data);
+        if (data.stage === "dispatch_intent") {
+          const matching = data.memory_items.some((item) => (
+            item.memory_ref.record_schema_version === "tracegraph.memory-record.v2"
+            && item.memory_ref.memory_id === memoryId
+            && item.memory_ref.version === memoryVersionValue
+            && item.memory_ref.content_hash === contentDigest
+          ));
+          if (!matching) continue;
+          requests.set(`${event.run_id}\u0000${data.memory_use_id}`, MemoryUseRequestSummarySchema.parse({
+            runId: event.run_id,
+            memoryUseId: data.memory_use_id,
+            memoryVersion: memoryVersionValue,
+            contextManifestId: data.manifest_id,
+            stage: data.stage,
+            occurredAt: event.occurred_at,
+          }));
+          continue;
+        }
+        const key = `${event.run_id}\u0000${data.memory_use_id}`;
+        const prior = requests.get(key);
+        if (prior === undefined) continue;
+        requests.set(key, MemoryUseRequestSummarySchema.parse({
+          ...prior,
+          stage: data.stage,
+          occurredAt: event.occurred_at,
+        }));
+      }
+    }
+    return [...requests.values()].sort((left, right) => (
+      left.occurredAt.localeCompare(right.occurredAt)
+      || left.runId.localeCompare(right.runId)
+      || left.memoryUseId.localeCompare(right.memoryUseId)
+    ));
+  }
+
+  /** Persist one CAS-checked lifecycle transition in the canonical Ledger. */
+  appendMemoryLifecycle(draftValue: MemoryLifecycleEventDraft): Promise<MemoryLifecycleAppendResult> {
+    const draft = MemoryLifecycleEventDraftSchema.parse(draftValue);
+    const ownerId = IdentifierSchema.parse(draft.ownerId);
+    const memoryId = IdentifierSchema.parse(draft.memoryId);
+    return this.#serialize(async () => {
+      const events = await this.#readMemoryLifecycleList(ownerId, memoryId);
+      const duplicate = events.find((event) => event.idempotencyKey === draft.idempotencyKey);
+      if (duplicate !== undefined) {
+        if (!sameMemoryLifecycleIntent(duplicate, draft)) {
+          throw new EventInvariantError("Memory lifecycle idempotency key conflicts with a committed transition");
+        }
+        return { event: duplicate, replayed: true };
+      }
+      if (draft.expectedSequence !== events.length) {
+        throw new EventInvariantError(
+          `Memory lifecycle sequence conflict: expected ${draft.expectedSequence}, found ${events.length}`,
+        );
+      }
+      const previous = events.at(-1);
+      if (draft.fromStatus !== (previous?.toStatus ?? "candidate")) {
+        throw new EventInvariantError("Memory lifecycle transition does not follow the aggregate status");
+      }
+      if (previous !== undefined && draft.memoryVersion !== previous.memoryVersion) {
+        throw new EventInvariantError("Memory lifecycle transition targets a different record version");
+      }
+      const eventId = this.#idFactory("memory-event");
+      if (events.some((event) => event.eventId === eventId)) {
+        throw new EventInvariantError("Memory lifecycle event id factory returned a duplicate identity");
+      }
+      const body = {
+        schemaVersion: draft.schemaVersion,
+        eventType: draft.eventType,
+        eventId,
+        ownerId,
+        memoryId,
+        memoryVersion: draft.memoryVersion,
+        sequence: events.length + 1,
+        action: draft.action,
+        fromStatus: draft.fromStatus,
+        toStatus: draft.toStatus,
+        actor: draft.actor,
+        reasonCode: draft.reasonCode,
+        ...(draft.relatedMemoryId === undefined ? {} : { relatedMemoryId: draft.relatedMemoryId }),
+        ...(draft.validUntil === undefined ? {} : { validUntil: draft.validUntil }),
+        idempotencyKey: draft.idempotencyKey,
+        occurredAt: draft.occurredAt,
+        ...(previous === undefined ? {} : { previousEventHash: previous.eventHash }),
+      };
+      const event = MemoryLifecycleEventSchema.parse({
+        ...body,
+        eventHash: this.#primitives.sha256(this.#primitives.stableStringify(body)),
+      });
+      const path = this.#memoryLifecyclePath(ownerId, memoryId);
+      await mkdir(dirname(path), { recursive: true, mode: 0o700 });
+      await this.#replaceDurably(
+        path,
+        `${[...events, event].map((item) => JSON.stringify(item)).join("\n")}\n`,
+      );
+      return { event, replayed: false };
+    });
+  }
+
+  /** Read content-free feedback for one immutable Memory record version. */
+  async listMemoryFeedback(
+    ownerIdValue: string,
+    memoryIdValue: string,
+    memoryVersionValue: number,
+  ): Promise<MemoryFeedbackEvent[]> {
+    const ownerId = IdentifierSchema.parse(ownerIdValue);
+    const memoryId = IdentifierSchema.parse(memoryIdValue);
+    if (!Number.isSafeInteger(memoryVersionValue) || memoryVersionValue < 1) {
+      throw new TypeError("Memory feedback version must be a positive safe integer");
+    }
+    const memoryVersion = memoryVersionValue;
+    await this.#queue;
+    return this.#readMemoryFeedbackList(ownerId, memoryId, memoryVersion);
+  }
+
+  /** Persist one owner-scoped, CAS-checked feedback fact in the canonical Ledger. */
+  appendMemoryFeedback(draftValue: MemoryFeedbackEventDraft): Promise<MemoryFeedbackAppendResult> {
+    const draft = MemoryFeedbackEventDraftSchema.parse(draftValue);
+    const ownerId = IdentifierSchema.parse(draft.ownerId);
+    const memoryId = IdentifierSchema.parse(draft.memoryId);
+    return this.#serialize(async () => {
+      const events = await this.#readMemoryFeedbackList(ownerId, memoryId, draft.memoryVersion);
+      const duplicate = events.find((event) => event.idempotencyKey === draft.idempotencyKey);
+      if (duplicate !== undefined) {
+        if (!sameMemoryFeedbackIntent(duplicate, draft)) {
+          throw new EventInvariantError("Memory feedback idempotency key conflicts with a committed fact");
+        }
+        return { event: duplicate, replayed: true };
+      }
+      if (draft.expectedSequence !== events.length) {
+        throw new EventInvariantError(
+          `Memory feedback sequence conflict: expected ${draft.expectedSequence}, found ${events.length}`,
+        );
+      }
+      assertMemoryFeedbackTransition(events, draft);
+      const previous = events.at(-1);
+      const body = {
+        schemaVersion: draft.schemaVersion,
+        eventType: draft.eventType,
+        eventId: this.#idFactory("memory-feedback"),
+        ownerId,
+        memoryId,
+        memoryVersion: draft.memoryVersion,
+        sequence: events.length + 1,
+        action: draft.action,
+        ...(draft.action === "reported" ? {
+          runId: draft.runId,
+          memoryUseId: draft.memoryUseId,
+          contextManifestId: draft.contextManifestId,
+          feedback: draft.feedback,
+        } : { feedbackEventId: draft.feedbackEventId }),
+        actor: draft.actor,
+        idempotencyKey: draft.idempotencyKey,
+        occurredAt: draft.occurredAt,
+        ...(previous === undefined ? {} : { previousEventHash: previous.eventHash }),
+      };
+      if (events.some((event) => event.eventId === body.eventId)) {
+        throw new EventInvariantError("Memory feedback event id factory returned a duplicate identity");
+      }
+      const event = MemoryFeedbackEventSchema.parse({
+        ...body,
+        eventHash: this.#primitives.sha256(this.#primitives.stableStringify(body)),
+      });
+      const path = this.#memoryFeedbackPath(ownerId, memoryId, draft.memoryVersion);
+      await mkdir(dirname(path), { recursive: true, mode: 0o700 });
+      await this.#replaceDurably(
+        path,
+        `${[...events, event].map((item) => JSON.stringify(item)).join("\n")}\n`,
+      );
+      return { event, replayed: false };
     });
   }
 
@@ -142,6 +441,41 @@ export class JsonlEventLedger {
     return this.#readList(runId);
   }
 
+  /** Bounded-work callers use this inventory to recover post-settlement jobs. */
+  async listRunIds(): Promise<string[]> {
+    await this.#queue;
+    await this.initialize();
+    const entries = await readdir(this.#root, { withFileTypes: true });
+    return entries
+      .filter((entry) => entry.isFile() && entry.name.endsWith(".jsonl"))
+      .map((entry) => IdentifierSchema.safeParse(entry.name.slice(0, -".jsonl".length)))
+      .filter((result): result is { success: true; data: string } => result.success)
+      .map(({ data }) => data)
+      .sort();
+  }
+
+  /** Stream run IDs in bounded batches so startup recovery does not materialize the full inventory. */
+  async *iterateRunIdBatches(batchSize = 32): AsyncGenerator<string[]> {
+    if (!Number.isSafeInteger(batchSize) || batchSize < 1 || batchSize > 1_000) {
+      throw new RangeError("Run inventory batch size must be between 1 and 1000");
+    }
+    await this.#queue;
+    await this.initialize();
+    const directory = await opendir(this.#root);
+    let batch: string[] = [];
+    for await (const entry of directory) {
+      if (!entry.isFile() || !entry.name.endsWith(".jsonl")) continue;
+      const parsed = IdentifierSchema.safeParse(entry.name.slice(0, -".jsonl".length));
+      if (!parsed.success) continue;
+      batch.push(parsed.data);
+      if (batch.length === batchSize) {
+        yield batch;
+        batch = [];
+      }
+    }
+    if (batch.length > 0) yield batch;
+  }
+
   async #readList(runId: string): Promise<SessionEvent[]> {
     await this.initialize();
     let content: string;
@@ -182,6 +516,136 @@ export class JsonlEventLedger {
     }
     if (events.filter((event) => isTerminalEventType(event.type)).length > 1) {
       throw new LedgerCorruptionError("multiple terminal events");
+    }
+    return events;
+  }
+
+  async #readMemoryLifecycleList(ownerId: string, memoryId: string): Promise<MemoryLifecycleEvent[]> {
+    await this.initialize();
+    let content: string;
+    try {
+      content = await readFile(this.#memoryLifecyclePath(ownerId, memoryId), "utf8");
+    } catch (error) {
+      if (error instanceof Error && "code" in error && error.code === "ENOENT") return [];
+      throw error;
+    }
+    if (content.length === 0) return [];
+    if (!content.endsWith("\n")) {
+      throw new LedgerCorruptionError("partial trailing Memory lifecycle event");
+    }
+    const events: MemoryLifecycleEvent[] = [];
+    for (const [index, line] of content.split("\n").filter(Boolean).entries()) {
+      let event: MemoryLifecycleEvent;
+      try {
+        event = MemoryLifecycleEventSchema.parse(JSON.parse(line) as unknown);
+      } catch (error) {
+        throw new LedgerCorruptionError(`invalid Memory lifecycle event at sequence ${index + 1}`, { cause: error });
+      }
+      const { eventHash, ...body } = event;
+      const previous = events.at(-1);
+      if (event.ownerId !== ownerId || event.memoryId !== memoryId) {
+        throw new LedgerCorruptionError(`Memory lifecycle aggregate identity mismatch at sequence ${index + 1}`);
+      }
+      if (event.sequence !== index + 1
+        || event.fromStatus !== (previous?.toStatus ?? "candidate")
+        || (previous !== undefined && event.memoryVersion !== previous.memoryVersion)) {
+        throw new LedgerCorruptionError(`Memory lifecycle sequence/status mismatch at sequence ${index + 1}`);
+      }
+      if (event.previousEventHash !== previous?.eventHash) {
+        throw new LedgerCorruptionError(`Memory lifecycle hash chain is broken at sequence ${event.sequence}`);
+      }
+      if (this.#primitives.sha256(this.#primitives.stableStringify(body)) !== eventHash) {
+        throw new LedgerCorruptionError(`Memory lifecycle event hash mismatch at sequence ${event.sequence}`);
+      }
+      events.push(event);
+    }
+    return events;
+  }
+
+  async #readMemoryControlList(ownerId: string, memoryId: string): Promise<MemoryControlEvent[]> {
+    await this.initialize();
+    let content: string;
+    try {
+      content = await readFile(this.#memoryControlPath(ownerId, memoryId), "utf8");
+    } catch (error) {
+      if (error instanceof Error && "code" in error && error.code === "ENOENT") return [];
+      throw error;
+    }
+    if (content.length === 0) return [];
+    if (!content.endsWith("\n")) throw new LedgerCorruptionError("partial trailing Memory control event");
+    const events: MemoryControlEvent[] = [];
+    for (const [index, line] of content.split("\n").filter(Boolean).entries()) {
+      let event: MemoryControlEvent;
+      try {
+        event = MemoryControlEventSchema.parse(JSON.parse(line) as unknown);
+      } catch (error) {
+        throw new LedgerCorruptionError(`invalid Memory control event at sequence ${index + 1}`, { cause: error });
+      }
+      const { eventHash, ...body } = event;
+      const previous = events.at(-1);
+      if (event.ownerId !== ownerId || event.memoryId !== memoryId
+        || event.sequence !== index + 1
+        || event.previousEventHash !== previous?.eventHash
+        || events.some((prior) => prior.idempotencyKey === event.idempotencyKey)
+        || this.#primitives.sha256(this.#primitives.stableStringify(body)) !== eventHash) {
+        throw new LedgerCorruptionError(`Memory control chain is invalid at sequence ${index + 1}`);
+      }
+      if (previous?.action === "deleted") throw new LedgerCorruptionError("Memory control event follows a terminal deletion");
+      if (isMemoryControlCreation(event.action)
+        && events.some((prior) => isMemoryControlCreation(prior.action))) {
+        throw new LedgerCorruptionError("Memory control identity has multiple creation facts");
+      }
+      events.push(event);
+    }
+    return events;
+  }
+
+  async #readMemoryFeedbackList(
+    ownerId: string,
+    memoryId: string,
+    memoryVersion: number,
+  ): Promise<MemoryFeedbackEvent[]> {
+    await this.initialize();
+    let content: string;
+    try {
+      content = await readFile(this.#memoryFeedbackPath(ownerId, memoryId, memoryVersion), "utf8");
+    } catch (error) {
+      if (error instanceof Error && "code" in error && error.code === "ENOENT") return [];
+      throw error;
+    }
+    if (content.length === 0) return [];
+    if (!content.endsWith("\n")) throw new LedgerCorruptionError("partial trailing Memory feedback event");
+    const events: MemoryFeedbackEvent[] = [];
+    for (const [index, line] of content.split("\n").filter(Boolean).entries()) {
+      let event: MemoryFeedbackEvent;
+      try {
+        event = MemoryFeedbackEventSchema.parse(JSON.parse(line) as unknown);
+      } catch (error) {
+        throw new LedgerCorruptionError(`invalid Memory feedback event at sequence ${index + 1}`, { cause: error });
+      }
+      const { eventHash, ...body } = event;
+      const previous = events.at(-1);
+      if (event.ownerId !== ownerId || event.memoryId !== memoryId || event.memoryVersion !== memoryVersion) {
+        throw new LedgerCorruptionError(`Memory feedback aggregate identity mismatch at sequence ${index + 1}`);
+      }
+      if (event.sequence !== index + 1 || event.previousEventHash !== previous?.eventHash) {
+        throw new LedgerCorruptionError(`Memory feedback sequence/hash chain is broken at sequence ${index + 1}`);
+      }
+      if (events.some((prior) => prior.eventId === event.eventId)) {
+        throw new LedgerCorruptionError(`duplicate Memory feedback event id at sequence ${index + 1}`);
+      }
+      if (events.some((prior) => prior.idempotencyKey === event.idempotencyKey)) {
+        throw new LedgerCorruptionError(`duplicate Memory feedback idempotency key at sequence ${index + 1}`);
+      }
+      if (this.#primitives.sha256(this.#primitives.stableStringify(body)) !== eventHash) {
+        throw new LedgerCorruptionError(`Memory feedback event hash mismatch at sequence ${index + 1}`);
+      }
+      try {
+        assertMemoryFeedbackTransition(events, event);
+      } catch (error) {
+        throw new LedgerCorruptionError(`invalid Memory feedback transition at sequence ${index + 1}`, { cause: error });
+      }
+      events.push(event);
     }
     return events;
   }
@@ -247,10 +711,119 @@ export class JsonlEventLedger {
     return join(this.#root, `${runId.replace(/[^A-Za-z0-9_.-]/gu, "_")}.jsonl`);
   }
 
+  #memoryLifecyclePath(ownerId: string, memoryId: string): string {
+    const ownerHash = this.#primitives.sha256(ownerId).slice("sha256:".length);
+    const memoryHash = this.#primitives.sha256(memoryId).slice("sha256:".length);
+    return join(this.#root, "memory", ownerHash, `${memoryHash}.jsonl`);
+  }
+
+  #memoryControlPath(ownerId: string, memoryId: string): string {
+    const ownerHash = this.#primitives.sha256(ownerId).slice("sha256:".length);
+    const memoryHash = this.#primitives.sha256(memoryId).slice("sha256:".length);
+    return join(this.#root, "memory", ownerHash, `${memoryHash}.control.jsonl`);
+  }
+
+  #memoryFeedbackPath(ownerId: string, memoryId: string, memoryVersion: number): string {
+    const ownerHash = this.#primitives.sha256(ownerId).slice("sha256:".length);
+    const memoryHash = this.#primitives.sha256(memoryId).slice("sha256:".length);
+    return join(this.#root, "memory", ownerHash, `${memoryHash}.v${memoryVersion}.feedback.jsonl`);
+  }
+
   #serialize<T>(operation: () => Promise<T>): Promise<T> {
     const result = this.#queue.then(operation, operation);
     this.#queue = result.then(() => undefined, () => undefined);
     return result;
+  }
+}
+
+function sameMemoryLifecycleIntent(
+  event: MemoryLifecycleEvent,
+  draft: MemoryLifecycleEventDraft,
+): boolean {
+  return event.ownerId === draft.ownerId
+    && event.memoryId === draft.memoryId
+    && event.memoryVersion === draft.memoryVersion
+    && event.action === draft.action
+    && event.fromStatus === draft.fromStatus
+    && event.toStatus === draft.toStatus
+    && event.actor.type === draft.actor.type
+    && event.actor.id === draft.actor.id
+    && event.reasonCode === draft.reasonCode
+    && event.relatedMemoryId === draft.relatedMemoryId
+    && event.validUntil === draft.validUntil;
+}
+
+function sameMemoryControlIntent(
+  event: MemoryControlEvent,
+  draft: MemoryControlEventDraft,
+): boolean {
+  if (event.ownerId !== draft.ownerId
+    || event.memoryId !== draft.memoryId
+    || event.memoryVersion !== draft.memoryVersion
+    || event.action !== draft.action
+    || event.actor.type !== draft.actor.type
+    || event.actor.id !== draft.actor.id) return false;
+  if (event.action === "candidate_created" && draft.action === "candidate_created") {
+    return event.contentDigest === draft.contentDigest;
+  }
+  if (event.action === "derived_candidate_created" && draft.action === "derived_candidate_created") {
+    return event.contentDigest === draft.contentDigest
+      && event.episodeId === draft.episodeId
+      && event.sourceDigest === draft.sourceDigest;
+  }
+  if (event.action === "corrected" && draft.action === "corrected") {
+    return event.contentDigest === draft.contentDigest
+      && event.relatedMemoryId === draft.relatedMemoryId;
+  }
+  return event.action === "deleted" && draft.action === "deleted"
+    && event.deletedMemoryIds.length === draft.deletedMemoryIds.length
+    && event.deletedMemoryIds.every((memoryId) => draft.deletedMemoryIds.includes(memoryId))
+    && event.deletedScopeIds.length === draft.deletedScopeIds.length
+    && event.deletedScopeIds.every((scopeId) => draft.deletedScopeIds.includes(scopeId));
+}
+
+function isMemoryControlCreation(action: MemoryControlEvent["action"] | MemoryControlEventDraft["action"]): boolean {
+  return action === "candidate_created" || action === "derived_candidate_created" || action === "corrected";
+}
+
+function sameMemoryFeedbackIntent(
+  event: MemoryFeedbackEvent,
+  draft: MemoryFeedbackEventDraft,
+): boolean {
+  if (event.ownerId !== draft.ownerId
+    || event.memoryId !== draft.memoryId
+    || event.memoryVersion !== draft.memoryVersion
+    || event.action !== draft.action
+    || event.actor.type !== draft.actor.type
+    || event.actor.id !== draft.actor.id) return false;
+  return event.action === "reported" && draft.action === "reported"
+    ? event.runId === draft.runId
+      && event.memoryUseId === draft.memoryUseId
+      && event.contextManifestId === draft.contextManifestId
+      && event.feedback === draft.feedback
+    : event.action === "review_dismissed" && draft.action === "review_dismissed"
+      && event.feedbackEventId === draft.feedbackEventId;
+}
+
+function assertMemoryFeedbackTransition(
+  events: readonly MemoryFeedbackEvent[],
+  next: MemoryFeedbackEventDraft | MemoryFeedbackEvent,
+): void {
+  if (next.action === "reported") {
+    if (events.some((event) => event.action === "reported"
+      && event.runId === next.runId
+      && event.memoryUseId === next.memoryUseId
+      && event.actor.id === next.actor.id)) {
+      throw new EventInvariantError("A user can report feedback only once for a given MemoryUse and version");
+    }
+    return;
+  }
+  const target = events.find((event) => event.eventId === next.feedbackEventId);
+  if (target?.action !== "reported" || (target.feedback !== "incorrect" && target.feedback !== "stale")) {
+    throw new EventInvariantError("Only an unresolved incorrect/stale Memory feedback can be dismissed");
+  }
+  if (events.some((event) => event.action === "review_dismissed" && event.feedbackEventId === target.eventId)) {
+    throw new EventInvariantError("Memory feedback review was already dismissed");
   }
 }
 

@@ -11,11 +11,11 @@ G-12 把语言服务器作为 Core 的语义能力 seam 接入现有 Tool/Receip
 - 生命周期：`stopped → spawning → initializing → ready → unavailable`；server 不存在或初始化失败时 `get_diagnostics` 返回 `status: "unavailable"`，不把失败伪装成空诊断。
 - 工具：`get_diagnostics(paths?, max_items?, severity?)` 返回严格、分页前有界的诊断；完整诊断只作为当前 Tool observation 返回，Ledger 只保存摘要、计数、sample 和 hash。
 - 语义位置：`LspManager.definition()` 与 `references()` 暴露经过 Workspace containment 和相对路径校验的 `LspLocation`，供可信 Host/Core 集成，不把任意 URI 直接传到 Web。
-- 事件：`lsp.diagnostics_received` 与 `lsp.server_unavailable` 追加到 canonical `EventTypeSchema`；`RunProjection.diagnostics_summary` 保存最新的有界摘要。G-20 还会在已有 `code_intel` 时复用同一摘要作为 `code_intel.diagnostics_summary`，不复制完整诊断。当前 canonical Event 共 102 种，`PROJECTOR_VERSION = "tracegraph.projector.v9"`。
+- 事件：`lsp.diagnostics_received` 与 `lsp.server_unavailable` 追加到 canonical `EventTypeSchema`；`RunProjection.diagnostics_summary` 保存最新的有界摘要。G-20 还会在已有 `code_intel` 时复用同一摘要作为 `code_intel.diagnostics_summary`，不复制完整诊断。MEM-042 追加 `memory.use_status` 后，当前 canonical Event 共 103 种，`PROJECTOR_VERSION = "tracegraph.projector.v9"`。
 
-## 2. Core 客户端与 Manager
+## 2. Provider 客户端与 Core 适配器
 
-`packages/core/src/seams/lsp/client.ts` 实现单 server 的 LSP JSON-RPC：
+`packages/lsp/src/client.ts` 实现单 server 的 LSP JSON-RPC：
 
 1. `initialize` / `initialized` 能力协商；
 2. `textDocument/didOpen`、`textDocument/didChange`、`textDocument/didClose`；
@@ -23,9 +23,9 @@ G-12 把语言服务器作为 Core 的语义能力 seam 接入现有 Tool/Receip
 4. `textDocument/definition`、`textDocument/references` 请求；
 5. Content-Length 解帧、JSON-RPC error、超时/取消与优雅停止。
 
-`packages/core/src/seams/lsp/manager.ts` 的 `LspManager` 负责按 `(project, workspace, server)` 的懒 session，`createLspToolsExtension` 把 `get_diagnostics` 接到 ExtensionManager：
+`packages/lsp/src/manager.ts` 的 `LspManager` 负责按 `(project, workspace, server)` 的懒 session。Core 自有的 [`LspRuntimePort`](../../packages/core/src/seams/lsp/ports.ts) 与 [`createLspToolsExtension`](../../packages/core/src/seams/lsp/tool-extension.ts) 把 `get_diagnostics` 接到 ExtensionManager：
 
-- 通过文件扩展名选择唯一 server，读取文件前复用 `resolveWorkspacePath` 与 `assertInside`；
+- 通过文件扩展名选择唯一 server；provider 先 realpath workspace，再解析显式相对路径并验证 containment，拒绝绝对路径、路径穿越和越界 symlink；
 - 每次诊断请求只打开显式 paths，等待一个有界 diagnostics window，再按 severity、稳定路径/位置排序；
 - summary 最多保留 128 条计数、20 条 sample，`diagnostics_hash` 对 bounded window 做去重/对账；
 - server unavailable 只产生 bounded unknown Tool result 和 canonical unavailable 事件；不盲目重试外部进程；
@@ -44,7 +44,7 @@ LSP 诊断不是第二份日志，也不是静态 CodeGraph 的替代品。
 
 - Host `GET /api/lsp` 只返回 strict、bounded server status；没有 manager 的嵌入式 Host 返回 501。
 - SDK 提供 `getLspStatus()`，重新解析 `LspStatusSnapshotSchema`；不会把 command、args、环境或 stderr 暴露给浏览器。
-- CLI 在 MCP/扩展装配后创建 `LspManager`，激活 `@tracegraph/lsp-stdio` Tool extension，并在关闭时停止 LSP child；状态通过 Host control plane 查询。
+- CLI 直接组合 `@tracegraph/lsp` 的 `LspManager` 与 Core-owned Tool adapter，激活 `@tracegraph/lsp-stdio` extension，并在关闭/extension deactivation 时停止 LSP child；状态通过 Host control plane 查询。
 - Web Settings 展示 server state、扩展名、诊断计数和脱敏错误；不会修改 LSP command，也不取得 Workspace 文件内容。
 
 ## 5. 验证映射
@@ -52,8 +52,9 @@ LSP 诊断不是第二份日志，也不是静态 CodeGraph 的替代品。
 | 事实 | 代码 / 测试 |
 | --- | --- |
 | strict config/status/diagnostic/event/projection contract | `packages/contracts/src/lsp.ts`、`packages/contracts/src/lsp-g12.test.ts` |
-| Content-Length stdio、initialize、publishDiagnostics、超时与 stop | `packages/core/src/seams/lsp/client.ts`、`packages/core/src/seams/lsp/lsp.test.ts` |
-| lazy session、workspace containment、bounded summary、unavailable 降级 | `packages/core/src/seams/lsp/manager.ts`、`packages/core/src/seams/lsp/lsp.test.ts` |
+| Content-Length stdio、initialize、publishDiagnostics、超时与 stop | `packages/lsp/src/client.ts`、`packages/lsp/src/lsp.test.ts` |
+| lazy session、workspace containment、bounded summary、unavailable 降级 | `packages/lsp/src/manager.ts`、`packages/lsp/src/lsp.test.ts` |
+| Core Tool bridge、端口和 extension deactivation | `packages/core/src/seams/lsp/tool-extension.ts`、`ports.ts`、`tool-extension.test.ts` |
 | Runtime Tool bridge 与 canonical Trace | `packages/core/src/domains/runtime/runtime.ts`、`packages/core/src/domains/evidence/projection.ts` |
 | Host/SDK status route | `packages/host/src/index.ts`、`packages/host/src/index.test.ts`、`packages/sdk/src/index.ts` |
 | CLI 装配与 Web Settings | `apps/cli/src/index.ts`、`apps/web/src/live-client.ts`、`apps/web/src/components/SettingsPanel.tsx` |

@@ -6,7 +6,7 @@ scope: roadmap
 language: zh-CN
 parent: ../../outlive-agent-v2.md
 machine_readable: roadmap.yaml
-last_reviewed: 2026-09-29
+last_reviewed: 2026-09-30
 ---
 
 # 09 · 实施路线
@@ -122,14 +122,14 @@ P4 与 P5 可在 P2 后并行；P6 应等待 Evidence/Session/API 边界稳定�
 |---|---|---|
 | `PKG-030` | `packages/evidence` | **已完成**：Ledger、Artifact、Projection、Replay 经 `@tracegraph/evidence` 根 API 导出；Core 注入 canonical crypto/redaction 与 Team/Todo projectors，契约测试走公开入口；Action WAL、Recovery Ledger、Attachment 仍留 Core。设计与门槛证据见 [PKG-030 Note](../../../.agents/notes/implemented/2026-09-30-pkg-030-evidence-package-gate.md) |
 | `PKG-031` | `packages/session` | **已完成**：Session JSONL 格式、持久化、查询和 generation migration 经公开根 API 提供；Core 通过兼容 façade 注入 canonical redactor，CLI 为第二直接 consumer；Session-to-Run controller 留在 Core。见 [PKG-031 Note](../../../.agents/notes/implemented/2026-09-30-pkg-031-session-package-gate.md) |
-| `PKG-032` | `mcp`、`lsp` | 已是清晰外部 seam |
-| `PKG-033` | `tool/{tools,executor,policy,approval}` | 副作用强制点需窄 API |
-| `PKG-034` | `context/{context,compaction,spill}` | 多 Provider 与模型可见契约 |
-| `PKG-035` | `boot/profile-loader` | 为多 app 统一组合做准备 |
+| `PKG-032` | `packages/mcp`、`packages/lsp` | **已完成**：stdio providers 与 Core Tool/Runtime 适配分离；Provider 仅依赖 Contracts，CLI 组合；通过包根 focused tests、路径 containment 与 Core adapter 测试。理由、边界和验证见 [PKG-032 Note](../../../.agents/notes/implemented/2026-09-30-pkg-032-mcp-lsp-package-boundaries.md) |
+| `PKG-033` | `packages/tool` | **已完成**：`@tracegraph/tool` 公开 generic Definition/Registry/call validation/单一 Executor/Policy/one-shot Approval/有界输出 API；Core built-ins、Runtime policy snapshot、Workspace/Sandbox authority、Action WAL 与 Receipt/Observation 仍归 Core。硬隔离理由是阻止副作用 enforcement kernel 反向依赖 orchestration，未把内部组合路径声称为第二 consumer。包根 contract tests、最终 deny 顺序回归、17 包边界和 README/module graph 门禁通过。见 [PKG-033 Note](../../../.agents/notes/implemented/2026-09-30-pkg-033-tool-family-package-boundary.md) |
+| `PKG-034` | `packages/context` | **已完成**：`@tracegraph/context` 根 API 拥有确定性组装、compaction、spill/refetch 与 Manifest-to-model-context reconstruction；Core Runtime 是唯一生产 consumer，Note 明确以模型可见信任边界作为硬隔离理由，不虚报第二 consumer。Context 只依赖 contracts、Tool shared helpers 与 Node APIs；Core 保留校准 meter implementation、ArtifactStore、provider 与 Ledger lifecycle。包根 27 项 tests、真实 ArtifactStore Core integration、18 包 boundary、README/module graph 门禁通过。见 [PKG-034 Note](../../../.agents/notes/implemented/2026-09-30-pkg-034-context-package-boundary.md) |
+| `PKG-035` | `apps/cli/src/boot`、`apps/cli/src/profiles` | **已完成（升包门槛裁决）**：当前仅 CLI 是真实 app composition consumer，通用 Profile/Bundle contract 尚未稳定，因此本轮不创建物理 `@tracegraph/boot`。CLI 内部 `tracegraph.resolved-cli-profile.v1` 可确定性 dump/hash；摘要只覆盖显式安全投影，不代替完整 CompositionPlan、权限或 Run manifest。Note、CLI profile contract tests 与模块文档记录了限制和重新评估条件。 |
 
 每升一个 package：添加 README、公开 export、依赖规则、conformance/REAL composition test，并证明旧 import 已清零。Memory family 等 contract V2 稳定后再升，不能先搬一个仍在快速变化的 API。
 
-表中的物理包名是**候选输出**，不是要求一次创建全部。除已完成的 `PKG-030`、`PKG-031` 外，`PKG-032～035` 各自先用[当前升包门槛](../03-package-topology/05-profiles-dependency-gates.md)裁决：边界不稳定、缺第二 consumer/硬隔离理由或缺 contract tests 时，任务记录 Note 并保持 Core 内逻辑模块；通过门槛才创建物理包。下游依赖应消费稳定公开 seam，不应把上游“未升包”误当失败或强行制造空包。
+表中的物理包名是**候选输出**，不是要求一次创建全部。`PKG-030`～`PKG-034` 已通过各自升包门槛；`PKG-035` 已按[当前升包门槛](../03-package-topology/05-profiles-dependency-gates.md)裁决，本轮因通用 Profile/Bundle contract 未稳定且缺少第二个真实应用消费者，保持为 CLI 内部模块。未来满足升包门槛后再单独创建包；下游依赖应消费稳定公开 seam，不应把上游“未升包”误当失败或强行制造空包。
 
 ## 7. Phase 4 · Memory 与 Experience 差异化
 
@@ -137,12 +137,12 @@ P4 与 P5 可在 P2 后并行；P6 应等待 Evidence/Session/API 边界稳定�
 
 | Task | 内容 | 验收 |
 |---|---|---|
-| `MEM-040` | Memory Contract V2：status/scope/provenance/validity/governance/lineage；定 Session/Run 与跨 Session Memory aggregate 的 ownership 边界 | v1 reader/migration；现有记录不丢；Memory stream 不绑定单个来源 Session |
-| `MEM-041` | Candidate/Review/Activate/Dispute/Supersede/Revoke/Expire | 非法状态转移拒绝；事件完整 |
-| `MEM-042` | Context provenance + exact version/digest；区分 retrieved/selected/adapter-invoked；Run-scoped `MemoryUse` 状态 | dispatch intent 先持久化；Manifest 可重建 Runtime 交给 Adapter 的内容；不推断远端接受或模型内部使用 |
-| `MEM-045` | conflict/staleness/use feedback | 依赖生命周期与 MemoryUse 请求状态；unresolved conflict 不静默注入 |
-| `MEM-046` | Inspect/Review/Correct/Revoke/Delete 领域命令与 Desktop/Web UI/CLI 共享控制面 | 候选、来源、冲突和 MemoryUse 请求状态可查；撤销/删除/cross-scope 负测通过 |
-| `MEM-043` | 两阶段 Episode extraction + consolidation | 在 Review 控制面就绪后才自动提取；candidate/diff 可见；lease/backoff/idempotency；主 Run 不阻塞；不静默激活 |
+| `MEM-040` | Memory Contract V2：status/scope/provenance/validity/governance/lineage；定 Session/Run 与跨 Session Memory aggregate 的 ownership 边界 | **已完成**：V1 strict 兼容 schema、V2 executable schema、owner 显式传入、保留 Run scope 的 review-gated adjacent sidecar；原 JSONL/runtime 不切换，迁移记录默认不可使用/导出。见 [MEM-040 Note](../../../.agents/notes/implemented/2026-09-30-mem-040-memory-contract-v2-migration.md) |
+| `MEM-041` | Candidate/Review/Activate/Dispute/Supersede/Revoke/Expire | **已完成**：canonical Evidence Ledger 中的 owner-scoped V2 lifecycle stream、strict transition event、CAS/idempotency/hash-chain 和确定性 replay；非法转移/无效激活 fail closed。G-21 Runtime 仍使用 V1。见 [MEM-041 Note](../../../.agents/notes/implemented/2026-09-30-mem-041-memory-lifecycle.md) |
+| `MEM-042` | Context provenance + exact version/digest；区分 retrieved/selected/adapter-invoked；Run-scoped `MemoryUse` 状态 | **已完成**：canonical V1 Memory attribution 绑定 record version/evidence refs；ContextManifest 绑定渲染内容 digest 与 token estimate；Run Ledger 追加 dispatch intent、adapter invoked、response/failed/unknown 并可回放。只证明 Runtime 交给 Adapter 的请求边界；G-21 V1 store 未切换，未实现 UI/Provider acceptance 证明。见 [MEM-042 Note](../../../.agents/notes/implemented/2026-09-30-mem-042-context-provenance.md) |
+| `MEM-045` | conflict/staleness/use feedback | **已完成**：显式 key + scope 的确定性冲突检测；V2 owner/scope/status/governance/source/validity 资格门；绑定 response-backed MemoryUse、精确版本与 Manifest 的内容无关反馈流；incorrect/stale 待复核阻断、dismissal/replay/CAS/hash-chain。未切换 G-21 V1 Runtime、未增加 UI。见 [MEM-045 Note](../../../.agents/notes/implemented/2026-09-30-mem-045-memory-conflict-feedback.md) |
+| `MEM-046` | Inspect/Review/Correct/Revoke/Delete 领域命令与共享控制面 | **当前实现：**唯一 Core 服务、Evidence Ledger command/event、Host/SDK、CLI 与 Web 可查看候选/来源/冲突/反馈/MemoryUse，并支持审核/纠正/撤销/删除；已覆盖 revoked/deleted/cross-scope 反例。**剩余：**仓库尚无 Desktop client，因此“Desktop 可查看/操作”这一验收项待 DESK-065/CLIENT-068 的 Desktop surface 复用该稳定 seam 后完成。 |
+| `MEM-043` | 两阶段 Episode extraction + consolidation | **当前单 Run 实现切片已验收：**terminal Run Episode projector、settlement 后 owner 级恢复队列、bounded/redacted extraction input、review-gated candidate 与去重/冲突 lineage 已接入 Core；focused/Runtime 验证覆盖恢复、重试/幂等、lease、来源/取消反例、候选审核与 Recall 关闭。Experience Case、跨 Run consolidation 和独立任务状态 UI 留待后续任务；V2 Recall 仍关闭。见 [MEM-043 Note](../../../.agents/notes/implemented/2026-09-30-mem-043-episode-consolidation.md)。 |
 
 ### 7.2 Experience 与用户控制
 
@@ -151,7 +151,7 @@ P4 与 P5 可在 P2 后并行；P6 应等待 Evidence/Session/API 边界稳定�
 | `MEM-044` | Experience Case schema/extractor | 成功、失败、unknown 都能表达；有适用条件 |
 | `MEM-047` | Legacy Capsule v1 | checksum、redaction、quarantine import、review diff |
 
-**执行顺序约束**：先完成契约/事件所有权与可回放的 Context Manifest（MEM-040/042），再提供冲突和可见控制面（MEM-045/046），最后才允许 Episode 自动提取和 consolidation（MEM-043）。自动召回单独受 MemoryUse 请求状态、UI 可见性、撤销/删除和反例测试门控，不因检索实现存在就默认打开。
+**执行顺序约束**：先完成契约/事件所有权与可回放的 Context Manifest（MEM-040/042），再提供确定性冲突/反馈基础（MEM-045）和可见控制面（MEM-046），最后才允许 Episode 自动提取和 consolidation（MEM-043）。自动召回单独受 MemoryUse 请求状态、UI 可见性、撤销/删除和反例测试门控，不因检索实现存在就默认打开。
 
 **退出标准**：能够现场展示“一条长期记忆从可回放的执行证据成为候选，经用户检查和准入后跨 Session 召回；Runtime 交给 Provider Adapter 的请求内容有 Run-scoped MemoryUse 记录；纠正后旧版本退出 Context；删除后回放清楚标注 redacted；导出后仍可校验”的完整链；本地端到端与安全反例通过，Langfuse 外部质量评估不作为本阶段阻塞条件。
 

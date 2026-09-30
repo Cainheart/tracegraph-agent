@@ -1,0 +1,1 @@
+export const MIN_TOOL_RESULT_ENVELOPE_BYTES = 256;

@@ -9,6 +9,7 @@ import { ReplayBanner } from "./components/ReplayBanner";
 import { BrandMark, IconButton, Notice, StatusPill } from "./components/Primitives";
 import { Sidebar } from "./components/Sidebar";
 import { SettingsPanel, type Theme } from "./components/SettingsPanel";
+import { MemoryControlPanel } from "./components/MemoryControlPanel";
 import { Trajectory } from "./components/Trajectory";
 import { ChatView, NoProject, ProjectReady } from "./components/WorkbenchStates";
 import { ReasoningEffortPicker } from "./components/ReasoningEffortPicker";
@@ -174,6 +175,7 @@ function Workbench({ client }: { client: WorkbenchClient }) {
   const [theme, setTheme] = useState<Theme>(initialTheme);
   const [reasoningEffort, setReasoningEffort] = useState<ReasoningEffort>(initialReasoningEffort);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [memoryOpen, setMemoryOpen] = useState(false);
   const [approvalBusy, setApprovalBusy] = useState(false);
   const [approvalError, setApprovalError] = useState<string | null>(null);
   const [planApprovalBusy, setPlanApprovalBusy] = useState(false);
@@ -496,7 +498,7 @@ function Workbench({ client }: { client: WorkbenchClient }) {
         <RunHeader onOpenInspector={() => setDetailsOpen(true)} onStop={() => void cancelRun()} onViewChange={(nextView) => { setView(nextView); if (nextView !== "trajectory") setDetailsOpen(false); if (nextView !== "chat") setLogOpen(false); }} replayReadOnly={replayReadOnly} snapshot={snapshot} stopDisabled={cancelBusy || run?.status === "reconnecting" || run?.inputQueue.pending.some(({ kind }) => kind === "cancel") === true} view={view} />
         {replay && <ReplayBanner error={replayError} onReturnToLive={returnToLive} onStep={(direction) => { setReplayError(null); void client.stepReplay(direction).catch((error: unknown) => setReplayError(error instanceof Error ? error.message : "Replay step failed")); }} replay={replay} />}
         <div className={`workspace ${view === "changes" ? "workspace-changes" : ""} ${view === "chat" ? "workspace-chat" : ""}`}>
-          <Sidebar onChooseProject={chooseProject} onDeleteSession={(sessionId) => client.deleteSession(sessionId)} onOpenLocal={(access) => client.openLocalProject(access)} onOpenSettings={() => setSettingsOpen(true)} onPreviewState={previewState} onRemoveProject={async (projectId) => { await client.removeProject(projectId); }} onResumeSession={resumeSession} onReturnHome={() => void client.returnHome()} onSearchSessions={(query) => client.searchSessions(query)} onSelectProject={(projectId) => void client.chooseProjectById(projectId)} onSelectSession={openSession} readOnly={replayReadOnly} snapshot={snapshot} />
+          <Sidebar onChooseProject={chooseProject} onDeleteSession={(sessionId) => client.deleteSession(sessionId)} onOpenLocal={(access) => client.openLocalProject(access)} onOpenMemory={() => setMemoryOpen(true)} onOpenSettings={() => setSettingsOpen(true)} onPreviewState={previewState} onRemoveProject={async (projectId) => { await client.removeProject(projectId); }} onResumeSession={resumeSession} onReturnHome={() => void client.returnHome()} onSearchSessions={(query) => client.searchSessions(query)} onSelectProject={(projectId) => void client.chooseProjectById(projectId)} onSelectSession={openSession} readOnly={replayReadOnly} snapshot={snapshot} />
 
           {!snapshot.project && !run && <NoProject connection={snapshot.connection} onReasoningEffortChange={setReasoningEffort} onReconnect={reconnect} onStartChat={startChat} reasoningEffort={reasoningEffort} />}
           {snapshot.project && !run && <ProjectReady key={snapshot.project.id} onReasoningEffortChange={setReasoningEffort} onStart={startRun} readonly={!projectCanExecute} reasoningEffort={reasoningEffort} />}
@@ -637,6 +639,16 @@ function Workbench({ client }: { client: WorkbenchClient }) {
         open={settingsOpen && !replayReadOnly}
         theme={theme}
       />
+      {memoryOpen && !replayReadOnly && <MemoryControlPanel
+        onClose={() => setMemoryOpen(false)}
+        {...(snapshot.project?.id === undefined ? {} : { projectId: snapshot.project.id })}
+        onList={() => client.listMemoryControl()}
+        onCreate={(input) => client.createMemoryCandidate(input)}
+        onReview={(memoryId, input) => client.reviewMemory(memoryId, input)}
+        onCorrect={(memoryId, input) => client.correctMemory(memoryId, input)}
+        onRevoke={(memoryId, input) => client.revokeMemory(memoryId, input)}
+        onDelete={(memoryId) => client.deleteMemory(memoryId)}
+      />}
     </div>
   );
 }

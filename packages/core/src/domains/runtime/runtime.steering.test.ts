@@ -28,7 +28,26 @@ const roots: string[] = [];
  */
 const STEERING_TEST_TIMEOUT_MS = 30_000;
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Drains nonblocking background work so temporary data directories can be removed safely. */
+async function drainTrackedRuntimes(): Promise<void> {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
+}
+
+/** Registers a Runtime so teardown can drain its background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 afterEach(async () => {
+  await drainTrackedRuntimes();
   // Several cases deliberately abandon a Runtime mid-Run next to a second
   // writer on the same tree, so a queued ledger/session write can still land
   // while the tree is being walked and surface as ENOTEMPTY on rmdir. force
@@ -65,7 +84,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
         return finishDecision(`decision:${calls}`, "Steering was applied in order.");
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: harness.dataDir, model, maxTurns: 8 });
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model, maxTurns: 8 });
     const started = await runtime.startRun(startInput(harness.workspace));
     await firstCall.promise;
 
@@ -107,7 +126,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
         return new Promise(() => undefined);
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: harness.dataDir, model });
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
     const started = await runtime.startRun(startInput(harness.workspace));
     await entered.promise;
     const first = inputCommand(started, {
@@ -150,7 +169,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
         return new Promise(() => undefined);
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: harness.dataDir, model });
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
     const started = await runtime.startRun(startInput(harness.workspace));
     await entered.promise;
     const body = "opaque-steering-value-9f3e4a72";
@@ -212,7 +231,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
     };
     // This case restarts without a Session store, so the abandoned Runtime owns
     // no Session index write for the two restarts below to wait out.
-    const first = await createAgentRuntime({ dataDir: harness.dataDir, model });
+    const first = await createTrackedRuntime({ dataDir: harness.dataDir, model });
     const started = await first.startRun(startInput(harness.workspace));
     await entered.promise;
     const message = inputCommand(started, {
@@ -230,7 +249,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
       input: { input_id: "input:restart-message" },
     });
 
-    const restarted = await createAgentRuntime({ dataDir: harness.dataDir, model });
+    const restarted = await createTrackedRuntime({ dataDir: harness.dataDir, model });
     await expect(restarted.submitUserInput(message)).resolves.toMatchObject({
       disposition: "duplicate",
       input: { input_id: "input:restart-message" },
@@ -249,7 +268,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
     const cancel = cancelCommand(started, "command:restart-cancel", "input:restart-cancel");
     await first.submitUserInput(cancel);
     await waitForStatus(first, started.run_id, "cancelled");
-    const afterTerminalRestart = await createAgentRuntime({ dataDir: harness.dataDir, model });
+    const afterTerminalRestart = await createTrackedRuntime({ dataDir: harness.dataDir, model });
     await expect(afterTerminalRestart.submitUserInput(cancel)).resolves.toMatchObject({
       disposition: "duplicate",
       input: {
@@ -277,7 +296,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
         return new Promise(() => undefined);
       },
     };
-    const first = await createAgentRuntime({
+    const first = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: new JsonlSessionStore(harness.sessionsRoot, {
         now: () => now,
@@ -301,7 +320,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
       harness.sessionsRoot,
       await first.getProjection(started.run_id),
     );
-    const restarted = await createAgentRuntime({
+    const restarted = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: new JsonlSessionStore(harness.sessionsRoot, { now: () => now }),
       model,
@@ -325,7 +344,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
       harness.sessionsRoot,
       await restarted.getProjection(started.run_id),
     );
-    const restartedAgain = await createAgentRuntime({ dataDir: harness.dataDir, model });
+    const restartedAgain = await createTrackedRuntime({ dataDir: harness.dataDir, model });
     await expect(restartedAgain.submitUserInput({
       ...alias,
       input_id: "input:interrupted-alias-rebound",
@@ -352,7 +371,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
         return finishDecision("decision:namespace:finish", "Namespace remained isolated");
       },
     };
-    const consumeRuntime = await createAgentRuntime({ dataDir: consumeHarness.dataDir, model: consumeModel });
+    const consumeRuntime = await createTrackedRuntime({ dataDir: consumeHarness.dataDir, model: consumeModel });
     const consumeStarted = await consumeRuntime.startRun(startInput(consumeHarness.workspace));
     await entered.promise;
     const inputId = "input:namespace-consumed";
@@ -377,7 +396,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
         return new Promise(() => undefined);
       },
     };
-    const terminalRuntime = await createAgentRuntime({ dataDir: terminalHarness.dataDir, model: terminalModel });
+    const terminalRuntime = await createTrackedRuntime({ dataDir: terminalHarness.dataDir, model: terminalModel });
     const terminalStarted = await terminalRuntime.startRun(startInput(terminalHarness.workspace));
     await terminalEntered.promise;
     await terminalRuntime.submitUserInput(cancelCommand(
@@ -408,7 +427,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
         return new Promise(() => undefined);
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: harness.dataDir, model });
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
     const started = await runtime.startRun(startInput(harness.workspace));
     await entered.promise;
 
@@ -452,7 +471,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
         return new Promise(() => undefined);
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: harness.dataDir, model });
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
     const started = await runtime.startRun(startInput(harness.workspace));
     await entered.promise;
 
@@ -484,7 +503,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
         return new Promise(() => undefined);
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: harness.dataDir, model });
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
     const started = await runtime.startRun(startInput(harness.workspace));
     await entered.promise;
     const command = cancelCommand(
@@ -540,7 +559,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
         });
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       model,
       permissionPolicy: createEffectivePermissionPolicy({
@@ -591,7 +610,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
           : finishDecision("decision:todo-race:ready", "Plan ready for a race");
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: harness.dataDir, model });
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
     const started = await runtime.startRun({ ...startInput(harness.workspace), mode: "plan" });
     const waiting = await waitForStatus(runtime, started.run_id, "awaiting_plan_approval");
 
@@ -662,7 +681,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
           : finishDecision("decision:unused", "unused");
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       model,
       toolRegistry: registry,
@@ -704,7 +723,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
         return finishDecision(`decision:finish:${calls}`, `finish ${calls}`);
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: harness.dataDir, model });
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
     const started = await runtime.startRun(startInput(harness.workspace));
     await entered.promise;
     const queued = runtime.submitUserInput(inputCommand(started, {
@@ -745,7 +764,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
         });
       },
     };
-    const runtime = await createAgentRuntime({ dataDir: harness.dataDir, model, maxTurns: 1 });
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model, maxTurns: 1 });
     const started = await runtime.startRun(startInput(harness.workspace));
     await entered.promise;
     await runtime.submitUserInput(inputCommand(started, {
@@ -789,7 +808,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
       now: () => now,
       pid: 2_147_483_646,
     });
-    const first = await createAgentRuntime({
+    const first = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: firstStore,
       model: planModel,
@@ -854,7 +873,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
       },
     };
     const restartedStore = new JsonlSessionStore(harness.sessionsRoot, { now: () => now });
-    const restarted = await createAgentRuntime({
+    const restarted = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: restartedStore,
       model: executeModel,
@@ -922,7 +941,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
             },
           }
         : undefined;
-      const first = await createAgentRuntime({
+      const first = await createTrackedRuntime({
         dataDir: harness.dataDir,
         sessionStore: new JsonlSessionStore(harness.sessionsRoot, {
           now: () => now,
@@ -965,7 +984,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
 
       await settleSessionIndexBeforeRestart(harness.sessionsRoot, beforeExternalCancel);
       now = new Date("2026-09-19T00:02:00.000Z");
-      const restarted = await createAgentRuntime({
+      const restarted = await createTrackedRuntime({
         dataDir: harness.dataDir,
         sessionStore: new JsonlSessionStore(harness.sessionsRoot, { now: () => now }),
         model,
@@ -1010,7 +1029,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
       now: () => now,
       pid: 2_147_483_646,
     });
-    const first = await createAgentRuntime({
+    const first = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: firstStore,
       model,
@@ -1050,7 +1069,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
     // the restarted Host's to consume, and the abandoned Runtime never indexes
     // it, so waiting on the queued fact itself would wait forever.
     await settleSessionIndexBeforeRestart(harness.sessionsRoot, waiting);
-    const restarted = await createAgentRuntime({
+    const restarted = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: new JsonlSessionStore(harness.sessionsRoot, { now: () => now }),
       model,
@@ -1096,7 +1115,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
       now: () => now,
       pid: 2_147_483_646,
     });
-    const first = await createAgentRuntime({
+    const first = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: firstStore,
       model,
@@ -1153,7 +1172,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
     await settleSessionIndexBeforeRestart(harness.sessionsRoot, waiting);
     now = new Date("2026-09-19T00:02:00.000Z");
     const restartedStore = new JsonlSessionStore(harness.sessionsRoot, { now: () => now });
-    const restarted = await createAgentRuntime({
+    const restarted = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: restartedStore,
       model,

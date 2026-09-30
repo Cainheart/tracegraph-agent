@@ -90,7 +90,7 @@ describe("G18 attachment contracts", () => {
     expect(EventTypeSchema.parse("attachment.added")).toBe("attachment.added");
     expect(EventTypeSchema.parse("attachment.rejected")).toBe("attachment.rejected");
     expect(EventTypeSchema.parse("attachment.offloaded")).toBe("attachment.offloaded");
-    expect(EventTypeSchema.options).toHaveLength(102);
+    expect(EventTypeSchema.options).toHaveLength(103);
   });
 
   it("defaults old projection payloads to an empty attachment list", () => {

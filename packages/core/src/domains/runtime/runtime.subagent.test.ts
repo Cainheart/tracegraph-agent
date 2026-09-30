@@ -20,7 +20,26 @@ import type { ModelAdapter, ModelInput } from "../../kernel/types.js";
 
 const roots: string[] = [];
 
+type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
+
+const trackedRuntimes: TrackedRuntime[] = [];
+
+/** Drains nonblocking background work so temporary data directories can be removed safely. */
+async function drainTrackedRuntimes(): Promise<void> {
+  await Promise.all(trackedRuntimes.splice(0).map((runtime) => runtime.shutdownBackgroundWork?.()));
+}
+
+/** Registers a Runtime so teardown can drain its background work before its data directory goes away. */
+async function createTrackedRuntime(
+  options: Parameters<typeof createAgentRuntime>[0],
+): Promise<TrackedRuntime> {
+  const runtime = await createAgentRuntime(options);
+  trackedRuntimes.push(runtime);
+  return runtime;
+}
+
 afterEach(async () => {
+  await drainTrackedRuntimes();
   await Promise.all(roots.splice(0).map((root) => rm(root, {
     recursive: true,
     force: true,
@@ -73,7 +92,7 @@ describe("G07 Runtime subagent orchestration", () => {
       },
     };
     const sessionStore = new JsonlSessionStore(harness.sessionsRoot);
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore,
       model: rootModel,
@@ -168,7 +187,7 @@ describe("G07 Runtime subagent orchestration", () => {
         return finishDecision("decision:fork-root", "Forked child completed.");
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       model: rootModel,
       subagentRegistry: registry(childModel),
@@ -230,7 +249,7 @@ describe("G07 Runtime subagent orchestration", () => {
           return finishDecision(`decision:budget-root:${scenario}`, "Budget receipt recorded.");
         },
       };
-      const runtime = await createAgentRuntime({
+      const runtime = await createTrackedRuntime({
         dataDir: harness.dataDir,
         model: rootModel,
         subagentRegistry: registry(childModel),
@@ -274,7 +293,7 @@ describe("G07 Runtime subagent orchestration", () => {
         return finishDecision("decision:allowlist-root", "Denial receipt recorded.");
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       model: rootModel,
       subagentRegistry: registry(childModel),
@@ -326,7 +345,7 @@ describe("G07 Runtime subagent orchestration", () => {
         return finishDecision("decision:message-root", "Message-controlled child completed.");
       },
     };
-    const messageRuntime = await createAgentRuntime({
+    const messageRuntime = await createTrackedRuntime({
       dataDir: messageHarness.dataDir,
       model: messageRoot,
       subagentRegistry: registry(messageChild),
@@ -372,7 +391,7 @@ describe("G07 Runtime subagent orchestration", () => {
         return finishDecision("decision:interrupt-root", "Interrupt receipt recorded.");
       },
     };
-    const interruptRuntime = await createAgentRuntime({
+    const interruptRuntime = await createTrackedRuntime({
       dataDir: interruptHarness.dataDir,
       model: interruptRoot,
       subagentRegistry: registry(interruptChild),
@@ -415,7 +434,7 @@ describe("G07 Runtime subagent orchestration", () => {
         return toolDecision("decision:spawn:abort", call.action_id, call.tool_name, call.arguments);
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       model: rootModel,
       subagentRegistry: registry(childModel),
@@ -459,7 +478,7 @@ describe("G07 Runtime subagent orchestration", () => {
         return toolDecision("decision:spawn:restart", call.action_id, call.tool_name, call.arguments);
       },
     };
-    const first = await createAgentRuntime({
+    const first = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore,
       model: rootModel,
@@ -470,7 +489,7 @@ describe("G07 Runtime subagent orchestration", () => {
     await childEntered.promise;
     const active = await waitForActiveSubagent(first, started.run_id, started.project_id);
 
-    const restarted = await createAgentRuntime({
+    const restarted = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore,
       model: rootModel,
@@ -526,7 +545,7 @@ describe("G07 Runtime subagent orchestration", () => {
         return finishDecision("decision:partial-root", "Partial launch reconciled.");
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: failing.store,
       model: rootModel,
@@ -574,7 +593,7 @@ describe("G07 Runtime subagent orchestration", () => {
     };
     let completed: RunProjection;
     try {
-      const runtime = await createAgentRuntime({
+      const runtime = await createTrackedRuntime({
         dataDir: harness.dataDir,
         sessionStore: failing.store,
         model: rootModel,
@@ -628,7 +647,7 @@ describe("G07 Runtime subagent orchestration", () => {
         return finishDecision("decision:preview-parent", "Approval denial receipt recorded.");
       },
     };
-    const runtime = await createAgentRuntime({
+    const runtime = await createTrackedRuntime({
       dataDir: harness.dataDir,
       model: rootModel,
       subagentRegistry: registry(childModel, ["preview_patch"]),
@@ -678,7 +697,7 @@ describe("G07 Runtime subagent orchestration", () => {
         return toolDecision("decision:spawn:persistent-partial", call.action_id, call.tool_name, call.arguments);
       },
     };
-    const first = await createAgentRuntime({
+    const first = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: sabotaged.store,
       model: rootModel,
@@ -699,7 +718,7 @@ describe("G07 Runtime subagent orchestration", () => {
     expect(stranded.subagents.active_count).toBe(1);
     expect(stranded.timeline.some((event) => event.type === "subagent.failed")).toBe(false);
 
-    const restarted = await createAgentRuntime({
+    const restarted = await createTrackedRuntime({
       dataDir: harness.dataDir,
       sessionStore: sabotaged.store,
       model: rootModel,

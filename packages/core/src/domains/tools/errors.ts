@@ -1,6 +1,2 @@
-export class ActionRejectedError extends Error {
-  constructor(readonly code: string, message: string) {
-    super(message);
-    this.name = "ActionRejectedError";
-  }
-}
+/** Core compatibility path; Tool call errors are owned by @tracegraph/tool. */
+export * from "@tracegraph/tool";

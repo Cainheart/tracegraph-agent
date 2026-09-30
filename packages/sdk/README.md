@@ -4,11 +4,11 @@ Typed client for the local TraceGraph Host API. See [module 09](../../docs/modul
 
 ## Purpose
 
-Give CLI/Web consumers a schema-checked HTTP and SSE client for Host operations, Run and Session projections, user commands, and live/model-surface streams.
+Give CLI/Web consumers a schema-checked HTTP and SSE client for Host operations, Run and Session projections, Memory control commands and queries, and live/model-surface streams.
 
 ## Public API
 
-The package root exports `TraceGraphClient`, `TraceGraphHttpError`, client/stream options, response types, and SSE parsing. The manifest exposes the root entry only.
+The package root exports `TraceGraphClient`, `TraceGraphHttpError`, client/stream options, response types, and SSE parsing. The client includes the shared Memory list/create/review/correct/revoke/delete routes and validates their contracts. The manifest exposes the root entry only.
 
 ## Dependencies
 

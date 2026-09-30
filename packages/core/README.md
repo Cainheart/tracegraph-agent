@@ -8,7 +8,7 @@ Run Agents over canonical execution facts: coordinate turn processing, assemble 
 
 ## Public API
 
-The package root exports Runtime creation and interfaces plus constructor-compatible Evidence and Session façades, recovery, context, policy, memory, sandbox, tool, and provider contracts from `src/index.ts`. Ledger, Artifact, Projection, and Replay implementations live in `@tracegraph/evidence`; Core binds its canonical crypto/redaction and Team/Todo projectors through `src/domains/evidence/runtime-service.ts`. Session's JSONL format, persistence, and query implementation lives in `@tracegraph/session`; the local adapter keeps Core's existing constructors and injects canonical title redaction. `DurableSessionController` stays here because it coordinates `AgentRuntime`. Core primitives and shared types live in `src/kernel/`; sandbox, LSP, and MCP adapters live in `src/seams/`. The package-root export names remain the consumer-facing contract.
+The package root exports Runtime creation and interfaces plus constructor-compatible Evidence and Session façades, recovery, context, policy, memory, sandbox, tool, and provider contracts from `src/index.ts`. Memory's opt-in `migrateMemoryJsonlAdjacent()` writes a review-gated V2 sidecar and leaves the current V1 canonical store untouched. `MemoryLifecycleService` records V2 status transitions through owner-scoped Evidence Ledger streams. MEM-042 adds `replayMemoryUseStatus()` for Run-scoped `memory.use_status` events. MEM-045 adds deterministic V2 conflict detection/recall eligibility plus exact-version feedback and replay. MEM-046 adds `MemoryControlService` and a local V2 immutable candidate seed store for inspect/review/correct/revoke/delete, without changing V1 automatic recall or its canonical store. Ledger, Artifact, Projection, and Replay implementations live in `@tracegraph/evidence`; Core binds its canonical crypto/redaction and Team/Todo projectors through `src/domains/evidence/runtime-service.ts`. Session's JSONL format, persistence, and query implementation lives in `@tracegraph/session`; the local adapter keeps Core's existing constructors and injects canonical title redaction. `DurableSessionController` stays here because it coordinates `AgentRuntime`. Core primitives and shared types live in `src/kernel/`; sandbox, LSP, and MCP adapters live in `src/seams/`. The package-root export names remain the consumer-facing contract.
 
 ## Dependencies
 
@@ -16,7 +16,7 @@ It depends on `@tracegraph/contracts`, `@tracegraph/evidence`, `@tracegraph/sess
 
 ## State ownership
 
-Evidence owns canonical Run Event Ledger writes, scoped Artifact persistence, and pure Projection/Replay. Session owns its durable JSONL index, format migration, file safety, and query store; Core retains Session-to-Run lifecycle orchestration. Core also owns Runtime authority and the lifecycle/composition for data-directory stores such as Action WAL, recovery, and Memory records. Retrieval indexes and Telemetry delivery state are separate projections, not replacements for the Ledger.
+Evidence owns canonical Run Event Ledger writes, owner-scoped Memory lifecycle, control and versioned feedback streams, scoped Artifact persistence, and pure Projection/Replay. Session owns its durable JSONL index, format migration, file safety, and query store; Core retains Session-to-Run lifecycle orchestration. Core also owns Runtime authority and the lifecycle/composition for data-directory stores such as Action WAL, recovery, and V1/V2 Memory records. The V2 migration sidecar is an explicit review artifact; V2 lifecycle/control/feedback facts are stored in separate aggregate namespaces within the Evidence Ledger, while MemoryUse status events remain in the corresponding Run stream. None changes the current V1 Runtime store. Retrieval indexes and Telemetry delivery state remain projections, not replacements for their respective canonical facts.
 
 ## Extension points
 
@@ -32,4 +32,4 @@ Run `pnpm run build && pnpm --filter @tracegraph/core test:unit` from the reposi
 
 ## Known limitations
 
-Runtime execution and its in-memory coordination are local to one Host process. Provider behavior depends on the injected implementation; Telemetry is best-effort and does not replace durable Ledger facts.
+Runtime execution and its in-memory coordination are local to one Host process. V2 Memory control queueing is also single-instance; multiple Hosts sharing a dataDir are unsupported. V2 deletion rewrites only the local V2 payload store and does not erase V1 records, audit history, external Artifacts, backups, or filesystem snapshots. Provider behavior depends on the injected implementation; Telemetry is best-effort and does not replace durable Ledger facts.
