@@ -42,6 +42,63 @@ describe("deterministic context assembly", () => {
     expect(built.manifest.token_estimate?.input_tokens).toBe(built.manifest.input_tokens);
   });
 
+  it("keeps validated Experience in its own Context section with case and evidence provenance", () => {
+    const evidence = {
+      kind: "run_event" as const,
+      projectId: "project:experience-context",
+      runId: "run:experience-source",
+      sessionId: "session:experience-source",
+      eventId: "event:experience-source",
+      sequence: 2,
+      eventType: "run.completed",
+      eventHash: sha256("synthetic Experience evidence"),
+    };
+    const content = "Advisory only: run the focused regression before proposing a change.";
+    let id = 0;
+    const builder = new DeterministicContextBuilder({ idFactory: (prefix) => prefix + ":experience:" + (++id) });
+    const built = builder.build({
+      projectId: "project:experience-context",
+      runId: "run:experience-context",
+      turnId: "turn:experience-context",
+      modelCallId: "model-call:experience-context",
+      task: "Apply the matching TypeScript regression experience",
+      workspaceKind: "managed_local",
+      observations: [],
+      retrievedExperience: [{
+        content,
+        attribution: {
+          rank: 1,
+          hitId: "experience-hit:context",
+          caseId: "experience:typescript-regression",
+          caseVersion: 1,
+          contentHash: sha256(content),
+          score: 1,
+          sourcePath: "experience/experience%3Atypescript-regression.md",
+          evidenceRefs: [evidence],
+          injectedTokens: estimateTokens(content),
+        },
+      }],
+    });
+
+    expect(built.modelContext).toContain("[experience] " + content);
+    const item = built.manifest.items.find(({ section }) => section === "experience");
+    expect(item).toMatchObject({
+      action: "retrieved",
+      source: { source_type: "experience", trust: "untrusted" },
+      experience_retrieval: {
+        hitId: "experience-hit:context",
+        caseId: "experience:typescript-regression",
+        caseVersion: 1,
+        evidenceRefs: [evidence],
+      },
+    });
+    expect(built.manifest.nodes?.find(({ section }) => section === "experience")).toMatchObject({
+      kind: "retrieved",
+      section: "experience",
+      experience_retrieval: { hitId: "experience-hit:context", caseVersion: 1 },
+    });
+  });
+
   it("uses a calibrated meter for every section without presenting calibration as exact tokenization", () => {
     const identities: Array<{ provider: string; model: string }> = [];
     const meter: TokenMeter = {
@@ -49,7 +106,7 @@ describe("deterministic context assembly", () => {
       revision: () => 7,
       estimate(input) {
         identities.push({ provider: input.provider, model: input.model });
-        const perSection = { system: 0, goal: 0, history: 0, tool: 0, repo: 0, memory: 0 };
+        const perSection = { system: 0, goal: 0, history: 0, tool: 0, repo: 0, memory: 0, experience: 0 };
         for (const item of input.sections) perSection[item.section] += estimateTokens(item.content) * 2;
         return {
           estimator_id: "heuristic_v2:calibrated",
@@ -113,7 +170,7 @@ describe("deterministic context assembly", () => {
       estimate(input) {
         calls += 1;
         if (calls === 1) {
-          const perSection = { system: 0, goal: 0, history: 0, tool: 0, repo: 0, memory: 0 };
+          const perSection = { system: 0, goal: 0, history: 0, tool: 0, repo: 0, memory: 0, experience: 0 };
           for (const item of input.sections) perSection[item.section] += estimateTokens(item.content);
           return {
             estimator_id: "custom:non-additive",
@@ -130,7 +187,7 @@ describe("deterministic context assembly", () => {
           confidence: "exact",
           input_tokens: 9_000,
           output_tokens: 0,
-          per_section: { system: 0, goal: 0, history: 0, tool: 0, repo: 9_000, memory: 0 },
+          per_section: { system: 0, goal: 0, history: 0, tool: 0, repo: 9_000, memory: 0, experience: 0 },
         };
       },
       observeUsage: async () => { throw new Error("not used in Context construction"); },

@@ -318,7 +318,7 @@ function memoryUseFor(
       confidence: "estimated",
       input_tokens: 2,
       output_tokens: 0,
-      per_section: { system: 0, goal: 0, history: 0, tool: 0, repo: 0, memory: 2 },
+      per_section: { system: 0, goal: 0, history: 0, tool: 0, repo: 0, memory: 2, experience: 0 },
     },
     memory_items: [{
       context_item_id: "context-item:one",

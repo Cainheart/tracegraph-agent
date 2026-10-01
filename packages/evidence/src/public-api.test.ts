@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { SessionEventProposal, TodoList } from "@tracegraph/contracts";
@@ -181,6 +181,50 @@ describe("@tracegraph/evidence public contract", () => {
     expect(replay.projection).toEqual(projection);
     expect(replay.snapshot_hash).toBe(computeReplaySnapshotHash(replay, replayPorts));
     expect(replay.anchor_event_id).toBe(events[1]?.event_id);
+  });
+
+  it("keeps Experience lifecycle in its own owner-scoped Ledger stream with CAS, idempotency, and hash validation", async () => {
+    const root = await temporaryRoot();
+    const ledgerRoot = join(root, "events");
+    const ledger = new JsonlEventLedger(ledgerRoot, { primitives });
+    const draft = {
+      schemaVersion: "tracegraph.experience-lifecycle-event.v1" as const,
+      eventType: "experience.lifecycle.transitioned" as const,
+      ownerId: "owner:experience",
+      caseId: "experience:one",
+      caseVersion: 1,
+      expectedSequence: 0,
+      action: "validate" as const,
+      fromStatus: "candidate" as const,
+      toStatus: "validated" as const,
+      actor: { type: "user" as const, id: "user:one" },
+      reasonCode: "review_accepted" as const,
+      idempotencyKey: "experience-review:one",
+      occurredAt: "2026-10-01T00:00:00.000Z",
+    };
+    const appended = await ledger.appendExperienceLifecycle(draft);
+    expect(await ledger.appendExperienceLifecycle({ ...draft, occurredAt: "2026-10-01T00:01:00.000Z" }))
+      .toEqual({ event: appended.event, replayed: true });
+    expect(await ledger.listExperienceLifecycle("owner:experience", "experience:one"))
+      .toEqual([appended.event]);
+    expect(await ledger.listExperienceLifecycle("owner:other", "experience:one")).toEqual([]);
+    expect(await ledger.list("run:evidence")).toEqual([]);
+    await expect(ledger.appendExperienceLifecycle({
+      ...draft,
+      action: "dispute",
+      fromStatus: "validated",
+      toStatus: "disputed",
+      reasonCode: "user_challenge",
+      idempotencyKey: "experience-review:stale",
+    })).rejects.toThrow(/sequence conflict/u);
+
+    const ownerHash = primitives.sha256(draft.ownerId).slice("sha256:".length);
+    const caseHash = primitives.sha256(draft.caseId).slice("sha256:".length);
+    const path = join(ledgerRoot, "experience", ownerHash, `${caseHash}.jsonl`);
+    const stored = JSON.parse(await readFile(path, "utf8")) as { eventHash: string };
+    stored.eventHash = primitives.sha256("tampered");
+    await writeFile(path, `${JSON.stringify(stored)}\n`);
+    await expect(ledger.listExperienceLifecycle(draft.ownerId, draft.caseId)).rejects.toThrow(/hash mismatch/u);
   });
 });
 

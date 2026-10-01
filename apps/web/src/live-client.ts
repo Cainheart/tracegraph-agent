@@ -2896,6 +2896,7 @@ function mapContextSources(manifest: ContextManifest): readonly ContextSource[] 
     history: "#e0a84b",
     tool: "#4e9bea",
     memory: "#d292e8",
+    experience: "#e17f67",
   };
   return manifest.items.map((item) => {
     const archive = item.artifact_ref?.kind === "spilled_tool_output"
@@ -3084,6 +3085,7 @@ function mapTokenEstimate(value: unknown): ContextTokenEstimateSnapshot | undefi
       tool: parsed.data.per_section.tool,
       repo: parsed.data.per_section.repo,
       memory: parsed.data.per_section.memory,
+      experience: parsed.data.per_section.experience,
     },
   };
 }

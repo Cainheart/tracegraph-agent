@@ -10,6 +10,7 @@ import {
   type ConversationMessage,
   type Observation,
   type RetrievedMemoryHit,
+  type RetrievedExperienceHit,
   type SkillCatalogEntry,
   type TokenEstimate,
   TokenEstimateSchema,
@@ -43,6 +44,8 @@ export interface ContextBuilderInput {
   observations: readonly Observation[];
   /** Ranked, budgeted retrieval hits. They remain untrusted attributed data. */
   retrievedMemory?: readonly RetrievedMemoryHit[];
+  /** Separately reviewed Experience suggestions with independent provenance. */
+  retrievedExperience?: readonly RetrievedExperienceHit[];
   conversationHistory?: readonly ConversationMessage[];
   /** A Host-owned policy. It is recorded in the manifest for replay. */
   contextPolicy?: ContextPolicy;
@@ -128,6 +131,10 @@ export class DeterministicContextBuilder {
         section: "memory" as const,
         content: hit.content,
       })),
+      ...(input.retrievedExperience ?? []).map((hit) => ({
+        section: "experience" as const,
+        content: hit.content,
+      })),
       ...history.map((message) => ({
         section: "history" as const,
         content: `${message.role}: ${message.content}`,
@@ -204,6 +211,34 @@ export class DeterministicContextBuilder {
         reason: "ranked_retrieval_with_source_lines",
         content,
         retrieval,
+      });
+    }
+
+    for (const hit of input.retrievedExperience ?? []) {
+      const remaining = Math.max(0, inputBudget - used);
+      if (remaining <= 0) break;
+      const originalTokens = countTokens(hit.content);
+      const content = originalTokens <= remaining ? hit.content : truncateToTokenBudget(hit.content, remaining, countTokens);
+      if (content.length === 0) continue;
+      const includedTokens = countTokens(content);
+      const experienceRetrieval = { ...hit.attribution, injectedTokens: includedTokens };
+      used += includedTokens;
+      items.push({
+        item_id: this.#idFactory("context-item"),
+        section: "experience",
+        label: `${experienceRetrieval.sourcePath} · ${experienceRetrieval.caseId} v${experienceRetrieval.caseVersion}`,
+        source: {
+          source_id: experienceRetrieval.hitId,
+          source_type: "experience",
+          trust: "untrusted",
+          description: `validated Experience retrieval score=${experienceRetrieval.score}`,
+        },
+        original_tokens: Math.max(originalTokens, includedTokens),
+        included_tokens: includedTokens,
+        action: "retrieved",
+        reason: "validated_experience_with_applicability_and_evidence",
+        content,
+        experience_retrieval: experienceRetrieval,
       });
     }
 
@@ -365,18 +400,19 @@ export class DeterministicContextBuilder {
       reconcileManifestItems(items, finalEstimate);
     }
     const contextNodes: NonNullable<ContextManifest["nodes"]> | undefined =
-      (input.retrievedMemory?.length ?? 0) === 0
+      (input.retrievedMemory?.length ?? 0) + (input.retrievedExperience?.length ?? 0) === 0
         ? undefined
         : items
           .filter((item) => item.included_tokens > 0 && item.content !== undefined)
           .map((item) => ({
         node_id: this.#idFactory("context-node"),
         section: item.section,
-        kind: item.retrieval === undefined ? "raw" : "retrieved",
+        kind: item.retrieval === undefined && item.experience_retrieval === undefined ? "raw" : "retrieved",
         content_hash: sha256(item.content!),
         tokens: item.included_tokens,
         volatile: item.section === "tool",
         ...(item.retrieval === undefined ? {} : { retrieval: item.retrieval }),
+        ...(item.experience_retrieval === undefined ? {} : { experience_retrieval: item.experience_retrieval }),
           }));
     used = finalEstimate.input_tokens;
     checkpointTokens = items
@@ -481,6 +517,10 @@ export class DeterministicContextBuilder {
         section: "memory" as const,
         content: hit.content,
       })),
+      ...(input.retrievedExperience ?? []).map((hit) => ({
+        section: "experience" as const,
+        content: hit.content,
+      })),
       ...(input.conversationHistory ?? []).map((message) => ({
         section: "history" as const,
         content: `${message.role}: ${message.content}`,
@@ -506,6 +546,7 @@ export class DeterministicContextBuilder {
       observations: input.observations,
       conversationHistory: input.conversationHistory ?? [],
       retrievedMemory: input.retrievedMemory ?? [],
+      retrievedExperience: input.retrievedExperience ?? [],
       skillCatalog: input.skillCatalog ?? [],
       policy: basePolicy,
       inputBudget,
@@ -541,6 +582,9 @@ export class DeterministicContextBuilder {
           ...(node.retrieval === undefined
             ? {}
             : { retrieval: { ...node.retrieval, injected_tokens: item.included_tokens } }),
+          ...(node.experience_retrieval === undefined
+            ? {}
+            : { experience_retrieval: { ...node.experience_retrieval, injectedTokens: item.included_tokens } }),
         };
       }
     }
@@ -829,7 +873,7 @@ function scaleEstimatedTokens(content: string, ratio: number): number {
 }
 
 function emptySectionCounts(): Record<ContextSection, number> {
-  return { system: 0, goal: 0, history: 0, tool: 0, repo: 0, memory: 0 };
+  return { system: 0, goal: 0, history: 0, tool: 0, repo: 0, memory: 0, experience: 0 };
 }
 
 /**
@@ -838,7 +882,7 @@ function emptySectionCounts(): Record<ContextSection, number> {
  * every visible token is classified exactly once.
  */
 function reconcileManifestItems(items: ContextManifestItem[], estimate: TokenEstimate): void {
-  for (const section of ["system", "goal", "history", "tool", "repo", "memory"] as const) {
+  for (const section of ["system", "goal", "history", "tool", "repo", "memory", "experience"] as const) {
     const indexes = items
       .map((item, index) => ({ item, index }))
       .filter(({ item }) => item.section === section && item.content !== undefined && item.included_tokens > 0);

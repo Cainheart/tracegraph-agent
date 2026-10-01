@@ -1,14 +1,16 @@
 # 模块 08：Memory 记忆子系统
 
 > 定位：把有来源、可审计的候选事实准入为 canonical Memory，并通过有界检索把相关内容作为不可信 Context 注入模型。  
-> 代码：`packages/core/src/domains/memory/memory.ts`、`memory-lifecycle.ts`、`memory-migration.ts`、`memory-governance.ts`、`memory-control.ts`、`packages/retrieval/src/`、`apps/retrieval-service/src/`、`apps/cli/src/memory-command.ts`、`apps/cli/src/retrieval-config.ts`、`packages/core/src/domains/runtime/runtime.ts`<br>
-> 契约：`packages/contracts/src/memory.ts`、`memory-use.ts`、`memory-governance.ts`、`memory-control.ts`、`event.ts`、`context.ts`<br>
-> 最后核对：2026-09-30
+> 代码：`packages/core/src/domains/memory/memory.ts`、`memory-lifecycle.ts`、`memory-migration.ts`、`memory-governance.ts`、`memory-control.ts`、`legacy-capsule.ts`、`packages/retrieval/src/`、`apps/retrieval-service/src/`、`apps/cli/src/memory-command.ts`、`apps/cli/src/retrieval-config.ts`、`packages/core/src/domains/runtime/runtime.ts`<br>
+> 契约：`packages/contracts/src/memory.ts`、`memory-use.ts`、`memory-governance.ts`、`memory-control.ts`、`legacy-capsule.ts`、`event.ts`、`context.ts`<br>
+> 最后核对：2026-10-01
 > 实现状态：**G-21 已实现**；默认生产路径是本地 JSONL 索引 + BM25，不是向量 RAG
 
 > **V2 边界：**这里同时记录 G-21 Memory 当前行为和已交付的 V2 lifecycle / Context provenance / governance / control-plane API。MEM-041～045 未切换 G-21 Runtime 的 V1 JSONL 真源；MEM-046 增加独立 V2 candidate seed store、统一控制服务、Host/SDK、CLI 与 Web 面板。仓库目前没有 Desktop client；V2 recall 也未接入 G-21。MemoryUse 只记录 Runtime Adapter hand-off 与可观察阶段，不能据此声称模型实际使用了记忆。
 
 > **MEM-040 已交付：**Contracts 同时公开兼容的 `MemoryRecordV1Schema` 与 strict `MemoryRecordV2Schema`；Core 提供显式 `migrateMemoryJsonlAdjacent()`，把 V1 rows 写到同目录的 `records.v2.jsonl` review sidecar。G-21 Runtime 仍只读写 `records.jsonl` V1；sidecar 不会自动成为 canonical store、不会参与 recall，也不会改写现有数据。
+
+> **MEM-047 当前交付：**Core 公开 Legacy Capsule v1 的 `buildLegacyCapsule()` / `verifyLegacyCapsule()` / `previewLegacyCapsuleImport()` / `acceptLegacyCapsuleImport()`；Contracts 约束固定 6 文件格式。仅显式选择、active 且本地允许导出的 Memory 和 validated Experience 可打包，敏感内容会脱敏。导入先返回无写入的 quarantine/diff；显式 accept 后 Memory 变成新的、untrusted、`candidate` V2 record，并关闭 consent/model use/export。Experience 只返回 `externalEvidence: true` 的 candidate，不持久化。无 UI/CLI/ZIP/加密/签名/raw Artifact 内容；checksum 不证明作者或内容真实性。实现与边界见 [MEM-047 Note](../../.agents/notes/implemented/2026-10-01-mem-047-legacy-capsule-v1.md)。
 
 ---
 
@@ -79,6 +81,16 @@ Core 导出 `detectMemoryConflicts()`、`evaluateMemoryRecallEligibility()`、`M
 - **Delete：**先对更正 lineage 全家族追加内容无关 tombstone（包括 family IDs 与 scope IDs），再用 fsync + rename 原子重写 V2 owner record file 移除正文。授权在每次操作重新验证；不可见/跨 scope 的记录以 404 隐藏。已删身份不能由重试创建复活，删除重试返回原 family。此能力只覆盖本机 V2 canonical payload 文件：不清除 G-21 V1 `records.jsonl`、Run/feedback/lifecycle/control 审计事件、备份、快照、外部 Artifact 或文件系统取证残留；因此不能称为 crypto-erase 或全域遗忘。
 
 所有写命令都经过 Host command ID 校验，再追加到现有 Evidence Ledger；控制事件不包含 claim/正文。实现与限制见 [MEM-046 Note](../../.agents/notes/implemented/2026-09-30-mem-046-memory-control-plane.md)。
+
+### 1.5 Legacy Capsule v1（MEM-047）
+
+`@tracegraph/contracts` 定义 strict Capsule manifest、Memory/Experience entry、quarantine 和 accept request schemas；`@tracegraph/core` 以 plain relative-path → UTF-8 file map 提供离线 bundle build/verify/preview/accept，不在领域层读任意文件系统路径。
+
+- **Export：**Memory 必须是 active、`allowExport`、explicit consent、非 secret/unknown sensitivity、非 untrusted/unknown source，并且不能是 `legacy_unclassified`；Experience 必须 validated。Known secret 会脱敏，导出后若仍检测到敏感内容则 fail closed。仅输出来源引用，不输出原始 Event/Artifact。
+- **Verify：**固定路径清单、6-file/4 MiB-per-file/8 MiB-total/500-row bounds、strict YAML/JSONL schemas、canonical JSONL 编码、manifest payload digests 和 `SHA256SUMS` 均须通过。SHA-256 只能校验字节一致性，不验证签名/作者/事实。
+- **Quarantine：**生成 redacted manifest/entry preview 以及按 target project 的 new/duplicate/conflict/experience-candidate 分类和 review digest，不写任何 Memory 或 Ledger。
+- **Accept：**必须重验 bundle bytes、本地 diff 和明确选择 IDs；变化后的本地状态导致 stale-review 拒绝。MemoryControl 为导入 Memory 分配本地身份/owner/scope，在 Evidence Ledger 写内容无关的 `imported_candidate_created`，来源标为 external/untrusted，status 为 candidate，consent/model use/export 全关闭；重复重试幂等。Experience 只返回外部证据标记的 candidate 结果，目前没有可写的 Experience store。
+- **平台边界：**当前 API 不实现 filesystem/ZIP transport、Web/CLI/Desktop UI、加密、签名信任根、raw evidence/artifact opt-in、撤销传播、Experience 持久化或自动激活。完整决策与限制见 [MEM-047 Note](../../.agents/notes/implemented/2026-10-01-mem-047-legacy-capsule-v1.md)。
 
 ---
 

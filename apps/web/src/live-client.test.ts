@@ -1783,7 +1783,7 @@ describe("LiveTraceGraphClient", () => {
         estimatorId: "heuristic:openai:gpt-test:r2",
         confidence: "calibrated",
         inputTokens: 1_000,
-        perSection: { system: 0, goal: 0, history: 0, tool: 0, repo: 1_000, memory: 0 },
+        perSection: { system: 0, goal: 0, history: 0, tool: 0, repo: 1_000, memory: 0, experience: 0 },
       },
       providerUsage: {
         modelCallId: "model_call_current",
@@ -3139,7 +3139,7 @@ function meteredContextEvent(
         input_tokens: 1_000,
         output_tokens: 512,
         cached_tokens: 120,
-        per_section: { system: 100, goal: 100, history: 200, tool: 100, repo: 400, memory: 100 },
+        per_section: { system: 100, goal: 100, history: 200, tool: 100, repo: 400, memory: 100, experience: 0 },
       },
     },
   });
@@ -3191,7 +3191,7 @@ function meteredContextManifest(manifestId: string, modelCallId: string): string
       input_tokens: 1_000,
       output_tokens: 512,
       cached_tokens: 120,
-      per_section: { system: 0, goal: 0, history: 0, tool: 0, repo: 1_000, memory: 0 },
+      per_section: { system: 0, goal: 0, history: 0, tool: 0, repo: 1_000, memory: 0, experience: 0 },
     },
     budget: {
       input_budget_tokens: 7_168,

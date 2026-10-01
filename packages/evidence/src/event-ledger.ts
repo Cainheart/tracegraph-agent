@@ -16,6 +16,8 @@ import {
   MemoryControlEventSchema,
   MemoryLifecycleEventDraftSchema,
   MemoryLifecycleEventSchema,
+  ExperienceLifecycleEventDraftSchema,
+  ExperienceLifecycleEventSchema,
   MemoryUseEventDataSchema,
   MemoryUseRequestSummarySchema,
   Sha256Schema,
@@ -26,6 +28,8 @@ import {
   type MemoryControlEventDraft,
   type MemoryLifecycleEvent,
   type MemoryLifecycleEventDraft,
+  type ExperienceLifecycleEvent,
+  type ExperienceLifecycleEventDraft,
   type MemoryUseRequestSummary,
   type SessionEvent,
   type SessionEventProposal,
@@ -50,6 +54,11 @@ export interface AtomicAppendResult {
 export interface MemoryLifecycleAppendResult {
   readonly event: MemoryLifecycleEvent;
   /** True when the idempotency key resolved to an event committed earlier. */
+  readonly replayed: boolean;
+}
+
+export interface ExperienceLifecycleAppendResult {
+  readonly event: ExperienceLifecycleEvent;
   readonly replayed: boolean;
 }
 
@@ -123,6 +132,69 @@ export class JsonlEventLedger {
     const memoryId = IdentifierSchema.parse(memoryIdValue);
     await this.#queue;
     return this.#readMemoryLifecycleList(ownerId, memoryId);
+  }
+
+  /** Read a separate owner-scoped Experience aggregate stream from the canonical Ledger. */
+  async listExperienceLifecycle(ownerIdValue: string, caseIdValue: string): Promise<ExperienceLifecycleEvent[]> {
+    const ownerId = IdentifierSchema.parse(ownerIdValue);
+    const caseId = IdentifierSchema.parse(caseIdValue);
+    await this.#queue;
+    return this.#readExperienceLifecycleList(ownerId, caseId);
+  }
+
+  /** Persist one CAS-checked Experience lifecycle transition in its own Ledger namespace. */
+  appendExperienceLifecycle(draftValue: ExperienceLifecycleEventDraft): Promise<ExperienceLifecycleAppendResult> {
+    const draft = ExperienceLifecycleEventDraftSchema.parse(draftValue);
+    const ownerId = IdentifierSchema.parse(draft.ownerId);
+    const caseId = IdentifierSchema.parse(draft.caseId);
+    return this.#serialize(async () => {
+      const events = await this.#readExperienceLifecycleList(ownerId, caseId);
+      const duplicate = events.find((event) => event.idempotencyKey === draft.idempotencyKey);
+      if (duplicate !== undefined) {
+        if (!sameExperienceLifecycleIntent(duplicate, draft)) {
+          throw new EventInvariantError("Experience lifecycle idempotency key conflicts with a committed transition");
+        }
+        return { event: duplicate, replayed: true };
+      }
+      if (draft.expectedSequence !== events.length) {
+        throw new EventInvariantError(`Experience lifecycle sequence conflict: expected ${draft.expectedSequence}, found ${events.length}`);
+      }
+      const previous = events.at(-1);
+      if (draft.fromStatus !== (previous?.toStatus ?? "candidate")) {
+        throw new EventInvariantError("Experience lifecycle transition does not follow the aggregate status");
+      }
+      if (previous !== undefined && draft.caseVersion !== previous.caseVersion) {
+        throw new EventInvariantError("Experience lifecycle transition targets a different Case version");
+      }
+      const body = {
+        schemaVersion: draft.schemaVersion,
+        eventType: draft.eventType,
+        eventId: this.#idFactory("experience-event"),
+        ownerId,
+        caseId,
+        caseVersion: draft.caseVersion,
+        sequence: events.length + 1,
+        action: draft.action,
+        fromStatus: draft.fromStatus,
+        toStatus: draft.toStatus,
+        actor: draft.actor,
+        reasonCode: draft.reasonCode,
+        idempotencyKey: draft.idempotencyKey,
+        occurredAt: draft.occurredAt,
+        ...(previous === undefined ? {} : { previousEventHash: previous.eventHash }),
+      };
+      if (events.some((event) => event.eventId === body.eventId)) {
+        throw new EventInvariantError("Experience lifecycle event id factory returned a duplicate identity");
+      }
+      const event = ExperienceLifecycleEventSchema.parse({
+        ...body,
+        eventHash: this.#primitives.sha256(this.#primitives.stableStringify(body)),
+      });
+      const path = this.#experienceLifecyclePath(ownerId, caseId);
+      await mkdir(dirname(path), { recursive: true, mode: 0o700 });
+      await this.#replaceDurably(path, `${[...events, event].map((item) => JSON.stringify(item)).join("\n")}\n`);
+      return { event, replayed: false };
+    });
   }
 
   async listMemoryControl(ownerIdValue: string, memoryIdValue: string): Promise<MemoryControlEvent[]> {
@@ -562,6 +634,46 @@ export class JsonlEventLedger {
     return events;
   }
 
+  async #readExperienceLifecycleList(ownerId: string, caseId: string): Promise<ExperienceLifecycleEvent[]> {
+    await this.initialize();
+    let content: string;
+    try {
+      content = await readFile(this.#experienceLifecyclePath(ownerId, caseId), "utf8");
+    } catch (error) {
+      if (error instanceof Error && "code" in error && error.code === "ENOENT") return [];
+      throw error;
+    }
+    if (content.length === 0) return [];
+    if (!content.endsWith("\n")) throw new LedgerCorruptionError("partial trailing Experience lifecycle event");
+    const events: ExperienceLifecycleEvent[] = [];
+    for (const [index, line] of content.split("\n").filter(Boolean).entries()) {
+      let event: ExperienceLifecycleEvent;
+      try {
+        event = ExperienceLifecycleEventSchema.parse(JSON.parse(line) as unknown);
+      } catch (error) {
+        throw new LedgerCorruptionError(`invalid Experience lifecycle event at sequence ${index + 1}`, { cause: error });
+      }
+      const { eventHash, ...body } = event;
+      const previous = events.at(-1);
+      if (event.ownerId !== ownerId || event.caseId !== caseId) {
+        throw new LedgerCorruptionError(`Experience lifecycle aggregate identity mismatch at sequence ${index + 1}`);
+      }
+      if (event.sequence !== index + 1
+        || event.fromStatus !== (previous?.toStatus ?? "candidate")
+        || (previous !== undefined && event.caseVersion !== previous.caseVersion)) {
+        throw new LedgerCorruptionError(`Experience lifecycle sequence/status mismatch at sequence ${index + 1}`);
+      }
+      if (event.previousEventHash !== previous?.eventHash) {
+        throw new LedgerCorruptionError(`Experience lifecycle hash chain is broken at sequence ${event.sequence}`);
+      }
+      if (this.#primitives.sha256(this.#primitives.stableStringify(body)) !== eventHash) {
+        throw new LedgerCorruptionError(`Experience lifecycle event hash mismatch at sequence ${event.sequence}`);
+      }
+      events.push(event);
+    }
+    return events;
+  }
+
   async #readMemoryControlList(ownerId: string, memoryId: string): Promise<MemoryControlEvent[]> {
     await this.initialize();
     let content: string;
@@ -729,6 +841,12 @@ export class JsonlEventLedger {
     return join(this.#root, "memory", ownerHash, `${memoryHash}.v${memoryVersion}.feedback.jsonl`);
   }
 
+  #experienceLifecyclePath(ownerId: string, caseId: string): string {
+    const ownerHash = this.#primitives.sha256(ownerId).slice("sha256:".length);
+    const caseHash = this.#primitives.sha256(caseId).slice("sha256:".length);
+    return join(this.#root, "experience", ownerHash, `${caseHash}.jsonl`);
+  }
+
   #serialize<T>(operation: () => Promise<T>): Promise<T> {
     const result = this.#queue.then(operation, operation);
     this.#queue = result.then(() => undefined, () => undefined);
@@ -751,6 +869,21 @@ function sameMemoryLifecycleIntent(
     && event.reasonCode === draft.reasonCode
     && event.relatedMemoryId === draft.relatedMemoryId
     && event.validUntil === draft.validUntil;
+}
+
+function sameExperienceLifecycleIntent(
+  event: ExperienceLifecycleEvent,
+  draft: ExperienceLifecycleEventDraft,
+): boolean {
+  return event.ownerId === draft.ownerId
+    && event.caseId === draft.caseId
+    && event.caseVersion === draft.caseVersion
+    && event.action === draft.action
+    && event.fromStatus === draft.fromStatus
+    && event.toStatus === draft.toStatus
+    && event.actor.type === draft.actor.type
+    && event.actor.id === draft.actor.id
+    && event.reasonCode === draft.reasonCode;
 }
 
 function sameMemoryControlIntent(

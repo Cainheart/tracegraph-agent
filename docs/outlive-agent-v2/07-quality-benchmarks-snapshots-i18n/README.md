@@ -28,6 +28,7 @@ flowchart LR
 | [Benchmark 系统](02-benchmark-system.md) | 场景、度量、基线、噪声与回归门槛 |
 | [录制会话 Snapshot](03-recorded-session-snapshots.md) | 录制、脱敏、回放、断言和更新审查 |
 | [Docs、i18n 与 Website](04-docs-i18n-website.md) | 文档真源、翻译、生成站点和发布边界 |
+| [Memory 与 Experience 配对外部评估](05-memory-experience-paired-evaluation.md) | MEM-048 的配对设计、统计口径、隐私边界和报告模板 |
 
 ## 1. 工程验证与产品评估分责
 

@@ -19,7 +19,7 @@ export const TokenConfidenceSchema = z.union([TokenEstimateConfidenceSchema, Tok
 export type TokenConfidence = z.infer<typeof TokenConfidenceSchema>;
 
 /** Shared six-way accounting vocabulary; Context re-exports this as its section schema. */
-export const TokenSectionSchema = z.enum(["system", "goal", "history", "tool", "repo", "memory"]);
+export const TokenSectionSchema = z.enum(["system", "goal", "history", "tool", "repo", "memory", "experience"]);
 export type TokenSection = z.infer<typeof TokenSectionSchema>;
 
 /** Exhaustive by design: every model-visible input token belongs to one section. */

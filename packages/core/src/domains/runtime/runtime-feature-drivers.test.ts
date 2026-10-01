@@ -42,7 +42,7 @@ afterEach(async () => {
 });
 
 describe("Runtime feature-driver contributions", () => {
-  it.each<RuntimeFeatureId>(["memory", "team", "todo", "attachment"])(
+  it.each<RuntimeFeatureId>(["memory", "experience", "team", "todo", "attachment"])(
     "disables %s independently and keeps the other lifecycle contributions active",
     async (disabledFeature) => {
       const harness = await createHarness(disabledFeature);
@@ -85,7 +85,7 @@ describe("Runtime feature-driver contributions", () => {
           .rejects.toMatchObject({ code: "feature_disabled" });
         await expect(runtime.recall(started.run_id, "query"))
           .rejects.toMatchObject({ code: "feature_disabled" });
-      } else {
+      } else if (disabledFeature === "attachment") {
         await expect(access(join(harness.dataDir, "attachments"))).rejects.toMatchObject({ code: "ENOENT" });
         await expect(runtime.stageAttachment({
           commandId: "command:attachment:disabled",
@@ -103,6 +103,9 @@ describe("Runtime feature-driver contributions", () => {
           command_id: "command:start:attachment-disabled",
           attachment_upload_ids: ["upload:disabled"],
         })).rejects.toMatchObject({ code: "feature_disabled" });
+      } else {
+        expect(() => runtime.listExperienceCases({ allowedScopeIds: [started.project_id] }))
+          .toThrow(expect.objectContaining({ code: "feature_disabled" }));
       }
 
       if (disabledFeature === "todo") expect(schemas).toContain("team_read");

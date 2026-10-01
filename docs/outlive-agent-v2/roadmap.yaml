@@ -421,6 +421,9 @@ tasks:
     outputs: [experience-case]
     acceptance:
       - success/failure/partial/unknown 与 applicability/counterexample 可表达
+      - extractor input/result 有界且严格校验；证据引用唯一、来自实际输入并可回到 canonical Run Ledger
+      - 非 unknown outcome 有 evidence-backed verification；Core 只生成确定性 candidate projection
+      - Runtime 自动调度、持久化、审核、检索和上下文注入不在本任务范围
 
   - id: MEM-045
     phase: P4
@@ -459,14 +462,47 @@ tasks:
     depends_on: [MEM-044, MEM-045, PKG-030]
     outputs: [legacy-capsule]
     acceptance:
-      - checksum/redaction/quarantine/diff/explicit-accept 全链通过
+      - v1 uses one strict fixed file set: manifest.yaml, memories.jsonl, experiences.jsonl, policies/usage-consent.yaml, README.md, SHA256SUMS
+      - export is explicitly selected, policy-eligible, redacted, bounded, and excludes raw Events/Artifacts, credentials, approvals, and inherited permissions
+      - offline verification rejects unsupported schemas, noncanonical/unsafe paths, malformed payloads, duplicate JSONL identities/keys, over-limit bundles, and checksum or payload-digest mismatch
+      - preview creates no store or Ledger writes and returns deterministic new/duplicate/conflict/Experience-candidate review with a digest
+      - explicit accept rechecks the exact bundle and current review digest, imports only selected Memory rows as local external/untrusted candidates, and is idempotent on retry
+      - imported Experiences are returned as external-evidence candidates only until an Experience persistence/review aggregate exists
+
+  - id: MEM-049
+    phase: P4
+    title: V2 Memory recall Runtime consumer
+    owner: memory-runtime
+    change_type: behavior
+    depends_on: [MEM-042, MEM-045, MEM-046]
+    outputs: [memory-v2-recall-consumer]
+    acceptance:
+      - V2 Recall 默认关闭；只有 Host 明确启用时才从 V2 Memory 控制面构建 Context，G-21 V1 Recall 路径保持独立
+      - 每次检索先以 owner、workspace/project/run scope、当前 lifecycle/feedback/conflict、有效期、trust、consent 和 governance 快照执行 fail-closed eligibility gate
+      - 只有通过 gate 的确切 Memory id/version 可以进入检索候选；Gate/ledger/store 异常时不回退到未过滤的 V1/V2 结果
+      - ContextManifest 和 Ledger 能追到 Memory id/version、证据引用、retrieved/selected/adapter_invoked 状态；不声称 Provider/model 因果使用
+      - 默认关闭、显式开启、scope/过期/撤销/冲突/反馈阻断、gate 故障与 Context provenance 有 focused/Runtime 负例
+
+  - id: MEM-050
+    phase: P4
+    title: Experience 生命周期与 Runtime 召回消费者
+    owner: experience
+    change_type: behavior
+    depends_on: [MEM-042, MEM-043, MEM-044, MEM-046]
+    outputs: [experience-case-aggregate, experience-review, experience-retrieval-consumer]
+    acceptance:
+      - immutable candidate seed 与 owner/project scoped append-only lifecycle facts 可重放；review/validate、dispute、retire 有 CAS、幂等键和 hash-chain 验证
+      - 只有显式审核的 validated Case 可进入召回，且每次均重新检查 owner/scope、有效性、条件匹配与 counterexamples；异常 fail closed
+      - Runtime 默认不注入 Experience；显式启用时 ContextManifest 能标识 Case/version/source/evidence，并区分检索、选中和 adapter hand-off
+      - Experience 仅作为含适用条件/反例/来源的建议，不直接执行 action，不把被注入或模型自述视作复用成功
+      - candidate、review、replay、scope、stale/dispute/retire、负例和实际 Context hand-off 有 focused/Runtime 行为验证
 
   - id: MEM-048
     phase: P7
     title: Memory 与 Experience 的 Langfuse paired evaluation
     owner: langfuse-integration
     change_type: validation
-    depends_on: [MEM-044, MEM-045]
+    depends_on: [MEM-044, MEM-045, MEM-049, MEM-050]
     outputs: ["external:langfuse-memory-evaluation", "external:langfuse-experience-evaluation"]
     acceptance:
       - 外部独立验证集报告收益、伤害和置信区间；本地安全不变量仍由确定性测试验证

@@ -12,6 +12,7 @@ export type {
   MemoryFeedbackAppendResult,
   MemoryControlAppendResult,
   MemoryLifecycleAppendResult,
+  ExperienceLifecycleAppendResult,
 } from "./event-ledger.js";
 export { projectRun, ProjectionError, toWireEvent } from "./projection.js";
 export {

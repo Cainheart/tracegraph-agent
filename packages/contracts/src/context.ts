@@ -14,6 +14,7 @@ import {
   type TokenSection,
 } from "./token.js";
 import { RetrievalAttributionSchema } from "./memory.js";
+import { ExperienceRetrievalAttributionSchema } from "./experience-lifecycle.js";
 
 /** Shared with token metering so section accounting cannot drift. */
 export const ContextSectionSchema = TokenSectionSchema;
@@ -206,6 +207,7 @@ export const ContextNodeSchema = z.object({
   volatile: z.boolean(),
   superseded_by: IdentifierSchema.optional(),
   retrieval: RetrievalAttributionSchema.optional(),
+  experience_retrieval: ExperienceRetrievalAttributionSchema.optional(),
 }).strict().superRefine((value, context) => {
   if (value.parent_node_id === value.node_id) {
     context.addIssue({
@@ -221,21 +223,29 @@ export const ContextNodeSchema = z.object({
       message: "a Context node cannot supersede itself",
     });
   }
-  if (value.kind === "retrieved" && (value.section !== "memory" || value.retrieval === undefined)) {
+  const hasOneRetrieval = (value.retrieval !== undefined) !== (value.experience_retrieval !== undefined);
+  if (value.kind === "retrieved" && (!hasOneRetrieval
+    || (value.section === "memory" && value.retrieval === undefined)
+    || (value.section === "experience" && value.experience_retrieval === undefined)
+    || (value.section !== "memory" && value.section !== "experience"))) {
     context.addIssue({
       code: "custom",
       path: ["retrieval"],
-      message: "retrieved Context nodes require memory provenance",
+      message: "retrieved Context nodes require section-matched Memory or Experience provenance",
     });
   }
-  if (value.kind === "retrieved" && value.retrieval?.injected_tokens !== value.tokens) {
+  if (value.kind === "retrieved" && value.retrieval !== undefined && value.retrieval.injected_tokens !== value.tokens) {
     context.addIssue({
       code: "custom",
       path: ["tokens"],
       message: "retrieved node tokens must match retrieval evidence",
     });
   }
-  if (value.kind !== "retrieved" && value.retrieval !== undefined) {
+  if (value.kind === "retrieved" && value.experience_retrieval !== undefined
+    && value.experience_retrieval.injectedTokens !== value.tokens) {
+    context.addIssue({ code: "custom", path: ["tokens"], message: "retrieved node tokens must match Experience retrieval evidence" });
+  }
+  if (value.kind !== "retrieved" && (value.retrieval !== undefined || value.experience_retrieval !== undefined)) {
     context.addIssue({ code: "custom", path: ["retrieval"], message: "only retrieved nodes carry retrieval provenance" });
   }
 });
@@ -340,14 +350,19 @@ export const ContextManifestItemSchema = z.object({
   content: z.string().max(12_000).optional(),
   artifact_ref: ArtifactRefSchema.optional(),
   retrieval: RetrievalAttributionSchema.optional(),
+  experience_retrieval: ExperienceRetrievalAttributionSchema.optional(),
 }).strict().superRefine((value, context) => {
   if (value.action === "retrieved") {
-    if (value.section !== "memory" || value.retrieval === undefined || value.content === undefined) {
-      context.addIssue({ code: "custom", path: ["retrieval"], message: "retrieved items require memory content and provenance" });
-    } else if (value.retrieval.injected_tokens !== value.included_tokens) {
+    const memoryHit = value.section === "memory" && value.retrieval !== undefined && value.experience_retrieval === undefined;
+    const experienceHit = value.section === "experience" && value.experience_retrieval !== undefined && value.retrieval === undefined;
+    if ((!memoryHit && !experienceHit) || value.content === undefined) {
+      context.addIssue({ code: "custom", path: ["retrieval"], message: "retrieved items require section-matched content and provenance" });
+    } else if (value.retrieval !== undefined && value.retrieval.injected_tokens !== value.included_tokens) {
       context.addIssue({ code: "custom", path: ["included_tokens"], message: "retrieval token evidence must match included tokens" });
+    } else if (value.experience_retrieval !== undefined && value.experience_retrieval.injectedTokens !== value.included_tokens) {
+      context.addIssue({ code: "custom", path: ["included_tokens"], message: "Experience token evidence must match included tokens" });
     }
-  } else if (value.retrieval !== undefined) {
+  } else if (value.retrieval !== undefined || value.experience_retrieval !== undefined) {
     context.addIssue({ code: "custom", path: ["retrieval"], message: "only retrieved items carry retrieval provenance" });
   }
 });
@@ -585,6 +600,7 @@ export const ContextManifestSchema = z.object({
         tool: 0,
         repo: 0,
         memory: 0,
+        experience: 0,
       };
       for (const node of activeNodes) nodeSectionTotals[node.section] += node.tokens;
       for (const section of TokenSectionSchema.options) {
@@ -614,10 +630,14 @@ export const ContextManifestSchema = z.object({
     const retrievedNodes = activeNodes.filter((node) => node.kind === "retrieved");
     for (const [index, item] of retrievedItems.entries()) {
       const matchingNode = retrievedNodes.find((node) => (
-        node.retrieval !== undefined
-        && item.retrieval !== undefined
-        && node.retrieval.hit_id === item.retrieval.hit_id
-        && node.retrieval.content_hash === item.retrieval.content_hash
+        ((node.retrieval !== undefined
+          && item.retrieval !== undefined
+          && node.retrieval.hit_id === item.retrieval.hit_id
+          && node.retrieval.content_hash === item.retrieval.content_hash)
+        || (node.experience_retrieval !== undefined
+          && item.experience_retrieval !== undefined
+          && node.experience_retrieval.hitId === item.experience_retrieval.hitId
+          && node.experience_retrieval.contentHash === item.experience_retrieval.contentHash))
         && node.tokens === item.included_tokens
       ));
       if (matchingNode === undefined) {
@@ -629,7 +649,10 @@ export const ContextManifestSchema = z.object({
       }
     }
     for (const [index, node] of retrievedNodes.entries()) {
-      if (!retrievedItems.some((item) => item.retrieval?.hit_id === node.retrieval?.hit_id)) {
+      if (!retrievedItems.some((item) => (
+        item.retrieval?.hit_id === node.retrieval?.hit_id
+        || item.experience_retrieval?.hitId === node.experience_retrieval?.hitId
+      ))) {
         context.addIssue({
           code: "custom",
           path: ["nodes", index, "retrieval"],
@@ -679,6 +702,7 @@ export const ContextManifestSchema = z.object({
       tool: 0,
       repo: 0,
       memory: 0,
+      experience: 0,
     };
     for (const item of value.items) itemSectionTotals[item.section] += item.included_tokens;
     for (const section of TokenSectionSchema.options) {

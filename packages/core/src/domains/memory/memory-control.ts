@@ -7,6 +7,7 @@ import {
   MemoryControlListResponseSchema,
   MemoryCorrectionRequestSchema,
   MemoryDerivedCandidateRequestSchema,
+  MemoryCapsuleCandidateImportRequestSchema,
   MemoryDeleteRequestSchema,
   MemoryRecordV2Schema,
   MemoryReviewRequestSchema,
@@ -16,6 +17,7 @@ import {
   type MemoryControlEventDraft,
   type MemoryControlItem,
   type MemoryControlListResponse,
+  type MemoryCapsuleCandidateImportRequest,
   type MemoryRunEvidenceRef,
   type MemoryRecordV2,
   type SessionEvent,
@@ -229,6 +231,13 @@ export class MemoryControlService {
     });
   }
 
+  /** Complete owner snapshot for governance gates; callers must still apply request scope before use. */
+  async listAllForGovernance(): Promise<MemoryControlListResponse> {
+    const stored = await this.#records.list(this.#ownerId);
+    const allowedScopeIds = [...new Set(stored.flatMap((record) => recordScopeIds(record)))];
+    return this.list({ allowedScopeIds });
+  }
+
   createCandidate(inputValue: unknown, scope: MemoryControlScope): Promise<MemoryControlItem> {
     return this.#mutate(() => this.#createCandidate(inputValue, scope));
   }
@@ -236,6 +245,11 @@ export class MemoryControlService {
   /** Core-only path for an extractor result; it can only create a review candidate. */
   createDerivedCandidate(inputValue: unknown): Promise<MemoryControlItem> {
     return this.#mutate(() => this.#createDerivedCandidate(inputValue));
+  }
+
+  /** Explicitly accepted Capsule content becomes a local, untrusted candidate only. */
+  createImportedCandidate(inputValue: unknown, scope: MemoryControlScope): Promise<MemoryControlItem> {
+    return this.#mutate(() => this.#createImportedCandidate(inputValue, scope));
   }
 
   review(memoryId: string, inputValue: unknown, scope: MemoryControlScope): Promise<MemoryControlItem> {
@@ -631,11 +645,119 @@ export class MemoryControlService {
     return this.#item(record, projected.record, projected.sequence);
   }
 
+  async #createImportedCandidate(inputValue: unknown, scope: MemoryControlScope): Promise<MemoryControlItem> {
+    const input: MemoryCapsuleCandidateImportRequest = MemoryCapsuleCandidateImportRequestSchema.parse(inputValue);
+    if (input.project_id !== undefined && !scope.allowedScopeIds.includes(input.project_id)) {
+      throw new MemoryControlError("memory_control_scope_denied", "Imported candidate project is outside the caller's visible scope");
+    }
+    const claim = redactSensitiveText(input.claim).trim();
+    if (claim.length === 0) throw new MemoryControlError("memory_control_invalid_command", "Imported claim is empty after redaction");
+    const normalizedKey = claim === input.claim ? input.normalized_key : undefined;
+    const memoryId = `memory:${sha256(`${this.#ownerId}:${input.source_capsule_id}:${input.source_memory_id}:${input.command_id}`).slice("sha256:".length, 40)}`;
+    const contentDigest = sha256(claim);
+    const records = await this.#records.list(this.#ownerId);
+    const prior = records.find((record) => record.memoryId === memoryId);
+    const controlEvents = await this.#journal.listMemoryControl(this.#ownerId, memoryId);
+    if (controlEvents.some((event) => event.action === "deleted")) {
+      throw new MemoryControlError("memory_control_deleted", "Imported Memory candidate has been deleted");
+    }
+    const priorCreation = controlEvents.find(isMemoryCreationEvent);
+    if (priorCreation !== undefined && (priorCreation.action !== "imported_candidate_created"
+      || priorCreation.contentDigest !== contentDigest
+      || priorCreation.sourceCapsuleId !== input.source_capsule_id
+      || priorCreation.sourceCapsuleDigest !== input.source_capsule_digest
+      || priorCreation.sourceMemoryId !== input.source_memory_id)) {
+      throw new MemoryControlError("memory_control_conflict", "Capsule import command id was reused for different content or provenance");
+    }
+    if (priorCreation !== undefined && prior === undefined) {
+      throw new MemoryControlError("memory_control_corrupt", "Imported candidate fact has no matching immutable payload");
+    }
+
+    const now = this.#now().toISOString();
+    const record = prior ?? MemoryRecordV2Schema.parse({
+      schemaVersion: 2,
+      memoryId,
+      version: 1,
+      kind: input.kind,
+      claim,
+      contentDigest,
+      ...(normalizedKey === undefined ? {} : { normalizedKey }),
+      status: "candidate",
+      scope: { ownerId: this.#ownerId, ...(input.project_id === undefined ? {} : { projectId: input.project_id }), visibility: "private" },
+      provenance: {
+        origin: "external",
+        evidenceRefs: [{
+          source_id: `capsule:${input.source_capsule_id}:memory:${input.source_memory_id}`,
+          source_type: "memory",
+          trust: "untrusted",
+          description: `Imported Memory ${input.source_memory_id} from a Legacy Capsule`,
+        }],
+        createdBy: { type: "user", id: this.#actorId },
+      },
+      assessment: { sourceTrust: "untrusted", verification: "unclassified" },
+      validity: {
+        validFrom: input.source_valid_from,
+        ...(input.source_valid_until === undefined ? {} : { validUntil: input.source_valid_until }),
+        applicability: [],
+        invalidators: [],
+      },
+      governance: {
+        sensitivity: input.sensitivity,
+        consent: "none",
+        retentionPolicy: "user-managed",
+        allowModelUse: false,
+        allowExport: false,
+      },
+      lineage: { supersedes: [], contradictedBy: [], derivedFrom: [] },
+      createdAt: now,
+      updatedAt: now,
+    });
+    const priorSourceRef = prior?.provenance.evidenceRefs[0];
+    if (prior !== undefined && (prior.status !== "candidate"
+      || prior.claim !== claim
+      || prior.contentDigest !== contentDigest
+      || prior.kind !== input.kind
+      || prior.normalizedKey !== normalizedKey
+      || prior.scope.ownerId !== this.#ownerId
+      || prior.scope.projectId !== input.project_id
+      || prior.provenance.origin !== "external"
+      || prior.provenance.createdBy.id !== this.#actorId
+      || priorSourceRef === undefined
+      || !("source_id" in priorSourceRef)
+      || priorSourceRef.source_id !== `capsule:${input.source_capsule_id}:memory:${input.source_memory_id}`
+      || prior.validity.validFrom !== input.source_valid_from
+      || prior.validity.validUntil !== input.source_valid_until
+      || prior.governance.sensitivity !== input.sensitivity
+      || prior.governance.consent !== "none"
+      || prior.governance.allowModelUse
+      || prior.governance.allowExport)) {
+      throw new MemoryControlError("memory_control_conflict", "Capsule import identity already belongs to different immutable content");
+    }
+    if (prior === undefined) await this.#records.writeCandidate(record);
+    try {
+      if (priorCreation === undefined) {
+        await this.#appendControl(record, {
+          action: "imported_candidate_created",
+          sourceCapsuleId: input.source_capsule_id,
+          sourceCapsuleDigest: input.source_capsule_digest,
+          sourceMemoryId: input.source_memory_id,
+          idempotencyKey: input.command_id,
+        });
+      }
+    } catch (error) {
+      if (prior === undefined) await this.#records.delete(this.#ownerId, [memoryId]);
+      throw error;
+    }
+    const projected = await this.#lifecycle.read(record);
+    return this.#item(record, projected.record, projected.sequence);
+  }
+
   async #appendControl(
     record: MemoryRecordV2,
     action: { action: "corrected"; relatedMemoryId: string; idempotencyKey: string }
       | { action: "candidate_created"; idempotencyKey: string }
       | { action: "derived_candidate_created"; episodeId: string; sourceDigest: string; actor: { type: "system"; id: string }; idempotencyKey: string }
+      | { action: "imported_candidate_created"; sourceCapsuleId: string; sourceCapsuleDigest: string; sourceMemoryId: string; idempotencyKey: string }
       | { action: "deleted"; deletedMemoryIds: readonly string[]; deletedScopeIds: readonly string[]; idempotencyKey: string },
   ): Promise<MemoryControlEvent> {
     const events = await this.#journal.listMemoryControl(this.#ownerId, record.memoryId);
@@ -647,10 +769,15 @@ export class MemoryControlService {
       memoryVersion: record.version,
       expectedSequence: events.length,
       action: action.action,
-      ...(action.action === "candidate_created" || action.action === "corrected" || action.action === "derived_candidate_created"
+      ...(action.action === "candidate_created" || action.action === "corrected" || action.action === "derived_candidate_created" || action.action === "imported_candidate_created"
         ? { contentDigest: record.contentDigest ?? sha256(record.claim) }
         : {}),
       ...(action.action === "derived_candidate_created" ? { episodeId: action.episodeId, sourceDigest: action.sourceDigest } : {}),
+      ...(action.action === "imported_candidate_created" ? {
+        sourceCapsuleId: action.sourceCapsuleId,
+        sourceCapsuleDigest: action.sourceCapsuleDigest,
+        sourceMemoryId: action.sourceMemoryId,
+      } : {}),
       ...(action.action === "corrected" ? { relatedMemoryId: action.relatedMemoryId } : {}),
       ...(action.action === "deleted" ? { deletedMemoryIds: action.deletedMemoryIds } : {}),
       ...(action.action === "deleted" ? { deletedScopeIds: action.deletedScopeIds } : {}),
@@ -711,9 +838,10 @@ function hasScopeAccess(record: MemoryRecordV2, scope: MemoryControlScope): bool
   return recordScopeIds(record).every((id) => scope.allowedScopeIds.includes(id));
 }
 
-function isMemoryCreationEvent(event: MemoryControlEvent): event is Extract<MemoryControlEvent, { action: "candidate_created" | "derived_candidate_created" | "corrected" }> {
+function isMemoryCreationEvent(event: MemoryControlEvent): event is Extract<MemoryControlEvent, { action: "candidate_created" | "derived_candidate_created" | "imported_candidate_created" | "corrected" }> {
   return event.action === "candidate_created"
     || event.action === "derived_candidate_created"
+    || event.action === "imported_candidate_created"
     || event.action === "corrected";
 }
 

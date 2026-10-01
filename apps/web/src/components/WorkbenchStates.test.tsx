@@ -289,7 +289,7 @@ describe("Chat workbench", () => {
         inputTokens: 1_000,
         outputTokens: 512,
         cachedTokens: 120,
-        perSection: { system: 100, goal: 100, history: 200, tool: 100, repo: 400, memory: 100 },
+        perSection: { system: 100, goal: 100, history: 200, tool: 100, repo: 400, memory: 100, experience: 0 },
       },
       providerUsage: {
         modelCallId: "model_call_usage",

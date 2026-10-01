@@ -148,8 +148,10 @@ P4 与 P5 可在 P2 后并行；P6 应等待 Evidence/Session/API 边界稳定�
 
 | Task | 内容 | 验收 |
 |---|---|---|
-| `MEM-044` | Experience Case schema/extractor | 成功、失败、unknown 都能表达；有适用条件 |
-| `MEM-047` | Legacy Capsule v1 | checksum、redaction、quarantine import、review diff |
+| `MEM-044` | Experience Case schema/extractor | **已完成：**strict/bounded Experience Case contract 表达 success/failure/partial/unknown、applicability 与 counterexamples；显式 ModelAdapter extractor 和 Core validator 将唯一证据序号解析为 canonical Run Ledger refs，并只投影 deterministic `candidate`。持久化、审核、检索与 Context 消费由后续独立的 MEM-050 实现。见 [MEM-044 Note](../../../.agents/notes/implemented/2026-10-01-mem-044-experience-case-extractor.md)。 |
+| `MEM-049` | V2 Memory Runtime 召回消费者 | **已完成：**Host 显式开关默认关闭；V2 每 turn 重新读取完整 owner/scope 快照并先执行资格门，只对精确 eligible id/version 检索，失败时 fail closed 且不回退 V1。Focused Runtime 测试验证默认关闭、策略负例、来源与真实 Adapter handoff。见 [MEM-049 Note](../../../.agents/notes/implemented/2026-10-01-mem-049-v2-memory-recall-runtime.md)。 |
+| `MEM-050` | Experience 生命周期与 Runtime 召回消费者 | **已完成：**Experience 独立 owner-scoped Ledger aggregate、CAS/幂等/replay 生命周期，以及 validated-only、scope/applicability/counterexample 召回；Runtime 默认关闭，独立 Context provenance 贯穿 Adapter handoff。Focused 生命周期与 Runtime 行为测试通过。见 [MEM-050 Note](../../../.agents/notes/implemented/2026-10-01-mem-050-experience-lifecycle-consumer.md)。 |
+| `MEM-047` | Legacy Capsule v1 | **已完成：**固定 6 文件 v1 format、严格 checksum/schema/size/path 校验、选择性导出与 secret redaction、无副作用 quarantine diff、stale-review 防护和显式 accept。Memory 只以 external/untrusted/candidate 写入本地 V2 控制面；Experience 仅返回带外部证据标记的 candidate、不持久化。无 UI/CLI/ZIP/签名/加密/raw Artifact 导出。见 [MEM-047 Note](../../../.agents/notes/implemented/2026-10-01-mem-047-legacy-capsule-v1.md)。 |
 
 **执行顺序约束**：先完成契约/事件所有权与可回放的 Context Manifest（MEM-040/042），再提供确定性冲突/反馈基础（MEM-045）和可见控制面（MEM-046），最后才允许 Episode 自动提取和 consolidation（MEM-043）。自动召回单独受 MemoryUse 请求状态、UI 可见性、撤销/删除和反例测试门控，不因检索实现存在就默认打开。
 
@@ -191,7 +193,7 @@ Desktop 技术选择必须先有 Note；当前倾向 Electron，不在任务里�
 | `SNAP-071` | recovery/cancel/memory/subagent 四组场景 | workspace 与事件均比较 |
 | `BENCH-072` | benchmark harness + machine report | raw samples、budget、环境信息 |
 | `BENCH-073` | 首批 8 条用户路径基线 | 负优化 CI 可见；更新需显式 |
-| `MEM-048` | Memory/Experience 的 Langfuse paired evaluation | 独立验证集报告收益/伤害；外部评估不替代本地安全测试 |
+| `MEM-048` | Memory/Experience 的 Langfuse paired evaluation | **已完成首轮本机合成 pilot，`exploratory-inconclusive`：**Memory 24 wins/24 ties，`+50.0 pp`（95% CI `[+50.0,+50.0]`）；Experience 32 wins/16 ties，`+66.7 pp`（95% CI `[+66.7,+66.7]`）；均为 48 项，0 treatment 退化。Langfuse run/score/trace 已读回；点区间由单次合成任务样本与任务族内一致结果造成，不代表真实分布收益或一般性无伤害。真实分布评估归 `EVAL-074`。见[配对方案与报告](../07-quality-benchmarks-snapshots-i18n/05-memory-experience-paired-evaluation.md) 和 [MEM-048 Note](../../../.agents/notes/implemented/2026-10-01-mem-048-langfuse-paired-evaluation.zh.md)。 |
 | `EVAL-074` | Langfuse Memory 质量评估（外部、可选） | 评估相关性/新鲜度/引用和 Experience 收益；leak/revoked/scope/injection 仍由本地负例门禁证明 |
 | `I18N-075` | client locale package + terminology | Web/Desktop/TUI 同 key；fallback 可测 |
 | `DOC-076` | bilingual pair/YAML checker | hash/结构/链接漂移失败 |
@@ -222,7 +224,7 @@ Star 不是工程验收项，但这三条公开证明比“支持几十个工具
 ### 不可并行
 
 - 在 canonical event contract 未冻结前同时拆 Evidence 和改协议；
-- 在 Memory V2 migration 未完成前做 Capsule；
+- 将 Capsule 当成 G-21 V1 Memory store migration 或 Runtime Recall 开关；Capsule v1 只经 V2 控制面导入为 untrusted candidate，迁移与 Recall 仍分别受其路线任务治理；
 - 在 Controller/transport 未分离前让 Desktop 直接调用 Host internals；
 - 在现有 CLI 纵向 e2e、Ledger replay 和外部工作区行为基线未固定前大改 Agent Loop；
 - 在 current docs 更新前对外发布 V2 承诺。

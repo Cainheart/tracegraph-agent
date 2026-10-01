@@ -105,7 +105,7 @@ Current 证据详见[模块 08：Memory 记忆子系统](../../modules/08-Memory
 
 在 V2 目标中，Session/Run 与 Memory 使用同一套规范 Event Ledger / event envelope、迁移和审计规则，但属于不同的 aggregate/stream；**不是**第二套互相独立的 Memory Journal，也不是把每条全局记忆复制到全部 Session。索引、列表和当前状态均为可重建投影；memory scope 必须在每次读写时重新授权。
 
-MEM-040 已落地 V1/V2 record contracts、owner/source scope 边界，以及保留旧 JSONL 的相邻迁移工具。MEM-041 已在既有 canonical Evidence Ledger 中实现按 owner+memory 隔离的 lifecycle aggregate stream。MEM-042 已将 canonical V1 record version/evidence refs 绑定到 Context retrieval provenance，并把 MemoryUse 状态追加到当前 Run stream。MEM-045 增加 V2 确定性冲突检测、有效期/治理/scope 召回门，以及仅关联已 response MemoryUse 的 owner+memory+version 反馈流和重放投影。MEM-046 增加本地 V2 candidate seed store、统一 Core 控制服务、Host/SDK 命令查询 seam、CLI 命令与 Web 面板；创建、纠正和删除的控制事实进入既有 Evidence Ledger，review/correct/revoke 通过 lifecycle stream 回放，删除家族先提交内容无关 tombstone 再清除 V2 canonical payload。MEM-043 增加完整 hash-chain 校验的单 Run Episode projector，以及 settlement 后可恢复的 owner 串行后台队列；提取输入为 allowlist + redaction 后的有界事件摘要/receipt，候选证据必须来自模型实际收到的事件，输出经 MemoryControlService 写成不可静默激活的 V2 candidate。队列状态只保存来源摘要、尝试次数和错误码；模型未配置时保持 waiting，配置后可恢复。MEM-043 的 focused/runtime 行为验证已通过，当前只覆盖“一次 terminal Run → 一个 Episode”，不做 Experience Case、跨 Run 合并或独立持久 Episode store。Host 从当前可见项目派生 scope allowlist，不能接受客户端指定 owner/actor。MEM-046 未切换 G-21 V1 Runtime、未建立 Desktop client，也不清理备份/快照、Run 审计历史或 V1 正文；不能把文件重写等同于 crypto-erase。MemoryUse 事件证明 Runtime Adapter hand-off 边界，反馈证明用户针对一次 response-backed MemoryUse 提交了评价，二者都不是 Provider 接收/模型因果使用证据。历史 Session event 保留策略、加密正文/密钥/备份的删除语义仍需 ADR；禁止双真源、双写或“新索引覆盖旧记录”。
+MEM-040 已落地 V1/V2 record contracts、owner/source scope 边界，以及保留旧 JSONL 的相邻迁移工具。MEM-041 已在既有 canonical Evidence Ledger 中实现按 owner+memory 隔离的 lifecycle aggregate stream。MEM-042 已将 canonical V1 record version/evidence refs 绑定到 Context retrieval provenance，并把 MemoryUse 状态追加到当前 Run stream。MEM-045 增加 V2 确定性冲突检测、有效期/治理/scope 召回门，以及仅关联已 response MemoryUse 的 owner+memory+version 反馈流和重放投影。MEM-046 增加本地 V2 candidate seed store、统一 Core 控制服务、Host/SDK 命令查询 seam、CLI 命令与 Web 面板；创建、纠正和删除的控制事实进入既有 Evidence Ledger，review/correct/revoke 通过 lifecycle stream 回放，删除家族先提交内容无关 tombstone 再清除 V2 canonical payload。MEM-043 增加完整 hash-chain 校验的单 Run Episode projector，以及 settlement 后可恢复的 owner 串行后台队列；提取输入为 allowlist + redaction 后的有界事件摘要/receipt，候选证据必须来自模型实际收到的事件，输出经 MemoryControlService 写成不可静默激活的 V2 candidate。队列状态只保存来源摘要、尝试次数和错误码；模型未配置时保持 waiting，配置后可恢复。MEM-043 的 focused/runtime 行为验证已通过，当前只覆盖“一次 terminal Run → 一个 Episode”，不负责 Experience Case 生命周期、跨 Run 合并或独立持久 Episode store。MEM-044 已提供有界 Experience Case contract、可显式调用的可选 ModelAdapter extractor 和只生成 candidate 的 Core validator；未接入 Runtime 自动调度。Host 从当前可见项目派生 scope allowlist，不能接受客户端指定 owner/actor。MEM-046 未切换 G-21 V1 Runtime、未建立 Desktop client，也不清理备份/快照、Run 审计历史或 V1 正文；不能把文件重写等同于 crypto-erase。MemoryUse 事件证明 Runtime Adapter hand-off 边界，反馈证明用户针对一次 response-backed MemoryUse 提交了评价，二者都不是 Provider 接收/模型因果使用证据。历史 Session event 保留策略、加密正文/密钥/备份的删除语义仍需 ADR；禁止双真源、双写或“新索引覆盖旧记录”。
 
 记忆正文可采用加密、内容寻址的 Artifact 引用，事件保留稳定 ID、版本、摘要/hash 和治理动作，不在不可变事件里反复复制敏感正文。物理删除或 crypto-erase 后，事件与回放只能显示 `redacted/unavailable`，不得悄悄换成新版本。加密域、密钥生命周期、备份清理和可恢复性仍需 ADR 裁决；“事件追加式”不能被误解成禁止用户依法/依策略删除内容。
 
@@ -119,7 +119,7 @@ MEM-040 已落地 V1/V2 record contracts、owner/source scope 边界，以及保
 
 ## 4. Memory Contract V2
 
-下面是版本化 V2 contract 及其生命周期目标。MEM-040 已为记录字段提供可执行 schema，MEM-041 已实现 review 驱动的状态转移与 Memory lifecycle stream，MEM-042 已实现 Context provenance 与 Run-scoped MemoryUse 记录，MEM-045 已实现确定性冲突/召回资格 API 与使用反馈 stream/replay。MEM-046 已实现本地 V2 candidate seed store、统一 Core/Host/SDK seam、CLI 与 Web 控制面；MEM-043 单 Run Episode 实现切片及 focused/runtime 行为验收已完成。本仓没有 Desktop client；V2 Recall 接入 G-21 Runtime 和完整加密/备份删除治理也未实现：
+下面是版本化 V2 contract 及其生命周期目标。MEM-040 已为记录字段提供可执行 schema，MEM-041 已实现 review 驱动的状态转移与 Memory lifecycle stream，MEM-042 已实现 Context provenance 与 Run-scoped MemoryUse 记录，MEM-045 已实现确定性冲突/召回资格 API 与使用反馈 stream/replay。MEM-046 已实现本地 V2 candidate seed store、统一 Core/Host/SDK seam、CLI 与 Web 控制面；MEM-043 单 Run Episode 实现切片及 focused/runtime 行为验收已完成；MEM-044 已增加有界 Experience Case 契约、显式 extractor adapter seam 和只生成 candidate 的 Core validator。本仓没有 Desktop client；V2 Recall 接入 G-21 Runtime 和完整加密/备份删除治理也未实现：
 
 ```ts
 type MemoryKind =
@@ -211,29 +211,31 @@ interface MemoryRecordV2 {
 ## 5. Experience Case Contract
 
 ```ts
-interface ExperienceCaseV1 {
-  experienceId: ExperienceId;
+interface ExperienceCase {
+  schemaVersion: "tracegraph.experience-case.v1";
+  caseId: Identifier;
   title: string;
-  problem: string;
-  context: EvidenceRef[];
-  constraints: string[];
-  decision: string;
-  alternatives: Array<{ option: string; rejectedBecause: string }>;
-  actions: Array<{
-    description: string;
-    toolCallRefs: ToolCallId[];
-    receiptRefs: ReceiptId[];
-  }>;
-  outcome: "succeeded" | "failed" | "partial" | "unknown";
-  verificationRefs: EvidenceRef[];
-  lessons: string[];
-  applicability: string[];
-  counterexamples: string[];
-  status: "candidate" | "active" | "superseded" | "revoked";
+  version: number;
+  projectId: Identifier;
+  episodeId: Identifier;
+  sourceDigest: Sha256;
+  extractorId: Identifier;
+  situation: { conditions: ExperienceCondition[] };
+  objective: string;
+  actions: ExperienceActionPattern[];
+  outcome: { kind: "success" | "failure" | "partial" | "unknown"; summary: string; evidenceRefs: EvidenceRef[] };
+  verification: ExperienceVerificationRef[];
+  counterexamples: ExperienceCounterexample[];
+  applicability: ExperienceScopeRule[];
+  evidenceRefs: EvidenceRef[];
+  confidence?: number;
+  status: "candidate" | "validated" | "disputed" | "retired";
 }
 ```
 
-Experience 的价值来自 `applicability` 和 `counterexamples`。没有适用条件的“最佳实践”极易污染未来任务。
+Extractor wire draft 使用 `evidenceSequences` 引用最多 256 条 bounded/redacted Episode 事件，最多生成 4 个 Case；Core 将其解析为 Run-scoped `EvidenceRef`，并对照 canonical Ledger。条件、行动、结果、验证、适用规则和反例都必须引用实际输入中的序号，单个字段内不允许重复。已知 outcome 必须含至少一项 evidence-backed verification；Extractor 无法设置身份、版本或生命周期状态。模型置信度不构成验证。
+
+MEM-044 当前只提供显式调用的可选 ModelAdapter 能力和 Core candidate projection。它不会由 Runtime 自动调度，不会持久化/审核候选，也不提供检索或上下文注入；所有投影保持 `candidate`。Experience 的价值来自 `applicability` 和 `counterexamples`。没有适用条件的“最佳实践”极易污染未来任务。
 
 ## 6. 记忆生命周期
 
@@ -296,7 +298,8 @@ V2 不开放低风险自动准入。若后续版本要重新评估，必须在�
 - **MEM-043 当前实现：**仅处理已 settlement 的单 Run；完整校验 Run hash chain 后确定性投影一个 Episode；启动恢复以 32 个 Run ID 为一批流式扫描，owner 级 lease 串行化；提取最多重试 5 次并使用指数退避；主 Run settlement 不等待提取。
 - **MEM-043 当前实现：**可选 ModelAdapter 只收到脱敏、allowlist 后且不超过 48,000 字符的事件 JSON；Candidate 引用必须来自实际发送给模型的证据行，并在写入前再次与 canonical Run Ledger 对照。
 - **MEM-043 当前实现：**仅派生待审核 V2 Candidate；精确 claim 重复为 no-op，显式同 key 的不同 claim 保留 lineage 供 MEM-045 展示；不写 active Memory、不接通 V2 Recall。没有可用提取器时任务等待，Host 配置模型后可恢复。
-- **留待后续任务：**Experience draft/Experience Case、跨 Run Episode 边界与合并、独立持久化 Episode projection 和后台任务 UI。
+- **MEM-044 当前实现：**提供 bounded/redacted Episode 输入上的可选 Experience extractor seam；Core 将输出校验为有精确来源引用的 candidate projection。Runtime 自动调度、Experience 持久化/审核、检索及上下文注入仍留待后续任务。
+- **留待后续任务：**跨 Run Episode 边界与合并、独立持久化 Episode projection 和后台任务 UI。
 
 ### Phase B · Consolidation
 
@@ -404,18 +407,19 @@ legacy-capsule/
 ├── manifest.yaml
 ├── memories.jsonl
 ├── experiences.jsonl
-├── evidence/
-│   ├── events.jsonl
-│   └── artifacts/
 ├── policies/
 │   └── usage-consent.yaml
 ├── README.md
 └── SHA256SUMS
 ```
 
-`manifest.yaml` 至少包含 schema/version、owner、created_at、included scopes、redaction report、source instance、required migrations、license/consent 和 checksum algorithm。
+MEM-047 已实现这个固定的 Legacy Capsule v1 文件集合。`manifest.yaml` 严格记录版本、四类 principals、scope/count、redaction report、source instance、required migrations、license/consent、各 payload digest 与 SHA-256 算法；`SHA256SUMS` 校验 manifest 和全部 payload。V1 不接受额外文件，也不包含 `evidence/`、原始 Run events 或 Artifact 内容。Memory/Experience 行仅携带 provenance 引用。
 
-导入流程：verify checksum → inspect manifest → map owner/scope → quarantine → show diff → explicit accept → create imported candidates。导入不能直接获得 active 或 authoritative 状态。
+导出必须逐条显式选择：Memory 还需 active、可信来源、明确同意且本地允许 export；Experience 只接受 validated Case。Known secrets 会被脱敏，脱敏后仍被识别为敏感的对象拒绝导出。每个 Capsule 最多 6 个文件、单文件 4 MiB、合计 8 MiB，每种条目最多 500 条。
+
+导入流程：验证固定相对路径集合、大小、schema、manifest payload digest 与 `SHA256SUMS` → 生成无写入的 quarantine 和确定性 review diff → 用户选择条目并确认精确 bundle/diff digest → Memory 写为本地 owner/scope 下的 `candidate`。diff 把 Memory 分为 new/duplicate/conflict；stale diff 会拒绝。导入不继承外部 owner、状态、trust、consent 或权限，也不激活候选。Experience 当前仅返回带 `externalEvidence: true` 的 candidate 结果；没有 Experience 持久化/审核存储，因此不会写入 canonical store。
+
+SHA-256 只能校验 Capsule 内部字节一致性，不能证明作者身份、来源真实性或内容正确性。v1 没有签名/加密，也没有 ZIP、CLI/Web/桌面导入导出界面；这些能力不属于 MEM-047。复制离开本实例的文件仍不受本地删除控制。
 
 ## 11. 人的记忆边界
 
@@ -439,8 +443,8 @@ V2 MVP 只做用户本人主动提供的工程/工作记忆，不对“人格延
 | M2 · 人的控制面 | MEM-046 已提供 Host/SDK、CLI 与 Web 的共享 inspect/review/correct/revoke/delete；本仓没有 Desktop client | Desktop 后续复用同一 command/query seam；来源、状态、冲突、反馈和请求阶段必须可见 |
 | M3 · 有界学习 | 当前无后台 Episode/自动提取 | settlement 后异步抽取候选；保留失败/unknown，幂等重跑，不静默激活 |
 | M4 · 策略实现与验证 | G-21 现有自动 Recall + MEM-045 V2 scope/status/validity/conflict/feedback gate + MEM-046 控制面；V2 recall gate 仍未接入 G-21 | 后续 Runtime consumer 落实默认关闭、用户显式开启和 scope/policy 过滤；所有 Candidate 显式审核，V2 不启用低风险自动准入；如未来版本要更改须另行评审 |
-| M5 · 经验与迁移 | Experience/Artifact/Event export | Experience 条件化复用、Legacy Capsule v1 |
-| M6 · 外部质量评估 | 外部 Langfuse（可选后续集成） | conflict/stale 对检索质量的影响、citation、Experience paired comparison；安全不变量仍由本地测试阻断 |
+| M5 · 经验与迁移 | MEM-047 Capsule v1 仅导出显式选择的 Memory/validated Experience 与来源引用；导入只写 untrusted Memory candidate，Experience 仅返回 candidate 结果，不含原始 Event/Artifact | Experience 条件化复用、原始 Artifact/Event 迁移、Experience 持久化审核 |
+| M6 · 外部质量评估 | 外部 Langfuse（可选后续集成） | conflict/stale 对检索质量的影响、citation、Experience paired comparison；安全不变量仍由本地测试阻断；配对设计见[评估方案](../07-quality-benchmarks-snapshots-i18n/05-memory-experience-paired-evaluation.md) |
 
 ## 13. 本地安全测试与外部质量评估问题
 

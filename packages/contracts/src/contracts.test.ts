@@ -327,7 +327,7 @@ describe("canonical contracts", () => {
         confidence: "estimated",
         input_tokens: 8,
         output_tokens: 0,
-        per_section: { system: 3, goal: 5, history: 0, tool: 0, repo: 0, memory: 0 },
+        per_section: { system: 3, goal: 5, history: 0, tool: 0, repo: 0, memory: 0, experience: 0 },
       },
       items: [{
         item_id: "item-system-metered",
@@ -423,6 +423,7 @@ describe("canonical contracts", () => {
       tool: 7,
       repo: 11,
       memory: 13,
+      experience: 0,
     } as const;
     expect(TokenEstimateSchema.parse({
       estimator_id: "heuristic_v2",

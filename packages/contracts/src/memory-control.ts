@@ -40,6 +40,22 @@ export const MemoryDerivedCandidateRequestSchema = z.object({
 }).strict();
 export type MemoryDerivedCandidateRequest = z.infer<typeof MemoryDerivedCandidateRequestSchema>;
 
+/** Core-only, explicit import path. The Host supplies local owner and actor. */
+export const MemoryCapsuleCandidateImportRequestSchema = z.object({
+  command_id: IdentifierSchema,
+  source_capsule_id: IdentifierSchema,
+  source_capsule_digest: Sha256Schema,
+  source_memory_id: IdentifierSchema,
+  kind: MemoryKindV2Schema.exclude(["declared_identity"]),
+  claim: NonEmptyStringSchema.max(8_000),
+  normalized_key: NonEmptyStringSchema.max(500).optional(),
+  project_id: IdentifierSchema.optional(),
+  source_valid_from: IsoDateTimeSchema,
+  source_valid_until: IsoDateTimeSchema.optional(),
+  sensitivity: z.enum(["public", "internal", "personal"]),
+}).strict();
+export type MemoryCapsuleCandidateImportRequest = z.infer<typeof MemoryCapsuleCandidateImportRequestSchema>;
+
 export const MemoryReviewRequestSchema = z.object({
   command_id: IdentifierSchema,
   expected_sequence: z.number().int().nonnegative(),
@@ -99,6 +115,14 @@ export const MemoryControlEventDraftSchema = z.discriminatedUnion("action", [
   }).strict(),
   z.object({
     ...memoryControlDraftBase,
+    action: z.literal("imported_candidate_created"),
+    contentDigest: Sha256Schema,
+    sourceCapsuleId: IdentifierSchema,
+    sourceCapsuleDigest: Sha256Schema,
+    sourceMemoryId: IdentifierSchema,
+  }).strict(),
+  z.object({
+    ...memoryControlDraftBase,
     action: z.literal("corrected"),
     contentDigest: Sha256Schema,
     relatedMemoryId: IdentifierSchema,
@@ -142,6 +166,14 @@ export const MemoryControlEventSchema = z.discriminatedUnion("action", [
     contentDigest: Sha256Schema,
     episodeId: IdentifierSchema,
     sourceDigest: Sha256Schema,
+  }).strict(),
+  z.object({
+    ...memoryControlEventBase,
+    action: z.literal("imported_candidate_created"),
+    contentDigest: Sha256Schema,
+    sourceCapsuleId: IdentifierSchema,
+    sourceCapsuleDigest: Sha256Schema,
+    sourceMemoryId: IdentifierSchema,
   }).strict(),
   z.object({
     ...memoryControlEventBase,

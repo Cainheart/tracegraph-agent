@@ -220,7 +220,7 @@ describe("Memory V2 control plane", () => {
       confidence: "estimated",
       input_tokens: 3,
       output_tokens: 0,
-      per_section: { system: 0, goal: 0, history: 0, tool: 0, repo: 0, memory: 3 },
+      per_section: { system: 0, goal: 0, history: 0, tool: 0, repo: 0, memory: 3, experience: 0 },
     };
     await ledger.append({
       type: "memory.use_status",

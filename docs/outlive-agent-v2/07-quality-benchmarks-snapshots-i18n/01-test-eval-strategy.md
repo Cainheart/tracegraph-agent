@@ -42,6 +42,8 @@ Fixture 使用稳定 ID/clock、临时 workspace、fake model/provider 和显式
 
 Langfuse 中的评估数据集、评分器/人工判读和运行报告由外部项目管理；本仓只定义需要回答的产品问题、事件/指标语义和隐私约束，不复制一套本地数据集或评分执行框架。外部评估需标明数据版本、模型/配置、样本量、阈值来源和失败样例，以便结果可解释、可复查。
 
+Memory 与 Experience 的具体 paired arms、主指标、伤害分类、配对置信区间与报告模板见 [MEM-048 评估方案](05-memory-experience-paired-evaluation.md)。2026-10-01 已在本机 self-hosted Langfuse 完成首轮 48 项合成 paired pilot；报告为 `exploratory-inconclusive`，真实分布质量仍为 `not evaluated`。这不改变 Langfuse 不作为本地 CI 前置条件的边界。
+
 外部评估仅用于可能不确定的质量问题，例如检索相关性、经验复用收益和任务结果趋势。关键安全/权限条件必须用本地确定性断言，禁止用 LLM-as-judge 证明“没有越权”或“删除已生效”。
 
 ### 4.1 能力评测卡与独立 oracle

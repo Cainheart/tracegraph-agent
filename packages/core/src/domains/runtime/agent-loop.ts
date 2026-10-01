@@ -354,6 +354,7 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
           source,
         })),
         retrievedMemory: featureTurnContext.retrievedMemory ?? [],
+        retrievedExperience: featureTurnContext.retrievedExperience ?? [],
         tokenMeterIdentity,
         ...(this.#ports.contextPolicy === undefined ? {} : { contextPolicy: this.#ports.contextPolicy }),
       }, {

@@ -532,7 +532,7 @@ describe("G-02 Context compaction strategy chain", () => {
       initialize: async () => undefined,
       revision: () => 0,
       estimate(value) {
-        const perSection = { system: 0, goal: 0, history: 0, tool: 0, repo: 0, memory: 0 };
+        const perSection = { system: 0, goal: 0, history: 0, tool: 0, repo: 0, memory: 0, experience: 0 };
         for (const section of value.sections) {
           perSection[section.section] += estimateTokens(section.content) * 2;
         }
@@ -565,7 +565,7 @@ describe("G-02 Context compaction strategy chain", () => {
     }), { artifactStore });
     const activeNodes = (built.manifest.nodes ?? []).filter((node) => node.superseded_by === undefined);
     const nodeTotal = activeNodes.reduce((sum, node) => sum + node.tokens, 0);
-    const nodeSections = { system: 0, goal: 0, history: 0, tool: 0, repo: 0, memory: 0 };
+    const nodeSections = { system: 0, goal: 0, history: 0, tool: 0, repo: 0, memory: 0, experience: 0 };
     for (const node of activeNodes) nodeSections[node.section] += node.tokens;
     const checkpointTokens = activeNodes.reduce(
       (sum, node) => node.kind === "checkpoint" ? sum + node.tokens : sum,

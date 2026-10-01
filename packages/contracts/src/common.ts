@@ -52,7 +52,7 @@ export type TrustLevel = z.infer<typeof TrustLevelSchema>;
 
 export const SourceRefSchema = z.object({
   source_id: IdentifierSchema,
-  source_type: z.enum(["user", "system", "repository", "tool", "memory", "fixture"]),
+  source_type: z.enum(["user", "system", "repository", "tool", "memory", "experience", "fixture"]),
   trust: TrustLevelSchema,
   artifact_ref: z.lazy(() => ArtifactRefSchema).optional(),
   description: z.string().max(500).optional(),

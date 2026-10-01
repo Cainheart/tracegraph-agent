@@ -14,6 +14,8 @@ import type {
   ToolCall,
   MemoryEpisodeExtractionInput,
   MemoryEpisodeExtractionResult,
+  ExperienceCaseExtractionInput,
+  ExperienceCaseExtractionResult,
 } from "@tracegraph/contracts";
 
 export interface ModelInput {
@@ -107,6 +109,10 @@ export interface ModelAdapter {
   extractMemoryEpisode?(input: MemoryEpisodeExtractionInput, options?: { signal?: AbortSignal }): Promise<MemoryEpisodeExtractionResult>;
   /** Lets the background scheduler avoid retrying an unconfigured optional capability. */
   canExtractMemoryEpisode?(): boolean;
+  /** Optional Experience Case extraction capability; all returned drafts remain untrusted candidates. */
+  extractExperienceCase?(input: ExperienceCaseExtractionInput, options?: { signal?: AbortSignal }): Promise<ExperienceCaseExtractionResult>;
+  /** Lets callers avoid invoking an unconfigured optional capability. */
+  canExtractExperienceCase?(): boolean;
 }
 
 export class ModelRequestError extends Error {

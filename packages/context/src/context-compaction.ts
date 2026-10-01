@@ -12,6 +12,7 @@ import {
   type ConversationMessage,
   type Observation,
   type RetrievedMemoryHit,
+  type RetrievedExperienceHit,
   type SkillCatalogEntry,
   type RetrievalAttribution,
   type SourceRef,
@@ -105,6 +106,7 @@ export interface ContextCompactionInput {
   observations: readonly Observation[];
   conversationHistory: readonly ConversationMessage[];
   retrievedMemory: readonly RetrievedMemoryHit[];
+  retrievedExperience?: readonly RetrievedExperienceHit[];
   skillCatalog?: readonly SkillCatalogEntry[];
   policy: ContextPolicy;
   inputBudget: number;
@@ -189,6 +191,7 @@ interface SurfaceItem {
   observation?: Observation;
   historyIndex?: number;
   retrieval?: RetrievalAttribution;
+  experienceRetrieval?: RetrievedExperienceHit["attribution"];
 }
 
 /**
@@ -221,11 +224,12 @@ export async function compactContext(
     nodes.push({
       node_id: nextId("context-node"),
       section: raw.section,
-      kind: raw.retrieval === undefined ? "raw" : "retrieved",
+      kind: raw.retrieval === undefined && raw.experienceRetrieval === undefined ? "raw" : "retrieved",
       content_hash: raw.sourceContentHash ?? sha256(raw.content),
       tokens,
       volatile: raw.section === "tool",
       ...(raw.retrieval === undefined ? {} : { retrieval: raw.retrieval }),
+      ...(raw.experienceRetrieval === undefined ? {} : { experience_retrieval: raw.experienceRetrieval }),
     });
     const item: SurfaceItem = {
       ...raw,
@@ -283,6 +287,24 @@ export async function compactContext(
       reason: "ranked_retrieval_with_source_lines",
       sourceTokens: hit.attribution.injected_tokens,
       retrieval: hit.attribution,
+    });
+  }
+  for (const hit of input.retrievedExperience ?? []) {
+    addRaw({
+      section: "experience",
+      label: `${hit.attribution.sourcePath} · ${hit.attribution.caseId} v${hit.attribution.caseVersion}`,
+      source: {
+        source_id: hit.attribution.hitId,
+        source_type: "experience",
+        trust: "untrusted",
+        description: `validated Experience retrieval score=${hit.attribution.score}`,
+      },
+      content: hit.content,
+      archiveContent: hit.content,
+      action: "retrieved",
+      reason: "validated_experience_with_applicability_and_evidence",
+      sourceTokens: hit.attribution.injectedTokens,
+      experienceRetrieval: hit.attribution,
     });
   }
   for (const [index, message] of input.conversationHistory.entries()) {
@@ -696,6 +718,7 @@ export async function compactContext(
     ...(item.content.length === 0 ? {} : { content: item.content }),
     ...(item.artifactRef === undefined ? {} : { artifact_ref: item.artifactRef }),
     ...(item.retrieval === undefined ? {} : { retrieval: item.retrieval }),
+    ...(item.experienceRetrieval === undefined ? {} : { experience_retrieval: item.experienceRetrieval }),
   }));
   const modelObservations = active
     .filter((item) => item.section === "tool" && item.content.length > 0)
@@ -794,7 +817,7 @@ function reconcileRawNodeTokens(
   nodes: ContextNode[],
   targets: Readonly<Record<ContextSection, number>>,
 ): void {
-  for (const section of ["system", "goal", "history", "tool", "repo", "memory"] as const) {
+  for (const section of ["system", "goal", "history", "tool", "repo", "memory", "experience"] as const) {
     const entries = surface.filter((item) => item.section === section);
     const target = targets[section];
     if (entries.length === 0) continue;
@@ -820,6 +843,12 @@ function reconcileRawNodeTokens(
           injected_tokens: allocation.tokens,
         };
       }
+      if (allocation.item.experienceRetrieval !== undefined) {
+        allocation.item.experienceRetrieval = {
+          ...allocation.item.experienceRetrieval,
+          injectedTokens: allocation.tokens,
+        };
+      }
       const node = nodes[allocation.item.nodeIndex]!;
       nodes[allocation.item.nodeIndex] = {
         ...node,
@@ -827,6 +856,9 @@ function reconcileRawNodeTokens(
         ...(node.retrieval === undefined
           ? {}
           : { retrieval: { ...node.retrieval, injected_tokens: allocation.tokens } }),
+        ...(node.experience_retrieval === undefined
+          ? {}
+          : { experience_retrieval: { ...node.experience_retrieval, injectedTokens: allocation.tokens } }),
       };
     }
   }
@@ -1111,7 +1143,7 @@ async function forceFitContext(
   // A single hard-budget pass may affect tools first and history second. Emit
   // one continuous step per actual section instead of falsely labelling all
   // emergency reductions as history.
-  for (const section of ["tool", "history", "repo", "memory"] as const) {
+  for (const section of ["tool", "history", "repo", "memory", "experience"] as const) {
     const sectionCandidates = candidates.filter((item) => item.section === section);
     const tokensBefore = activeTokens(surface);
     const archives: ArtifactRef[] = [];

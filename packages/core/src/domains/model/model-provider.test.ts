@@ -1442,4 +1442,65 @@ describe("ConfigurableModelAdapter", () => {
     expect(failure).toMatchObject({ code: expectedCode });
     expect((failure as Error).message).not.toContain(sourceText);
   });
+
+  it.each(["openai-chat-completions", "anthropic-messages"] as const)(
+    "extracts strict Experience Case drafts through the %s protocol",
+    async (protocol) => {
+      let requestBody: Record<string, unknown> | undefined;
+      const fetchMock = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+        requestBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+        const result = { cases: [] };
+        return Response.json(protocol === "anthropic-messages"
+          ? { content: [{ type: "text", text: JSON.stringify(result) }] }
+          : { choices: [{ message: { content: JSON.stringify(result) } }] });
+      });
+      vi.stubGlobal("fetch", fetchMock);
+      const model = testModelAdapter();
+      model.configure({
+        provider: protocol === "anthropic-messages" ? "anthropic" : "custom",
+        protocol,
+        baseUrl: "https://models.example/v1",
+        model: "experience-model",
+        credentialRef: TEST_CREDENTIAL_REFERENCE,
+      });
+      const input = {
+        projectId: "project:experience-provider",
+        runId: "run:experience-provider",
+        episodeId: "episode:experience-provider",
+        sourceDigest: "sha256:" + "b".repeat(64),
+        episodeOutcome: "succeeded" as const,
+        sourceText: "[{\"sequence\":1,\"summary\":\"A checked outcome.\"}]",
+        evidenceSequences: [1],
+      };
+
+      await expect(model.extractExperienceCase(input)).resolves.toEqual({ cases: [] });
+      expect(model.canExtractExperienceCase()).toBe(true);
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      const messages = requestBody?.messages as Array<{ role: string; content: string }>;
+      const systemPrompt = protocol === "anthropic-messages"
+        ? String(requestBody?.system)
+        : messages.find(({ role }) => role === "system")?.content ?? "";
+      const userPrompt = messages.find(({ role }) => role === "user")?.content ?? "";
+      expect(systemPrompt).toContain("use unknown when evidence does not verify the result");
+      expect(JSON.parse(userPrompt)).toMatchObject({
+        episode_id: input.episodeId,
+        allowed_evidence_sequences: [1],
+        source_text: input.sourceText,
+      });
+    },
+  );
+
+  it("keeps Experience extraction unavailable until a provider is configured", async () => {
+    const model = testModelAdapter();
+    expect(model.canExtractExperienceCase()).toBe(false);
+    await expect(model.extractExperienceCase({
+      projectId: "project:experience-provider",
+      runId: "run:experience-provider",
+      episodeId: "episode:experience-provider",
+      sourceDigest: "sha256:" + "c".repeat(64),
+      episodeOutcome: "unknown",
+      sourceText: "[{\"sequence\":1}]",
+      evidenceSequences: [1],
+    })).rejects.toMatchObject({ code: "model_not_configured" });
+  });
 });

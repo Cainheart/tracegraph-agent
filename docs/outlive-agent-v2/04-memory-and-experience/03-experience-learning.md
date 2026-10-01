@@ -31,20 +31,29 @@ Memory 回答“知道什么”；Experience 回答“在什么条件下，曾�
 ## 2. ExperienceCase
 
 ```ts
-type ExperienceCase = {
-  caseId: ExperienceCaseId;
+interface ExperienceCase {
+  schemaVersion: "tracegraph.experience-case.v1";
+  caseId: string;
   version: number;
-  situation: ConditionSet;
+  projectId: string;
+  episodeId: string;
+  sourceDigest: string;
+  extractorId: string;
+  title: string;
+  situation: { conditions: Array<{ dimension: string; operator: string; value: string; evidenceRefs: EvidenceRef[] }> };
   objective: string;
-  actions: ActionPattern[];
-  outcome: OutcomeRef;
+  actions: Array<{ intent: string; preconditions: Condition[]; steps: EvidenceStatement[] }>;
+  outcome: { kind: "success" | "failure" | "partial" | "unknown"; summary: string; evidenceRefs: EvidenceRef[] };
   verification: VerificationRef[];
   counterexamples: Counterexample[];
   applicability: ScopeRule[];
   evidenceRefs: EvidenceRef[];
+  confidence?: number;
   status: "candidate" | "validated" | "disputed" | "retired";
-};
+}
 ```
+
+MEM-044 已把此结构实现为严格 Zod 契约。Extractor draft 中以 `evidenceSequences` 引用有界输入；Core 生成 ID/version、解析来源引用并固定 `candidate` 状态。单个字段中的证据序号不可重复。非 `unknown` outcome 必须有 evidence-backed verification。可选 Provider 能力可显式调用，但尚未接入 Runtime 自动调度、持久化、审核、检索或上下文注入。
 
 ActionPattern 描述意图、前置条件和验证，不默认保存可直接执行的危险命令。若保存命令模板，变量必须显式、当前权限重新求值。
 
@@ -67,7 +76,7 @@ sequenceDiagram
   P-->>H: validated case + current status
 ```
 
-成功和失败都能产生候选；失败经验至少记录失败条件、观察到的信号和安全退出方式，不能提炼成“永远不要这样做”的无 scope 规则。
+成功和失败都能产生候选；失败经验至少记录失败条件、观察到的信号和安全退出方式，不能提炼成“永远不要这样做”的无 scope 规则。当前实现从单个 MEM-043 Episode 派生候选；跨 Run consolidation 和可复用 Experience 生命周期仍待后续任务。
 
 ## 4. 复用时序
 

@@ -132,7 +132,7 @@ describe("ContextBudget", () => {
       confidence: "estimated",
       inputTokens: 600,
       outputTokens: 256,
-      perSection: { system: 100, goal: 100, history: 100, tool: 100, repo: 200, memory: 0 },
+      perSection: { system: 100, goal: 100, history: 100, tool: 100, repo: 200, memory: 0, experience: 0 },
     };
     const providerUsage: NonNullable<ContextBudgetSnapshot["providerUsage"]> = {
       modelCallId: "model_call_context_budget",

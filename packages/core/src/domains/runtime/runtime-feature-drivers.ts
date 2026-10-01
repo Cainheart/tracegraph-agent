@@ -1,11 +1,12 @@
 import type {
   RetrievedMemoryHit,
+  RetrievedExperienceHit,
   ToolName,
 } from "@tracegraph/contracts";
 import type { WorkspaceHandle } from "@tracegraph/contracts";
 import type { ToolExecutionContext } from "../../kernel/tool/definition.js";
 
-export const RUNTIME_FEATURE_IDS = ["memory", "team", "todo", "attachment"] as const;
+export const RUNTIME_FEATURE_IDS = ["memory", "experience", "team", "todo", "attachment"] as const;
 export type RuntimeFeatureId = typeof RUNTIME_FEATURE_IDS[number];
 
 const RUNTIME_FEATURE_ID_SET = new Set<string>(RUNTIME_FEATURE_IDS);
@@ -37,6 +38,7 @@ export interface RuntimeFeatureTurnContext {
 
 export interface RuntimeFeatureTurnContribution {
   readonly retrievedMemory?: readonly RetrievedMemoryHit[];
+  readonly retrievedExperience?: readonly RetrievedExperienceHit[];
 }
 
 export interface RuntimeFeatureRunCreatedContext {
@@ -133,14 +135,18 @@ export class RuntimeFeatureDriverRegistry {
 
   async contributeTurn(context: RuntimeFeatureTurnContext): Promise<RuntimeFeatureTurnContribution> {
     const retrievedMemory: RetrievedMemoryHit[] = [];
+    const retrievedExperience: RetrievedExperienceHit[] = [];
     for (const [feature, driver] of this.#drivers) {
       if (!this.isEnabled(feature)) continue;
       const contribution = await driver.contributeTurn?.(context);
       if (contribution?.retrievedMemory !== undefined) {
         retrievedMemory.push(...contribution.retrievedMemory);
       }
+      if (contribution?.retrievedExperience !== undefined) {
+        retrievedExperience.push(...contribution.retrievedExperience);
+      }
     }
-    return { retrievedMemory };
+    return { retrievedMemory, retrievedExperience };
   }
 
   async contributeToolContext(context: RuntimeFeatureToolContext): Promise<RuntimeFeatureToolContribution> {

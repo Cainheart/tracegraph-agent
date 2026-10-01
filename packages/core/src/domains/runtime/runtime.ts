@@ -187,6 +187,8 @@ import {
   type WorkspaceHandle,
   type SkillProjectInspection,
   type McpToolCatalogEntry,
+  type ExperienceCase,
+  type ExperienceLifecycleAction,
 } from "@tracegraph/contracts";
 import {
   NoopTelemetrySink,
@@ -251,6 +253,15 @@ import {
   type MemoryV2RecordStore,
 } from "../memory/memory-control.js";
 import { MemoryLifecycleService } from "../memory/memory-lifecycle.js";
+import { evaluateMemoryRecallEligibility } from "../memory/memory-governance.js";
+import { rankEligibleV2Memory } from "../memory/memory-v2-recall.js";
+import {
+  ExperienceCaseService,
+  JsonlExperienceCaseStore,
+  type ExperienceCaseStore,
+  type ExperienceScope,
+  type ExperienceTaskFacts,
+} from "../experience/experience-lifecycle.js";
 import {
   MemoryBackgroundPipeline,
   createModelMemoryEpisodeExtractor,
@@ -412,6 +423,14 @@ export interface AgentRuntimeOptions {
   memoryControlOwnerId?: string;
   /** Injectable V2 payload store for tests and in-process embedding. */
   memoryV2RecordStore?: MemoryV2RecordStore;
+  /** V2 eligibility-gated Runtime Recall is opt-in and remains off by default. */
+  v2MemoryRecallEnabled?: boolean;
+  /** Validated Experience retrieval/context handoff is opt-in and remains off by default. */
+  experienceRecallEnabled?: boolean;
+  experienceCaseStore?: ExperienceCaseStore;
+  /** Host-supplied structured facts; absent/unknown facts cannot satisfy applicability. */
+  experienceFactsProvider?: (input: { projectId: string; task: string }) =>
+    ExperienceTaskFacts["facts"] | Promise<ExperienceTaskFacts["facts"]>;
   /** Optional trusted extractor override; defaults to the configured ModelAdapter capability. */
   memoryEpisodeExtractor?: MemoryEpisodeExtractor;
   /** Host composition can disable built-in Runtime feature contributions independently. */
@@ -530,6 +549,13 @@ export interface AgentRuntime {
   correctMemory(memoryId: string, input: MemoryCorrectionRequest, scope: MemoryControlScope): Promise<MemoryControlItem>;
   revokeMemory(memoryId: string, input: MemoryRevokeRequest, scope: MemoryControlScope): Promise<MemoryControlItem>;
   deleteMemory(memoryId: string, commandId: string, scope: MemoryControlScope): Promise<{ deletedMemoryIds: readonly string[] }>;
+  listExperienceCases(scope: ExperienceScope): Promise<Array<{ case: ExperienceCase; lifecycleSequence: number }>>;
+  createExperienceCandidate(input: ExperienceCase, scope: ExperienceScope): Promise<ExperienceCase>;
+  reviewExperienceCase(caseId: string, input: {
+    action: ExperienceLifecycleAction;
+    expectedSequence: number;
+    commandId: string;
+  }, scope: ExperienceScope): Promise<{ case: ExperienceCase; lifecycleSequence: number; replayed: boolean }>;
   approve(command: ApprovalCommand): Promise<RunProjection>;
   reject(command: ApprovalCommand): Promise<RunProjection>;
   stop(command: StopRunCommand): Promise<RunProjection>;
@@ -823,6 +849,11 @@ class AgentRuntimeImpl implements AgentRuntime {
   readonly #contextPolicy: ContextPolicy | undefined;
   readonly #memory: MemoryManager;
   readonly #memoryControl: MemoryControlService;
+  readonly #memoryControlOwnerId: string;
+  readonly #v2MemoryRecallEnabled: boolean;
+  readonly #experienceCases: ExperienceCaseService;
+  readonly #experienceRecallEnabled: boolean;
+  readonly #experienceFactsProvider: AgentRuntimeOptions["experienceFactsProvider"];
   readonly #memoryBackgroundPipeline: MemoryBackgroundPipeline;
   readonly #memoryBackgroundUnsubscribe: () => void;
   readonly #featureDrivers: RuntimeFeatureDriverRegistry;
@@ -990,12 +1021,26 @@ class AgentRuntimeImpl implements AgentRuntime {
       estimateTokens,
     });
     const memoryOwnerId = IdentifierSchema.parse(options.memoryControlOwnerId ?? "local-owner:default");
+    this.#memoryControlOwnerId = memoryOwnerId;
+    this.#v2MemoryRecallEnabled = options.v2MemoryRecallEnabled === true;
+    const memoryV2Store = options.memoryV2RecordStore
+      ?? new JsonlMemoryV2RecordStore(join(options.dataDir, "memory-v2", "records"));
     this.#memoryControl = new MemoryControlService({
       ownerId: memoryOwnerId,
       actorId: memoryOwnerId,
-      records: options.memoryV2RecordStore,
+      records: memoryV2Store,
       journal: options.ledger,
       lifecycle: new MemoryLifecycleService({ journal: options.ledger, now: this.#now }),
+      now: this.#now,
+    });
+    this.#experienceRecallEnabled = options.experienceRecallEnabled === true;
+    this.#experienceFactsProvider = options.experienceFactsProvider;
+    this.#experienceCases = new ExperienceCaseService({
+      ownerId: memoryOwnerId,
+      actorId: memoryOwnerId,
+      store: options.experienceCaseStore
+        ?? new JsonlExperienceCaseStore(join(options.dataDir, "experience-v1", "cases")),
+      journal: options.ledger,
       now: this.#now,
     });
     const memoryEpisodeExtractor = options.memoryEpisodeExtractor ?? createModelMemoryEpisodeExtractor(options.model);
@@ -1014,18 +1059,71 @@ class AgentRuntimeImpl implements AgentRuntime {
     this.#featureDrivers = new RuntimeFeatureDriverRegistry(options.disabledRuntimeFeatures);
     this.#featureDrivers.register({
       id: "memory",
-      contributeTurn: async ({ projectId, runId, sessionId, task, signal }) => ({
-        retrievedMemory: this.#memory.retrievalAvailable
-          ? (await this.#memory.recall({
-            projectId,
-            runId,
-            sessionId,
-            query: task.slice(0, MAX_MEMORY_QUERY_CHARS),
-            budget: this.#retrievalBudget,
-            signal,
-          })).hits
-          : [],
-      }),
+      contributeTurn: async ({ projectId, runId, sessionId, task, signal }) => {
+        if (this.#v2MemoryRecallEnabled) {
+          try {
+            const snapshot = await this.#memoryControl.listAllForGovernance();
+            const gate = evaluateMemoryRecallEligibility({
+              records: snapshot.items.map((item) => item.record),
+              feedback: snapshot.items.map((item) => item.feedback),
+              request: {
+                ownerId: this.#memoryControlOwnerId,
+                projectId,
+                runId,
+                sessionId,
+              },
+              now: this.#now(),
+            });
+            return {
+              retrievedMemory: rankEligibleV2Memory({
+                records: snapshot.items.map((item) => item.record),
+                gate,
+                query: task.slice(0, MAX_MEMORY_QUERY_CHARS),
+                maxHits: this.#retrievalBudget.max_hits,
+                maxTokens: this.#retrievalBudget.max_tokens,
+              }),
+            };
+          } catch {
+            // V2 is a fail-closed mode. In particular, do not fall back to G-21
+            // when its control snapshot, Ledger, or eligibility gate is unavailable.
+            return { retrievedMemory: [] };
+          }
+        }
+        return {
+          retrievedMemory: this.#memory.retrievalAvailable
+            ? (await this.#memory.recall({
+              projectId,
+              runId,
+              sessionId,
+              query: task.slice(0, MAX_MEMORY_QUERY_CHARS),
+              budget: this.#retrievalBudget,
+              signal,
+            })).hits
+            : [],
+        };
+      },
+    });
+    this.#featureDrivers.register({
+      id: "experience",
+      contributeTurn: async ({ projectId, task }) => {
+        if (!this.#experienceRecallEnabled || this.#experienceFactsProvider === undefined) {
+          return { retrievedExperience: [] };
+        }
+        try {
+          const facts = await this.#experienceFactsProvider({ projectId, task });
+          return {
+            retrievedExperience: await this.#experienceCases.recall({
+              projectId,
+              query: { task, facts },
+              maxHits: Math.min(this.#retrievalBudget.max_hits, 5),
+              maxTokens: this.#retrievalBudget.max_tokens,
+            }),
+          };
+        } catch {
+          // Experience is advisory and fail-closed; no stale or unvalidated fallback.
+          return { retrievedExperience: [] };
+        }
+      },
     });
     this.#featureDrivers.register({
       id: "team",
@@ -2272,6 +2370,25 @@ class AgentRuntimeImpl implements AgentRuntime {
   deleteMemory(memoryId: string, commandId: string, scope: MemoryControlScope): Promise<{ deletedMemoryIds: readonly string[] }> {
     this.#requireRuntimeFeature("memory");
     return this.#memoryControl.delete(IdentifierSchema.parse(memoryId), IdentifierSchema.parse(commandId), scope);
+  }
+
+  listExperienceCases(scope: ExperienceScope): Promise<Array<{ case: ExperienceCase; lifecycleSequence: number }>> {
+    this.#requireRuntimeFeature("experience");
+    return this.#experienceCases.list(scope);
+  }
+
+  createExperienceCandidate(input: ExperienceCase, scope: ExperienceScope): Promise<ExperienceCase> {
+    this.#requireRuntimeFeature("experience");
+    return this.#experienceCases.createCandidate(input, scope);
+  }
+
+  reviewExperienceCase(caseId: string, input: {
+    action: ExperienceLifecycleAction;
+    expectedSequence: number;
+    commandId: string;
+  }, scope: ExperienceScope): Promise<{ case: ExperienceCase; lifecycleSequence: number; replayed: boolean }> {
+    this.#requireRuntimeFeature("experience");
+    return this.#experienceCases.review(IdentifierSchema.parse(caseId), input, scope);
   }
 
   async #ensurePlanReadyAfterTodo(

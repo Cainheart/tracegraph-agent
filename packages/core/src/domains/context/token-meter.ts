@@ -30,7 +30,7 @@ import { estimateTokens, type TokenMeter } from "@tracegraph/context";
 import { sha256, stableStringify } from "@tracegraph/tool";
 
 const MAX_CALIBRATION_BYTES = 1024 * 1024;
-const SECTION_ORDER = ["system", "goal", "history", "tool", "repo", "memory"] as const;
+const SECTION_ORDER = ["system", "goal", "history", "tool", "repo", "memory", "experience"] as const;
 
 export interface TokenCounter {
   readonly estimatorId: string;
@@ -349,7 +349,7 @@ function safelyCount(counter: TokenCounter, content: string): number | null {
 }
 
 function emptySections(): TokenSectionCounts {
-  return { system: 0, goal: 0, history: 0, tool: 0, repo: 0, memory: 0 };
+  return { system: 0, goal: 0, history: 0, tool: 0, repo: 0, memory: 0, experience: 0 };
 }
 
 function scaleSections(sections: TokenSectionCounts, ratioValue: number): TokenSectionCounts {

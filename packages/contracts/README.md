@@ -8,7 +8,7 @@ Define the common contracts used by Runtime, Host, SDK, Web, and provider seams:
 
 ## Public API
 
-The package root re-exports the schema/type modules from `src/index.ts`, including strict Zod validators and version identifiers. Memory exposes the compatible G-21 `MemoryRecordV1Schema`/`MemoryRecordSchema`, independent `MemoryRecordV2Schema`, exact record-version/evidence references, Run-scoped `MemoryUseEventDataSchema`, MEM-045 feedback/conflict/recall-gate contracts, and MEM-046 control requests, content-free control events, list projections, and delete responses. New Context manifests can bind their rendered input digest to the token estimate. The manifest exposes only the `@tracegraph/contracts` root entry.
+The package root re-exports the schema/type modules from `src/index.ts`, including strict Zod validators and version identifiers. Memory exposes the compatible G-21 `MemoryRecordV1Schema`/`MemoryRecordSchema`, independent `MemoryRecordV2Schema`, exact record-version/evidence references, Run-scoped `MemoryUseEventDataSchema`, MEM-045 feedback/conflict/recall-gate contracts, and MEM-046 control requests, content-free control events, list projections, and delete responses. MEM-047 adds strict Legacy Capsule v1 manifest, payload, quarantine, and explicit-accept contracts, plus the content-free imported-candidate control event shape. New Context manifests can bind their rendered input digest to the token estimate. The manifest exposes only the `@tracegraph/contracts` root entry.
 
 ## Dependencies
 
@@ -32,4 +32,4 @@ Run `pnpm run build && pnpm --filter @tracegraph/contracts test:unit` from the r
 
 ## Known limitations
 
-Most `SessionEvent.data` payloads retain a general record shape. `memory.use_status` is an explicit exception: its event schema validates the strict MemoryUse stage payload, and producer/replay boundaries also validate transitions. MEM-045 feedback and MEM-046 lifecycle/control use separate content-free owner/Memory aggregate contracts. Their schemas do not provide identity authentication or automatically integrate a V2 recall policy; Host/Runtime composition owns caller authorization. A TypeScript type alone is not evidence that a business action succeeded.
+Most `SessionEvent.data` payloads retain a general record shape. `memory.use_status` is an explicit exception: its event schema validates the strict MemoryUse stage payload, and producer/replay boundaries also validate transitions. MEM-045 feedback and MEM-046 lifecycle/control use separate content-free owner/Memory aggregate contracts. MEM-047 Capsule checksums and schemas establish byte/shape consistency only; they do not authenticate the source or make imported content trusted. These schemas do not provide identity authentication or automatically integrate a V2 recall policy; Host/Runtime composition owns caller authorization. A TypeScript type alone is not evidence that a business action succeeded.
