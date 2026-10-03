@@ -101,6 +101,15 @@ describe("MEM-049/050 Runtime recall handoff", () => {
     expect(inputs[2]?.contextManifest.items.some(({ section }) => section === "experience")).toBe(false);
   });
 
+  it("keeps reviewed Memory and Experience outside the configured project subset",async()=>{
+    const harness=await createHarness("project-subset");const inputs:ModelInput[]=[];
+    const runtime=await createRuntime({dataDir:harness.dataDir,memoryControlOwnerId:OWNER_ID,v2MemoryRecallEnabled:true,v2MemoryRecallProjectIds:["project:other"],experienceRecallEnabled:true,experienceRecallProjectIds:["project:other"],experienceFactsProvider:()=>({language:"TypeScript"}),model:capturingModel(inputs)});
+    const scope={allowedScopeIds:[harness.workspace.project_id]};const memory=await runtime.createMemoryCandidate({command_id:"subset:create",kind:"fact",claim:"Subset fixture has ledger-backed Memory",normalized_key:"subset fixture",project_id:harness.workspace.project_id,allow_model_use:true},scope);
+    await runtime.reviewMemory(memory.record.memoryId,{command_id:"subset:activate",expected_sequence:0,action:"review_activate"},scope);
+    const experience=makeExperience(harness.workspace.project_id);await runtime.createExperienceCandidate(experience,scope);await runtime.reviewExperienceCase(experience.caseId,{action:"validate",expectedSequence:0,commandId:"subset:validate"},scope);
+    const completed=await completedRun(runtime,harness.workspace,"outside-subset","Subset fixture TypeScript ledger-backed Memory");expect(completed.status).toBe("completed");expect(inputs[0]?.context).not.toContain(memory.record.claim);expect(inputs[0]?.contextManifest.items.some(x=>x.section==="experience")).toBe(false);expect(inputs[0]?.contextManifest.items.some(x=>x.section==="memory")).toBe(false);
+  });
+
   it("passes exact eligible V2 Memory into the adapter and records MemoryUse dispatch/response", async () => {
     const harness = await createHarness("memory-v2");
     const inputs: ModelInput[] = [];

@@ -94,6 +94,10 @@ export interface ModelObservation {
 
 export interface ModelAdapter {
   readonly name: string;
+  /** Host-owned immutable model snapshot for a Run; recovery binds a fresh snapshot. */
+  forRun?(): ModelAdapter;
+  /** Release only after a terminal transition or Runtime shutdown. */
+  releaseRun?(): void;
   /** Trusted adapter capability declaration. Absence is fail-closed. */
   capabilities?(): ModelCapabilities;
   /** Stable public identity used to select provider/model token calibration. */

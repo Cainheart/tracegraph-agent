@@ -3,6 +3,7 @@ import { IdentifierSchema, NonEmptyStringSchema } from "./common.js";
 import { AttachmentUploadIdsSchema } from "./attachment.js";
 import { SubmitUserInputCommandSchema } from "./steering.js";
 import { WorkspaceHandleSchema } from "./workspace.js";
+import { ProjectFileContextRefsSchema } from "./project-file-context.js";
 
 export const RunModeSchema = z.enum(["plan", "execute"]);
 export type RunMode = z.infer<typeof RunModeSchema>;
@@ -58,22 +59,25 @@ export const StartRunRequestSchema = z.object({
   task: NonEmptyStringSchema.max(8_000),
   mode: RunModeSchema,
   reasoning_effort: ReasoningEffortSchema.optional(),
+  run_options: z.object({connection_id:IdentifierSchema.optional(),model:z.string().trim().min(1).max(200).optional(),reasoning_effort:ReasoningEffortSchema.default("default"),mode:RunModeSchema.default("execute"),permission_preset:z.enum(["read-only","workspace-write","full-write"]).default("workspace-write")}).strict().optional(),
   // The Context Manager, rather than an arbitrary UI slice, owns retention and
   // compaction. 160 bounded messages can exercise the 258K policy while still
   // placing a hard cap on a browser request.
   conversation_history: ConversationMessageSchema.array().max(160).optional(),
   /** Opaque, scope-bound staging receipts; raw attachment bytes never enter this JSON request. */
   attachment_upload_ids: AttachmentUploadIdsSchema.optional(),
+  /** Versioned selection only. Host reads and authorizes the immutable contents. */
+  file_contexts: ProjectFileContextRefsSchema.optional(),
 }).strict();
 export type StartRunRequest = z.infer<typeof StartRunRequestSchema>;
 
-// A plain conversation deliberately has no client-selected project, path, or
-// execution mode. The Host binds it to a private empty workspace in execute
-// mode; Workspace capabilities and policy still deny unavailable actions.
+// Plain conversations have no client-selected project or path. The Host binds
+// a private workspace; omitted mode remains execute for existing clients.
+// Explicit plan mode is enforced by the same Runtime policy as project Runs.
 export const StartChatRequestSchema = StartRunRequestSchema.omit({
   project_id: true,
-  mode: true,
-}).strict();
+  file_contexts: true,
+}).extend({mode:RunModeSchema.optional()}).strict();
 export type StartChatRequest = z.infer<typeof StartChatRequestSchema>;
 
 // Host -> Core only. Host resolves project_id to a fixed WorkspaceHandle.
@@ -86,6 +90,7 @@ export const StartRunInputSchema = z.object({
   reasoning_effort: ReasoningEffortSchema.optional(),
   conversation_history: ConversationMessageSchema.array().max(160).optional(),
   attachment_upload_ids: AttachmentUploadIdsSchema.optional(),
+  file_contexts: ProjectFileContextRefsSchema.optional(),
   workspace: WorkspaceHandleSchema,
 });
 export type StartRunInput = z.infer<typeof StartRunInputSchema>;

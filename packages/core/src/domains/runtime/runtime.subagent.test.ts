@@ -156,6 +156,95 @@ describe("G07 Runtime subagent orchestration", () => {
     expect(all.sessions.filter((session) => session.parent_session_id === completed.session_id)).toHaveLength(2);
   }, 15_000);
 
+  it("keeps a third batched child behind the configured active-child capacity", async () => {
+    const harness = await createHarness("capacity-queue");
+    const entered = [deferred<string>(), deferred<string>(), deferred<string>()];
+    const release = [deferred<void>(), deferred<void>(), deferred<void>()];
+    let childCalls = 0;
+    let activeChildren = 0;
+    let peakChildren = 0;
+    const childModel: ModelAdapter = {
+      name: "capacity-child-provider",
+      async decide(input) {
+        const slot = childCalls++;
+        if (slot >= entered.length) throw new Error("Unexpected extra child launch");
+        activeChildren += 1;
+        peakChildren = Math.max(peakChildren, activeChildren);
+        entered[slot]!.resolve(input.runId);
+        await release[slot]!.promise;
+        activeChildren -= 1;
+        return finishDecision(`decision:capacity-child:${slot}`, `Child ${slot} completed.`);
+      },
+    };
+    let rootCalls = 0;
+    const rootModel: ModelAdapter = {
+      name: "capacity-root-provider",
+      async decide() {
+        rootCalls += 1;
+        if (rootCalls === 1) {
+          return batchDecision("decision:capacity-spawn-three", [
+            spawnCall("action:capacity:one", "Run the first bounded task"),
+            spawnCall("action:capacity:two", "Run the second bounded task"),
+            spawnCall("action:capacity:three", "Run the queued bounded task"),
+          ]);
+        }
+        return finishDecision("decision:capacity-root-done", "All bounded tasks completed.");
+      },
+    };
+    const runtime = await createTrackedRuntime({
+      dataDir: harness.dataDir,
+      model: rootModel,
+      subagentRegistry: registry(childModel),
+      maxParallelSubagents: 1,
+      idFactory: sequentialIdFactory(),
+    });
+
+    const started = await runtime.startRun(startInput(harness.workspace));
+    try {
+      const firstRunId = await entered[0]!.promise;
+      await new Promise((resolve) => setTimeout(resolve, 25));
+      expect(childCalls).toBe(1);
+      const whileFull = await runtime.listSubagents(started.run_id, started.project_id);
+      expect(whileFull).toMatchObject({
+        active_count: 1,
+        limits: { max_parallel_subagents: 1 },
+        items: [{ link: { child_run_id: firstRunId }, status: "running" }],
+      });
+
+      release[0]!.resolve();
+      const secondRunId = await entered[1]!.promise;
+      expect(secondRunId).not.toBe(firstRunId);
+      release[1]!.resolve();
+      const thirdRunId = await entered[2]!.promise;
+      expect(new Set([firstRunId, secondRunId, thirdRunId]).size).toBe(3);
+      release[2]!.resolve();
+
+      const completed = await waitForStatus(runtime, started.run_id, "completed");
+      expect(peakChildren).toBe(1);
+      expect(completed.subagents.items).toHaveLength(3);
+      expect(completed.subagents.active_count).toBe(0);
+      expect(completed.subagents.items.map(({ status }) => status)).toEqual([
+        "completed",
+        "completed",
+        "completed",
+      ]);
+      let activeInLedger = 0;
+      let peakInLedger = 0;
+      for (const event of completed.timeline) {
+        if (event.type === "subagent.started") {
+          activeInLedger += 1;
+          peakInLedger = Math.max(peakInLedger, activeInLedger);
+        } else if (["subagent.completed", "subagent.failed", "subagent.interrupted"].includes(event.type)) {
+          activeInLedger -= 1;
+        }
+      }
+      expect(peakInLedger).toBe(1);
+      expect(activeInLedger).toBe(0);
+    } finally {
+      release.forEach((gate) => gate.resolve());
+    }
+  }, 15_000);
+
   it("forks a bounded snapshot of parent conversation and observations", async () => {
     const harness = await createHarness("fork");
     let captured: ModelInput | undefined;
@@ -374,9 +463,9 @@ describe("G07 Runtime subagent orchestration", () => {
     const interruptEntered = deferred<void>();
     const interruptChild: ModelAdapter = {
       name: "interrupt-child",
-      async decide() {
+      async decide(input) {
         interruptEntered.resolve();
-        return new Promise(() => undefined);
+        return waitForAbort(input.signal);
       },
     };
     let interruptRootCalls = 0;
@@ -422,9 +511,9 @@ describe("G07 Runtime subagent orchestration", () => {
     const childEntered = deferred<void>();
     const childModel: ModelAdapter = {
       name: "abort-child",
-      async decide() {
+      async decide(input) {
         childEntered.resolve();
-        return new Promise(() => undefined);
+        return waitForAbort(input.signal);
       },
     };
     const rootModel: ModelAdapter = {
@@ -857,6 +946,19 @@ function deferred<T>(): { promise: Promise<T>; resolve(value?: T): void } {
     resolvePromise = resolve;
   });
   return { promise, resolve: (value) => resolvePromise(value as T) };
+}
+
+function waitForAbort(signal?: AbortSignal): Promise<never> {
+  return new Promise((_, reject) => {
+    const rejectAbort = () => reject(
+      signal?.reason instanceof Error ? signal.reason : new Error("Run cancelled"),
+    );
+    if (signal?.aborted) {
+      rejectAbort();
+      return;
+    }
+    signal?.addEventListener("abort", rejectAbort, { once: true });
+  });
 }
 
 async function waitForStatus(

@@ -84,6 +84,16 @@ describe("G12 LspManager", () => {
         character: 6,
       })).resolves.toEqual([{ path: "src/index.ts", range: { start: { line: 0, character: 6 }, end: { line: 0, character: 11 } } }]);
       expect(manager.history().map((event) => event.type)).toContain("lsp.diagnostics_received");
+      const beforeRestart = manager.history().filter((event) => event.type === "lsp.diagnostics_received").length;
+      await expect(manager.restart("missing-server")).rejects.toMatchObject({ code: "lsp_server_not_found" });
+      expect((await manager.restart("fixture")).servers[0]?.state).toBe("stopped");
+      expect(manager.history().filter((event) => event.type === "lsp.diagnostics_received")).toHaveLength(beforeRestart);
+      const afterRestart = await manager.diagnostics({
+        projectId: "project:lsp-fixture", workspaceRoot: root,
+        request: { paths: ["src/index.ts"], max_items: 10, severity: "all" },
+      });
+      expect(afterRestart.status).toBe("available");
+      expect(manager.history().filter((event) => event.type === "lsp.diagnostics_received")).toHaveLength(beforeRestart + 1);
       await expect(manager.definition({
         projectId: "project:lsp-fixture",
         workspaceRoot: root,

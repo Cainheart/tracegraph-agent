@@ -18,7 +18,7 @@ The package owns immutable Tool definitions, process-local Registry slots, bound
 
 ## Extension points
 
-Core supplies Tool definitions and execution-context bridges. Callers can inject clocks and ID factories for deterministic policy/approval behavior. Tool Registry registration remains reversible and schema projection remains explicitly model-bounded.
+Core supplies Tool definitions and execution-context bridges. Runtime passes the canonical `operationId` from the durable `tool.started` event so external Tool implementations can correlate provider state for later reconciliation. Scope provider idempotency keys with `projectId` and `runId`; operation IDs are Run-scoped. Callers can inject clocks and ID factories for deterministic policy/approval behavior. Tool Registry registration remains reversible and schema projection remains explicitly model-bounded.
 
 ## Model effect
 

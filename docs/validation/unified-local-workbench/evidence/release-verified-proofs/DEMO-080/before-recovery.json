@@ -1,0 +1,669 @@
+{
+  "schema_version": "tracegraph.session-event.v1",
+  "projector_version": "tracegraph.projector.v9",
+  "project_id": "project:proof-recovery",
+  "session_id": "session:68a3d129-c4f2-4d17-aa84-f3a30e41844f",
+  "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+  "task": "Execute the controlled recovery public proof.",
+  "mode": "execute",
+  "reasoning_effort": "default",
+  "workspace_kind": "disposable_fixture",
+  "status": "running",
+  "last_sequence": 18,
+  "timeline": [
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:3cc817e6-a80e-4e63-bbf5-81b9b93ccd82",
+      "project_id": "project:proof-recovery",
+      "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+      "session_id": "session:68a3d129-c4f2-4d17-aa84-f3a30e41844f",
+      "sequence": 1,
+      "occurred_at": "2026-10-03T06:23:08.055Z",
+      "type": "run.created",
+      "summary": "Run created",
+      "artifact_refs": [],
+      "data": {
+        "task": "Execute the controlled recovery public proof.",
+        "mode": "execute",
+        "reasoning_effort": "default",
+        "workspace_kind": "disposable_fixture",
+        "conversation_message_count": 0,
+        "max_turns": 12,
+        "subagent_limits": {
+          "max_parallel_subagents": 2,
+          "max_depth": 1
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:24d3f23d-9945-4252-bfcd-178018089ca1",
+      "project_id": "project:proof-recovery",
+      "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+      "session_id": "session:68a3d129-c4f2-4d17-aa84-f3a30e41844f",
+      "sequence": 2,
+      "occurred_at": "2026-10-03T06:23:08.077Z",
+      "type": "session.opened",
+      "summary": "Durable session opened",
+      "artifact_refs": [],
+      "data": {
+        "session_version": 1
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:1c6ff2bf-99c7-415b-8fdc-81cf68cf7f63",
+      "project_id": "project:proof-recovery",
+      "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+      "session_id": "session:68a3d129-c4f2-4d17-aa84-f3a30e41844f",
+      "sequence": 3,
+      "occurred_at": "2026-10-03T06:23:08.099Z",
+      "type": "permission.configured",
+      "summary": "Permission preset configured as custom",
+      "artifact_refs": [],
+      "data": {
+        "permission": {
+          "preset_key": "custom",
+          "label": "Legacy danger full access",
+          "sandbox_mode": "danger-full-access",
+          "approval_policy": "on-write",
+          "policy_digest": "sha256:883f560287947e3aad6d98fb02eeb541cd6a066df405a032a681330b2a0a2c2e"
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:1f36ac22-959f-4e1e-81cb-39e0f71849bd",
+      "project_id": "project:proof-recovery",
+      "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+      "session_id": "session:68a3d129-c4f2-4d17-aa84-f3a30e41844f",
+      "sequence": 4,
+      "occurred_at": "2026-10-03T06:23:08.122Z",
+      "type": "skill.registry_loaded",
+      "summary": "Loaded 0 local Skill catalog entries",
+      "artifact_refs": [],
+      "data": {
+        "registry_digest": "sha256:5989480b657835d0bb128def01535daf86488acba961e63dec82d5b75ed91e59",
+        "skill_names": [],
+        "loaded_count": 0,
+        "conflict_count": 0,
+        "diagnostic_count": 0
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:6b66ca53-2d74-4907-a530-c99339148d68",
+      "project_id": "project:proof-recovery",
+      "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+      "session_id": "session:68a3d129-c4f2-4d17-aa84-f3a30e41844f",
+      "sequence": 5,
+      "occurred_at": "2026-10-03T06:23:08.145Z",
+      "type": "sandbox.configured",
+      "summary": "Sandbox mode configured as danger-full-access",
+      "artifact_refs": [],
+      "data": {
+        "mode": "danger-full-access",
+        "platform": "darwin"
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:e7b5df34-4770-4ce5-8dc4-faabddd964ce",
+      "project_id": "project:proof-recovery",
+      "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+      "session_id": "session:68a3d129-c4f2-4d17-aa84-f3a30e41844f",
+      "sequence": 6,
+      "occurred_at": "2026-10-03T06:23:08.169Z",
+      "type": "sandbox.disabled",
+      "summary": "OS sandbox explicitly disabled by Host configuration",
+      "artifact_refs": [],
+      "data": {
+        "reason": "explicit_danger_full_access",
+        "sandbox_report": {
+          "report_version": 1,
+          "mode": "danger-full-access",
+          "enforcement": "none",
+          "platform": "darwin",
+          "mechanisms": [],
+          "unmet_constraints": []
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:e35c4b9e-d7f9-458b-a94f-2410fc7cc219",
+      "project_id": "project:proof-recovery",
+      "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+      "session_id": "session:68a3d129-c4f2-4d17-aa84-f3a30e41844f",
+      "sequence": 7,
+      "occurred_at": "2026-10-03T06:23:08.194Z",
+      "type": "run.started",
+      "summary": "Workspace preflight and indexing started",
+      "artifact_refs": [],
+      "data": {
+        "phase": "indexing"
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:6813d589-1983-4155-aeff-fdde59e995b7",
+      "project_id": "project:proof-recovery",
+      "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+      "session_id": "session:68a3d129-c4f2-4d17-aa84-f3a30e41844f",
+      "sequence": 8,
+      "occurred_at": "2026-10-03T06:23:08.237Z",
+      "type": "context.built",
+      "summary": "Context built with 134 input tokens",
+      "artifact_refs": [
+        {
+          "artifact_id": "artifact:369594ea-6324-4bb2-b3d8-159711aa82fd",
+          "kind": "context_manifest",
+          "content_hash": "sha256:0b499a039398319332dc3b9e883f23144805cbde963dfaede4719898c0ef1e86",
+          "mime_type": "application/json",
+          "byte_length": 3245,
+          "project_id": "project:proof-recovery",
+          "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+          "created_at": "2026-10-03T06:23:08.236Z"
+        }
+      ],
+      "turn_id": "turn:8ccbac61-a576-43b6-947b-6b1d8d96df38",
+      "context_manifest_ref": "context:2af641f2-1068-4a08-940e-9f462fcf89e4",
+      "model_call_id": "model-call:40f538a7-761f-4090-96ac-5a5db0f2c583",
+      "data": {
+        "manifest_id": "context:2af641f2-1068-4a08-940e-9f462fcf89e4",
+        "input_tokens": 134,
+        "token_limit": 258000,
+        "reserved_output_tokens": 32000,
+        "token_estimate": {
+          "estimator_id": "heuristic_v2",
+          "confidence": "estimated",
+          "input_tokens": 134,
+          "output_tokens": 0,
+          "per_section": {
+            "system": 119,
+            "goal": 15,
+            "history": 0,
+            "tool": 0,
+            "repo": 0,
+            "memory": 0,
+            "experience": 0
+          }
+        },
+        "input_budget_tokens": 226000,
+        "warning_threshold_tokens": 158200,
+        "compression_threshold_tokens": 180800,
+        "token_estimator": "heuristic_v2",
+        "context_status": "healthy",
+        "compression": {
+          "strategy": "none",
+          "applied_strategy": "none",
+          "trigger": "within_budget",
+          "before_tokens": 134,
+          "after_tokens": 134,
+          "checkpoint_tokens": 0,
+          "preserved_recent_message_count": 0,
+          "compacted_history_message_count": 0,
+          "steps": []
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:9103df1d-c628-44e5-a5f2-bba7476693f6",
+      "project_id": "project:proof-recovery",
+      "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+      "session_id": "session:68a3d129-c4f2-4d17-aa84-f3a30e41844f",
+      "sequence": 9,
+      "occurred_at": "2026-10-03T06:23:08.263Z",
+      "type": "model.request_started",
+      "summary": "Requesting a decision from public-proof-preview with provider-default reasoning",
+      "artifact_refs": [],
+      "turn_id": "turn:8ccbac61-a576-43b6-947b-6b1d8d96df38",
+      "context_manifest_ref": "context:2af641f2-1068-4a08-940e-9f462fcf89e4",
+      "model_call_id": "model-call:40f538a7-761f-4090-96ac-5a5db0f2c583",
+      "data": {
+        "adapter": "public-proof-preview",
+        "requested_reasoning_effort": "default",
+        "reasoning_configuration": "provider_default",
+        "retry_taxonomy": {
+          "version": "retry-taxonomy.v1",
+          "model_provider": {
+            "max_attempts": 3,
+            "retryable_http_statuses": [
+              408,
+              425,
+              429,
+              500,
+              502,
+              503,
+              504
+            ],
+            "retryable_transport_classes": [
+              "timeout",
+              "selected_network_errors"
+            ],
+            "base_backoff_ms": 250,
+            "max_backoff_ms": 1000,
+            "stop_after_provider_usage": true
+          },
+          "tool": {
+            "max_automatic_dispatch_attempts": 1,
+            "replay_policy": "disabled",
+            "new_model_authored_actions_are_separate": true,
+            "run_turn_limit": 12
+          },
+          "action": {
+            "max_dispatch_attempts_per_operation": 1,
+            "unknown_outcome": "reconcile_only"
+          }
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:7683e823-cf90-4cc1-88a8-3169cde5a2f1",
+      "project_id": "project:proof-recovery",
+      "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+      "session_id": "session:68a3d129-c4f2-4d17-aa84-f3a30e41844f",
+      "sequence": 10,
+      "occurred_at": "2026-10-03T06:23:08.288Z",
+      "type": "model.decision",
+      "summary": "Execute the controlled public proof action.",
+      "artifact_refs": [],
+      "turn_id": "turn:8ccbac61-a576-43b6-947b-6b1d8d96df38",
+      "context_manifest_ref": "context:2af641f2-1068-4a08-940e-9f462fcf89e4",
+      "model_call_id": "model-call:40f538a7-761f-4090-96ac-5a5db0f2c583",
+      "action_id": "action:proof:preview",
+      "data": {
+        "decision_kind": "tool_call",
+        "risk": "high",
+        "evidence_ref_count": 0,
+        "public_plan": "Execute the controlled public proof action.",
+        "tool_name": "preview_patch",
+        "adapter": "public-proof-preview",
+        "requested_reasoning_effort": "default",
+        "reasoning_configuration": "provider_default",
+        "provider_attempts": 1,
+        "provider_retry_count": 0,
+        "provider_retry_delays_ms": []
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:74b96b42-e4a5-4213-9d27-9eccf97e2bf2",
+      "project_id": "project:proof-recovery",
+      "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+      "session_id": "session:68a3d129-c4f2-4d17-aa84-f3a30e41844f",
+      "sequence": 11,
+      "occurred_at": "2026-10-03T06:23:08.315Z",
+      "type": "policy.evaluated",
+      "summary": "Permission preset custom allows this Tool action",
+      "artifact_refs": [],
+      "action_id": "action:proof:preview",
+      "data": {
+        "decision": {
+          "decision_id": "policy-decision:728fa23f-184f-490d-8dd8-e83d3e42ecf4",
+          "preset_key": "custom",
+          "policy_digest": "sha256:883f560287947e3aad6d98fb02eeb541cd6a066df405a032a681330b2a0a2c2e",
+          "tool_name": "preview_patch",
+          "side_effect": "read",
+          "kind": "allow",
+          "source": "preset-default",
+          "explanation": "Permission preset custom allows this Tool action",
+          "action_digest": "sha256:cb994c70d1336fddb4eca41bc8634caf5e76298d8f1b720933ff2351c26bd11e"
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:1dd86f47-adcc-46fc-ac9c-8780c962d7d4",
+      "project_id": "project:proof-recovery",
+      "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+      "session_id": "session:68a3d129-c4f2-4d17-aa84-f3a30e41844f",
+      "sequence": 12,
+      "occurred_at": "2026-10-03T06:23:08.341Z",
+      "type": "tool.started",
+      "summary": "Preparing a patch preview for src/add.ts",
+      "artifact_refs": [],
+      "operation_id": "action:proof:preview",
+      "action_id": "action:proof:preview",
+      "data": {
+        "tool_name": "preview_patch",
+        "activity": "preview_patch",
+        "path": "src/add.ts"
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:d0ea25f9-d182-4b87-97b9-57f1bc0e0fe5",
+      "project_id": "project:proof-recovery",
+      "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+      "session_id": "session:68a3d129-c4f2-4d17-aa84-f3a30e41844f",
+      "sequence": 13,
+      "occurred_at": "2026-10-03T06:23:08.369Z",
+      "type": "tool.completed",
+      "summary": "Prepared patch preview for src/add.ts",
+      "artifact_refs": [
+        {
+          "artifact_id": "artifact:f4d1fd74-af19-4368-884e-89b75967d15d",
+          "kind": "patch_preview",
+          "content_hash": "sha256:33046b9eedfd1c03a3fd2d7398ac0d460c7a64674670fef9704ec466be0b96be",
+          "mime_type": "text/x-diff",
+          "byte_length": 81,
+          "project_id": "project:proof-recovery",
+          "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+          "created_at": "2026-10-03T06:23:08.367Z"
+        }
+      ],
+      "operation_id": "action:proof:preview",
+      "action_id": "action:proof:preview",
+      "data": {
+        "receipt": {
+          "receipt_id": "receipt:df9ebb61-f76d-4495-96a9-0eb088c04981",
+          "action_id": "action:proof:preview",
+          "tool_name": "preview_patch",
+          "status": "success",
+          "transport_status": "success",
+          "business_status": "success",
+          "code": "patch_preview_created",
+          "summary": "Prepared patch preview for src/add.ts",
+          "started_at": "2026-10-03T06:23:08.341Z",
+          "completed_at": "2026-10-03T06:23:08.367Z",
+          "duration_ms": 26,
+          "artifact_refs": [
+            {
+              "artifact_id": "artifact:f4d1fd74-af19-4368-884e-89b75967d15d",
+              "kind": "patch_preview",
+              "content_hash": "sha256:33046b9eedfd1c03a3fd2d7398ac0d460c7a64674670fef9704ec466be0b96be",
+              "mime_type": "text/x-diff",
+              "byte_length": 81,
+              "project_id": "project:proof-recovery",
+              "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+              "created_at": "2026-10-03T06:23:08.367Z"
+            }
+          ],
+          "metadata": {
+            "output_bytes": 547,
+            "execution_parallel": false
+          }
+        },
+        "observation": {
+          "observation_id": "observation:94e04869-69c0-4e53-9c50-ccb868ba3472",
+          "action_id": "action:proof:preview",
+          "receipt_id": "receipt:df9ebb61-f76d-4495-96a9-0eb088c04981",
+          "status": "success",
+          "summary": "Prepared patch preview for src/add.ts",
+          "facts": {
+            "tool_name": "preview_patch",
+            "code": "patch_preview_created",
+            "path": "src/add.ts",
+            "diff_excerpt": "--- a/src/add.ts\n+++ b/src/add.ts\n@@\n-return left - right;\n+return left + right;\n",
+            "base_hash": "sha256:8f184f0ee842e5319aba9498225bc548b98b8e274abad07695c2b2b2f971afc5",
+            "patch_hash": "sha256:c3ca7d77c21373a80b1c37a23d5b3fa73c96aa41baaa1e2cbd65f3f65b02f1f6",
+            "scope": [
+              "src/add.ts"
+            ]
+          },
+          "artifact_refs": [
+            {
+              "artifact_id": "artifact:f4d1fd74-af19-4368-884e-89b75967d15d",
+              "kind": "patch_preview",
+              "content_hash": "sha256:33046b9eedfd1c03a3fd2d7398ac0d460c7a64674670fef9704ec466be0b96be",
+              "mime_type": "text/x-diff",
+              "byte_length": 81,
+              "project_id": "project:proof-recovery",
+              "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+              "created_at": "2026-10-03T06:23:08.367Z"
+            }
+          ],
+          "created_at": "2026-10-03T06:23:08.367Z"
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:2afee30b-711f-4a62-b0e2-f3c74c3c642a",
+      "project_id": "project:proof-recovery",
+      "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+      "session_id": "session:68a3d129-c4f2-4d17-aa84-f3a30e41844f",
+      "sequence": 14,
+      "occurred_at": "2026-10-03T06:23:08.392Z",
+      "type": "policy.evaluated",
+      "summary": "Permission preset custom requires approval for write actions",
+      "artifact_refs": [],
+      "action_id": "action:proof:preview",
+      "data": {
+        "decision": {
+          "decision_id": "policy-decision:7f50f1a4-08e6-4e35-91f0-2796e3c81830",
+          "preset_key": "custom",
+          "policy_digest": "sha256:883f560287947e3aad6d98fb02eeb541cd6a066df405a032a681330b2a0a2c2e",
+          "tool_name": "commit_patch",
+          "side_effect": "write",
+          "kind": "ask",
+          "source": "preset-default",
+          "explanation": "Permission preset custom requires approval for write actions",
+          "action_digest": "sha256:a41a5164608e07af3963609858de1167cbb6b6a4e7c99f27df8acf1ef84148ec"
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:f2c3917a-fb12-4c42-b5af-460d1392b547",
+      "project_id": "project:proof-recovery",
+      "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+      "session_id": "session:68a3d129-c4f2-4d17-aa84-f3a30e41844f",
+      "sequence": 15,
+      "occurred_at": "2026-10-03T06:23:08.413Z",
+      "type": "patch.preview_created",
+      "summary": "Patch preview created for src/add.ts",
+      "artifact_refs": [
+        {
+          "artifact_id": "artifact:f4d1fd74-af19-4368-884e-89b75967d15d",
+          "kind": "patch_preview",
+          "content_hash": "sha256:33046b9eedfd1c03a3fd2d7398ac0d460c7a64674670fef9704ec466be0b96be",
+          "mime_type": "text/x-diff",
+          "byte_length": 81,
+          "project_id": "project:proof-recovery",
+          "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+          "created_at": "2026-10-03T06:23:08.367Z"
+        }
+      ],
+      "caused_by_event_id": "event:d0ea25f9-d182-4b87-97b9-57f1bc0e0fe5",
+      "action_id": "action:proof:preview",
+      "data": {
+        "preview": {
+          "preview_id": "patch-preview:e18e3ecc-8692-4c21-91af-af7db881aa71",
+          "action_id": "action:proof:preview",
+          "path": "src/add.ts",
+          "diff": "--- a/src/add.ts\n+++ b/src/add.ts\n@@\n-return left - right;\n+return left + right;",
+          "base_hash": "sha256:8f184f0ee842e5319aba9498225bc548b98b8e274abad07695c2b2b2f971afc5",
+          "patch_hash": "sha256:c3ca7d77c21373a80b1c37a23d5b3fa73c96aa41baaa1e2cbd65f3f65b02f1f6",
+          "scope": [
+            "src/add.ts"
+          ],
+          "expires_at": "2026-10-03T06:28:08.388Z",
+          "artifact_ref": {
+            "artifact_id": "artifact:f4d1fd74-af19-4368-884e-89b75967d15d",
+            "kind": "patch_preview",
+            "content_hash": "sha256:33046b9eedfd1c03a3fd2d7398ac0d460c7a64674670fef9704ec466be0b96be",
+            "mime_type": "text/x-diff",
+            "byte_length": 81,
+            "project_id": "project:proof-recovery",
+            "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+            "created_at": "2026-10-03T06:23:08.367Z"
+          }
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:b77b0c0a-e935-49ce-804d-eb733e02061d",
+      "project_id": "project:proof-recovery",
+      "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+      "session_id": "session:68a3d129-c4f2-4d17-aa84-f3a30e41844f",
+      "sequence": 16,
+      "occurred_at": "2026-10-03T06:23:08.439Z",
+      "type": "approval.requested",
+      "summary": "Approval required to modify src/add.ts",
+      "artifact_refs": [
+        {
+          "artifact_id": "artifact:f4d1fd74-af19-4368-884e-89b75967d15d",
+          "kind": "patch_preview",
+          "content_hash": "sha256:33046b9eedfd1c03a3fd2d7398ac0d460c7a64674670fef9704ec466be0b96be",
+          "mime_type": "text/x-diff",
+          "byte_length": 81,
+          "project_id": "project:proof-recovery",
+          "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+          "created_at": "2026-10-03T06:23:08.367Z"
+        }
+      ],
+      "action_id": "action:proof:preview",
+      "data": {
+        "pending_approval": {
+          "approval_id": "approval:6bafd9ff-b9de-4e6c-bf74-c248fa9e44ee",
+          "action_id": "action:proof:preview",
+          "risk": "high",
+          "preview": {
+            "preview_id": "patch-preview:e18e3ecc-8692-4c21-91af-af7db881aa71",
+            "action_id": "action:proof:preview",
+            "path": "src/add.ts",
+            "diff": "--- a/src/add.ts\n+++ b/src/add.ts\n@@\n-return left - right;\n+return left + right;",
+            "base_hash": "sha256:8f184f0ee842e5319aba9498225bc548b98b8e274abad07695c2b2b2f971afc5",
+            "patch_hash": "sha256:c3ca7d77c21373a80b1c37a23d5b3fa73c96aa41baaa1e2cbd65f3f65b02f1f6",
+            "scope": [
+              "src/add.ts"
+            ],
+            "expires_at": "2026-10-03T06:28:08.388Z",
+            "artifact_ref": {
+              "artifact_id": "artifact:f4d1fd74-af19-4368-884e-89b75967d15d",
+              "kind": "patch_preview",
+              "content_hash": "sha256:33046b9eedfd1c03a3fd2d7398ac0d460c7a64674670fef9704ec466be0b96be",
+              "mime_type": "text/x-diff",
+              "byte_length": 81,
+              "project_id": "project:proof-recovery",
+              "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+              "created_at": "2026-10-03T06:23:08.367Z"
+            }
+          },
+          "tool_name": "commit_patch",
+          "action_digest": "sha256:a41a5164608e07af3963609858de1167cbb6b6a4e7c99f27df8acf1ef84148ec",
+          "policy_digest": "sha256:883f560287947e3aad6d98fb02eeb541cd6a066df405a032a681330b2a0a2c2e"
+        },
+        "approval_id": "approval:6bafd9ff-b9de-4e6c-bf74-c248fa9e44ee",
+        "action_id": "action:proof:preview",
+        "tool_name": "commit_patch",
+        "action_digest": "sha256:a41a5164608e07af3963609858de1167cbb6b6a4e7c99f27df8acf1ef84148ec",
+        "policy_digest": "sha256:883f560287947e3aad6d98fb02eeb541cd6a066df405a032a681330b2a0a2c2e",
+        "expires_at": "2026-10-03T06:28:08.388Z"
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:930cb83a-6cc4-49f2-9096-175c24f4e5b3",
+      "project_id": "project:proof-recovery",
+      "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+      "session_id": "session:68a3d129-c4f2-4d17-aa84-f3a30e41844f",
+      "sequence": 17,
+      "occurred_at": "2026-10-03T06:23:08.464Z",
+      "type": "approval.granted",
+      "summary": "One-time approval granted and atomically consumed",
+      "artifact_refs": [],
+      "action_id": "action:proof:preview",
+      "data": {
+        "approval": {
+          "approval_id": "approval:6bafd9ff-b9de-4e6c-bf74-c248fa9e44ee",
+          "action_id": "action:proof:preview",
+          "token_id": "approval-token=[REDACTED]",
+          "action_digest": "sha256:a41a5164608e07af3963609858de1167cbb6b6a4e7c99f27df8acf1ef84148ec",
+          "policy_digest": "sha256:883f560287947e3aad6d98fb02eeb541cd6a066df405a032a681330b2a0a2c2e",
+          "base_hash": "sha256:8f184f0ee842e5319aba9498225bc548b98b8e274abad07695c2b2b2f971afc5",
+          "patch_hash": "sha256:c3ca7d77c21373a80b1c37a23d5b3fa73c96aa41baaa1e2cbd65f3f65b02f1f6",
+          "scope": [
+            "src/add.ts"
+          ],
+          "expires_at": "2026-10-03T06:28:08.388Z",
+          "granted_at": "2026-10-03T06:23:08.463Z",
+          "consumed_at": "2026-10-03T06:23:08.463Z",
+          "outcome": "allowed-once",
+          "single_use": true
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:8c6d4123-7262-4c71-9e25-226a8229199a",
+      "project_id": "project:proof-recovery",
+      "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+      "session_id": "session:68a3d129-c4f2-4d17-aa84-f3a30e41844f",
+      "sequence": 18,
+      "occurred_at": "2026-10-03T06:23:08.489Z",
+      "type": "tool.started",
+      "summary": "Applying the approved patch to src/add.ts",
+      "artifact_refs": [],
+      "operation_id": "action:proof:preview",
+      "action_id": "action:proof:preview",
+      "data": {
+        "tool_name": "commit_patch",
+        "activity": "commit_patch",
+        "path": "src/add.ts"
+      }
+    }
+  ],
+  "todos": {
+    "items": [],
+    "last_sequence": 18
+  },
+  "input_queue": {
+    "pending": []
+  },
+  "subagents": {
+    "items": [],
+    "active_count": 0,
+    "last_sequence": 18,
+    "limits": {
+      "max_parallel_subagents": 2,
+      "max_depth": 1
+    }
+  },
+  "attachments": {
+    "items": [],
+    "last_sequence": 0
+  },
+  "sandbox_report": {
+    "report_version": 1,
+    "mode": "danger-full-access",
+    "enforcement": "none",
+    "platform": "darwin",
+    "mechanisms": [],
+    "unmet_constraints": []
+  },
+  "permission": {
+    "preset_key": "custom",
+    "label": "Legacy danger full access",
+    "sandbox_mode": "danger-full-access",
+    "approval_policy": "on-write",
+    "policy_digest": "sha256:883f560287947e3aad6d98fb02eeb541cd6a066df405a032a681330b2a0a2c2e"
+  },
+  "artifact_refs": [
+    {
+      "artifact_id": "artifact:369594ea-6324-4bb2-b3d8-159711aa82fd",
+      "kind": "context_manifest",
+      "content_hash": "sha256:0b499a039398319332dc3b9e883f23144805cbde963dfaede4719898c0ef1e86",
+      "mime_type": "application/json",
+      "byte_length": 3245,
+      "project_id": "project:proof-recovery",
+      "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+      "created_at": "2026-10-03T06:23:08.236Z"
+    },
+    {
+      "artifact_id": "artifact:f4d1fd74-af19-4368-884e-89b75967d15d",
+      "kind": "patch_preview",
+      "content_hash": "sha256:33046b9eedfd1c03a3fd2d7398ac0d460c7a64674670fef9704ec466be0b96be",
+      "mime_type": "text/x-diff",
+      "byte_length": 81,
+      "project_id": "project:proof-recovery",
+      "run_id": "run:1298821d-a0fd-4599-8257-91bfe8e4f4ef",
+      "created_at": "2026-10-03T06:23:08.367Z"
+    }
+  ]
+}

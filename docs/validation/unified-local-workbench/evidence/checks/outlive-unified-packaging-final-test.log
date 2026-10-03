@@ -1,0 +1,20 @@
+✔ SBOM names pinned scoped registry packages and preserves integrity hashes (4.945709ms)
+✔ preview inventory rejects symlink sources (2.259625ms)
+✔ installer rejects modified dist bytes before running dependency installation (29.362583ms)
+✔ smoke refuses source directories without a release inventory (1.45775ms)
+▶ valid checksums never permit unlisted pnpm hooks, configs, workspace manifests or source files
+  ✔ .pnpmfile.cjs (7.395583ms)
+  ✔ apps/cli/.npmrc (6.645042ms)
+  ✔ packages/injected/package.json (6.752958ms)
+  ✔ apps/cli/dist/extra.js (6.150083ms)
+✔ valid checksums never permit unlisted pnpm hooks, configs, workspace manifests or source files (27.406416ms)
+✔ installed smoke permits only real node_modules roots of declared workspace packages (9.859791ms)
+✔ cleanup rejection attempts remaining cleanup and never publishes passed evidence (0.478208ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 122.699375

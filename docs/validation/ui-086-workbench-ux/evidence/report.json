@@ -1,0 +1,612 @@
+{
+  "recorded_at": "2026-10-02T23:42:18.763Z",
+  "task_id": "UX-086",
+  "node": "v24.21.0",
+  "platform": "darwin",
+  "model_boundary": "Synthetic deterministic local HTTP provider; real live clients/Hosts/Runtime/ledger/files/processes. This is not provider-quality or external-user acceptance.",
+  "screenshots": [
+    {
+      "surface": "web",
+      "state": "empty",
+      "file": "web-empty-1440x900.png",
+      "sha256": "93360d67c09030dd42700cd0b37dd1cadc0c953aca62cc01f49781bd1e1ee396",
+      "layout": {
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440,
+        "bodyWidth": 1440,
+        "readOnlyGate": false,
+        "enabledInputs": 13
+      },
+      "interactions": [
+        "keyboard navigation/search/settings",
+        "enabled submit after input",
+        "IME Enter does not submit",
+        "Shift+Enter inserts newline"
+      ]
+    },
+    {
+      "surface": "web",
+      "state": "empty",
+      "file": "web-empty-1280x800.png",
+      "sha256": "0a256bfa292ee5ae19dd5cd67db7d5460eb2b066470fdc6529084575542624ad",
+      "layout": {
+        "width": 1280,
+        "height": 800,
+        "documentWidth": 1280,
+        "bodyWidth": 1280,
+        "readOnlyGate": false,
+        "enabledInputs": 13
+      },
+      "interactions": [
+        "keyboard navigation/search/settings",
+        "enabled submit after input",
+        "IME Enter does not submit",
+        "Shift+Enter inserts newline"
+      ]
+    },
+    {
+      "surface": "web",
+      "state": "empty",
+      "file": "web-empty-1024x768.png",
+      "sha256": "3c47c27c9515c17435502c4f1d18dd79cd53c7c9c7738dd33635ee2dcb853cbf",
+      "layout": {
+        "width": 1024,
+        "height": 768,
+        "documentWidth": 1024,
+        "bodyWidth": 1024,
+        "readOnlyGate": false,
+        "enabledInputs": 13
+      },
+      "interactions": [
+        "keyboard navigation/search/settings",
+        "enabled submit after input",
+        "IME Enter does not submit",
+        "Shift+Enter inserts newline"
+      ]
+    },
+    {
+      "surface": "web",
+      "state": "active-run",
+      "file": "web-active-run-1440x900.png",
+      "sha256": "3c191a550b107e08d688569cf0de3f7339768b16531fe8e3f637d7100660bf85",
+      "layout": {
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440,
+        "bodyWidth": 1440,
+        "readOnlyGate": false,
+        "enabledInputs": 18
+      },
+      "interactions": [
+        "steering input and queue control enabled",
+        "cancel control enabled"
+      ],
+      "run_id": "run:c148b5a5-6a59-4b32-a0fa-2d6ee53cf9a0",
+      "status": "running",
+      "last_sequence": 11
+    },
+    {
+      "surface": "web",
+      "state": "active-run",
+      "file": "web-active-run-1280x800.png",
+      "sha256": "94dcdd1367ec76f2aeaf9b66242ad63c230f2e70ed4c43e57f868c44b1357419",
+      "layout": {
+        "width": 1280,
+        "height": 800,
+        "documentWidth": 1280,
+        "bodyWidth": 1280,
+        "readOnlyGate": false,
+        "enabledInputs": 18
+      },
+      "interactions": [
+        "steering input and queue control enabled",
+        "cancel control enabled"
+      ],
+      "run_id": "run:c148b5a5-6a59-4b32-a0fa-2d6ee53cf9a0",
+      "status": "running",
+      "last_sequence": 11
+    },
+    {
+      "surface": "web",
+      "state": "active-run",
+      "file": "web-active-run-1024x768.png",
+      "sha256": "9e11ad68d496f82b22093fbe8c454f149610de79b457440d0131ca71785a806a",
+      "layout": {
+        "width": 1024,
+        "height": 768,
+        "documentWidth": 1024,
+        "bodyWidth": 1024,
+        "readOnlyGate": false,
+        "enabledInputs": 18
+      },
+      "interactions": [
+        "steering input and queue control enabled",
+        "cancel control enabled"
+      ],
+      "run_id": "run:c148b5a5-6a59-4b32-a0fa-2d6ee53cf9a0",
+      "status": "running",
+      "last_sequence": 11
+    },
+    {
+      "surface": "web",
+      "state": "tool-result",
+      "file": "web-tool-result-1440x900.png",
+      "sha256": "1f7c72c1030be300358dab0a325251af456f06d2c4208b064fb03add954e5f50",
+      "layout": {
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440,
+        "bodyWidth": 1440,
+        "readOnlyGate": false,
+        "enabledInputs": 34
+      },
+      "interactions": [
+        "conversation/activity navigation"
+      ],
+      "run_id": "run:c148b5a5-6a59-4b32-a0fa-2d6ee53cf9a0",
+      "status": "running",
+      "last_sequence": 19
+    },
+    {
+      "surface": "web",
+      "state": "tool-result",
+      "file": "web-tool-result-1280x800.png",
+      "sha256": "59b8bdeaf989aeec89260de4470f55a69123098fe13fb833999017f392feb72b",
+      "layout": {
+        "width": 1280,
+        "height": 800,
+        "documentWidth": 1280,
+        "bodyWidth": 1280,
+        "readOnlyGate": false,
+        "enabledInputs": 34
+      },
+      "interactions": [
+        "conversation/activity navigation"
+      ],
+      "run_id": "run:c148b5a5-6a59-4b32-a0fa-2d6ee53cf9a0",
+      "status": "running",
+      "last_sequence": 19
+    },
+    {
+      "surface": "web",
+      "state": "tool-result",
+      "file": "web-tool-result-1024x768.png",
+      "sha256": "ebcd018e69fa0228ade43af5d47a3f009f849299d7147ce0905fc44200fb7eaa",
+      "layout": {
+        "width": 1024,
+        "height": 768,
+        "documentWidth": 1024,
+        "bodyWidth": 1024,
+        "readOnlyGate": false,
+        "enabledInputs": 34
+      },
+      "interactions": [
+        "conversation/activity navigation"
+      ],
+      "run_id": "run:c148b5a5-6a59-4b32-a0fa-2d6ee53cf9a0",
+      "status": "running",
+      "last_sequence": 19
+    },
+    {
+      "surface": "web",
+      "state": "change-review",
+      "file": "web-change-review-1440x900.png",
+      "sha256": "006a61ba4050e16a959465299e5e19f1dc22af1c5343d882e5efd0b82ab45537",
+      "layout": {
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440,
+        "bodyWidth": 1440,
+        "readOnlyGate": false,
+        "enabledInputs": 22
+      },
+      "interactions": [
+        "wide review file selection with simultaneous diff and architecture panels"
+      ],
+      "run_id": "run:c148b5a5-6a59-4b32-a0fa-2d6ee53cf9a0",
+      "status": "completed",
+      "last_sequence": 60
+    },
+    {
+      "surface": "web",
+      "state": "change-review",
+      "file": "web-change-review-1280x800.png",
+      "sha256": "4427d15ba0498862fbb470f502dcbe8965ab1b5d8e998eb9b99e9c91cebc0fd9",
+      "layout": {
+        "width": 1280,
+        "height": 800,
+        "documentWidth": 1280,
+        "bodyWidth": 1280,
+        "readOnlyGate": false,
+        "enabledInputs": 22
+      },
+      "interactions": [
+        "wide review file selection with simultaneous diff and architecture panels"
+      ],
+      "run_id": "run:c148b5a5-6a59-4b32-a0fa-2d6ee53cf9a0",
+      "status": "completed",
+      "last_sequence": 60
+    },
+    {
+      "surface": "web",
+      "state": "change-review",
+      "file": "web-change-review-1024x768.png",
+      "sha256": "7f6ffb1ad36947bf7b0972f81f94142aa6bd91d2869c22aac2f8db8e77780b05",
+      "layout": {
+        "width": 1024,
+        "height": 768,
+        "documentWidth": 1024,
+        "bodyWidth": 1024,
+        "readOnlyGate": false,
+        "enabledInputs": 22
+      },
+      "interactions": [
+        "responsive files/architecture/diff review navigation with visible panels"
+      ],
+      "run_id": "run:c148b5a5-6a59-4b32-a0fa-2d6ee53cf9a0",
+      "status": "completed",
+      "last_sequence": 60
+    },
+    {
+      "surface": "desktop",
+      "state": "empty",
+      "file": "desktop-empty-1440x900.png",
+      "sha256": "0fcc92e6d36a259d45996af5f6c8933ab6ba103468b57f39941fff6cf1be34e7",
+      "layout": {
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440,
+        "bodyWidth": 1440,
+        "readOnlyGate": false,
+        "enabledInputs": 14
+      },
+      "interactions": [
+        "keyboard navigation/search/settings",
+        "enabled submit after input",
+        "IME Enter does not submit",
+        "Shift+Enter inserts newline"
+      ]
+    },
+    {
+      "surface": "desktop",
+      "state": "empty",
+      "file": "desktop-empty-1280x800.png",
+      "sha256": "0562b402b25dc68757f768472c4518d93b0a63cef2472e09444152502e3bf84c",
+      "layout": {
+        "width": 1280,
+        "height": 800,
+        "documentWidth": 1280,
+        "bodyWidth": 1280,
+        "readOnlyGate": false,
+        "enabledInputs": 14
+      },
+      "interactions": [
+        "keyboard navigation/search/settings",
+        "enabled submit after input",
+        "IME Enter does not submit",
+        "Shift+Enter inserts newline"
+      ]
+    },
+    {
+      "surface": "desktop",
+      "state": "empty",
+      "file": "desktop-empty-1024x768.png",
+      "sha256": "b96b6b4cb588fd144d31447b474167a4e4e445d7fef5a5c3ad92e1d49d741729",
+      "layout": {
+        "width": 1024,
+        "height": 768,
+        "documentWidth": 1024,
+        "bodyWidth": 1024,
+        "readOnlyGate": false,
+        "enabledInputs": 14
+      },
+      "interactions": [
+        "keyboard navigation/search/settings",
+        "enabled submit after input",
+        "IME Enter does not submit",
+        "Shift+Enter inserts newline"
+      ]
+    },
+    {
+      "surface": "desktop",
+      "state": "active-run",
+      "file": "desktop-active-run-1440x900.png",
+      "sha256": "1df2dcddd039d30215235487b3b2a0889d14bc7b4ffe24e80247936106fb5762",
+      "layout": {
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440,
+        "bodyWidth": 1440,
+        "readOnlyGate": false,
+        "enabledInputs": 19
+      },
+      "interactions": [
+        "steering input and queue control enabled",
+        "cancel control enabled"
+      ],
+      "run_id": "run:c6378114-5fde-48bc-9666-d3d835ceddc7",
+      "status": "running",
+      "last_sequence": 9
+    },
+    {
+      "surface": "desktop",
+      "state": "active-run",
+      "file": "desktop-active-run-1280x800.png",
+      "sha256": "9bb2f81fd7d0ae44746e2abfc3eca8ced09d1f0f73684a5b7de56068287a54ab",
+      "layout": {
+        "width": 1280,
+        "height": 800,
+        "documentWidth": 1280,
+        "bodyWidth": 1280,
+        "readOnlyGate": false,
+        "enabledInputs": 19
+      },
+      "interactions": [
+        "steering input and queue control enabled",
+        "cancel control enabled"
+      ],
+      "run_id": "run:c6378114-5fde-48bc-9666-d3d835ceddc7",
+      "status": "running",
+      "last_sequence": 9
+    },
+    {
+      "surface": "desktop",
+      "state": "active-run",
+      "file": "desktop-active-run-1024x768.png",
+      "sha256": "32d42e590a0f30555ea1f329a8d5dde2f5c143904fe96e4d09d4269d5d9fbf25",
+      "layout": {
+        "width": 1024,
+        "height": 768,
+        "documentWidth": 1024,
+        "bodyWidth": 1024,
+        "readOnlyGate": false,
+        "enabledInputs": 19
+      },
+      "interactions": [
+        "steering input and queue control enabled",
+        "cancel control enabled"
+      ],
+      "run_id": "run:c6378114-5fde-48bc-9666-d3d835ceddc7",
+      "status": "running",
+      "last_sequence": 9
+    },
+    {
+      "surface": "desktop",
+      "state": "tool-result",
+      "file": "desktop-tool-result-1440x900.png",
+      "sha256": "b251694d12c87a49fe26a314edd6eb31bc2eac4507ac608c4c0d3b07420ced04",
+      "layout": {
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440,
+        "bodyWidth": 1440,
+        "readOnlyGate": false,
+        "enabledInputs": 33
+      },
+      "interactions": [
+        "conversation/activity navigation"
+      ],
+      "run_id": "run:c6378114-5fde-48bc-9666-d3d835ceddc7",
+      "status": "running",
+      "last_sequence": 17
+    },
+    {
+      "surface": "desktop",
+      "state": "tool-result",
+      "file": "desktop-tool-result-1280x800.png",
+      "sha256": "576452f6a275357d9faacb119cd93d9d3ef510922fb140d991c7d8d2350cdf60",
+      "layout": {
+        "width": 1280,
+        "height": 800,
+        "documentWidth": 1280,
+        "bodyWidth": 1280,
+        "readOnlyGate": false,
+        "enabledInputs": 33
+      },
+      "interactions": [
+        "conversation/activity navigation"
+      ],
+      "run_id": "run:c6378114-5fde-48bc-9666-d3d835ceddc7",
+      "status": "running",
+      "last_sequence": 17
+    },
+    {
+      "surface": "desktop",
+      "state": "tool-result",
+      "file": "desktop-tool-result-1024x768.png",
+      "sha256": "bda3862e70eb71e25ea6a4c9bf438ab1cd18bef65ea975ad3dd965bb718aed57",
+      "layout": {
+        "width": 1024,
+        "height": 768,
+        "documentWidth": 1024,
+        "bodyWidth": 1024,
+        "readOnlyGate": false,
+        "enabledInputs": 33
+      },
+      "interactions": [
+        "conversation/activity navigation"
+      ],
+      "run_id": "run:c6378114-5fde-48bc-9666-d3d835ceddc7",
+      "status": "running",
+      "last_sequence": 17
+    },
+    {
+      "surface": "desktop",
+      "state": "change-review",
+      "file": "desktop-change-review-1440x900.png",
+      "sha256": "b06667433d10f46f864faa2055db1638a8a4b96354c7a7371b856911cf76a00e",
+      "layout": {
+        "width": 1440,
+        "height": 900,
+        "documentWidth": 1440,
+        "bodyWidth": 1440,
+        "readOnlyGate": false,
+        "enabledInputs": 21
+      },
+      "interactions": [
+        "wide review file selection with simultaneous diff and architecture panels"
+      ],
+      "run_id": "run:c6378114-5fde-48bc-9666-d3d835ceddc7",
+      "status": "completed",
+      "last_sequence": 53
+    },
+    {
+      "surface": "desktop",
+      "state": "change-review",
+      "file": "desktop-change-review-1280x800.png",
+      "sha256": "97a316a763c048426763568b7c65a7c55c97c42a15d148729dcd91665febe0cf",
+      "layout": {
+        "width": 1280,
+        "height": 800,
+        "documentWidth": 1280,
+        "bodyWidth": 1280,
+        "readOnlyGate": false,
+        "enabledInputs": 21
+      },
+      "interactions": [
+        "wide review file selection with simultaneous diff and architecture panels"
+      ],
+      "run_id": "run:c6378114-5fde-48bc-9666-d3d835ceddc7",
+      "status": "completed",
+      "last_sequence": 53
+    },
+    {
+      "surface": "desktop",
+      "state": "change-review",
+      "file": "desktop-change-review-1024x768.png",
+      "sha256": "a4853dd886a654a1eca71bb489b71ad26129ddddd8bb1c32c83de5df7d7ffcf6",
+      "layout": {
+        "width": 1024,
+        "height": 768,
+        "documentWidth": 1024,
+        "bodyWidth": 1024,
+        "readOnlyGate": false,
+        "enabledInputs": 21
+      },
+      "interactions": [
+        "responsive files/architecture/diff review navigation with visible panels"
+      ],
+      "run_id": "run:c6378114-5fde-48bc-9666-d3d835ceddc7",
+      "status": "completed",
+      "last_sequence": 53
+    }
+  ],
+  "journeys": [
+    {
+      "surface": "web",
+      "assertions": [
+        "live empty composer",
+        "keyboard navigation/search/settings/submission",
+        "plain chat",
+        "project selection",
+        "task",
+        "canonical Todo mutation from UI",
+        "durable steering",
+        "real search tool receipt",
+        "Host restart recovery without write",
+        "explicit resume with fresh approval",
+        "schema-bound approval",
+        "real patch/file oracle",
+        "test receipt",
+        "Artifact-backed diff",
+        "same-session follow-up",
+        "session switching without dispatch",
+        "safe cancellation prevents new dispatch"
+      ],
+      "chat_run_id": "run:d4d125f9-e8d5-41eb-82cf-4fdcb5f023ec",
+      "task_run_id": "run:c148b5a5-6a59-4b32-a0fa-2d6ee53cf9a0",
+      "followup_run_id": "run:f2606585-ab7a-4df1-8535-5eae98f5793a",
+      "cancelled_run_id": "run:374ea626-219e-4239-a402-5318cafb697c",
+      "recovery_sequence": 35,
+      "test_evidence": [
+        {
+          "type": "model.decision",
+          "sequence": 52,
+          "summary": "Synthetic acceptance: run_test."
+        },
+        {
+          "type": "policy.evaluated",
+          "sequence": 53,
+          "summary": "Permission preset custom allows this Tool action"
+        },
+        {
+          "type": "tool.started",
+          "sequence": 54,
+          "summary": "Running test suite fixture"
+        },
+        {
+          "type": "tool.completed",
+          "sequence": 55,
+          "summary": "Fixture tests passed"
+        },
+        {
+          "type": "test.completed",
+          "sequence": 56,
+          "summary": "Fixture tests passed"
+        }
+      ]
+    },
+    {
+      "surface": "desktop",
+      "assertions": [
+        "live empty composer",
+        "keyboard navigation/search/settings/submission",
+        "plain chat",
+        "project selection",
+        "task",
+        "canonical Todo mutation from UI",
+        "durable steering",
+        "real search tool receipt",
+        "Host restart recovery without write",
+        "explicit resume with fresh approval",
+        "schema-bound approval",
+        "real patch/file oracle",
+        "test receipt",
+        "Artifact-backed diff",
+        "same-session follow-up",
+        "session switching without dispatch",
+        "safe cancellation prevents new dispatch"
+      ],
+      "chat_run_id": "run:4543158c-c154-414f-9518-e0168036dbc9",
+      "task_run_id": "run:c6378114-5fde-48bc-9666-d3d835ceddc7",
+      "followup_run_id": "run:85be3a8f-bc0e-4f2e-9ed3-61e04c24b2c0",
+      "cancelled_run_id": "run:86f2d6d7-e7bd-4f05-a8c1-8747a6e3c111",
+      "recovery_sequence": 33,
+      "test_evidence": [
+        {
+          "type": "model.decision",
+          "sequence": 45,
+          "summary": "Synthetic acceptance: run_test."
+        },
+        {
+          "type": "policy.evaluated",
+          "sequence": 46,
+          "summary": "Permission preset workspace-write allows this Tool action"
+        },
+        {
+          "type": "tool.started",
+          "sequence": 47,
+          "summary": "Running test suite fixture"
+        },
+        {
+          "type": "tool.completed",
+          "sequence": 48,
+          "summary": "Fixture tests passed"
+        },
+        {
+          "type": "test.completed",
+          "sequence": 49,
+          "summary": "Fixture tests passed"
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "status": "passed",
+  "preview_boundary": "Shipped Electron Preview renderer started separately and displayed its explicit synthetic-data marker.",
+  "cleanup": {
+    "status": "passed",
+    "errors": []
+  }
+}

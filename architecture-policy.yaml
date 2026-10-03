@@ -31,14 +31,24 @@ packages:
     root: apps/web
     governance: legacy
     migration_owner: web
-    allowed: ['@tracegraph/contracts', '@tracegraph/sdk']
+    allowed: ['@tracegraph/contracts', '@tracegraph/sdk', '@tracegraph/workbench']
     forbidden: ['@tracegraph/cli', '@tracegraph/context', '@tracegraph/core', '@tracegraph/evidence', '@tracegraph/host', '@tracegraph/retrieval-service', '@tracegraph/test-support']
+  - name: '@tracegraph/desktop'
+    root: apps/desktop
+    governance: managed
+    allowed: ['@tracegraph/contracts', '@tracegraph/desktop-host', '@tracegraph/sdk', '@tracegraph/workbench']
+    forbidden: ['@tracegraph/api', '@tracegraph/cli', '@tracegraph/codegraph', '@tracegraph/context', '@tracegraph/core', '@tracegraph/evidence', '@tracegraph/failing-typescript-fixture', '@tracegraph/host', '@tracegraph/lsp', '@tracegraph/mcp', '@tracegraph/retrieval', '@tracegraph/retrieval-service', '@tracegraph/session', '@tracegraph/telemetry', '@tracegraph/test-support', '@tracegraph/tool', '@tracegraph/web']
   - name: '@tracegraph/failing-typescript-fixture'
     root: examples/failing-typescript-repo
     governance: legacy
     migration_owner: test-infrastructure
     allowed: []
     forbidden: ['@tracegraph/cli', '@tracegraph/context', '@tracegraph/core', '@tracegraph/evidence', '@tracegraph/host', '@tracegraph/web']
+  - name: '@tracegraph/api'
+    root: packages/api
+    governance: managed
+    allowed: ['@tracegraph/contracts']
+    forbidden: ['@tracegraph/cli', '@tracegraph/codegraph', '@tracegraph/context', '@tracegraph/core', '@tracegraph/evidence', '@tracegraph/failing-typescript-fixture', '@tracegraph/host', '@tracegraph/lsp', '@tracegraph/mcp', '@tracegraph/retrieval', '@tracegraph/retrieval-service', '@tracegraph/sdk', '@tracegraph/session', '@tracegraph/telemetry', '@tracegraph/test-support', '@tracegraph/web']
   - name: '@tracegraph/codegraph'
     root: packages/codegraph
     governance: legacy
@@ -55,6 +65,11 @@ packages:
     governance: managed
     allowed: []
     forbidden: ['@tracegraph/cli', '@tracegraph/codegraph', '@tracegraph/context', '@tracegraph/core', '@tracegraph/evidence', '@tracegraph/host', '@tracegraph/lsp', '@tracegraph/mcp', '@tracegraph/retrieval-service', '@tracegraph/sdk', '@tracegraph/test-support', '@tracegraph/tool', '@tracegraph/web']
+  - name: '@tracegraph/desktop-host'
+    root: apps/desktop-host
+    governance: managed
+    allowed: ['@tracegraph/api', '@tracegraph/contracts', '@tracegraph/core', '@tracegraph/host', '@tracegraph/sdk', '@tracegraph/session', '@tracegraph/test-support']
+    forbidden: ['@tracegraph/cli', '@tracegraph/codegraph', '@tracegraph/context', '@tracegraph/evidence', '@tracegraph/failing-typescript-fixture', '@tracegraph/lsp', '@tracegraph/mcp', '@tracegraph/retrieval', '@tracegraph/retrieval-service', '@tracegraph/telemetry', '@tracegraph/tool', '@tracegraph/web']
   - name: '@tracegraph/core'
     root: packages/core
     governance: legacy
@@ -70,8 +85,8 @@ packages:
     root: packages/host
     governance: legacy
     migration_owner: host-runtime
-    allowed: ['@tracegraph/contracts', '@tracegraph/core']
-    forbidden: ['@tracegraph/cli', '@tracegraph/context', '@tracegraph/evidence', '@tracegraph/retrieval-service', '@tracegraph/sdk', '@tracegraph/web']
+    allowed: ['@tracegraph/api', '@tracegraph/contracts', '@tracegraph/core', '@tracegraph/codegraph', '@tracegraph/sdk', '@tracegraph/session', '@tracegraph/mcp', '@tracegraph/lsp', '@tracegraph/retrieval', '@tracegraph/retrieval-service', '@tracegraph/telemetry']
+    forbidden: ['@tracegraph/cli', '@tracegraph/context', '@tracegraph/evidence', '@tracegraph/web']
   - name: '@tracegraph/lsp'
     root: packages/lsp
     governance: managed
@@ -108,6 +123,11 @@ packages:
     governance: managed
     allowed: []
     forbidden: ['@tracegraph/cli', '@tracegraph/context', '@tracegraph/evidence', '@tracegraph/host', '@tracegraph/retrieval-service', '@tracegraph/web']
+  - name: '@tracegraph/workbench'
+    root: packages/workbench
+    governance: managed
+    allowed: ['@tracegraph/contracts', '@tracegraph/sdk']
+    forbidden: ['@tracegraph/api', '@tracegraph/cli', '@tracegraph/codegraph', '@tracegraph/context', '@tracegraph/core', '@tracegraph/desktop', '@tracegraph/desktop-host', '@tracegraph/evidence', '@tracegraph/failing-typescript-fixture', '@tracegraph/host', '@tracegraph/lsp', '@tracegraph/mcp', '@tracegraph/retrieval', '@tracegraph/retrieval-service', '@tracegraph/session', '@tracegraph/telemetry', '@tracegraph/test-support', '@tracegraph/tool', '@tracegraph/web']
   - name: '@tracegraph/test-support'
     root: packages/test-support
     governance: legacy

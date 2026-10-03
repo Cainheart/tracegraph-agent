@@ -1,0 +1,152 @@
+{
+  "schema_version": "tracegraph.public-proofs.v1",
+  "recorded_at": "2026-10-02T19:51:20.168Z",
+  "platform": "darwin",
+  "arch": "arm64",
+  "node": "v24.21.0",
+  "fixture_boundary": "offline scripted decisions, synthetic public content, real Runtime/files/processes; no provider quality claim",
+  "results": [
+    {
+      "task_id": "DEMO-080",
+      "status": "passed",
+      "child_pid": 45331,
+      "exit": {
+        "code": null,
+        "signal": "SIGKILL"
+      },
+      "crash_point": "after_apply_before_applied",
+      "recovery": {
+        "scanned_sessions": 1,
+        "truncated_session_ids": [],
+        "interrupted_run_ids": [
+          "run:b5d89b91-2d72-40ff-9d1c-5869e5b5e181"
+        ],
+        "reconciled_action_ids": [
+          "action:proof:preview"
+        ],
+        "aborted_action_ids": [],
+        "diverged_action_ids": [],
+        "recovered_at": "2026-10-02T19:51:19.166Z"
+      },
+      "mutation_sha256_at_crash": "c3ca7d77c21373a80b1c37a23d5b3fa73c96aa41baaa1e2cbd65f3f65b02f1f6",
+      "mutation_sha256_after_repeated_reconcile": "c3ca7d77c21373a80b1c37a23d5b3fa73c96aa41baaa1e2cbd65f3f65b02f1f6",
+      "patch_applied_events": 1,
+      "verified_events": 1,
+      "repeated_reconcile_added_events": 0,
+      "child_absent": true
+    },
+    {
+      "task_id": "DEMO-081",
+      "status": "passed",
+      "source_memory_id": "memory:fee0d5d99e47caf105f48148c6f1f8547",
+      "corrected_memory_id": "memory:f4fb0dca022b60c715a7a6d084afc0c23",
+      "capsule_digest": "sha256:8010d69598ea53487c52d99b5d2d24ea28bda3ef407e1bcf2c2522e00a04302d",
+      "corrected_capsule_digest": "sha256:10d77f86e82f2be11705dc9c9274a2d8943879f1bd1c1b6ac1a4203e1856f00a",
+      "original_recalled": true,
+      "correction_recalled": true,
+      "superseded_excluded": true,
+      "revoked_excluded": true,
+      "revoked_export_rejected": true,
+      "retained_external_copy_warning": true
+    },
+    {
+      "task_id": "DEMO-082",
+      "status": "passed",
+      "leader": 45349,
+      "descendant": 45350,
+      "leader_absent": true,
+      "descendant_absent": true,
+      "process_group_absent": true,
+      "model_dispatches": 1,
+      "pending_inputs": 0,
+      "active_subagents": 0,
+      "events": [
+        {
+          "sequence": 1,
+          "type": "run.created",
+          "summary": "Run created"
+        },
+        {
+          "sequence": 2,
+          "type": "session.opened",
+          "summary": "Durable session opened"
+        },
+        {
+          "sequence": 3,
+          "type": "permission.configured",
+          "summary": "Permission preset configured as custom"
+        },
+        {
+          "sequence": 4,
+          "type": "skill.registry_loaded",
+          "summary": "Loaded 0 local Skill catalog entries"
+        },
+        {
+          "sequence": 5,
+          "type": "sandbox.configured",
+          "summary": "Sandbox mode configured as danger-full-access"
+        },
+        {
+          "sequence": 6,
+          "type": "sandbox.disabled",
+          "summary": "OS sandbox explicitly disabled by Host configuration"
+        },
+        {
+          "sequence": 7,
+          "type": "run.started",
+          "summary": "Workspace preflight and indexing started"
+        },
+        {
+          "sequence": 8,
+          "type": "context.built",
+          "summary": "Context built with 133 input tokens"
+        },
+        {
+          "sequence": 9,
+          "type": "model.request_started",
+          "summary": "Requesting a decision from public-proof-cancel with provider-default reasoning"
+        },
+        {
+          "sequence": 10,
+          "type": "model.decision",
+          "summary": "Execute the controlled public proof action."
+        },
+        {
+          "sequence": 11,
+          "type": "policy.evaluated",
+          "summary": "Permission preset custom allows this Tool action"
+        },
+        {
+          "sequence": 12,
+          "type": "tool.started",
+          "summary": "Running test suite fixture"
+        },
+        {
+          "sequence": 13,
+          "type": "user.input_queued",
+          "summary": "User requested Run cancellation"
+        },
+        {
+          "sequence": 14,
+          "type": "tool.failed",
+          "summary": "Test execution was blocked because the sandbox result could not be verified"
+        },
+        {
+          "sequence": 15,
+          "type": "test.completed",
+          "summary": "Test execution was blocked because the sandbox result could not be verified"
+        },
+        {
+          "sequence": 16,
+          "type": "user.input_consumed",
+          "summary": "User cancellation consumed at a safe boundary"
+        },
+        {
+          "sequence": 17,
+          "type": "run.cancelled",
+          "summary": "Run cancelled by user"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+$ vitest run --config vitest.config.ts
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/desktop
+
+ ❯ src/main-connection.test.ts (10 tests | 1 failed) 769ms
+   ❯ Desktop unified Host connection lifetime (10)
+     × preserves only closed Host admission rejection metadata across Electron IPC 84ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/main-connection.test.ts > Desktop unified Host connection lifetime > preserves only closed Host admission rejection metadata across Electron IPC
+TraceGraphHttpError: Private URL/token must not cross IPC
+ ❯ src/main-connection.test.ts:76:48
+     74|   it("preserves only closed Host admission rejection metadata across E…
+     75|     await import("./main.js");await vi.waitFor(()=>expect(doubles.load…
+     76|     doubles.capabilities.mockRejectedValueOnce(new TraceGraphHttpError…
+       |                                                ^
+     77|     const response=await doubles.handlers.get(DESKTOP_IPC.getCapabilit…
+     78|     expect(response).toEqual({__outlive_command_rejected:{code:"capabi…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 7 passed (8)
+      Tests  1 failed | 37 passed (38)
+   Start at  21:09:33
+   Duration  1.09s (tests 49%, transform 34%, import 16%)
+
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/desktop:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @tracegraph/desktop@0.1.0-alpha.0 test:unit: `vitest run --config vitest.config.ts`
+Exit status 1

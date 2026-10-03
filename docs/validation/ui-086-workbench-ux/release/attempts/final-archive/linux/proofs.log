@@ -1,0 +1,25 @@
+file:///tmp/outlive-fresh-install/outlive-agent-0.1.0-alpha.0-preview/demos/proofs.mjs:57
+      if (child.exitCode !== null || child.signalCode !== null) throw new Error(`Recovery worker exited too early: ${errorText}`);
+                                                                      ^
+
+Error: Recovery worker exited too early: file:///tmp/outlive-fresh-install/outlive-agent-0.1.0-alpha.0-preview/packages/session/dist/session-store.js:474
+            throw new SessionPathSafetyError("session file changed while opening");
+                  ^
+
+SessionPathSafetyError: session file changed while opening
+    at readSessionPath (file:///tmp/outlive-fresh-install/outlive-agent-0.1.0-alpha.0-preview/packages/session/dist/session-store.js:474:19)
+    at async #scanSessions (file:///tmp/outlive-fresh-install/outlive-agent-0.1.0-alpha.0-preview/packages/session/dist/session-store.js:456:31)
+    at async #locateSession (file:///tmp/outlive-fresh-install/outlive-agent-0.1.0-alpha.0-preview/packages/session/dist/session-store.js:427:26)
+    at async file:///tmp/outlive-fresh-install/outlive-agent-0.1.0-alpha.0-preview/packages/session/dist/session-store.js:190:29 {
+  code: 'session_path_unsafe'
+}
+
+Node.js v22.19.0
+
+    at file:///tmp/outlive-fresh-install/outlive-agent-0.1.0-alpha.0-preview/demos/proofs.mjs:57:71
+    at eventually (file:///tmp/outlive-fresh-install/outlive-agent-0.1.0-alpha.0-preview/demos/proofs.mjs:234:132)
+    at async recovery (file:///tmp/outlive-fresh-install/outlive-agent-0.1.0-alpha.0-preview/demos/proofs.mjs:56:12)
+    at async runProofs (file:///tmp/outlive-fresh-install/outlive-agent-0.1.0-alpha.0-preview/demos/proofs.mjs:29:36)
+    at async file:///tmp/outlive-fresh-install/outlive-agent-0.1.0-alpha.0-preview/demos/proofs.mjs:242:20
+
+Node.js v22.19.0

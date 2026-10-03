@@ -7,9 +7,51 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./webserver": {
+      "types": "./dist/webserver/index.d.ts",
+      "import": "./dist/webserver/index.js"
+    },
+    "./composition/composition": {
+      "types": "./dist/composition/composition.d.ts",
+      "import": "./dist/composition/composition.js"
+    },
+    "./composition/extension-config": {
+      "types": "./dist/composition/extension-config.d.ts",
+      "import": "./dist/composition/extension-config.js"
+    },
+    "./composition/model-config": {
+      "types": "./dist/composition/model-config.d.ts",
+      "import": "./dist/composition/model-config.js"
+    },
+    "./composition/permission-config": {
+      "types": "./dist/composition/permission-config.d.ts",
+      "import": "./dist/composition/permission-config.js"
+    },
+    "./composition/project-registry": {
+      "types": "./dist/composition/project-registry.d.ts",
+      "import": "./dist/composition/project-registry.js"
+    },
+    "./composition/retrieval-config": {
+      "types": "./dist/composition/retrieval-config.d.ts",
+      "import": "./dist/composition/retrieval-config.js"
+    },
+    "./composition/subagent-config": {
+      "types": "./dist/composition/subagent-config.d.ts",
+      "import": "./dist/composition/subagent-config.js"
+    },
+    "./composition/telemetry-config": {
+      "types": "./dist/composition/telemetry-config.d.ts",
+      "import": "./dist/composition/telemetry-config.js"
+    },
+    "./composition/node-executable": {
+      "types": "./dist/composition/node-executable.d.ts",
+      "import": "./dist/composition/node-executable.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
@@ -19,10 +61,20 @@
   },
   "dependencies": {
     "@fastify/cors": "catalog:",
+    "@tracegraph/api": "workspace:*",
     "@tracegraph/contracts": "workspace:*",
     "@tracegraph/core": "workspace:*",
     "fastify": "catalog:",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@tracegraph/codegraph": "workspace:*",
+    "@tracegraph/sdk": "workspace:*",
+    "@tracegraph/session": "workspace:*",
+    "@tracegraph/mcp": "workspace:*",
+    "@tracegraph/lsp": "workspace:*",
+    "@tracegraph/retrieval": "workspace:*",
+    "@tracegraph/retrieval-service": "workspace:*",
+    "@tracegraph/telemetry": "workspace:*",
+    "node-pty": "1.1.0"
   },
   "devDependencies": {
     "@types/node": "catalog:",

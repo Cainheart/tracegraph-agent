@@ -1,0 +1,25 @@
+import {z} from "zod";
+import {IdentifierSchema,IsoDateTimeSchema,Sha256Schema} from "./common.js";
+
+export const MAX_PROJECT_FILE_BYTES=1024*1024;
+export const ProjectFilePathSchema=z.string().min(1).max(1024).refine(value=>!value.startsWith("/")&&!value.startsWith("\\")&&!/^[A-Za-z]:/u.test(value)&&!/[\\\u0000-\u001f\u007f]/u.test(value)&&value.split("/").every(part=>part!==".."&&part!=="."&&part!==""),"Use a workspace-relative POSIX path");
+export const ProjectFileListRequestSchema=z.object({path:ProjectFilePathSchema.optional()}).strict();
+export const ProjectFileReadRequestSchema=z.object({path:ProjectFilePathSchema}).strict();
+export const ProjectFileListSchema=z.object({project_id:IdentifierSchema,path:z.string(),entries:z.array(z.object({path:ProjectFilePathSchema,name:z.string(),kind:z.enum(["file","directory"]),byte_length:z.number().int().nonnegative().optional()}).strict()).max(2000),truncated:z.boolean()}).strict();
+export const ProjectFileImageSchema=z.object({media_type:z.enum(["image/png","image/jpeg","image/webp"]),data_base64:z.string().min(4).max(Math.ceil(MAX_PROJECT_FILE_BYTES/3)*4).regex(/^[A-Za-z0-9+/]+={0,2}$/u),width:z.number().int().min(1).max(8192),height:z.number().int().min(1).max(8192)}).strict().refine(value=>value.width*value.height<=16_777_216&&value.data_base64.length%4===0,"Image dimensions and base64 must be bounded");
+export const ProjectFileSnapshotSchema=z.object({project_id:IdentifierSchema,path:ProjectFilePathSchema,sha256:Sha256Schema,byte_length:z.number().int().nonnegative(),kind:z.enum(["text","binary","too_large"]),content:z.string().max(MAX_PROJECT_FILE_BYTES).optional(),image:ProjectFileImageSchema.optional()}).strict().superRefine((value,ctx)=>{if((value.kind==="text")!==(value.content!==undefined))ctx.addIssue({code:"custom",message:"Only text files carry content"});if(value.image&&value.kind!=="binary")ctx.addIssue({code:"custom",message:"Only binary image files carry image bytes"});});
+export const ProjectFileSaveRequestSchema=z.object({command_id:IdentifierSchema,session_id:IdentifierSchema.optional(),path:ProjectFilePathSchema,expected_sha256:Sha256Schema,content:z.string().max(MAX_PROJECT_FILE_BYTES),approval:z.object({approval_id:IdentifierSchema,decision:z.enum(["approve","deny"])}).strict().optional()}).strict();
+export const ProjectFileReconcileRequestSchema=z.object({command_id:IdentifierSchema}).strict();
+export const ProjectFileSaveResultSchema=z.object({command_id:IdentifierSchema,project_id:IdentifierSchema,path:ProjectFilePathSchema,status:z.enum(["succeeded","awaiting_approval","denied","conflict","unknown","failed"]),code:IdentifierSchema,expected_sha256:Sha256Schema,content_sha256:Sha256Schema,actual_sha256:Sha256Schema.optional(),approval_id:IdentifierSchema.optional(),receipt_event_id:IdentifierSchema.optional()}).strict().superRefine((value,ctx)=>{if(value.status==="succeeded"&&(value.actual_sha256!==value.content_sha256||!value.receipt_event_id))ctx.addIssue({code:"custom",message:"Success requires observed matching content and a durable receipt"});if(value.status==="awaiting_approval"&&!value.approval_id)ctx.addIssue({code:"custom",message:"Pending approval requires its bound identifier"});});
+export const AnswerFeedbackValueSchema=z.enum(["like","dislike","clear"]);
+export const AnswerFeedbackRequestSchema=z.object({command_id:IdentifierSchema,answer_event_id:IdentifierSchema,value:AnswerFeedbackValueSchema}).strict();
+export const AnswerFeedbackSnapshotSchema=z.object({run_id:IdentifierSchema,answer_event_id:IdentifierSchema.optional(),value:AnswerFeedbackValueSchema,updated_at:IsoDateTimeSchema.optional(),receipt_event_id:IdentifierSchema.optional()}).strict();
+export type ProjectFileListRequest=z.infer<typeof ProjectFileListRequestSchema>;
+export type ProjectFileReadRequest=z.infer<typeof ProjectFileReadRequestSchema>;
+export type ProjectFileList=z.infer<typeof ProjectFileListSchema>;
+export type ProjectFileSnapshot=z.infer<typeof ProjectFileSnapshotSchema>;
+export type ProjectFileSaveRequest=z.infer<typeof ProjectFileSaveRequestSchema>;
+export type ProjectFileSaveResult=z.infer<typeof ProjectFileSaveResultSchema>;
+export type ProjectFileReconcileRequest=z.infer<typeof ProjectFileReconcileRequestSchema>;
+export type AnswerFeedbackRequest=z.infer<typeof AnswerFeedbackRequestSchema>;
+export type AnswerFeedbackSnapshot=z.infer<typeof AnswerFeedbackSnapshotSchema>;

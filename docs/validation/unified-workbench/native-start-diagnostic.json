@@ -1,0 +1,13 @@
+{
+  "status": {
+    "state": "offline",
+    "message": "Local Host setup unavailable: owner did not become ready; check supported Node and the loopback gateway port"
+  },
+  "direct": {
+    "state": "failed",
+    "name": "TypeError",
+    "message": "A dynamic import callback was not specified.",
+    "code": "ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING",
+    "stack": "TypeError [ERR_VM_DYNAMIC_IMPORT_CALLBACK_MISSING]: A dynamic import callback was not specified.\n    at importModuleDynamicallyCallback (node:internal/modules/esm/utils:280:9)\n    at eval (eval at evaluate (:311:30), <anonymous>:1:72)\n    at UtilityScript.evaluate (<anonymous>:313:16)\n    at UtilityScript.<anonymous> (<anonymous>:1:44)"
+  }
+}

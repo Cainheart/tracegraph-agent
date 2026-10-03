@@ -38,14 +38,37 @@ describe("bounded child process execution", () => {
 
   it("escalates an AbortSignal and reports the stop reason", async () => {
     const controller = new AbortController();
+    const directory = await mkdtemp(join(tmpdir(), "outlive-abort-ready-"));
+    const readyPath = join(directory, "ready");
+    const script = [
+      "const { spawn } = require('node:child_process');",
+      "process.on('SIGTERM', () => {});",
+      "const grandchild = spawn(process.execPath, ['-e', \"process.on('SIGTERM', () => {}); setInterval(() => {}, 1000)\"], { stdio: 'ignore' });",
+      "grandchild.unref();",
+      "console.log(grandchild.pid);",
+      "require('node:fs').writeFileSync(process.argv[1], 'ready');",
+      "setInterval(() => {}, 1000);",
+    ].join("\n");
     const running = runProcess(
       process.execPath,
-      ["-e", "process.on('SIGTERM', () => {}); setInterval(() => {}, 1000);"],
+      ["-e", script, readyPath],
       { cwd: tmpdir(), timeoutMs: 5_000, maxOutputBytes: 1_024, signal: controller.signal },
     );
-    setTimeout(() => controller.abort(), 40);
-
-    await expect(running).resolves.toMatchObject({ aborted: true, exitCode: null });
+    try {
+      // Loaded CI machines may take more than 40ms to start Node. Abort only
+      // after the descendant exists so the assertion exercises cancellation.
+      await expect.poll(async () => readFile(readyPath, "utf8").catch(() => undefined), { timeout: 3_000 }).toBe("ready");
+      controller.abort();
+      const result = await running;
+      const grandchildPid = Number.parseInt(result.stdout.trim(), 10);
+      expect(result).toMatchObject({ aborted: true, exitCode: null });
+      expect(Number.isInteger(grandchildPid)).toBe(true);
+      expect(processIsAlive(grandchildPid)).toBe(false);
+    } finally {
+      controller.abort();
+      await running;
+      await removeControlledTemporaryDirectory(directory);
+    }
   });
 
   it.skipIf(process.platform === "win32")("terminates the spawned process group, including grandchildren", async () => {
@@ -65,6 +88,7 @@ describe("bounded child process execution", () => {
 
     expect(result.timedOut).toBe(true);
     expect(Number.isInteger(grandchildPid)).toBe(true);
+    expect(processIsAlive(grandchildPid)).toBe(false);
     await expectProcessToExit(grandchildPid);
   });
 
@@ -84,7 +108,27 @@ describe("bounded child process execution", () => {
 
     expect(result.timedOut).toBe(true);
     expect(Number.isInteger(grandchildPid)).toBe(true);
+    expect(processIsAlive(grandchildPid)).toBe(false);
     await expectProcessToExit(grandchildPid);
+  });
+
+  it.skipIf(process.platform === "win32")("reclaims a descendant when the group leader exits successfully", async () => {
+    const script = [
+      "const { spawn } = require('node:child_process');",
+      "const grandchild = spawn(process.execPath, ['-e', \"process.on('SIGTERM', () => {}); setInterval(() => {}, 1000)\"], { stdio: 'ignore' });",
+      "grandchild.unref();",
+      "console.log(grandchild.pid);",
+    ].join("\n");
+    const result = await runProcess(process.execPath, ["-e", script], {
+      cwd: tmpdir(),
+      timeoutMs: 5_000,
+      maxOutputBytes: 1_024,
+    });
+    const grandchildPid = Number.parseInt(result.stdout.trim(), 10);
+
+    expect(result).toMatchObject({ exitCode: 0, timedOut: false, aborted: false });
+    expect(Number.isInteger(grandchildPid)).toBe(true);
+    expect(processIsAlive(grandchildPid)).toBe(false);
   });
 
   it.skipIf(process.platform === "win32")("reuses process-group cleanup when the Tool execution boundary times out", async () => {
@@ -133,4 +177,14 @@ async function expectProcessToExit(pid: number): Promise<void> {
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
   throw new Error(`grandchild process ${pid} survived process-group termination`);
+}
+
+function processIsAlive(pid: number): boolean {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "ESRCH") return false;
+    throw error;
+  }
 }

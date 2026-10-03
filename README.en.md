@@ -2,10 +2,12 @@
 
 English · [简体中文](README.md)
 
+> Desktop installers bundle the runtime and CLI; users do not need Node/pnpm. See the [installation guide](docs/releases/README.md) for signing and platform acceptance boundaries. Commands such as `pnpm dev` below require a source checkout. Older Preview archives retain their included guide.
+
 > **An architecture-aware Web coding agent whose Context, long-term Memory, and
 > verification evidence are all inspectable.**
 >
-> Status: `v0.1-alpha.0`. Local-first, single-machine, not published to npm; the
+> Status: `v0.1.0-alpha.0`. Local-first, single-machine, not published to npm; the
 > P0 vertical slice is implemented. Current boundaries live in the relevant
 > [module documentation](docs/modules/) and the
 > [TraceGraph-to-Outlive migration baseline](docs/outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md).
@@ -50,11 +52,12 @@ produced it.
   progressive disclosure of bodies; a Host-owned stdio MCP client; and six
   reversible extension seams. None of them executes third-party code, and
   unopened paths fail closed.
-- **Long-term Memory**: Markdown chunked at headings and paragraphs into an
-  atomic JSONL index searched with local BM25. Hits carry source paths, exact
-  line numbers, and content hashes, and cited context is injected before each
-  model request.
-- **Three working modes**: Plain Chat (no file or command capability), Managed
+- **Long-term Memory**: G-21 retains its JSONL/BM25 source retrieval. V2 adds
+  candidate review, correction, revocation, deletion, and Memory/Experience
+  controls. V2 Memory and Experience Recall are off by default; explicit
+  enablement still checks scope, status, and policy and records Context
+  provenance and Adapter hand-off.
+- **Three working modes**: Plain Chat (no project filesystem or command capability; scoped media Artifacts are available), Managed
   Project, and Linked Local Folder.
 
 The V2 disposition of G-01 through G-23 is in the
@@ -65,11 +68,16 @@ Current implementation and verification entry points live in the
 
 ## What this is not
 
-The current product entry points are the Web Workbench and a Host started by
-the local CLI. **The Desktop client is not implemented. Memory V2 is also not
-implemented**: the available G-21 Memory is the canonical JSONL store, BM25,
-and cited Context injection, not the V2 lifecycle governance and management
-surface.
+Current product entry points are CLI, Web Workbench, and local Electron Desktop.
+All three clients connect to one background Host and shared profile through the
+same controllers. Desktop uses an isolated renderer, fixed preload bridge and
+authenticated private channel; Web uses local HTTP. Canonical Ledger events arrive
+through SSE. The shared workbench centers on conversation, with activity and review
+opened on request; see the [Desktop boundaries](apps/desktop/README.md) and
+[current acceptance](docs/validation/unified-local-workbench/README.md).
+Memory V2 lifecycle, controls, and opt-in Runtime Recall are implemented, while
+the G-21 V1 store remains separate. Distribution and independent installation
+claims require release evidence.
 
 Here, “local-first” means that the Workspace, Host, and canonical Memory are
 managed by one Host on one machine. It does not mean every request stays local:
@@ -109,25 +117,46 @@ The [migration baseline](docs/outlive-agent-v2/10-tracegraph-to-outlive-migratio
 records the fuller transition boundaries and their V2 disposition. The list
 above only tells you what not to expect in the first five minutes.
 
-## Five-minute local start
+## Installed use and shared profile
 
-Requirements: Node.js `22.19+` and pnpm `11.19.0`.
+Open Outlive Agent and the application discovers or starts its bundled runtime. First use saves a model configuration, explicitly tests the connection, then offers a project or plain chat. Saved and tested are separate states. Optional MCP/LSP connections do not block ordinary chat. Closing the window retains background tasks; reopening restores their view without automatically rerunning history. A different installed build owning the runtime is detected and refused until repaired safely.
+
+Web, Desktop and CLI share `~/.outlive/profiles/default`, including configuration, projects, sessions, Memory and tasks. The installed `outlive` CLI starts or discovers this owner for normal commands. Lifecycle commands include `host status`, `host restart` and `host stop`; they are diagnostic operations, not prerequisites for first use. Legacy data migration is explicit in About → Installation diagnostics or the CLI, with conflict preview and backup before committing.
+
+Optional image settings support a dedicated image endpoint, a Responses image tool, or compatible chat-native PNG output. Actual PNG bytes and locally rendered SVG charts are scoped Run Artifacts, verified for preview/download in Web/Desktop and export through CLI. Text, code, or an image URL alone never counts as generation success. See [media boundaries](docs/modules/14-附件与多模态.md) and [current installed-product evidence](docs/validation/installable-product/README.md).
+
+[Four original natural-color logo candidates](docs/brand/logo-candidates.png) are available; A is provisional until the user selects a final mark.
+
+## Source development start
+
+Requirements: Node.js `^22.19.0` or `>=24.0.0` and pnpm `11.19.0`.
 
 ```bash
 pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Open `http://127.0.0.1:4310` for the Web Workbench; the Host API listens on
-`http://127.0.0.1:4311`.
+Open `http://127.0.0.1:4310` for the development Web Workbench. A fresh development profile requests port 4311; an existing owner retains its actual address. Installed Desktop uses a dynamically assigned gateway port.
+
+For the live Desktop in a source checkout, first run `pnpm build`, then:
+
+```bash
+pnpm --filter @tracegraph/desktop start
+```
+
+`pnpm --filter @tracegraph/desktop preview` opens a labelled synthetic demo.
+[Independent preview archive installation](docs/releases/README.md) documents
+running the prebuilt application without source files.
 
 Pick a provider in Settings and enter an API key, then create a project and
 submit a task. Keys are write-only: they travel only with the save request,
 are never written to browser storage, and are not echoed by Host/SDK
 responses.
 
-You can also copy [`.env.example`](.env.example) to `.env.local` and configure
-through the environment. For DeepSeek that is just:
+Environment configuration below applies to the explicit one-shot and legacy serve
+entry points. Persist model configuration for the shared profile through Settings
+or CLI config commands. Copy [`.env.example`](.env.example) to `.env.local`; for
+DeepSeek that is just:
 
 ```dotenv
 DEEPSEEK_API_KEY=your-key
@@ -160,8 +189,7 @@ choice can only equal or lower the ceiling, and a project-level
 created afterwards. `full-write` reports `enforcement:none` explicitly and must
 not be read as "the sandbox is on".
 
-Data lands in `.tracegraph/` at the repository root, and Sessions default to
-`~/.tracegraph/sessions`; both are gitignored. `dataDir` and the Session root are
+Normal clients use the shared profile for data and Sessions. Explicit legacy serve retains `.tracegraph/` at the repository root and `~/.tracegraph/sessions`; these are compatibility paths, not the new product default. `dataDir` and the Session root are
 a pair: when running multiple instances, give each one its own stable
 `--session-dir` or startup recovery fails closed.
 
@@ -169,13 +197,13 @@ a pair: when running multiple instances, give each one its own stable
 
 | Mode | Capability | Boundary |
 |---|---|---|
-| Plain Chat | Multi-turn Q&A without a project, public execution progress, Markdown/Mermaid output, and paged read-back of the Run's own compacted archive | Every hidden-workspace file and command capability is off; `read_artifact` is not workspace read access and cannot reach a local project or another Run |
+| Plain Chat | Multi-turn Q&A without a project, public execution progress, Markdown/Mermaid and scoped image/chart output, and paged read-back of the Run's own compacted archive | Every hidden-workspace file and command capability is off; `read_artifact` is not workspace read access and cannot reach a local project or another Run |
 | Managed Project | Durable projects, live model Q&A, read/search, file creation and modification, Preview/Approval, Graph Delta | Under `.tracegraph/projects`; with the default `workspace-write` every write needs one-shot approval, `read-only` forbids writes, and explicit `full-write` stops asking but stays bound by workspace, schema, and WAL checks; API keys are resolved only by the local Host |
 | Linked Local Folder | Open an existing directory through the native folder picker, read-write or read-only, with reveal-in-file-manager | The browser cannot submit arbitrary paths; the Host normalizes and registers the directory, and workspace capabilities and hard constraints cannot be raised by preset or rule; writes need one-shot approval under the default `workspace-write` |
 
 Natively selected directories are registered in
 `.tracegraph/local-projects.json` and are restored after a Host restart.
-Removing a local directory only revokes the TraceGraph registration and never
+Removing a local directory only revokes the Outlive Agent registration and never
 deletes the real directory; a Host-created managed project has its copy under
 `.tracegraph/projects` deleted after confirmation. If a directory is deleted,
 moved, or loses permissions externally, the Host skips the unusable record and
@@ -239,3 +267,28 @@ cross-module consistency.
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+## Shared local workbench
+
+Web, Desktop and CLI connect to one background Host and the default profile at
+`~/.tracegraph/profiles/default`. Host owns configuration, credential references,
+projects, Sessions, Memory and tasks. Closing a window detaches; explicit Host
+stop terminates background work. Login startup is not installed. Inspect legacy
+sources and conflicts before committing migration from Desktop Settings/About
+or `host migration preview|commit`; source directories and backups are retained.
+
+The conversation leads the workspace: New chat, Memory, Projects and Recents in
+the sidebar; ten settings categories under the avatar menu; one public progress
+statement and one real operation by default. Tool results and changes open on
+request. Developer tools include Git/worktrees, terminals, loopback preview and
+schedules. Host operation capabilities define availability. Test the model
+connection independently after saving; the probe sends only a short sentence.
+
+```bash
+env -u NODE_OPTIONS node apps/cli/dist/index.js host start
+env -u NODE_OPTIONS node apps/cli/dist/index.js doctor --json
+env -u NODE_OPTIONS node apps/cli/dist/index.js host stop
+```
+
+See the [CLI guide](apps/cli/README.md) and
+[local-workbench acceptance](docs/validation/unified-local-workbench/README.md).

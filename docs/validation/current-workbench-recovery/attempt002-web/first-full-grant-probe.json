@@ -1,0 +1,8 @@
+{
+  "status": "reproduced",
+  "boundary": "Built PermissionConfigController with a new owned temporary profile, no credentials/provider and no default user profile",
+  "operation": "PermissionConfigController.open({userConfigPath: temp/config/harness-config.json, environment:{}}); setLocalFullGrant(true)",
+  "observed": {"code": "ENOENT", "syscall": "open"},
+  "source": "packages/host/src/composition/permission-config.ts setLocalFullGrant calls atomicPrivateJson without creating the new config parent",
+  "cleanup": true
+}

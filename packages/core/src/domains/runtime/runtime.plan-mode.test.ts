@@ -36,6 +36,69 @@ afterEach(async () => {
 });
 
 describe("G09 Runtime Plan Mode", () => {
+  it("rejects invalid Todo batches without execution, then lets the model correct them", async () => {
+    const harness = await createHarness("todo-correct-input");
+    let step = 0;
+    let recoveryFacts: unknown;
+    const model: ModelAdapter = {
+      name: "todo-correct-input",
+      async decide(input) {
+        step += 1;
+        if (step === 1) {
+          return {
+            ...toolDecision("decision:bad-todo", "action:bad-todo", "todo_write", {}),
+            tool_call: undefined,
+            tool_calls: [
+              { action_id: "action:must-not-run", tool_name: "todo_write", arguments: { operation: "create", todo_id: "todo:atomic", title: "Must not run" } },
+              { action_id: "action:bad-todo", tool_name: "todo_write", arguments: { operation: "create", todo_id: "todo:corrected", title: "Inspect project", state: "in_progress" } },
+            ],
+          };
+        }
+        if (step === 2) {
+          recoveryFacts = input.observations.find(({ facts }) => facts.code === "schema_invalid")?.facts;
+          return toolDecision("decision:correct-todo", "action:correct-todo", "todo_write", {
+            operation: "create", todo_id: "todo:corrected", title: "Inspect project", state: "pending",
+          });
+        }
+        return finishDecision("decision:corrected-plan", "The plan is ready.");
+      },
+    };
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
+    const started = await runtime.startRun(startInput(harness.workspace));
+    const waiting = await waitForStatus(runtime, started.run_id, "awaiting_plan_approval");
+    expect(recoveryFacts).toMatchObject({ executed: false, batch_executed: false, validation_error: expect.stringContaining("new todos must start pending") });
+    expect(recoveryFacts).not.toHaveProperty("evidence_event_id");
+    expect(waiting.timeline.filter((event) => event.type === "tool.started").map((event) => event.action_id)).toEqual(["action:correct-todo"]);
+    expect(waiting.timeline.find((event) => event.type === "action.rejected")?.data).toMatchObject({ correction_attempt: 1, retrying: true, receipt: { status: "failure", metadata: { executed: false } } });
+    expect((await runtime.readTodos(started.run_id, started.project_id)).items.map((todo) => [todo.todo_id, todo.state])).toEqual([["todo:corrected", "pending"]]);
+    expect(await readFile(join(harness.workspace.real_root, "src/value.ts"), "utf8")).toBe("before\n");
+  });
+
+  it("bounds repeated invalid tool arguments and never executes them", async () => {
+    const harness = await createHarness("todo-invalid-budget");
+    let requests = 0;
+    const runtime = await createTrackedRuntime({
+      dataDir: harness.dataDir,
+      model: {
+        name: "invalid-todo-budget",
+        async decide() {
+          requests += 1;
+          return toolDecision(`decision:bad:${requests}`, `action:bad:${requests}`, "todo_write", {
+            operation: "create", todo_id: "todo:invalid", title: "Invalid state", state: "in_progress",
+          });
+        },
+      },
+    });
+    const started = await runtime.startRun(startInput(harness.workspace));
+    const failed = await waitForStatus(runtime, started.run_id, "failed");
+    expect(requests).toBe(3);
+    expect(failed.failure_code).toBe("schema_invalid");
+    expect(failed.timeline.filter((event) => event.type === "action.rejected").map((event) => event.data.retrying)).toEqual([true, true, false]);
+    expect(failed.timeline.some((event) => event.type === "tool.started")).toBe(false);
+    expect((await runtime.readTodos(started.run_id, started.project_id)).items).toEqual([]);
+    expect(failed.timeline.find((event) => event.type === "run.failed")?.summary).not.toContain('"code":');
+  });
+
   it("denies direct commit_patch before tool.started, WAL prepare, or mutation", async () => {
     const harness = await createHarness("commit-denied");
     const model: ModelAdapter = {

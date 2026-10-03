@@ -1,7 +1,7 @@
 schema_version: 1
 roadmap: outlive-agent-v2
 status: proposed
-last_reviewed: 2026-09-28
+last_reviewed: 2026-10-03
 
 execution_rules:
   one_primary_change_type_per_task: true
@@ -60,6 +60,8 @@ phases:
     depends_on: [P7]
     exit_criteria:
       - 三条核心演示可独立复现
+      - HOST-087/PAR-088/CLI-089/SET-090/DEV-091/RUN-092/BRAND-093/MEDIA-094/DIST-095 与 UX-086 安装即用验收有一致实现、三端操作证据和当前文档
+      - macOS/Windows 安装包携带运行时与 CLI，用户无需 Node/pnpm 或手动启动服务即可配置模型并完成任务
       - 外部用户可从零安装并跑通
 
 tasks:
@@ -127,7 +129,7 @@ tasks:
     depends_on: [BASE-003]
     outputs: [README.md, docs/modules, docs/outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md]
     acceptance:
-      - Desktop 与 Memory V2 明确标为未实现
+      - Desktop 与 Memory V2 按当前源码和验收证据记录实现范围，保留未实现能力边界；不得永久沿用 P0 时的未实现快照
       - local-first、sandbox、remote scope 不含糊
 
   - id: ARCH-010
@@ -548,7 +550,10 @@ tasks:
     depends_on: [RUN-052]
     outputs: [retry-policy]
     acceptance:
-      - model/tool/action retry 分离且有界
+      - typed 瞬时模型 Provider 错误最多尝试 3 次，250/500ms backoff 与每次 retry 均可审计
+      - Tool executor 与每个 Action operation 最多自动派发一次
+      - unknown 外部 Action 只进入有界查询对账，不重新派发
+      - 取消可中止 backoff 且不会产生下一次模型派发
 
   - id: ORCH-054
     phase: P5
@@ -568,7 +573,8 @@ tasks:
     depends_on: [RUN-052]
     outputs: [durable-work-continuation]
     acceptance:
-      - background task 可恢复且不把 accepted 当 completed
+      - 终态 Run 的后台 Job 可从 canonical evidence 恢复缺失或 stale running 状态，重放幂等
+      - Run 命令响应返回当前投影；Job 仅在 durable 输出提交后 completed，待审核 candidate 仍不等于 active Memory
 
   - id: API-060
     phase: P6
@@ -578,7 +584,8 @@ tasks:
     depends_on: [PKG-031, PKG-033]
     outputs: [packages/sdk/protocol]
     acceptance:
-      - Web UI/CLI/Desktop 使用同源内部 schema 并生成 fixture；不发布外部 SDK
+      - Web UI/CLI 使用同源内部 schema 和 deterministic conformance fixture；Desktop 可复用相同 private package subpath，不复制 DTO
+      - Run/Session command/query 与 durable/transient event discriminator 有 contract coverage；不发布外部 SDK
 
   - id: API-061
     phase: P6
@@ -588,7 +595,10 @@ tasks:
     depends_on: [API-060]
     outputs: [packages/api, packages/host/webserver]
     acceptance:
-      - controller 可进程内测试；Web HTTP 仅作为本地 Web UI transport
+      - 无 HTTP 依赖的 @tracegraph/api Run/Session Controller 可进程内调用，绑定注册 Workspace/Session scope，并覆盖 command-id 幂等与单活动 Run 协调
+      - Host Run start/read 与 Session list/read/resume 路由调用共享 Controller；HTTP 认证、状态/缓存语义及 SSE 留在本地 webserver adapter
+      - "@tracegraph/host/webserver 子路径公开 Fastify 实现，包根保持兼容；架构策略和模块图包含新的 api 包"
+      - Settings、项目生命周期、扩展、MCP/LSP、Team、Memory、Artifact 内容与 SSE 领域编排明确留待后续切片
 
   - id: API-062
     phase: P6
@@ -598,7 +608,10 @@ tasks:
     depends_on: [API-061]
     outputs: [packages/sdk/client, packages/sdk/server]
     acceptance:
-      - partial frame/cancel/backpressure/version mismatch tests；不形成外部 RPC 产品
+      - 私有 4 字节大端长度帧；默认单帧 8 MiB 上限；增量 partial/coalesced decoding 和严格 UTF-8/JSON/schema/version 校验
+      - client pending、server in-flight 与 writer queued bytes 都有有限上限；序列化写入等待 WHATWG stream backpressure
+      - request-scoped transport cancel 只 abort 对应 handler signal，不作为 Run cancel command
+      - conformance 覆盖 partial/coalesced frame、长度/截断拒绝、cancel 目标、背压、版本错配和 in-flight 上限；不形成外部 RPC 产品，不绑定 Host/API Controller，也不迁移 CLI/Desktop
 
   - id: CLI-063
     phase: P6
@@ -608,8 +621,10 @@ tasks:
     depends_on: [API-062]
     outputs: [apps/cli]
     acceptance:
-      - JSON stdout 无日志污染
-      - canonical events 与 Web 一致
+      - run start/get/events 与 sessions list/get 使用共享 protocol/contracts schema，通过 TraceGraphClient 进入同一 Host RunSessionController；无效输入在 bootstrap 前拒绝
+      - 成功 stdout 仅包含 schema-valid protocol JSONL reply/event；diagnostics 写 stderr，Host failure 不产生成功形状输出
+      - Run ledger JSONL event identity/sequence/payload 与同一 Host 的 SDK/Web canonical event stream 逐条一致，follow 从快照末尾 sequence 继续
+      - 只连接已运行 Host；不创建第二个 Runtime/Controller，不绑定 API-062 framed RPC dispatcher
 
   - id: DESK-064
     phase: P6
@@ -619,7 +634,10 @@ tasks:
     depends_on: [API-062, PKG-035]
     outputs: [apps/desktop-host]
     acceptance:
-      - exact-version runtime 启停、崩溃恢复和关停测试
+      - built child 通过 Node IPC 校验精确 Desktop Host package/protocol version；不匹配在接受 RPC 前拒绝
+      - 无 GUI child 经 stdin/stdout framed RPC 完成 schema-valid Session 查询，启动 IPC 只承载受信配置与 readiness
+      - 独立进程写入的 durable active Run 在 child 启动恢复为 interrupted；Run projection 只有一个 run.interrupted，重复 Host 崩溃/重启不追加重复恢复事实
+      - RPC EOF 后 Runtime 关停、Telemetry flush 并以 code 0 退出；进程崩溃后可重启并读取同一 canonical ledger
 
   - id: DESK-065
     phase: P6
@@ -629,10 +647,11 @@ tasks:
     depends_on: [DESK-064]
     outputs: [apps/desktop]
     acceptance:
-      - Web/Desktop 共享 Workspace/Session 导航、中心对话/Run 活动与 Tool 状态呈现等主要工作台 UI
-      - 核心用户路径语义一致；Desktop 仅通过平台适配增加原生窗口与系统操作
-      - Renderer 无 Node 权限
-      - 默认不开放网络端口
+      - Web 与 Desktop 都从 @tracegraph/workbench 导入同一 App、Workspace/Session 导航、对话/Run 活动与 Tool 状态 UI；apps/web 与 apps/desktop 仅作为组合根
+      - App 必须注入 WorkbenchClient；Web 保留 HTTP/SSE adapter，Desktop 通过固定的 Main/preload RPC adapter 复用同一操作语义
+      - Desktop 使用 exact-version apps/desktop-host、受信 main-frame 校验和 schema-valid IPC；Preview 明确标记且只使用 DemoTraceGraphClient
+      - 本地 packaged renderer + CSP `connect-src 'none'`；nodeIntegration=false、contextIsolation=true、sandbox=true、无 HTTP/TCP listener
+      - DESK-065 完成边界：当时 Host 尚无目录注册接口，实时工作台展示空 Workspace/Session；项目选择、persistent registration 与 credentials 随后由 DESK-066 补足
 
   - id: DESK-066
     phase: P6
@@ -642,18 +661,26 @@ tasks:
     depends_on: [DESK-065]
     outputs: [desktop-native-adapters]
     acceptance:
-      - opaque handles 与 authority checks
+      - Electron Main 只从原生目录 picker 取得选择；Host 持久化规范路径、根目录身份和 opaque Workspace handle，Renderer 仅收安全 ProjectSummary/ID
+      - Project list/register/remove 走固定 schema IPC 与私有 Main/Host control channel；Run/Session scope 绑定当前注册，移除只注销登记、不删除目录
+      - 打开项目文件要求已注册 Project ID，经原生文件选择、realpath/普通文件检查及项目根 containment 校验，拒绝 symlink escape
+      - Settings 可配置 Desktop ModelAdapter；API key write-only 传入 CredentialStore，配置文件只持久化 `${secret:NAME}` 引用，响应不回显值
+      - macOS 使用 Keychain；其他支持平台使用私有权限文件后端且不声称硬件加密，后端错误 fail closed
+      - Host 重启恢复有效项目，缺失或根目录身份变化的记录不扩大权限；测试覆盖持久性、注销不删目录、越权/逃逸和 secret redaction
 
   - id: CLIENT-068
     phase: P6
     title: Memory 与 Experience 控制面接入统一协议和共享 UI
     owner: client-memory
     change_type: feature
-    depends_on: [API-060, MEM-046, DESK-065]
-    outputs: [shared-memory-control-ui]
+    depends_on: [API-060, API-061, MEM-046, MEM-050, DESK-065, DESK-066]
+    outputs: [memory-experience-controller, protocol-v2, shared-memory-control-ui]
     acceptance:
-      - Web 与 Desktop 对同一命令产生同一 canonical event
-      - inspect/review/correct/revoke/delete 均可追溯且权限一致
+      - Web REST 与 Desktop framed RPC 使用同一 controller、Runtime command ID、scope 与幂等/CAS 语义
+      - Memory list/create/review/correct/revoke/delete 和 Experience list/review 使用 strict protocol schemas/fixtures
+      - Experience 仅开放现存生命周期转换；seed 不可变，不支持编辑/删除；Recall 不因 UI 开启
+      - Shared Workbench 在 Web 与 Desktop 展示同一 Memory/Experience controls
+      - Fixed Desktop IPC、preload 与 client adapters 对输入和响应执行 schema validation
 
   - id: SNAP-070
     phase: P7
@@ -694,18 +721,20 @@ tasks:
     depends_on: [BENCH-072, MEM-045, RUN-051]
     outputs: [benchmark-baselines]
     acceptance:
-      - cold start/ledger/replay/context/memory/tool/cancel/recovery 有预算
+      - 八条生产用户路径各自有 correctness oracle、固定样本与受审 wall-time P95 ceiling
+      - Ubuntu 24.04/Node 22.19 CI 执行完整 suite 并上传有界原始报告；调预算必须显式修改 manifest
 
   - id: EVAL-074
     phase: P7
-    title: Langfuse Memory 与检索质量评估
-    owner: langfuse-integration
+    title: 公开基准 Memory 与 Experience 质量评估
+    owner: evals
     change_type: validation
     depends_on: [MEM-048]
-    outputs: ["external:langfuse-memory-quality-report"]
+    outputs: [docs/validation/2026-10-03-eval074-public-benchmarks]
     acceptance:
-      - 外部评估覆盖相关性、新鲜度、来源引用和 Experience 复用收益
+      - 使用有版本/许可/hash 的公开 Memory 与 Experience 基准，记录 control/treatment、官方评分或清晰标注的可复现本地指标、样本分母、效应和不确定性
       - leak/revoked/scope/injection 等安全不变量由仓库内本地负例门禁阻断
+      - 记录 Experience 候选准入与 V2 rubric judge 的本地模拟以及图像题排除；公开基准结果明确标为探索性，不声称代表线上真实用户分布
 
   - id: I18N-075
     phase: P7
@@ -713,9 +742,9 @@ tasks:
     owner: client
     change_type: feature
     depends_on: [DESK-065]
-    outputs: [packages/client/locale, docs/i18n/terminology.md]
+    outputs: [packages/sdk/src/client/locale, docs/i18n/terminology.md]
     acceptance:
-      - Web/Desktop/TUI key 一致且 fallback 可测
+      - Web/Desktop 与现有 CLI 终端适配器复用同一 key，fallback 可测；完整 TUI 未存在，不将其声称为当前能力
 
   - id: DOC-076
     phase: P7
@@ -772,7 +801,7 @@ tasks:
     title: CLI 与 Desktop preview 发布
     owner: release
     change_type: release
-    depends_on: [DEMO-080, DEMO-081, DEMO-082]
+    depends_on: [DEMO-080, DEMO-081, DEMO-082, UX-086, HOST-087, PAR-088, CLI-089, SET-090, DEV-091, RUN-092, BRAND-093, MEDIA-094, DIST-095]
     outputs: [release-bundles, checksums, sbom]
     acceptance:
       - clean-machine install smoke
@@ -780,13 +809,14 @@ tasks:
 
   - id: REL-084
     phase: P8
-    title: 外部用户从零验证
+    title: 预览归档从零安装与使用验证
     owner: community
     change_type: validation
     depends_on: [REL-083]
-    outputs: [external-validation-report]
+    outputs: [docs/validation/2026-10-03-rel084-simulation, docs/validation/ui-086-workbench-ux/release]
     acceptance:
-      - 至少一个非维护者按文档独立跑通
+      - 用户授权的模拟从冻结归档新解压目录开始，完成安装、CLI/Host smoke、Desktop preview 与三条公开证明，并记录摘要、环境和失败恢复
+      - 维护者/Agent 模拟明确标为 simulated；它不构成真实非维护者证明
 
   - id: SITE-085
     phase: P8
@@ -799,3 +829,146 @@ tasks:
       - 仅在 P1–P7 实现阶段完成、进入 P8 后启动
       - 只投影 docs，不复制正文
       - build 含 dead-link/Mermaid/version checks
+
+  - id: UX-086
+    phase: P8
+    title: Codex 风格全页面与三端本地工作台二次验收
+    owner: workbench
+    change_type: feature
+    depends_on: [DESK-065, DESK-066, CLIENT-068, I18N-075, HOST-087, PAR-088, CLI-089, SET-090, DEV-091, RUN-092, BRAND-093, MEDIA-094]
+    outputs: [packages/workbench, packages/api, packages/sdk, apps/web, apps/desktop, apps/desktop-host, docs/validation/ui-086-workbench-ux]
+    acceptance:
+      - 以当前 Codex 工作台为交互参考，交付可复核的核心用户旅程与 Outlive 能力差距表；复用通用交互模式，不复制品牌、素材或声称一比一复刻
+      - 共享 Workbench 形成一致的信息架构与视觉层级，覆盖项目/会话导航、对话与任务输入、模型设置、Run/Tool 活动、变更审阅与结果；空态、加载、失败和 unavailable 状态均明确
+      - Web 与 Desktop 均能通过真实 client/Host 完成项目选择、新建对话/任务、切换与恢复 Session、发送后续指令、steer/cancel、查看 Run/Tool 状态及变更/测试结果；Desktop 对已有 canonical controller 支持的 Approval/Todo/Artifact 操作补齐 schema-validated route，不以静态控件冒充可用功能
+      - 继续遵守 Outlive 的权限、审批、Memory consent 和 Preview 标记语义；云任务、账号同步、多人共享等未纳入 Outlive 的 Codex 能力明确列为范围外
+      - Web 与 Desktop 在 1440×900、1280×800 和 1024×768 下通过主要交互与布局验收；键盘可完成核心导航/提交，窄视口不得把核心工作台降级为只读告警
+      - Web/Desktop 用户旅程测试与有状态截图覆盖空工作区、活动 Run、工具结果和变更审阅；真实模式与 Preview 数据边界可观察且不混淆
+
+      - 保留首轮 UX-086 历史证据；二次验收移除置顶/顶部设置/常驻页签，头像设置入口、紧凑公开进度与真实结果展开一致
+      - 现有全页面、十类设置及 Git/终端/预览/定时任务入口在 Web/Desktop 三种尺寸验证；CLI 有等价真实操作
+      - 新对话、项目和历史会话共用 Composer；加号附件、会话模型/推理、权限与执行/计划模式接入真实控制器，中文输入法和发送快捷键保持有效
+      - 默认仅公开当前说明与一行真实活动，点击展开不执行任务；回答复制/本机反馈、逐 Run 写入卡片及文件/变更/终端/预览/成果面板由真实事件与资源驱动
+      - 宽度 1200px 起使用右侧面板，较窄使用全屏；关闭、切换、重连保留草稿、附件、未保存文件；明暗与三尺寸通过实际客户端验收
+
+  - id: HOST-087
+    phase: P8
+    title: 随应用管理的共享 profile 与单一后台运行时
+    owner: host
+    change_type: feature
+    depends_on: [API-061, DESK-066, CLIENT-068]
+    outputs: [packages/host, docs/validation/unified-local-workbench]
+    acceptance:
+      - Web loopback HTTP 与 Desktop/CLI 认证私有通道使用同一 Runtime、profile、业务控制器和规范 Ledger
+      - 双客户端启动只有一个写入者；关闭窗口只 detach，显式停止 Host 才停止服务；不默认安装开机启动
+      - 旧数据迁移扫描、预览、冲突选择、备份、一次提交与回退保留源数据/原始事件/凭据引用，拒绝旧活跃写入者且不自动执行历史任务
+      - 安装包携带独立运行时；自动启动/监测/重连/安全恢复，不依赖用户 Node/pnpm，未指定端口时自动选择可用端口
+      - 普通 Web/Desktop/CLI 流程自动连接同一 owner；异常恢复不自动重跑历史任务或重复 side effect
+      - 共享连接监督器覆盖外部 CLI 重启、崩溃、唤醒和显式停止，单一恢复请求更新实例/凭据/订阅，游标补齐且不重新提交任务
+      - 连接状态与能力状态分离；已读值保留，失败不能显示安装版本不支持，普通界面提供中文恢复操作
+
+  - id: PAR-088
+    phase: P8
+    title: 三端能力契约与 Desktop 完整路径
+    owner: clients
+    change_type: feature
+    depends_on: [HOST-087]
+    outputs: [packages/contracts, packages/sdk, apps/desktop, apps/desktop-host, docs/validation/unified-local-workbench]
+    acceptance:
+      - Host 按操作返回可用/未配置/只读/策略禁用/不可用状态，三端入口同义且错误码一致
+      - Desktop 补齐权限/用量/遥测/Skills/扩展/MCP/LSP/附件/Team/子 Agent/回放/回滚与真实公开流；已有审批/Todo/Artifact/Memory共同验收
+      - 回放只读、恢复不自动重跑；模型请求和活动只展示公开受校验文本及真实回执
+      - 保存模型连接、会话选项、本机完全访问资格、项目文件 CAS/回执协调与本机反馈经 HTTP/固定 preload/CLI 同义操作，密钥不回传
+
+  - id: CLI-089
+    phase: P8
+    title: CLI 完整本机工作台操作与结构化回执
+    owner: cli
+    change_type: feature
+    depends_on: [HOST-087, PAR-088]
+    outputs: [apps/cli, docs/validation/unified-local-workbench]
+    acceptance:
+      - host/config/doctor/projects/chat/run/sessions/approval/todo/artifact/attachments/replay/rollback/experience/usage/lsp 命令族经同一业务控制器执行，保留既有 Team/Memory/Skills/MCP/扩展命令
+      - 实时进度和 JSON/JSONL 对应真实事件/回执；错误码与退出码稳定，停止订阅不取消任务
+      - 新增开发资源和定时任务有等价命令；凭据通过 stdin 读取，不出现在命令行参数/输出/诊断中
+      - models、files、feedback 与 sessions options-get/options-set 提供真实操作；模型密钥仅 stdin，未知保存可按命令 ID reconcile，显式 host start 才解除已停止状态
+
+  - id: SET-090
+    phase: P8
+    title: 十类设置、真实生效与模型诊断
+    owner: settings
+    change_type: feature
+    depends_on: [HOST-087, PAR-088]
+    outputs: [packages/contracts, packages/host, packages/workbench, docs/validation/unified-local-workbench]
+    acceptance:
+      - 分类导航/搜索与常规/外观/模型/权限/Skills扩展/MCP-LSP/记忆隐私/开发/用量诊断/关于均展示当前值、来源、范围和生效时机
+      - 保存与测试连接独立；错误 Key/模型/地址/超时/只读/存储失败分别呈现；小请求不携带项目或聊天，进行中 Run 绑定原配置
+      - Recall 默认关闭，项目范围和审核/同意约束保留；工具/遥测设置按声明的重启时机真实应用
+      - 加载、空态、只读、失败、策略禁用区分，错误后不会永久加载；设置 CAS 防并发覆盖
+      - 多服务配置与单服务旧数据迁移、独立测试与会话选项持久化；任务受理冻结模型/凭据版本，删除/替换不影响已受理任务
+      - 完全访问资格保存在本机且可撤销，与会话选择和管理员上限分离；重启待生效期间不得声称完全访问已经获得
+
+  - id: DEV-091
+    phase: P8
+    title: 本地 Git/worktree、PTY 终端和网页预览
+    owner: developer-workbench
+    change_type: feature
+    depends_on: [HOST-087, PAR-088, SET-090]
+    outputs: [packages/host, packages/workbench, apps/desktop, apps/cli, docs/validation/unified-local-workbench]
+    acceptance:
+      - Git 状态/三类 diff/暂存/提交/分支/worktree 创建选择移除真实执行；丢弃先显示范围，活跃 worktree 不移除
+      - node-pty/xterm 终端归 Host 管理；客户端关闭不结束进程，重连有限历史；显式关闭终止，崩溃后不自动重跑且遵守实际沙箱
+      - 项目预览注册/启动/地址健康/停止可操作；Web 受控预览与 Desktop 隔离浏览视图，不开放任意远端浏览
+      - CodeMirror 编辑 UTF-8 文本、受限图片预览；保存携带哈希/命令 ID，经项目范围/符号链接/权限/审批/工作区协调，磁盘内容与 Ledger 回执一致
+      - 冲突保留缓冲；未知写入只协调不自动重写；计划模式禁止 Agent 写入，独立的人类保存仍按显式权限与审批处理
+
+  - id: RUN-092
+    phase: P8
+    title: 后台多会话、工作区协调与持久定时任务
+    owner: runtime-host
+    change_type: feature
+    depends_on: [HOST-087, PAR-088, DEV-091]
+    outputs: [packages/api, packages/host, packages/workbench, apps/cli, docs/validation/unified-local-workbench]
+    acceptance:
+      - 每会话串行、独立工作区并行、同 canonical 工作区写任务 FIFO；Git/PTY/预览/Agent/定时任务共享协调，切换视图不取消
+      - 一次性/周期/时区任务 CRUD、暂停、立即运行、历史与通知；错过不补跑、重叠跳过、审批暂停
+      - 触发先持久记录，重启不重复执行；归档不删除历史，后台任务和最近会话显示真实状态
+
+  - id: BRAND-093
+    phase: P8
+    title: Outlive Agent 产品名称与自然色标志
+    owner: product
+    change_type: feature
+    depends_on: [PAR-088]
+    outputs: [docs/brand, packages/workbench, apps/desktop, apps/cli]
+    acceptance:
+      - 全部当前产品页面、窗口、帮助和安装包统一使用 Outlive Agent；旧 wire/package/环境变量与原始 Ledger 保持可读取兼容
+      - 保留四幅原创自然色 SVG 候选与历史选择证据，最终使用用户确认的 B Current；无圆点端点
+      - 用户已确认 B Current，独立 current.svg 为唯一生产源；resvg 构建透明标志和单暖色底板居中原生图标，完整 ICNS/多尺寸 ICO 与逐尺寸裁切校验
+      - 新安装版核对实际 App 路径和资源，并在 Dock/Finder 查看；Windows 原生显示仍待 Windows 实机证据
+
+  - id: MEDIA-094
+    phase: P8
+    title: 真实图片生成、原生图片输出与受限图表 Artifact
+    owner: media
+    change_type: feature
+    depends_on: [HOST-087, PAR-088, SET-090]
+    outputs: [packages/contracts, packages/core, packages/evidence, packages/host, packages/sdk, packages/workbench, apps/cli, docs/validation/installable-product]
+    acceptance:
+      - 专用 OpenAI/OpenAI-compatible 图片接口与原生聊天图片输出均经受信 Provider seam；文字或代码不得作为图片生成成功证据
+      - 有界图表/图形渲染产出真实可预览文件；内容通过大小/MIME/格式校验，保存为同项目/Run Artifact 并绑定规范 Ledger 工具回执
+      - Web/Desktop 可预览保存，CLI 可生成/渲染/导出；跨 Run/项目读取拒绝，回放只读且不触发生成
+      - 未配置、认证/模型/地址/超时/存储失败给出可恢复操作，未知外部结果不得自动重复计费请求
+
+  - id: DIST-095
+    phase: P8
+    title: macOS/Windows 安装包与首次使用闭环
+    owner: distribution
+    change_type: feature
+    depends_on: [HOST-087, PAR-088, CLI-089, SET-090, DEV-091, RUN-092, BRAND-093, MEDIA-094]
+    outputs: [apps/desktop, scripts, .github/workflows, docs/releases, docs/validation/installable-product]
+    acceptance:
+      - 两个平台交付安装包、随包运行时与 CLI；启动无需开发工具，升级保留 profile/Ledger/凭据引用并支持失败回退
+      - 首次使用连接模型/保存 Key/独立真实小请求测试/打开项目/执行/查看结果闭环；MCP/LSP 等可选服务不阻塞普通对话
+      - 应用自动恢复失败后才显示修复安装与脱敏诊断；普通界面不展示手动 Host 启停或本机服务未启动文案
+      - 全新 macOS 与 Windows 环境完成安装/升级/错误恢复验收；签名、平台验证与外部用户证据不足时明确保持待验收

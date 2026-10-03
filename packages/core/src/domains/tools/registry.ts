@@ -1041,7 +1041,7 @@ function todoReadPageFits(result: RawToolResult): boolean {
 const todoWriteTool: ToolDefinition<TodoWriteInput> = {
   name: "todo_write",
   ...rawToolContract("todo_write", {
-    description: "Create or update one structured Todo in this Run's canonical event ledger.",
+    description: "Create or update one structured Todo in this Run's canonical event ledger. New Todos must use state=pending (or omit state); only a later update may mark in_progress or done. Done requires prior canonical evidence event IDs.",
     timeoutMs: 5_000,
     // Ledger writes retain command order even though they do not mutate the
     // Workspace and therefore have side_effect=none for permission policy.

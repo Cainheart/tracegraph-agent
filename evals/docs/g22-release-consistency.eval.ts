@@ -2,10 +2,11 @@ import { promises as fs } from "node:fs";
 import nodePath from "node:path";
 
 import { describe, expect, it } from "vitest";
+import { parse } from "yaml";
 
 import { REPOSITORY_ROOT } from "../support/paths.js";
 
-const REQUIRED_CI_JOBS = ["typecheck", "test", "evals"] as const;
+const REQUIRED_CI_JOBS = ["typecheck", "test", "evals", "benchmarks"] as const;
 const REQUIRED_SCRIPTS = [
   "coverage",
   "evals",
@@ -16,7 +17,7 @@ const REQUIRED_SCRIPTS = [
 ] as const;
 
 describe("G22 engineering and release consistency", () => {
-  it("keeps the three CI jobs least-privilege and immutable-action pinned", async () => {
+  it("keeps the four CI jobs least-privilege and immutable-action pinned", async () => {
     const workflow = await read(".github/workflows/ci.yml");
     const releaseWorkflow = await read(".github/workflows/release.yml");
     expect(workflow).toContain("permissions:\n  contents: read");
@@ -33,13 +34,26 @@ describe("G22 engineering and release consistency", () => {
         /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+@[a-f0-9]{40}$/u,
       );
     }
-    expect(workflow.match(/install: false/gu)?.length).toBe(3);
-    expect(releaseWorkflow.match(/install: false/gu)?.length).toBe(1);
     const preinstallGuard = "node scripts/verify-lockfile.mjs --skip-frozen";
-    expect(workflow.match(new RegExp(preinstallGuard.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "gu"))?.length).toBe(3);
-    expect(releaseWorkflow.match(new RegExp(preinstallGuard.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "gu"))?.length).toBe(1);
-    expect(workflow.indexOf(preinstallGuard)).toBeLessThan(workflow.indexOf("pnpm install --frozen-lockfile"));
-    expect(releaseWorkflow.indexOf(preinstallGuard)).toBeLessThan(releaseWorkflow.indexOf("pnpm install --frozen-lockfile"));
+    for (const source of [workflow, releaseWorkflow]) {
+      const definition = parse(source) as {
+        permissions: Record<string, string>;
+        jobs: Record<string, { permissions?: Record<string, string>; steps: Array<{ uses?: string; run?: string; with?: Record<string, unknown> }> }>;
+      };
+      expect(definition.permissions).toEqual({ contents: "read" });
+      for (const [name, job] of Object.entries(definition.jobs)) {
+        expect(job.permissions ?? definition.permissions, `${name} must not broaden release permissions`).toEqual({ contents: "read" });
+        const setup = job.steps.filter((step) => step.uses?.startsWith("pnpm/setup@"));
+        expect(setup, `${name} must install pinned tools without implicit dependency installation`).toHaveLength(1);
+        expect(setup[0]?.with).toMatchObject({ version: "11.19.0", install: false });
+        expect(setup[0]?.with?.runtime).toMatch(/^node@(?:22\.19\.0|24\.21\.0)$/u);
+        const guards = job.steps.flatMap((step, index) => step.run === preinstallGuard ? [index] : []);
+        const installs = job.steps.flatMap((step, index) => step.run === "pnpm install --frozen-lockfile" ? [index] : []);
+        expect(guards, `${name} needs exactly one lockfile safety guard`).toHaveLength(1);
+        expect(installs, `${name} needs exactly one frozen dependency installation`).toHaveLength(1);
+        expect(guards[0], `${name} must guard before installing`).toBeLessThan(installs[0]!);
+      }
+    }
     expect(workflow).toContain("runtime: node@22.19.0");
     expect(workflow).toContain("version: 11.19.0");
     expect(releaseWorkflow).toContain("node scripts/verify-release.mjs --write-manifest --tag");

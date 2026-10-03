@@ -52,8 +52,12 @@ export async function executeToolDefinition<TInput, TOutput>(
   });
 
   try {
+    const execution = context.startOwnedJob === undefined
+      ? Promise.resolve(definition.execute(frozenInput, { ...context, signal }))
+      : context.startOwnedJob(() => definition.execute(frozenInput, { ...context, signal }));
+    if (execution === undefined) return abortedToolResult();
     const output = await Promise.race([
-      definition.execute(frozenInput, { ...context, signal }),
+      execution,
       aborted,
     ]);
     if (!cancellationIsShielded()) {

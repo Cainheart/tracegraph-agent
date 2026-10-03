@@ -1,0 +1,46 @@
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: readonly (parallel 2, depth 1)
+{
+  "schema_version": "tracegraph.preview-smoke.v1",
+  "status": "passed",
+  "recorded_at": "2026-10-03T06:27:34.106Z",
+  "platform": "darwin",
+  "arch": "arm64",
+  "node": "v24.21.0",
+  "version": "0.1.0-alpha.0",
+  "evidence_scope": "extracted preview on the current machine; clean-machine and independent-user context must be supplied by the verifier",
+  "cli": {
+    "command": "sessions list --profile-root <isolated> --json",
+    "transport": "authenticated private local channel",
+    "exit_code": 0,
+    "session_count": 0
+  },
+  "shared_host": {
+    "profile_id": "d28fa1ad-83fa-4407-8e73-1a204dc7803c",
+    "protocol_version": "outlive.local-host.v1",
+    "gateway_same_sessions": true
+  },
+  "desktop_host": {
+    "mode": "legacy framed compatibility seam",
+    "identity": {
+      "package_name": "@tracegraph/desktop-host",
+      "package_version": "0.1.0-alpha.0",
+      "protocol_version": "tracegraph.client-protocol.v2"
+    },
+    "exit": {
+      "code": 0,
+      "signal": null
+    },
+    "child_absent": true
+  },
+  "desktop_gui": "not tested by this headless smoke; launch separately",
+  "package_resolution": "within extracted archive",
+  "inventory": {
+    "file_count": 1489,
+    "total_bytes": 23746578
+  },
+  "report_path": "/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-installed-smoke-3BLsNV/report.json"
+}

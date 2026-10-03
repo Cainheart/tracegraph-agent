@@ -6,7 +6,7 @@ interface MemoryCommandClient {
   listMemoryControl(): Promise<{ items: readonly MemoryControlItem[]; conflicts: readonly unknown[] }>;
   createMemoryCandidate(input: Omit<MemoryCandidateCreateRequest, "command_id"> & { command_id?: string }): Promise<MemoryControlItem>;
   reviewMemory(memoryId: string, input: { expected_sequence: number; action: "review_activate" | "review_reject"; command_id?: string }): Promise<MemoryControlItem>;
-  correctMemory(memoryId: string, input: { expected_sequence: number; claim: string; normalized_key?: string; command_id?: string }): Promise<MemoryControlItem>;
+  correctMemory(memoryId: string, input: { expected_sequence: number; claim: string; normalized_key?: string; command_id?: string; allow_export?: boolean }): Promise<MemoryControlItem>;
   revokeMemory(memoryId: string, input: { expected_sequence: number; command_id?: string }): Promise<MemoryControlItem>;
   deleteMemory(memoryId: string, commandId?: string): Promise<{ deletedMemoryIds: readonly string[] }>;
 }
@@ -19,13 +19,13 @@ export interface MemoryCommandDependencies {
 
 const USAGE = [
   "Usage:",
-  "  tracegraph memory list [--host-url <url>]",
-  "  tracegraph memory show <memory-id> [--host-url <url>]",
-  "  tracegraph memory candidate add --kind <kind> --claim <text> [--project-id <id>] [--normalized-key <key>] [--sensitivity <level>] [--allow-model-use]",
-  "  tracegraph memory review <memory-id> --sequence <n> --action <activate|reject>",
-  "  tracegraph memory correct <memory-id> --sequence <n> --claim <text> [--normalized-key <key>]",
-  "  tracegraph memory revoke <memory-id> --sequence <n>",
-  "  tracegraph memory delete <memory-id>",
+  "  outlive memory list [--host-url <url>]",
+  "  outlive memory show <memory-id> [--host-url <url>]",
+  "  outlive memory candidate add --kind <kind> --claim <text> [--project-id <id>] [--normalized-key <key>] [--sensitivity <level>] [--allow-model-use] [--allow-export]",
+  "  outlive memory review <memory-id> --sequence <n> --action <activate|reject>",
+  "  outlive memory correct <memory-id> --sequence <n> --claim <text> [--normalized-key <key>] [--allow-export]",
+  "  outlive memory revoke <memory-id> --sequence <n>",
+  "  outlive memory delete <memory-id>",
   "  Add --host-url <url> to target a non-default local Host.",
 ].join("\n");
 
@@ -55,7 +55,7 @@ export async function runMemoryCommand(
   } else if (operation === "candidate") {
     const action = commandArgs[0];
     if (action !== "add") throw new Error(USAGE);
-    const flags = parseFlags(commandArgs.slice(1), ["--kind", "--claim", "--project-id", "--normalized-key", "--sensitivity", "--source-description", "--retention-policy", "--valid-until"], ["--allow-model-use"]);
+    const flags = parseFlags(commandArgs.slice(1), ["--kind", "--claim", "--project-id", "--normalized-key", "--sensitivity", "--source-description", "--retention-policy", "--valid-until"], ["--allow-model-use", "--allow-export"]);
     output = await client.createMemoryCandidate({
       kind: required(flags, "--kind") as MemoryCandidateCreateRequest["kind"],
       claim: required(flags, "--claim"),
@@ -66,6 +66,7 @@ export async function runMemoryCommand(
       ...(flags.get("--retention-policy") === undefined ? {} : { retention_policy: flags.get("--retention-policy")! }),
       ...(flags.get("--valid-until") === undefined ? {} : { valid_until: flags.get("--valid-until")! }),
       allow_model_use: flags.has("--allow-model-use"),
+      allow_export: flags.has("--allow-export"),
     });
   } else if (operation === "review") {
     const memoryId = requiredPositional(commandArgs, 0);
@@ -78,10 +79,11 @@ export async function runMemoryCommand(
     });
   } else if (operation === "correct") {
     const memoryId = requiredPositional(commandArgs, 0);
-    const flags = parseFlags(commandArgs.slice(1), ["--sequence", "--claim", "--normalized-key"]);
+    const flags = parseFlags(commandArgs.slice(1), ["--sequence", "--claim", "--normalized-key"], ["--allow-export"]);
     output = await client.correctMemory(memoryId, {
       expected_sequence: positiveOrZero(required(flags, "--sequence")),
       claim: required(flags, "--claim"),
+      allow_export: flags.has("--allow-export"),
       ...(flags.get("--normalized-key") === undefined ? {} : { normalized_key: flags.get("--normalized-key")! }),
     });
   } else if (operation === "revoke") {

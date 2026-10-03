@@ -11,6 +11,7 @@ import {
   MemoryUseEventDataSchema,
   ModelUsageReportSchema,
   ObservationSchema,
+  ReceiptSchema,
   ToolBatchCompletedDataSchema,
   ToolBatchStartedDataSchema,
   isTerminalEventType,
@@ -50,6 +51,14 @@ import { ArtifactStore, JsonlEventLedger, projectRun } from "../evidence/runtime
 import { ExtensionManager, type ExtensionRuntimeError } from "../extensions/manager.js";
 import type { SkillRegistrySnapshotInternal } from "../skill/skill.js";
 import { RuntimeFeatureDriverRegistry } from "./runtime-feature-drivers.js";
+import {
+  assessNoProgress,
+  buildProgressFingerprint,
+  type NoProgressPolicy,
+  type ProgressFingerprint,
+} from "./no-progress-guard.js";
+import { planModelProviderRetry, retryTaxonomySnapshot } from "./retry-policy.js";
+import type { CancellationController } from "./cancellation-controller.js";
 import { transitionTurnStart } from "./run-state-machine.js";
 
 export type ValidatedToolCall = ReturnType<typeof validateToolCall>;
@@ -125,7 +134,7 @@ export interface ActionIdentityRepair {
 }
 
 export interface AgentLoopState {
-  readonly abortController: AbortController;
+  readonly cancellation: CancellationController;
   readonly actionSignatures: Map<string, string>;
   readonly cancelInputId?: string;
   readonly conversationHistory: StartRunInput["conversation_history"];
@@ -134,6 +143,8 @@ export interface AgentLoopState {
   readonly mode: RunMode;
   readonly model: ModelAdapter;
   readonly modelImages: ModelImageInput[];
+  readonly noProgressFingerprints: ProgressFingerprint[];
+  readonly noProgressEvidence: Set<string>;
   readonly observations: Observation[];
   readonly orchestration: { readonly depth: number };
   readonly pendingPatch?: PendingPatch;
@@ -236,6 +247,7 @@ export interface AgentLoopPorts<State extends AgentLoopState> {
   readonly isTerminal: (runId: string) => Promise<boolean>;
   readonly ledger: JsonlEventLedger;
   readonly maxToolConcurrency: number;
+  readonly noProgressPolicy: NoProgressPolicy;
   readonly now: () => Date;
   readonly planModeDenialDecision: (
     state: State,
@@ -273,8 +285,14 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
     this.#ports = ports;
   }
 
+  resetNoProgress(state: State): void {
+    state.noProgressFingerprints.length = 0;
+    state.noProgressEvidence.clear();
+  }
+
   async continueRun(state: State): Promise<void> {
-    while (
+    let consecutiveInvalidBatches = 0;
+    modelTurns: while (
       !state.stopped
       && state.pendingPatch === undefined
       && state.pendingPlan === undefined
@@ -296,6 +314,7 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
       }
       const steering = await this.#ports.consumeNextUserInput(state, turnTransition.turn);
       if (steering === "cancelled" || state.stopped) return;
+      if (steering === "message") this.resetNoProgress(state);
       state.turn = turnTransition.turn;
       const turnId = this.#ports.idFactory("turn");
       const modelCallId = this.#ports.idFactory("model-call");
@@ -308,7 +327,7 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
         sessionId: state.sessionId,
         task: state.task,
         turn: state.turn,
-        signal: state.abortController.signal,
+        signal: state.cancellation.signal,
       });
       const extensionSourceEvent = (await this.#ports.ledger.list(state.runId)).at(-1);
       if (extensionSourceEvent === undefined) {
@@ -359,7 +378,7 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
         ...(this.#ports.contextPolicy === undefined ? {} : { contextPolicy: this.#ports.contextPolicy }),
       }, {
         artifactStore: this.#ports.artifacts,
-        signal: state.abortController.signal,
+        signal: state.cancellation.signal,
         onCompactionStarted: async (details) => {
           if (contextCompactionStarted) return;
           contextCompactionStarted = true;
@@ -539,6 +558,15 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
       }
 
       const reportedUsage = new Map<string, ModelUsageReport>();
+      let providerUsageReported = false;
+      const captureUsage = (providerAttempt: number, usageValue: unknown): void => {
+        const parsed = ModelUsageReportSchema.safeParse(usageValue);
+        if (!parsed.success) return;
+        providerUsageReported = true;
+        if (reportedUsage.size >= 16) return;
+        const key = `${providerAttempt}:${parsed.data.request_kind}:${parsed.data.request_sequence}`;
+        if (!reportedUsage.has(key)) reportedUsage.set(key, parsed.data);
+      };
       const modelInput: ModelInput = {
         projectId: state.projectId,
         runId: state.runId,
@@ -555,14 +583,8 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
         toolSchemas: this.#ports.toolRegistry.modelSchemas(this.#ports.effectiveToolAllowlist(state)),
         ...(state.rolePrompt === undefined ? {} : { rolePrompt: state.rolePrompt }),
         ...(remainingSubagentTokens === undefined ? {} : { maxOutputTokens: remainingSubagentTokens }),
-        signal: state.abortController.signal,
-        onUsage: (usageValue) => {
-          if (reportedUsage.size >= 16) return;
-          const parsed = ModelUsageReportSchema.safeParse(usageValue);
-          if (!parsed.success) return;
-          const key = `${parsed.data.request_kind}:${parsed.data.request_sequence}`;
-          if (!reportedUsage.has(key)) reportedUsage.set(key, parsed.data);
-        },
+        signal: state.cancellation.signal,
+        onUsage: (usageValue) => captureUsage(1, usageValue),
       };
       // Keep raw image bytes only in this request object. They must not remain
       // attached to long-lived Run state after the first request is assembled.
@@ -587,7 +609,10 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
         turn_id: turnId,
         model_call_id: modelCallId,
         context_manifest_ref: built.manifest.manifest_id,
-        data: { ...modelRequest },
+        data: {
+          ...modelRequest,
+          retry_taxonomy: retryTaxonomySnapshot(state.maxTurns),
+        },
       });
       if (state.stopped) return;
       if (memoryUseIntent !== undefined) {
@@ -611,28 +636,74 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
       let adapterReturned = false;
       let adapterAttempted = false;
       let adapterInvocationRecorded = false;
+      let providerAttempts = 0;
+      const retryDelays: number[] = [];
       try {
-        adapterAttempted = true;
-        const adapterResponse = state.model.decide(modelInput);
-        const settledAdapterResponse = adapterResponse.then(
-          (value) => ({ status: "response" as const, value }),
-          (error: unknown) => ({ status: "error" as const, error }),
-        );
-        if (appendMemoryUseStatus !== undefined && memoryUseIntent !== undefined) {
-          await appendMemoryUseStatus(MemoryUseEventDataSchema.parse({
-            memory_use_id: memoryUseIntent.memory_use_id,
-            stage: "adapter_invoked",
-            adapter_name: modelRequest.adapter,
-          }));
+        let rawResponse: unknown;
+        while (true) {
+          const attempt = providerAttempts + 1;
+          const attemptInput: ModelInput = {
+            ...modelInput,
+            onUsage: (usageValue) => captureUsage(attempt, usageValue),
+          };
+          const adapterResponse = state.cancellation.startJob(
+            "model",
+            () => state.model.decide(attemptInput),
+          );
+          if (adapterResponse === undefined) return;
+          providerAttempts = attempt;
+          adapterAttempted = true;
+          const settledAdapterResponse = adapterResponse.then(
+            (value) => ({ status: "response" as const, value }),
+            (error: unknown) => ({ status: "error" as const, error }),
+          );
+          if (!adapterInvocationRecorded && appendMemoryUseStatus !== undefined && memoryUseIntent !== undefined) {
+            await appendMemoryUseStatus(MemoryUseEventDataSchema.parse({
+              memory_use_id: memoryUseIntent.memory_use_id,
+              stage: "adapter_invoked",
+              adapter_name: modelRequest.adapter,
+            }));
             adapterInvocationRecorded = true;
+          }
+          const settled = await this.#ports.helpers.abortable(
+            settledAdapterResponse,
+            state.cancellation.signal,
+          );
+          if (settled.status === "response") {
+            rawResponse = settled.value;
+            adapterReturned = true;
+            break;
+          }
+
+          const retry = planModelProviderRetry(
+            settled.error,
+            providerAttempts,
+            providerUsageReported,
+          );
+          if (retry === undefined || state.stopped || state.cancellation.signal.aborted) {
+            throw settled.error;
+          }
+          await this.#ports.append(state, {
+            type: "model.retry_scheduled",
+            summary: `Transient provider failure; retry ${retry.nextAttempt} of ${retry.maxAttempts} in ${retry.delayMs}ms`,
+            turn_id: turnId,
+            model_call_id: modelCallId,
+            context_manifest_ref: built.manifest.manifest_id,
+            data: {
+              retry_scope: "model_provider",
+              attempt: retry.attempt,
+              next_attempt: retry.nextAttempt,
+              max_attempts: retry.maxAttempts,
+              delay_ms: retry.delayMs,
+              reason_code: retry.reasonCode,
+            },
+          });
+          retryDelays.push(retry.delayMs);
+          await waitForRetryDelay(retry.delayMs, state.cancellation.signal);
+          if (state.stopped || state.cancellation.signal.aborted) {
+            throw state.cancellation.signal.reason ?? new Error("Model retry interrupted");
+          }
         }
-        const settled = await this.#ports.helpers.abortable(
-          settledAdapterResponse,
-          state.abortController.signal,
-        );
-        if (settled.status === "error") throw settled.error;
-        const rawResponse = settled.value;
-        adapterReturned = true;
         decision = DecisionSchema.parse(rawResponse);
         const serializedDecision = JSON.stringify(decision);
         if (
@@ -677,7 +748,7 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
               stage: "unknown",
               reason: "run_interrupted",
             })
-            : state.abortController.signal.aborted
+            : state.cancellation.signal.aborted
             ? MemoryUseEventDataSchema.parse({
               memory_use_id: memoryUseIntent.memory_use_id,
               stage: "unknown",
@@ -700,6 +771,9 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
           data: {
             error: errorMessage,
             ...modelRequest,
+            provider_attempts: providerAttempts,
+            provider_retry_count: retryDelays.length,
+            provider_retry_delays_ms: retryDelays,
             ...(requestFailed ? { code: error.code } : {}),
           },
         });
@@ -783,6 +857,9 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
         data: {
           ...publicDecision.data,
           ...modelRequest,
+          provider_attempts: providerAttempts,
+          provider_retry_count: retryDelays.length,
+          provider_retry_delays_ms: retryDelays,
           ...(state.subagentBudget === undefined ? {} : {
             _internal_subagent_budget: {
               max_tokens: state.subagentBudget.maxTokens,
@@ -1003,6 +1080,63 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
           signatures.push({ actionId: call.action_id, signature: actionSignature });
         } catch (error) {
           if (!(error instanceof ActionRejectedError)) throw error;
+          if (error.code === "schema_invalid") {
+            consecutiveInvalidBatches += 1;
+            const retrying = consecutiveInvalidBatches <= 2;
+            const summary = retrying
+              ? "The tool request needs correction; checking its arguments again."
+              : "The model could not provide valid tool arguments. Try continuing with a more specific request.";
+            const now = this.#ports.now().toISOString();
+            const receipt = ReceiptSchema.parse({
+              receipt_id: this.#ports.idFactory("validation-receipt"),
+              action_id: call.action_id,
+              tool_name: call.tool_name,
+              status: "failure",
+              transport_status: "unknown",
+              business_status: "failure",
+              code: "schema_invalid",
+              summary,
+              started_at: now,
+              completed_at: now,
+              duration_ms: 0,
+              artifact_refs: [],
+              metadata: { phase: "validation", executed: false },
+            });
+            const observation = ObservationSchema.parse({
+              observation_id: this.#ports.idFactory("validation-observation"),
+              action_id: call.action_id,
+              receipt_id: receipt.receipt_id,
+              status: "failure",
+              summary,
+              facts: {
+                tool_name: call.tool_name,
+                code: "schema_invalid",
+                executed: false,
+                batch_executed: false,
+                validation_error: this.#ports.helpers.publicError(error).slice(0, 2_000),
+                recovery: "Correct the rejected arguments using the tool schema. No tool in this batch ran. Do not claim completion or reuse this rejection as success evidence.",
+              },
+              artifact_refs: [],
+              created_at: now,
+            });
+            await this.#ports.append(state, {
+              type: "action.rejected",
+              summary,
+              action_id: call.action_id,
+              data: {
+                code: error.code,
+                failure_class: "invalid_arguments",
+                correction_attempt: consecutiveInvalidBatches,
+                retrying,
+                receipt,
+                observation,
+              },
+            });
+            state.observations.push(observation);
+            if (retrying) continue modelTurns;
+            await this.#ports.fail(state, error.code, summary);
+            return;
+          }
           await this.#ports.append(state, {
             type: error.code === "capability_denied"
               || error.code === "plan_mode_denied"
@@ -1020,6 +1154,7 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
           return;
         }
       }
+      consecutiveInvalidBatches = 0;
       for (const { actionId, signature } of signatures) state.actionSignatures.set(actionId, signature);
 
       const isBatch = decision.tool_calls !== undefined;
@@ -1138,8 +1273,92 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
         return;
       }
       if (preview !== undefined) return;
+
+      const fingerprint = buildProgressFingerprint(
+        scheduled.completed.map(({ prepared, executed }) => ({
+          normalizedToolCall: this.#ports.helpers.commandSignature({
+            tool_name: prepared.call.tool_name,
+            arguments: prepared.call.arguments,
+          }),
+          toolName: prepared.call.tool_name,
+          sideEffect: prepared.validated.definition.sideEffect,
+          result: executed.raw,
+        })),
+        state.noProgressEvidence,
+      );
+      const assessment = assessNoProgress(
+        state.noProgressFingerprints,
+        fingerprint,
+        this.#ports.noProgressPolicy,
+      );
+      const hasQueuedSteering = assessment.triggered
+        && projectRun(await this.#ports.ledger.list(state.runId)).input_queue.pending
+          .some(({ kind }) => kind !== "cancel");
+      if (assessment.triggered && !hasQueuedSteering) {
+        const repeatedPercent = Math.round(assessment.repeatedCallRatio * 100);
+        await this.#ports.fail(
+          state,
+          "no_progress_detected",
+          `Run stopped after ${assessment.noProgressTurns} consecutive Tool turns produced no new evidence (${repeatedPercent}% repeated calls in the ${assessment.recentTurns}-turn window)`,
+          {
+            no_progress_guard: {
+              policy: {
+                window_turns: this.#ports.noProgressPolicy.windowTurns,
+                minimum_no_progress_turns: this.#ports.noProgressPolicy.minimumNoProgressTurns,
+                minimum_repeated_call_ratio: this.#ports.noProgressPolicy.minimumRepeatedCallRatio,
+              },
+              recent_turns: assessment.recentTurns,
+              no_progress_turns: assessment.noProgressTurns,
+              repeated_call_count: assessment.repeatedCallCount,
+              total_call_count: assessment.totalCallCount,
+              repeated_call_ratio: assessment.repeatedCallRatio,
+              fingerprint: {
+                normalized_tool_calls: fingerprint.normalizedToolCalls,
+                ...(fingerprint.workspaceDeltaHash === undefined
+                  ? {}
+                  : { workspace_delta_hash: fingerprint.workspaceDeltaHash }),
+                ...(fingerprint.diagnosticsHash === undefined
+                  ? {}
+                  : { diagnostics_hash: fingerprint.diagnosticsHash }),
+                ...(fingerprint.goalStateHash === undefined
+                  ? {}
+                  : { goal_state_hash: fingerprint.goalStateHash }),
+                new_evidence_count: fingerprint.newEvidenceCount,
+                unresolved_error_codes: fingerprint.unresolvedErrorCodes,
+              },
+            },
+          },
+        );
+        return;
+      }
+      state.noProgressFingerprints.push(fingerprint);
+      if (state.noProgressFingerprints.length > this.#ports.noProgressPolicy.windowTurns) {
+        state.noProgressFingerprints.splice(
+          0,
+          state.noProgressFingerprints.length - this.#ports.noProgressPolicy.windowTurns,
+        );
+      }
     }
   }
+}
+
+function waitForRetryDelay(delayMs: number, signal: AbortSignal): Promise<void> {
+  if (signal.aborted) {
+    return Promise.reject(signal.reason ?? new Error("Model retry interrupted"));
+  }
+  return new Promise((resolve, reject) => {
+    let timer: ReturnType<typeof setTimeout>;
+    const onAbort = (): void => {
+      clearTimeout(timer);
+      signal.removeEventListener("abort", onAbort);
+      reject(signal.reason ?? new Error("Model retry interrupted"));
+    };
+    timer = setTimeout(() => {
+      signal.removeEventListener("abort", onAbort);
+      resolve();
+    }, delayMs);
+    signal.addEventListener("abort", onAbort, { once: true });
+  });
 }
 
 function createMemoryUseDispatchIntent(

@@ -1,0 +1,487 @@
+{
+  "schema_version": "tracegraph.session-event.v1",
+  "projector_version": "tracegraph.projector.v9",
+  "project_id": "chat:local",
+  "session_id": "session:215f0fcf-37ac-4f13-b3d9-5d7e19a3e169",
+  "run_id": "run:b9e26717-f769-4eec-8373-4d349ab9932f",
+  "task": "Create image: bad64: negative fixture",
+  "mode": "execute",
+  "reasoning_effort": "default",
+  "workspace_kind": "readonly_local",
+  "status": "failed",
+  "last_sequence": 15,
+  "timeline": [
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:25b061a1-c909-4ede-8b16-1b06534e5cd8",
+      "project_id": "chat:local",
+      "run_id": "run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "session_id": "session:215f0fcf-37ac-4f13-b3d9-5d7e19a3e169",
+      "sequence": 1,
+      "occurred_at": "2026-10-03T08:57:04.814Z",
+      "type": "run.created",
+      "summary": "Run created",
+      "artifact_refs": [],
+      "data": {
+        "task": "Create image: bad64: negative fixture",
+        "background_model_derivation": false,
+        "mode": "execute",
+        "reasoning_effort": "default",
+        "workspace_kind": "readonly_local",
+        "conversation_message_count": 0,
+        "max_turns": 12,
+        "subagent_limits": {
+          "max_parallel_subagents": 2,
+          "max_depth": 1
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:c5fc1f6a-dea9-478e-8478-82a41ac46147",
+      "project_id": "chat:local",
+      "run_id": "run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "session_id": "session:215f0fcf-37ac-4f13-b3d9-5d7e19a3e169",
+      "sequence": 2,
+      "occurred_at": "2026-10-03T08:57:04.836Z",
+      "type": "session.opened",
+      "summary": "Durable session opened",
+      "artifact_refs": [],
+      "data": {
+        "session_version": 1
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:0012087b-bb42-4ebe-b5e4-3791f65da1e4",
+      "project_id": "chat:local",
+      "run_id": "run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "session_id": "session:215f0fcf-37ac-4f13-b3d9-5d7e19a3e169",
+      "sequence": 3,
+      "occurred_at": "2026-10-03T08:57:04.857Z",
+      "type": "permission.configured",
+      "summary": "Permission preset configured as workspace-write",
+      "artifact_refs": [],
+      "data": {
+        "permission": {
+          "preset_key": "workspace-write",
+          "label": "Workspace write",
+          "sandbox_mode": "workspace-write",
+          "approval_policy": "on-write",
+          "policy_digest": "sha256:8a007dbb9f361639b82a7b17941c3c8f8a3761d4eb805cb9f08bdac7f0e4ae1d"
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:48c26712-a0d0-4a29-afdb-74ae24bdb7a9",
+      "project_id": "chat:local",
+      "run_id": "run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "session_id": "session:215f0fcf-37ac-4f13-b3d9-5d7e19a3e169",
+      "sequence": 4,
+      "occurred_at": "2026-10-03T08:57:04.878Z",
+      "type": "skill.registry_loaded",
+      "summary": "Loaded 0 local Skill catalog entries",
+      "artifact_refs": [],
+      "data": {
+        "registry_digest": "sha256:cfd7a252974f7d974251d383272d845c0c44b5295051650764ee275b99d401f6",
+        "skill_names": [],
+        "loaded_count": 0,
+        "conflict_count": 0,
+        "diagnostic_count": 0
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:d15468a7-2a56-4df0-8764-43201bd0d438",
+      "project_id": "chat:local",
+      "run_id": "run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "session_id": "session:215f0fcf-37ac-4f13-b3d9-5d7e19a3e169",
+      "sequence": 5,
+      "occurred_at": "2026-10-03T08:57:04.911Z",
+      "type": "sandbox.configured",
+      "summary": "Sandbox mode configured as workspace-write",
+      "artifact_refs": [],
+      "data": {
+        "mode": "workspace-write",
+        "platform": "darwin"
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:c5ad9794-0119-462d-bc3f-554cd9aafcb9",
+      "project_id": "chat:local",
+      "run_id": "run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "session_id": "session:215f0fcf-37ac-4f13-b3d9-5d7e19a3e169",
+      "sequence": 6,
+      "occurred_at": "2026-10-03T08:57:04.932Z",
+      "type": "sandbox.enforced",
+      "summary": "OS sandbox enforcement is active",
+      "artifact_refs": [],
+      "data": {
+        "sandbox_report": {
+          "report_version": 1,
+          "mode": "workspace-write",
+          "enforcement": "full",
+          "platform": "darwin",
+          "mechanisms": [
+            "seatbelt:/usr/bin/sandbox-exec",
+            "filesystem:workspace-write",
+            "path-scope:canonical-workspace",
+            "network:denied",
+            "process:shell-false"
+          ],
+          "unmet_constraints": []
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:17052d5d-2170-4c38-a643-6758a05bab01",
+      "project_id": "chat:local",
+      "run_id": "run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "session_id": "session:215f0fcf-37ac-4f13-b3d9-5d7e19a3e169",
+      "sequence": 7,
+      "occurred_at": "2026-10-03T08:57:04.953Z",
+      "type": "run.started",
+      "summary": "Conversation started without workspace indexing",
+      "artifact_refs": [],
+      "data": {
+        "phase": "conversation"
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:0a3f0a5b-287a-4542-8956-71eaec48240a",
+      "project_id": "chat:local",
+      "run_id": "run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "session_id": "session:215f0fcf-37ac-4f13-b3d9-5d7e19a3e169",
+      "sequence": 8,
+      "occurred_at": "2026-10-03T08:57:04.979Z",
+      "type": "memory.recalled",
+      "summary": "Recalled 0 memory items within 0 tokens",
+      "artifact_refs": [],
+      "data": {
+        "retrieval_id": "memory-retrieval:feedd01e-41a7-4556-9e4e-fda78e23df8b",
+        "query_hash": "sha256:f9f4b6c5ae09cad9e1b2f67e18fb4646a5b9bd37c5b4bf7ceee7175ab9a6979c",
+        "status": "completed",
+        "budget": {
+          "max_tokens": 4096,
+          "max_hits": 8
+        },
+        "hits": [],
+        "blocked_hits": [],
+        "injected_tokens": 0
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:e5972f65-e1cf-4b02-9bf2-d511f62c6b1e",
+      "project_id": "chat:local",
+      "run_id": "run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "session_id": "session:215f0fcf-37ac-4f13-b3d9-5d7e19a3e169",
+      "sequence": 9,
+      "occurred_at": "2026-10-03T08:57:05.018Z",
+      "type": "context.built",
+      "summary": "Context built with 130 input tokens",
+      "artifact_refs": [
+        {
+          "artifact_id": "artifact:95c7c619-f8cb-4a6e-a51b-5284ba7a4f97",
+          "kind": "context_manifest",
+          "content_hash": "sha256:0746f9486a264cf3f664c2c58fe8a97ea1db9c5bed6ce93ab9529c9c56386717",
+          "mime_type": "application/json",
+          "byte_length": 3221,
+          "project_id": "chat:local",
+          "run_id": "run:b9e26717-f769-4eec-8373-4d349ab9932f",
+          "created_at": "2026-10-03T08:57:05.017Z"
+        }
+      ],
+      "turn_id": "turn:d4676d90-c664-456d-93db-b19f2aab8a2a",
+      "context_manifest_ref": "context:d0e7cd98-0c40-41bd-9170-2051cb8a37d6",
+      "model_call_id": "model-call:d9668ba1-999c-4e69-b29d-5d914554515a",
+      "data": {
+        "manifest_id": "context:d0e7cd98-0c40-41bd-9170-2051cb8a37d6",
+        "input_tokens": 130,
+        "token_limit": 258000,
+        "reserved_output_tokens": 32000,
+        "token_estimate": {
+          "estimator_id": "heuristic_v2",
+          "confidence": "estimated",
+          "input_tokens": 130,
+          "output_tokens": 0,
+          "per_section": {
+            "system": 117,
+            "goal": 13,
+            "history": 0,
+            "tool": 0,
+            "repo": 0,
+            "memory": 0,
+            "experience": 0
+          }
+        },
+        "input_budget_tokens": 226000,
+        "warning_threshold_tokens": 158200,
+        "compression_threshold_tokens": 180800,
+        "token_estimator": "heuristic_v2",
+        "context_status": "healthy",
+        "compression": {
+          "strategy": "none",
+          "applied_strategy": "none",
+          "trigger": "within_budget",
+          "before_tokens": 130,
+          "after_tokens": 130,
+          "checkpoint_tokens": 0,
+          "preserved_recent_message_count": 0,
+          "compacted_history_message_count": 0,
+          "steps": []
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:58aadfc6-6b2b-45bb-bd5d-e72c8fe671ea",
+      "project_id": "chat:local",
+      "run_id": "run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "session_id": "session:215f0fcf-37ac-4f13-b3d9-5d7e19a3e169",
+      "sequence": 10,
+      "occurred_at": "2026-10-03T08:57:05.058Z",
+      "type": "model.request_started",
+      "summary": "Requesting a decision from trusted-media-instruction-v1-6c20105b86ddb998d4e4e8c7ac75c90e34855d34dfac69507006933021e2ee8b with provider-default reasoning",
+      "artifact_refs": [],
+      "turn_id": "turn:d4676d90-c664-456d-93db-b19f2aab8a2a",
+      "context_manifest_ref": "context:d0e7cd98-0c40-41bd-9170-2051cb8a37d6",
+      "model_call_id": "model-call:d9668ba1-999c-4e69-b29d-5d914554515a",
+      "data": {
+        "adapter": "trusted-media-instruction-v1-6c20105b86ddb998d4e4e8c7ac75c90e34855d34dfac69507006933021e2ee8b",
+        "requested_reasoning_effort": "default",
+        "reasoning_configuration": "provider_default",
+        "retry_taxonomy": {
+          "version": "retry-taxonomy.v1",
+          "model_provider": {
+            "max_attempts": 3,
+            "retryable_http_statuses": [
+              408,
+              425,
+              429,
+              500,
+              502,
+              503,
+              504
+            ],
+            "retryable_transport_classes": [
+              "timeout",
+              "selected_network_errors"
+            ],
+            "base_backoff_ms": 250,
+            "max_backoff_ms": 1000,
+            "stop_after_provider_usage": true
+          },
+          "tool": {
+            "max_automatic_dispatch_attempts": 1,
+            "replay_policy": "disabled",
+            "new_model_authored_actions_are_separate": true,
+            "run_turn_limit": 12
+          },
+          "action": {
+            "max_dispatch_attempts_per_operation": 1,
+            "unknown_outcome": "reconcile_only"
+          }
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:0edafab9-8acc-4b3d-92e7-11b5033bc4b0",
+      "project_id": "chat:local",
+      "run_id": "run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "session_id": "session:215f0fcf-37ac-4f13-b3d9-5d7e19a3e169",
+      "sequence": 11,
+      "occurred_at": "2026-10-03T08:57:05.097Z",
+      "type": "model.decision",
+      "summary": "Execute the explicitly requested media operation through the registered tool.",
+      "artifact_refs": [],
+      "turn_id": "turn:d4676d90-c664-456d-93db-b19f2aab8a2a",
+      "context_manifest_ref": "context:d0e7cd98-0c40-41bd-9170-2051cb8a37d6",
+      "model_call_id": "model-call:d9668ba1-999c-4e69-b29d-5d914554515a",
+      "action_id": "action:media-run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "data": {
+        "decision_kind": "tool_call",
+        "risk": "medium",
+        "evidence_ref_count": 0,
+        "public_plan": "Execute the explicitly requested media operation through the registered tool.",
+        "tool_name": "generate_image",
+        "adapter": "trusted-media-instruction-v1-6c20105b86ddb998d4e4e8c7ac75c90e34855d34dfac69507006933021e2ee8b",
+        "requested_reasoning_effort": "default",
+        "reasoning_configuration": "provider_default",
+        "provider_attempts": 1,
+        "provider_retry_count": 0,
+        "provider_retry_delays_ms": []
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:8a362637-7b96-4d61-99e9-77cb05dacfcd",
+      "project_id": "chat:local",
+      "run_id": "run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "session_id": "session:215f0fcf-37ac-4f13-b3d9-5d7e19a3e169",
+      "sequence": 12,
+      "occurred_at": "2026-10-03T08:57:05.139Z",
+      "type": "policy.evaluated",
+      "summary": "Permission preset workspace-write allows this Tool action",
+      "artifact_refs": [],
+      "action_id": "action:media-run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "data": {
+        "decision": {
+          "decision_id": "policy-decision:12fab2e0-731c-432c-9364-c9779dc10412",
+          "preset_key": "workspace-write",
+          "policy_digest": "sha256:8a007dbb9f361639b82a7b17941c3c8f8a3761d4eb805cb9f08bdac7f0e4ae1d",
+          "tool_name": "generate_image",
+          "side_effect": "execute",
+          "kind": "allow",
+          "source": "preset-default",
+          "explanation": "Permission preset workspace-write allows this Tool action",
+          "action_digest": "sha256:827045f0e9a400fec37059fcd3aac8ce887315162cca049fa0d29bebee5bdfa7"
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:42a9af5b-cea7-440d-87ae-ba4a53e27274",
+      "project_id": "chat:local",
+      "run_id": "run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "session_id": "session:215f0fcf-37ac-4f13-b3d9-5d7e19a3e169",
+      "sequence": 13,
+      "occurred_at": "2026-10-03T08:57:05.182Z",
+      "type": "tool.started",
+      "summary": "generate_image started",
+      "artifact_refs": [],
+      "operation_id": "action:media-run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "action_id": "action:media-run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "data": {
+        "tool_name": "generate_image",
+        "activity": "tool"
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:5fe65fd1-faf9-4cbf-84cc-526ab843521b",
+      "project_id": "chat:local",
+      "run_id": "run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "session_id": "session:215f0fcf-37ac-4f13-b3d9-5d7e19a3e169",
+      "sequence": 14,
+      "occurred_at": "2026-10-03T08:57:05.215Z",
+      "type": "tool.failed",
+      "summary": "No verified image bytes were returned; text, code and remote URLs are not image success",
+      "artifact_refs": [],
+      "operation_id": "action:media-run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "action_id": "action:media-run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "data": {
+        "receipt": {
+          "receipt_id": "receipt:c14aa527-df21-433e-80e0-459e189f2c9c",
+          "action_id": "action:media-run:b9e26717-f769-4eec-8373-4d349ab9932f",
+          "tool_name": "generate_image",
+          "status": "failure",
+          "transport_status": "success",
+          "business_status": "failure",
+          "code": "image_output_invalid",
+          "summary": "No verified image bytes were returned; text, code and remote URLs are not image success",
+          "started_at": "2026-10-03T08:57:05.182Z",
+          "completed_at": "2026-10-03T08:57:05.214Z",
+          "duration_ms": 32,
+          "artifact_refs": [],
+          "metadata": {
+            "output_bytes": 150,
+            "failure_code": "output_contract_violation",
+            "business_code": "image_output_invalid",
+            "execution_parallel": false
+          }
+        },
+        "observation": {
+          "observation_id": "observation:2b691ad4-34e9-4fac-905c-6a44a08248d4",
+          "action_id": "action:media-run:b9e26717-f769-4eec-8373-4d349ab9932f",
+          "receipt_id": "receipt:c14aa527-df21-433e-80e0-459e189f2c9c",
+          "status": "failure",
+          "summary": "No verified image bytes were returned; text, code and remote URLs are not image success",
+          "facts": {
+            "tool_name": "generate_image",
+            "code": "image_output_invalid"
+          },
+          "artifact_refs": [],
+          "created_at": "2026-10-03T08:57:05.214Z"
+        },
+        "code": "output_contract_violation",
+        "business_code": "image_output_invalid"
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:f05cc6ce-0f31-4a38-8900-745bce36c715",
+      "project_id": "chat:local",
+      "run_id": "run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "session_id": "session:215f0fcf-37ac-4f13-b3d9-5d7e19a3e169",
+      "sequence": 15,
+      "occurred_at": "2026-10-03T08:57:05.255Z",
+      "type": "run.failed",
+      "summary": "No verified image bytes were returned; text, code and remote URLs are not image success",
+      "artifact_refs": [],
+      "data": {
+        "code": "image_output_invalid"
+      }
+    }
+  ],
+  "todos": {
+    "items": [],
+    "last_sequence": 15
+  },
+  "input_queue": {
+    "pending": []
+  },
+  "subagents": {
+    "items": [],
+    "active_count": 0,
+    "last_sequence": 15,
+    "limits": {
+      "max_parallel_subagents": 2,
+      "max_depth": 1
+    }
+  },
+  "attachments": {
+    "items": [],
+    "last_sequence": 0
+  },
+  "sandbox_report": {
+    "report_version": 1,
+    "mode": "workspace-write",
+    "enforcement": "full",
+    "platform": "darwin",
+    "mechanisms": [
+      "seatbelt:/usr/bin/sandbox-exec",
+      "filesystem:workspace-write",
+      "path-scope:canonical-workspace",
+      "network:denied",
+      "process:shell-false"
+    ],
+    "unmet_constraints": []
+  },
+  "permission": {
+    "preset_key": "workspace-write",
+    "label": "Workspace write",
+    "sandbox_mode": "workspace-write",
+    "approval_policy": "on-write",
+    "policy_digest": "sha256:8a007dbb9f361639b82a7b17941c3c8f8a3761d4eb805cb9f08bdac7f0e4ae1d"
+  },
+  "artifact_refs": [
+    {
+      "artifact_id": "artifact:95c7c619-f8cb-4a6e-a51b-5284ba7a4f97",
+      "kind": "context_manifest",
+      "content_hash": "sha256:0746f9486a264cf3f664c2c58fe8a97ea1db9c5bed6ce93ab9529c9c56386717",
+      "mime_type": "application/json",
+      "byte_length": 3221,
+      "project_id": "chat:local",
+      "run_id": "run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "created_at": "2026-10-03T08:57:05.017Z"
+    }
+  ],
+  "outcome": "No verified image bytes were returned; text, code and remote URLs are not image success",
+  "failure_code": "image_output_invalid"
+}

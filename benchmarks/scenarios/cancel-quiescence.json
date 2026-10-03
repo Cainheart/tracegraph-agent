@@ -1,0 +1,13 @@
+{
+  "schema_version": "tracegraph.benchmark-scenario.v1",
+  "id": "cancel-quiescence",
+  "version": "1.0.0",
+  "description": "Cancel a blocked model request and assert terminal state with no active or queued work",
+  "working_directory": ".",
+  "correctness_command": { "args": ["benchmarks/paths/scenario.mjs", "correctness", "cancel-quiescence"] },
+  "command": { "args": ["benchmarks/paths/scenario.mjs", "measure", "cancel-quiescence"] },
+  "warmup_iterations": 1,
+  "sample_iterations": 5,
+  "timeout_ms": 30000,
+  "budget": { "wall_time_ms_p95_max": 1800 }
+}

@@ -1,3 +1,7 @@
+import {ModelConnectionsSnapshotSchema,ModelConnectionSaveRequestSchema,ModelConnectionRemoveRequestSchema,SessionRunOptionsSnapshotSchema,SessionRunOptionsUpdateRequestSchema,PermissionGrantSchema,PermissionGrantUpdateRequestSchema,type ModelConnectionSaveRequest,type ModelConnectionRemoveRequest,type SessionRunOptionsUpdateRequest,type PermissionGrantUpdateRequest} from "@tracegraph/contracts";
+import {ImageProviderConfigUpdateSchema,ImageProviderConfigSnapshotSchema,StartMediaRunRequestSchema,MediaMimeTypeSchema,MAX_GENERATED_IMAGE_BYTES,type ImageProviderConfigUpdate,type ImageProviderConfigSnapshot,type StartMediaRunRequest,type MediaMimeType} from "@tracegraph/contracts";
+import {ProjectFileListRequestSchema,ProjectFileReadRequestSchema,ProjectFileSaveRequestSchema,ProjectFileReconcileRequestSchema,ProjectFileListSchema,ProjectFileSnapshotSchema,ProjectFileSaveResultSchema,AnswerFeedbackRequestSchema,AnswerFeedbackSnapshotSchema,type ProjectFileListRequest,type ProjectFileReadRequest,type ProjectFileSaveRequest,type ProjectFileReconcileRequest,type ProjectFileList,type ProjectFileSnapshot,type ProjectFileSaveResult,type AnswerFeedbackRequest,type AnswerFeedbackSnapshot} from "@tracegraph/contracts";
+import {verifyProjectFileSnapshot,verifyProjectFileSaveResult} from "./project-file-integrity.js";
 import {
   ApprovalCommandSchema,
   ApprovePlanRequestSchema,
@@ -9,6 +13,9 @@ import {
   ExtensionCommandResultSchema,
   ExtensionReloadCommandSchema,
   ExtensionStatusSchema,
+  ExperienceControlListResponseSchema,
+  ExperienceLifecycleReviewRequestSchema,
+  ExperienceLifecycleReviewResponseSchema,
   LivePublicActivitySchema,
   MCP_SERVER_NAME_SCHEMA,
   McpRestartRequestSchema,
@@ -71,6 +78,9 @@ import {
   type AttachmentStageReceipt,
   type AttachmentUploadRequest,
   type ArtifactWireResponse,
+  type ExperienceControlListResponse,
+  type ExperienceLifecycleReviewRequest,
+  type ExperienceLifecycleReviewResponse,
   type ExtensionCommandResult,
   type ExtensionStatus,
   type LivePublicActivity,
@@ -125,6 +135,15 @@ import {
   type TodoWriteRequest,
   type WireSessionEvent,
   type SkillProjectInspection,
+} from "@tracegraph/contracts";
+import { ClientCommandSchema, ClientQuerySchema } from "./protocol/index.js";
+import {
+  HostCapabilitiesSchema, ModelConnectionTestRequestSchema, ModelConnectionTestResultSchema,
+  UpdateWorkbenchSettingsRequestSchema, WorkbenchCommandRequestSchema,
+  WorkbenchCommandResultSchema, WorkbenchResourcesSchema, WorkbenchSettingsSnapshotSchema,
+  type HostCapabilities, type ModelConnectionTestResult, type UpdateWorkbenchSettingsRequest,
+  type WorkbenchCommandRequest, type WorkbenchCommandResult, type WorkbenchResources,
+  type WorkbenchSettingsSnapshot,
 } from "@tracegraph/contracts";
 
 export type {
@@ -242,13 +261,25 @@ export interface BootstrapSnapshot {
 export class TraceGraphHttpError extends Error {
   readonly status: number;
   readonly body: unknown;
+  /** The Host's closed auth errors prove rejection before domain admission. */
+  readonly admission: "rejected" | undefined;
 
   constructor(status: number, message: string, body: unknown) {
     super(message);
     this.name = "TraceGraphHttpError";
     this.status = status;
     this.body = body;
+    const code=typeof body==="object"&&body!==null&&"error" in body?body.error:undefined;
+    this.admission=status===401&&["capability_required","capability_invalid","capability_expired"].includes(String(code))?"rejected":undefined;
   }
+}
+
+/** A failed read-only authority check proves that no domain command was sent. */
+export class TraceGraphMutationPreflightError extends Error {
+  readonly code="mutation_preflight_failed";
+  readonly admission="rejected";
+  readonly commandDispatched=false;
+  constructor(){super("The connection could not be verified. No command was sent. Repair the connection before retrying.");this.name="TraceGraphMutationPreflightError";}
 }
 
 const normalizeBaseUrl = (value: string): string => value.replace(/\/$/, "");
@@ -268,12 +299,14 @@ const createInputId = (): string => {
   return `input_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 };
 
+export interface ArtifactContentResponse {artifactId:string;mediaType:MediaMimeType;sha256:`sha256:${string}`;bytes:Uint8Array}
 export class TraceGraphClient {
   readonly #baseUrl: string;
   readonly #fetch: typeof globalThis.fetch;
   readonly #nodeOrigin: string | undefined;
   #token: string | undefined;
-  #tokenRefresh: Promise<void> | null = null;
+  #tokenRefresh: Promise<BootstrapSnapshot> | null = null;
+  #managedLiveAuthority=false;
   #liveTokenBeforeReplay: string | undefined;
   #replayScope: { sessionId: string; runId: string } | undefined;
   #replayGeneration = 0;
@@ -299,7 +332,13 @@ export class TraceGraphClient {
     if (this.#replayScope !== undefined) {
       throw new Error("Exit replay before refreshing the live Host capability");
     }
-    const value = await this.#requestUnknown("/api/bootstrap", { method: "GET" }, false);
+    if(!this.#tokenRefresh)this.#tokenRefresh=this.#bootstrapLiveAuthority().finally(()=>{this.#tokenRefresh=null;});
+    return this.#tokenRefresh;
+  }
+
+  async #bootstrapLiveAuthority():Promise<BootstrapSnapshot>{
+    const generation=this.#replayGeneration;
+    const value = await this.#requestUnknown("/api/bootstrap", { method: "GET",signal:AbortSignal.timeout(10_000) }, false);
     if (
       typeof value !== "object" ||
       value === null ||
@@ -313,7 +352,9 @@ export class TraceGraphClient {
     const recovery = "recovery" in value && value.recovery !== undefined
       ? SessionRecoveryReportSchema.parse(value.recovery)
       : undefined;
+    if(generation!==this.#replayGeneration||this.#replayScope!==undefined)throw new Error("Live capability refresh was superseded by an authority transition");
     this.#token = value.token;
+    this.#managedLiveAuthority=true;
     return {
       token: value.token,
       expiresAt: value.expiresAt,
@@ -357,10 +398,55 @@ export class TraceGraphClient {
     await this.#command(`/api/projects/${encodeURIComponent(projectId)}/remove`, body);
   }
 
+  async getImageConfig():Promise<ImageProviderConfigSnapshot>{return ImageProviderConfigSnapshotSchema.parse(await this.#requestUnknown("/api/image-provider"));}
+  async listProjectFiles(projectId:string,input:ProjectFileListRequest={}):Promise<ProjectFileList>{const result=ProjectFileListSchema.parse(await this.#command(`/api/workbench/projects/${encodeURIComponent(projectId)}/files/list`,ProjectFileListRequestSchema.parse(input)));if(result.project_id!==projectId||result.path!==(input.path??""))throw new TypeError("Project file listing has a different scope");return result;}
+  async readProjectFile(projectId:string,input:ProjectFileReadRequest):Promise<ProjectFileSnapshot>{const parsed=ProjectFileReadRequestSchema.parse(input);return verifyProjectFileSnapshot(ProjectFileSnapshotSchema.parse(await this.#command(`/api/workbench/projects/${encodeURIComponent(projectId)}/files/read`,parsed)),projectId,parsed.path);}
+  async saveProjectFile(projectId:string,input:ProjectFileSaveRequest):Promise<ProjectFileSaveResult>{const parsed=ProjectFileSaveRequestSchema.parse(input);return verifyProjectFileSaveResult(ProjectFileSaveResultSchema.parse(await this.#command(`/api/workbench/projects/${encodeURIComponent(projectId)}/files/save`,parsed)),projectId,parsed);}
+  async reconcileProjectFileSave(projectId:string,input:ProjectFileReconcileRequest):Promise<ProjectFileSaveResult>{return ProjectFileSaveResultSchema.parse(await this.#command(`/api/workbench/projects/${encodeURIComponent(projectId)}/files/reconcile`,ProjectFileReconcileRequestSchema.parse(input)));}
+  async getAnswerFeedback(runId:string):Promise<AnswerFeedbackSnapshot>{const result=AnswerFeedbackSnapshotSchema.parse(await this.#requestUnknown(`/api/workbench/runs/${encodeURIComponent(runId)}/feedback`));if(result.run_id!==runId)throw new TypeError("Feedback response has a different Run scope");return result;}
+  async setAnswerFeedback(runId:string,input:AnswerFeedbackRequest):Promise<AnswerFeedbackSnapshot>{const parsed=AnswerFeedbackRequestSchema.parse(input),result=AnswerFeedbackSnapshotSchema.parse(await this.#command(`/api/workbench/runs/${encodeURIComponent(runId)}/feedback`,parsed));if(result.run_id!==runId||result.answer_event_id!==parsed.answer_event_id||result.value!==parsed.value||!result.receipt_event_id)throw new TypeError("Feedback response differs from its bound intent");return result;}
+  async configureImageProvider(input:ImageProviderConfigUpdate):Promise<ImageProviderConfigSnapshot>{return ImageProviderConfigSnapshotSchema.parse(await this.#command("/api/image-provider",ImageProviderConfigUpdateSchema.parse(input)));}
+  async clearImageProvider():Promise<ImageProviderConfigSnapshot>{return ImageProviderConfigSnapshotSchema.parse(await this.#mutation("/api/image-provider","DELETE"));}
+  async startMediaRun(input:StartMediaRunRequest):Promise<RunProjection>{return RunProjectionSchema.parse(await this.#command("/api/media/runs",StartMediaRunRequestSchema.parse(input)));}
+  async getArtifactContent(runId:string,artifactId:string):Promise<ArtifactContentResponse>{
+    const response=await this.#requestResponse(`/api/runs/${encodeURIComponent(runId)}/artifacts/${encodeURIComponent(artifactId)}/content`,{headers:{accept:"image/png,image/svg+xml,image/jpeg,image/webp"}});
+    const mediaType=MediaMimeTypeSchema.parse(response.headers.get("content-type")?.split(";",1)[0]?.trim().toLowerCase());
+    const hash=response.headers.get("x-tracegraph-content-sha256");if(hash===null||!/^sha256:[a-f0-9]{64}$/u.test(hash))throw new TypeError("Binary Artifact has no valid integrity header");
+    const reader=response.body?.getReader();if(!reader)throw new TypeError("Binary Artifact has no body");let total=0;const chunks:Uint8Array[]=[];
+    try{for(;;){const part=await reader.read();if(part.done)break;total+=part.value.byteLength;if(total>MAX_GENERATED_IMAGE_BYTES){await reader.cancel();throw new TypeError("Binary Artifact exceeds the byte limit");}chunks.push(part.value);}}finally{reader.releaseLock();}
+    if(!total)throw new TypeError("Binary Artifact was empty");const bytes=new Uint8Array(total);let offset=0;for(const part of chunks){bytes.set(part,offset);offset+=part.byteLength;}
+    const digest=new Uint8Array(await globalThis.crypto.subtle.digest("SHA-256",bytes));const actual="sha256:"+Array.from(digest,byte=>byte.toString(16).padStart(2,"0")).join("");if(actual!==hash)throw new TypeError("Binary Artifact failed SHA-256 verification");
+    return {artifactId,mediaType,sha256:hash as `sha256:${string}`,bytes};
+  }
+
   async getModelConfig(): Promise<ModelConfigSnapshot> {
     return PublicModelConfigResponseSchema.parse(
       await this.#requestUnknown("/api/model-config"),
     );
+  }
+
+  async getWorkbenchSettings(): Promise<WorkbenchSettingsSnapshot> {
+    return WorkbenchSettingsSnapshotSchema.parse(await this.#requestUnknown("/api/workbench/settings"));
+  }
+
+  async updateWorkbenchSettings(input: UpdateWorkbenchSettingsRequest): Promise<WorkbenchSettingsSnapshot> {
+    return WorkbenchSettingsSnapshotSchema.parse(await this.#command("/api/workbench/settings", UpdateWorkbenchSettingsRequestSchema.parse(input)));
+  }
+
+  async getCapabilities(): Promise<HostCapabilities> {
+    return HostCapabilitiesSchema.parse(await this.#requestUnknown("/api/workbench/capabilities"));
+  }
+
+  async testModel(input: { command_id: string } = { command_id: createCommandId() }): Promise<ModelConnectionTestResult> {
+    return ModelConnectionTestResultSchema.parse(await this.#command("/api/workbench/model-test", ModelConnectionTestRequestSchema.parse(input)));
+  }
+
+  async getWorkbenchResources(): Promise<WorkbenchResources> {
+    return WorkbenchResourcesSchema.parse(await this.#requestUnknown("/api/workbench/resources"));
+  }
+
+  async workbenchCommand(input: WorkbenchCommandRequest): Promise<WorkbenchCommandResult> {
+    return WorkbenchCommandResultSchema.parse(await this.#command("/api/workbench/commands", WorkbenchCommandRequestSchema.parse(input)));
   }
 
   async configureModel(input: ConfigureModelInput): Promise<ModelConfigSnapshot> {
@@ -413,6 +499,7 @@ export class TraceGraphClient {
   }
 
   async listMemoryControl(): Promise<MemoryControlListResponse> {
+    ClientQuerySchema.parse({ operation: "memory.list" });
     return MemoryControlListResponseSchema.parse(await this.#requestUnknown("/api/memory"));
   }
 
@@ -420,6 +507,7 @@ export class TraceGraphClient {
     input: Omit<MemoryCandidateCreateRequest, "command_id"> & { command_id?: string },
   ): Promise<MemoryControlItem> {
     const body = MemoryCandidateCreateRequestSchema.parse({ ...input, command_id: input.command_id ?? createCommandId() });
+    ClientCommandSchema.parse({ type: "memory.create", input: body });
     return MemoryControlItemSchema.parse(await this.#command("/api/memory", body));
   }
 
@@ -428,6 +516,7 @@ export class TraceGraphClient {
     input: Omit<MemoryReviewRequest, "command_id"> & { command_id?: string },
   ): Promise<MemoryControlItem> {
     const body = MemoryReviewRequestSchema.parse({ ...input, command_id: input.command_id ?? createCommandId() });
+    ClientCommandSchema.parse({ type: "memory.review", memory_id: memoryId, input: body });
     return MemoryControlItemSchema.parse(await this.#command(`/api/memory/${encodeURIComponent(memoryId)}/review`, body));
   }
 
@@ -436,6 +525,7 @@ export class TraceGraphClient {
     input: Omit<MemoryCorrectionRequest, "command_id"> & { command_id?: string },
   ): Promise<MemoryControlItem> {
     const body = MemoryCorrectionRequestSchema.parse({ ...input, command_id: input.command_id ?? createCommandId() });
+    ClientCommandSchema.parse({ type: "memory.correct", memory_id: memoryId, input: body });
     return MemoryControlItemSchema.parse(await this.#command(`/api/memory/${encodeURIComponent(memoryId)}/correct`, body));
   }
 
@@ -444,11 +534,13 @@ export class TraceGraphClient {
     input: { expected_sequence: number; command_id?: string },
   ): Promise<MemoryControlItem> {
     const body = MemoryRevokeRequestSchema.parse({ ...input, command_id: input.command_id ?? createCommandId() });
+    ClientCommandSchema.parse({ type: "memory.revoke", memory_id: memoryId, input: body });
     return MemoryControlItemSchema.parse(await this.#command(`/api/memory/${encodeURIComponent(memoryId)}/revoke`, body));
   }
 
   async deleteMemory(memoryId: string, commandId = createCommandId()): Promise<{ deletedMemoryIds: readonly string[] }> {
     const body = MemoryDeleteRequestSchema.parse({ command_id: commandId });
+    ClientCommandSchema.parse({ type: "memory.delete", memory_id: memoryId, input: body });
     return MemoryDeleteResponseSchema.parse(await this.#requestUnknown(`/api/memory/${encodeURIComponent(memoryId)}`, {
       method: "DELETE",
       headers: {
@@ -457,6 +549,23 @@ export class TraceGraphClient {
       },
       body: JSON.stringify(body),
     }));
+  }
+
+  async listExperienceCases(): Promise<ExperienceControlListResponse> {
+    ClientQuerySchema.parse({ operation: "experience.list" });
+    return ExperienceControlListResponseSchema.parse(await this.#requestUnknown("/api/experience"));
+  }
+
+  async reviewExperienceCase(
+    caseId: string,
+    input: Omit<ExperienceLifecycleReviewRequest, "command_id"> & { command_id?: string },
+  ): Promise<ExperienceLifecycleReviewResponse> {
+    const body = ExperienceLifecycleReviewRequestSchema.parse({ ...input, command_id: input.command_id ?? createCommandId() });
+    ClientCommandSchema.parse({ type: "experience.review", case_id: caseId, input: body });
+    return ExperienceLifecycleReviewResponseSchema.parse(await this.#command(
+      `/api/experience/${encodeURIComponent(caseId)}/review`,
+      body,
+    ));
   }
 
   async restartMcpServer(
@@ -615,6 +724,15 @@ export class TraceGraphClient {
       await this.#mutation(`/api/sessions/${encodeURIComponent(sessionId)}/resume`, "POST", body),
     );
   }
+
+  async getModelConnections(){return ModelConnectionsSnapshotSchema.parse(await this.#requestUnknown("/api/workbench/models"));}
+  async saveModelConnection(input:ModelConnectionSaveRequest){return ModelConnectionsSnapshotSchema.parse(await this.#command("/api/workbench/models",ModelConnectionSaveRequestSchema.parse(input)));}
+  async removeModelConnection(id:string,input:ModelConnectionRemoveRequest){return ModelConnectionsSnapshotSchema.parse(await this.#command(`/api/workbench/models/${encodeURIComponent(id)}/remove`,ModelConnectionRemoveRequestSchema.parse(input)));}
+  async testModelConnection(id:string,input:{command_id:string}){return ModelConnectionTestResultSchema.parse(await this.#command(`/api/workbench/models/${encodeURIComponent(id)}/test`,ModelConnectionTestRequestSchema.parse(input)));}
+  async getSessionRunOptions(id:string){return SessionRunOptionsSnapshotSchema.parse(await this.#requestUnknown(`/api/workbench/sessions/${encodeURIComponent(id)}/options`));}
+  async updateSessionRunOptions(id:string,input:SessionRunOptionsUpdateRequest){return SessionRunOptionsSnapshotSchema.parse(await this.#command(`/api/workbench/sessions/${encodeURIComponent(id)}/options`,SessionRunOptionsUpdateRequestSchema.parse(input)));}
+  async getPermissionGrant(){return PermissionGrantSchema.parse(await this.#requestUnknown("/api/workbench/permission-grant"));}
+  async setPermissionGrant(input:PermissionGrantUpdateRequest){return PermissionGrantSchema.parse(await this.#command("/api/workbench/permission-grant",PermissionGrantUpdateRequestSchema.parse(input)));}
 
   async startRun(input: StartRunRequest): Promise<RunProjection> {
     const body = StartRunRequestSchema.parse(input);
@@ -1127,6 +1245,15 @@ export class TraceGraphClient {
     // Remembering it here prevents an exited replay request from turning a
     // delayed 401 into a live bootstrap/retry.
     const startedWithReplayAuthority = this.#replayScope !== undefined;
+    const generation=this.#replayGeneration;
+    if(authenticated&&this.#managedLiveAuthority&&!startedWithReplayAuthority&&!["GET","HEAD"].includes((init.method??"GET").toUpperCase())){
+      // A replaced Host can retain the same gateway address while rotating its
+      // bearer. Verify live authority before this one explicit command; never
+      // retry the POST/PATCH/DELETE if its response is lost or rejected.
+      try{await this.#refreshCapabilityToken();}
+      catch{throw new TraceGraphMutationPreflightError();}
+      if(generation!==this.#replayGeneration||this.#replayScope!==undefined)throw new TraceGraphMutationPreflightError();
+    }
     const response = await this.#fetch(`${this.#baseUrl}${path}`, {
       ...init,
       headers: {
@@ -1138,6 +1265,7 @@ export class TraceGraphClient {
       response.status === 401
       && authenticated
       && retryAuthentication
+      && ["GET", "HEAD"].includes((init.method ?? "GET").toUpperCase())
       && !startedWithReplayAuthority
       && this.#replayScope === undefined
     ) {
@@ -1158,12 +1286,7 @@ export class TraceGraphClient {
         { error: "replay_capability_expired" },
       );
     }
-    if (!this.#tokenRefresh) {
-      this.#tokenRefresh = this.bootstrap().then(() => undefined).finally(() => {
-        this.#tokenRefresh = null;
-      });
-    }
-    await this.#tokenRefresh;
+    await this.bootstrap();
   }
 
   #headers(authenticated = true): Record<string, string> {
@@ -1188,7 +1311,7 @@ export class TraceGraphClient {
     const message =
       typeof body === "object" && body !== null && "message" in body
         ? String(body.message)
-        : `TraceGraph Host returned ${response.status}`;
+        : `Outlive Agent returned ${response.status}`;
     return new TraceGraphHttpError(response.status, message, body);
   }
 }

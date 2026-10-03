@@ -1,0 +1,54 @@
+{
+  "schema_version": "outlive.unified-workbench-acceptance.v1",
+  "status": "passed",
+  "recorded_at": "2026-10-03T06:30:14.258934+00:00",
+  "tasks": [
+    "HOST-087",
+    "PAR-088",
+    "CLI-089",
+    "SET-090",
+    "DEV-091",
+    "RUN-092",
+    "UX-086 second acceptance"
+  ],
+  "platform": "darwin arm64",
+  "node": "v24.21.0",
+  "pnpm": "11.19.0",
+  "source_mode": "dirty local checkout; no commit/push/tag",
+  "unit_tests": {
+    "passed": 1367,
+    "failed": 0,
+    "workspace_summaries": 21
+  },
+  "offline_evals": {
+    "passed": 32
+  },
+  "recorded_snapshots": 5,
+  "engineering_tests": {
+    "node_passed": 94,
+    "vitest_passed": 8,
+    "final_packaging_narrow_passed": 11
+  },
+  "web": {
+    "report": "ui/report.json",
+    "assertions": 14,
+    "screenshots": 102
+  },
+  "installed_desktop": {
+    "report": "installed-desktop/report.json",
+    "assertions": 21,
+    "screenshots": 134,
+    "actual_cli_commands": 22
+  },
+  "archive": {
+    "path": "_tmp_release/unified-local-workbench-20261003-complete/outlive-agent-0.1.0-alpha.0-preview.tar.gz",
+    "sha256": "33147dfea9230ad877627946d5117bd1eb96bc27289435528bd60b067f87c615",
+    "listed_files": 1489,
+    "fresh_install": "_tmp_release/unified-local-workbench-20261003-complete-install/outlive-agent-0.1.0-alpha.0-preview"
+  },
+  "proofs": "release-complete-proofs/report.json",
+  "model_boundary": "Synthetic loopback model; actual Runtime/ledger/files/tests/processes. No real provider credential or quality claim.",
+  "external_acceptance": "Maintainer Agent simulation; independent non-maintainer unverified",
+  "distribution": "private unsigned Preview; no signed installer/public deployment",
+  "notifications": "Canonical retained facts; OS notifications require an attached authorized client."
+}

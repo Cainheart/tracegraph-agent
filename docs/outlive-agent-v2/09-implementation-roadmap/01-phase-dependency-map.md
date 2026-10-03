@@ -5,7 +5,7 @@ status: proposed
 scope: roadmap-phases
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-25
+last_reviewed: 2026-10-03
 ---
 
 # 阶段依赖与并行路线
@@ -40,7 +40,7 @@ flowchart TB
 | P5 | cancel/recovery/reconcile/no-progress | failure injection snapshots | 分布式 scheduler |
 | P6 | 共享协议、Desktop Host/bridge | multi-transport conformance/security | 独立业务语义 |
 | P7 | snapshots/benchmarks、可选 Langfuse 接入、docs/i18n | 回归报告；外部质量评估独立报告且不阻塞本地门禁 | 只建空目录 |
-| P8 | install→task→evidence→resume→export 公开路径 | clean install/release evidence | 未证明的营销能力 |
+| P8 | Codex-inspired 工作台与 install→task→evidence→resume→export 公开路径 | Web/Desktop 核心旅程与 UI 状态验收；更新后的归档 clean-install/release evidence | 未证明的营销能力、Outlive 范围外的云/账号/多人能力 |
 
 ## 3. 并行 lanes
 
@@ -82,3 +82,9 @@ flowchart LR
 ## 7. 验收标准
 
 每个 roadmap task 只依赖已存在节点且图无环；任一 Phase 的出口可由证据判断而非主观进度；并行 lanes 不同时争用同一 canonical owner；删除任一前置时，下游任务能被机器或评审明确阻塞。
+
+## 8. 当前 P8 验收边界
+
+UX-086 首轮基础与 Web/Desktop 核心旅程已通过[当前验收](../../validation/ui-086-workbench-ux/README.md)。HOST-087 自动管理运行时 → PAR-088 → CLI-089/SET-090 → DEV-091 → RUN-092；BRAND-093/MEDIA-094 → UX-086 安装即用验收 → DIST-095 → REL-083/084 构成本轮闭环路径。REL-083/084 必须引用新归档摘要与对应安装/窗口回执；历史摘要不证明新 UI。当前 REL-084 接受明确的维护者 Agent 模拟，P8 的真实外部用户从零安装条件仍需独立人员证据。
+
+安装即用范围要求应用携带运行时并自动恢复，用户无需开发工具或手动启动服务。BRAND-093 的兼容标识保持可读；MEDIA-094 必须产出真实文件和工具回执；DIST-095 的 macOS/Windows 干净环境验收、签名状态与外部参与者分别记录，不以维护者源码测试代替。

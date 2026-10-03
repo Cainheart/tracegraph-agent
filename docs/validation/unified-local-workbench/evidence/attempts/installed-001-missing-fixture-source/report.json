@@ -1,0 +1,54 @@
+{
+  "task_id": "PAR-088",
+  "recorded_at": "2026-10-03T06:23:15.756Z",
+  "status": "failed",
+  "model_boundary": "Synthetic loopback provider; actual packaged Electron Main/preload, HTTP over private local channel, shared Host/Runtime/ledger, real fixture patch and test processes. No provider-quality or external-user claims.",
+  "assertions": [],
+  "errors": [
+    {
+      "boundary": "acceptance",
+      "message": "ENOENT: no such file or directory, open '/private/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/tracegraph-fixture-u3QBQl/src/add.ts'",
+      "stack": "Error: ENOENT: no such file or directory, open '/private/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/tracegraph-fixture-u3QBQl/src/add.ts'\n    at async open (node:internal/fs/promises:1345:25)\n    at async readFile (node:internal/fs/promises:1996:14)\n    at async file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/unified-workbench/desktop-transport.mjs:112:24"
+    }
+  ],
+  "product": {
+    "artifact_mode": "installed",
+    "repository_root": "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/unified-local-workbench-20261003-verified-install/outlive-agent-0.1.0-alpha.0-preview",
+    "hashes": {
+      "apps/desktop/dist/main.js": "b717460b34830502e84036d923f4698bcf1c76114de7c3ee1fabfb486f3a15a8",
+      "apps/desktop/dist/preload.cjs": "9a270f2c5a6d066309adab0d7ca02acef81770ad72241ff31fc729208ef731de",
+      "apps/desktop/dist/renderer/index.html": "f29c7e9fd6a5fd09584fe6601e85dba3a38e3a0e5b4717c54d7ea1825aba81ad",
+      "apps/cli/dist/index.js": "bfd1bbbed588a2f37fb639d3abf4f182fa14a2fef924b7d8aad50ab079ae4d9d",
+      "apps/cli/dist/workbench-command.js": "e68ee152cecf84a340d07667ac21c89d60dfb2cbeb6d81bb780af7599ee69624",
+      "packages/host/dist/local-host-worker.js": "f3ee9f70ca4c3c5142138a4b2c6fbf34357967ff99e85eae3295382a37e27ddd",
+      "packages/sdk/dist/index.js": "e07a1d6d09391320c775ecb83412ab69150be74073233aad7fd016298d23fc3d",
+      "apps/desktop/dist/renderer/assets/index-DYWus0AG.js": "622dee82af67bf07cf1a9c685d877cdc13968274cfc425fe46f9ab015ad5e32a",
+      "apps/desktop/dist/renderer/assets/chunk-Y2CYZVJY-DsF7k-Jl.js": "a74e3669f356ad0d67cc5232f1e0f62ff4544fdb8e7057cf9a5001a0ea6fc2cc",
+      "apps/desktop/dist/renderer/assets/src-D_iIdUkB.js": "e9388a1b6412ffa2b395fc348df2ed61bb10bdcfdd51ffa2bc7b5d4527e8279c",
+      "apps/desktop/dist/renderer/assets/chunk-O7XYJQB3-CKKWJ5qg.js": "d84493326d919d2cbdc52afc59d9e1bb806d2fabb9a0dde356ae4741101be5f7",
+      "apps/desktop/dist/renderer/assets/dist-Bfr8PhAA.js": "77e45d626ece635e7105ffc9e36c5a177ac803e0f8380d86f6236ff460e18586",
+      "apps/desktop/dist/renderer/assets/chunk-ZIGJFQKS-CEpNxTiJ.js": "2c752abd2c1665fcc3b5aafcc8ec23fd67edfec70ad1d594a2470c795003ce5c",
+      "apps/desktop/dist/renderer/assets/path-fybaL0A-.js": "71b62c60fd6659668995a83955af7c0ffd1bc05496148191841e017441afe36b",
+      "apps/desktop/dist/renderer/assets/array-BifhSqXX.js": "63126646dbf611a0cf9e2293a9f636ac3c93c815a8f7d1e97d783151ab8529b9",
+      "apps/desktop/dist/renderer/assets/line-CnaOAfv0.js": "e7f6a4e731b07c23383808ffc3044da619d3d9b08d4942b1473fe88ae4862961",
+      "apps/desktop/dist/renderer/assets/chunk-7PRAP22T-DyBrMsFS.js": "89d2ee87cd53161f176e735d2b0b2f17d29b75d80cf2b3ee4c2d657ca6ea8e5d",
+      "apps/desktop/dist/renderer/assets/chunk-742MDFTN-C2DSAlGM.js": "8a72cc226bd7da4e2b8b35dea3baa4af6cf282f03119f32b71395c41ce5b0df3",
+      "apps/desktop/dist/renderer/assets/chunk-MBY4JIJT-BLxfLtrC.js": "42c51180ce9a0c2404a601e4060bfacffb50101d3f9b4f2068a63b173555241d",
+      "apps/desktop/dist/renderer/assets/chunk-J5ZVWO5B-oDCd-gWO.js": "9ef2dc3eac1cfcec79acc9e2d21b546b3007482f6f67953492e76710abb2ba71",
+      "apps/desktop/dist/renderer/assets/rough.esm-Dy-Kn_BL.js": "ef405c5eaa3316c75428f63ec698e39993bdcc2da358dbc7ebd355d18901f63f",
+      "apps/desktop/dist/renderer/assets/chunk-7INBJB4K-C1cBX-ES.js": "79a0f7a3f439f7a9327345b75f257a49bcd12c8ced025e7ac119ec2584c48513",
+      "apps/desktop/dist/renderer/assets/chunk-5DYCD2WN-D0pLhIqt.js": "da37fbe83369c2249ca35a42250baa5e764e2923b285e464470a6e1f901d7183",
+      "apps/desktop/dist/renderer/assets/index-Bfi-l9Vv.css": "464008faa47b6b8a7f8ff38053043a5f5a5f5fee85f28a0255bf6d3d7ff85427"
+    }
+  },
+  "cleanup": {
+    "completed": true,
+    "failures": []
+  },
+  "owner_processes": [
+    {
+      "pid": 31792,
+      "exited": true
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "task_ids": [
+    "UX-086",
+    "SET-090",
+    "DEV-091"
+  ],
+  "recorded_at": "2026-10-03T05:13:50.966Z",
+  "status": "failed",
+  "boundary": "Synthetic loopback model; real built Web/local authenticated Host/Runtime/Git/PTY/preview/schedules. Disposable fixtures only. No external provider-quality or external-user acceptance claim.",
+  "assertions": [],
+  "screenshots": [],
+  "errors": [
+    {
+      "boundary": "acceptance",
+      "message": "Permission preset full-write exceeds the Host ceiling workspace-write",
+      "stack": "TraceGraphHttpError: Permission preset full-write exceeds the Host ceiling workspace-write\n    at #httpError (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/sdk/dist/index.js:715:16)\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)\n    at async #requestResponse (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/sdk/dist/index.js:676:19)\n    at async #requestUnknown (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/sdk/dist/index.js:649:26)\n    at async TraceGraphClient.configurePermissionPreset (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/sdk/dist/index.js:221:55)\n    at async file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/unified-local-workbench/ui-journey.mjs:30:3"
+    }
+  ],
+  "cleanup": {
+    "completed": true,
+    "failures": []
+  }
+}

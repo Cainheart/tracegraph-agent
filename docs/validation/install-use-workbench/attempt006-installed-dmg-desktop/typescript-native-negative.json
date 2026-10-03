@@ -1,0 +1,10 @@
+{
+  "binary": "/Users/cain/Applications/Outlive Agent.app/Contents/Resources/app/node_modules/@typescript/typescript-darwin-arm64/lib/tsc",
+  "args": [
+    "--version"
+  ],
+  "exit_code": 2,
+  "signal": null,
+  "stdout": "",
+  "stderr": "panic: bundled: /Users/cain/Applications/Outlive Agent.app/Contents/Resources/app/node_modules/@typescript/typescript-darwin-arm64/lib/lib.d.ts does not exist; this executable may be misplaced [recovered, repanicked]\n\ngoroutine 1 [running]:\ngithub.com/microsoft/typescript-go/internal/bundled.init.OnceValue[...].func8.1.1()\n\tsync/oncefunc.go:63 +0x7c\npanic({0x103977d60?, 0x196058266830?})\n\truntime/panic.go:860 +0x12c\ngithub.com/microsoft/typescript-go/internal/bundled.init.func4()\n\tgithub.com/microsoft/typescript-go/internal/bundled/noembed.go:40 +0x124\ngithub.com/microsoft/typescript-go/internal/bundled.init.OnceValue[...].func8.1()\n\tsync/oncefunc.go:66 +0x54\nsync.(*Once).doSlow(0x19605825e104?, 0x3b?)\n\tsync/once.go:78 +0xdc\nsync.(*Once).Do(0x1030411d8?, 0x1?)\n\tsync/once.go:69 +0x24\ngithub.com/microsoft/typescript-go/internal/bundled.init.OnceValue[...].func8()\n\tsync/oncefunc.go:58 +0x3c\ngithub.com/microsoft/typescript-go/internal/bundled.LibPath(...)\n\tgithub.com/microsoft/typescript-go/internal/bundled/bundled.go:31\nmain.newSystem()\n\tgithub.com/microsoft/typescript-go/cmd/tsgo/sys.go:72 +0xa8\nmain.runMain()\n\tgithub.com/microsoft/typescript-go/cmd/tsgo/main.go:30 +0x180\nmain.main()\n\tgithub.com/microsoft/typescript-go/cmd/tsgo/main.go:14 +0x1c\n"
+}

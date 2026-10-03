@@ -1,0 +1,13 @@
+{
+  "schema_version": "tracegraph.benchmark-scenario.v1",
+  "id": "ledger-append",
+  "version": "1.0.0",
+  "description": "Append and validate a fixed 50-event durable Run ledger",
+  "working_directory": ".",
+  "correctness_command": { "args": ["benchmarks/paths/scenario.mjs", "correctness", "ledger-append"] },
+  "command": { "args": ["benchmarks/paths/scenario.mjs", "measure", "ledger-append"] },
+  "warmup_iterations": 1,
+  "sample_iterations": 5,
+  "timeout_ms": 30000,
+  "budget": { "wall_time_ms_p95_max": 3000 }
+}

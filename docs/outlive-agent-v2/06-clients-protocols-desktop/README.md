@@ -5,7 +5,7 @@ status: proposed
 scope: clients
 language: zh-CN
 parent: ../../outlive-agent-v2.md
-last_reviewed: 2026-09-28
+last_reviewed: 2026-10-03
 ---
 
 # 06 · 三种产品入口、内部协议与 Desktop
@@ -34,9 +34,9 @@ flowchart LR
 
 | 入口 | 适合 | Transport | 是否拥有 Runtime 状态 |
 |---|---|---|---:|
-| CLI | 终端交互、脚本、一次性任务；TUI 是其呈现模式 | 进程内或 framed stdio | 否 |
-| Web UI | 本机浏览器工作台 | 本地 HTTP Command/Query + SSE/WebSocket | 否 |
-| Desktop | 日常多项目、原生目录与窗口 | private framed pipe + renderer bridge | 否 |
+| CLI | 命令、脚本与实时进度；当前不建设完整 TUI | private UDS/Windows pipe HTTP + SSE | 否 |
+| Web UI | 本机浏览器工作台 | loopback HTTP Command/Query + 三条 SSE | 否 |
+| Desktop | 日常多项目、原生目录与窗口 | 固定 renderer bridge → Main typed SDK → private UDS/Windows pipe HTTP + SSE | 否 |
 
 入口只做输入、呈现、连接和平台适配。Session、Run、Memory、Approval、Tool、Workspace 的 owner 都在 Host/Runtime。
 独立 API、对外 SDK、ACP 及编辑器插件暂不属于当前产品范围；内部 Host protocol/client 仅作为上述三种入口的实现依赖。
@@ -47,7 +47,7 @@ Web 与 Desktop 的交互形态以 DSH Agent 工作台为直接参照；按用�
 
 借鉴的是产品信息架构与可见工作流，不是照搬 DSH 的代码或插件实现。Outlive 特有的 Evidence 来源、Memory 生命周期与本次 MemoryUse 必须按 Outlive 契约呈现；不能因参考 DSH 就暗示它已有相同记忆管理能力。详细交互目标见 [CLI 与 Web UI 设计](02-cli-web-ui.md)，源码观察见[设计依据](../08-reference-lineage/01-source-observations.md)。
 
-**DEC-07 已接受 Electron 作为 Desktop 外壳**，采用独立 Outlive Host、私有 framed RPC 与 Web 共享工作台 UI。此为目标实现选择，不表示仓库已有 Electron Desktop；Host 启动、签名打包、自动更新和发布流程仍须按路线任务实现与验证。
+**DEC-07 已接受 Electron 外壳**。DESK-064/065/066 与 CLIENT-068 的 child/framed RPC、共享 UI、原生桥与 Memory 控制是历史实现基础。2026-10-03 的 HOST-087/PAR-088/CLI-089/SET-090 将当前正式入口收敛为一个长期独立 Node Host：默认 `~/.tracegraph/profiles/default`，Main/CLI私有连接，Web loopbackgateway进入同一 Runtime/Controller/configuration。旧child/framed seam保留兼容，不再为每个窗口各写一份数据。当前能力和平台证据见 [模块09](../../modules/09-Host-与-SDK-接口层.md)、[模块11](../../modules/11-CLI-与装配.md)；归档、签名、公证、更新和独立外部安装验收分开。
 
 ## 2. 共享协议核心
 
@@ -117,8 +117,8 @@ BFF 不直接打开 JSONL 或 Memory index；UI 也不能用“本地应用”�
 现有 `apps/web` 和 Host/SSE 是可保留基础。V2 收敛点：
 
 - Web UI 只依赖内部 `sdk/client` 与 client UI modules，不复制 route DTO；
-- 三条现有事件流逐步归一为 durable events、projection snapshot、live hints 三种语义；
-- 浏览器不提交任意本机路径，目录选择由 Host provider 完成；
+- canonical、live activity、model surface三条SSE各自保留sequence/cursor；snapshot水合durable状态，瞬时流不替代账本；
+- 浏览器不提交任意本机路径；Desktop原生picker和CLI显式path经私有native route授权，linked项目共享同一注册表；
 - credential 输入 write-only，client 不持久化 secret；
 - replay view 与 live head 有独立 cursor，禁止浏览历史时误发当前命令；
 - optimistic state 只覆盖“命令已发送”，收到 committed projection 后替换。
@@ -133,17 +133,19 @@ packages/client/tui   可选终端呈现
 packages/sdk/client   内部 client helper；不是对外发布的 SDK
 ```
 
-支持三种模式：
+当前实现选择命令与实时进度：
 
-- interactive TUI；
-- one-shot human-readable；
-- machine JSON/JSONL。
+- one-shot结构化结果与稳定退出码；
+- events/activity/model三条machine JSONL；
+- terminal attach使用Host-ownedPTY，不另建Runtime。
+
+完整interactive TUI不属于当前已授权计划；上述 `packages/client/tui` 仅保留未来呈现方向，不能作为已实现能力。
 
 Machine mode 的 stdout 只输出协议结果；日志走 stderr。命令成功退出码只表示 CLI 命令完成，不自动等价为外部业务副作用成功，结果中仍需 Observation status。
 
 ## 7. 暂不纳入的产品入口
 
-独立 `apps/api`、面向第三方的 SDK、ACP/编辑器接入当前均不建设，也不作为 V2 验收项。Web UI 所需的本机 HTTP/SSE、Desktop 所需的私有 framed pipe，以及 CLI 使用的内部 client/controller 都是三种产品入口的实现传输，不构成独立 API 产品承诺。
+独立 `apps/api`、面向第三方的 SDK、ACP/编辑器接入当前均不建设，也不作为 V2 验收项。Web UI 所需的本机 HTTP/SSE、Desktop 所需的私有 UDS/Windows pipe HTTP adapter与固定bridge，以及 CLI 使用的内部 client/controller 都是三种产品入口的实现传输，不构成独立 API 产品承诺。
 
 ## 8. Desktop 设计
 
@@ -151,32 +153,29 @@ Machine mode 的 stdout 只输出协议结果；日志走 stderr。命令成功�
 
 基于当前 React/Vite/TypeScript 资产，第一选择是 **Electron**：可以复用 Web renderer、Node Host 和跨平台打包经验。Tauri 可在包体/安全需求明确后通过 Agent Note 比较，不应在 V2 文档中假定已决定。
 
-### 8.2 进程模型
+### 8.2 当前进程模型
 
 ```mermaid
 flowchart LR
-  Renderer[Desktop Renderer<br/>React UI]
-  Preload[Typed Preload Bridge]
-  Main[Desktop Main<br/>window/native/lifecycle]
-  Host[Desktop Host child<br/>Runtime + Controllers]
-  Data[(Sessions / Evidence / Memory)]
-
-  Renderer <--> Preload
-  Preload <--> Main
-  Main <-->|framed versioned bytes| Host
-  Host <--> Data
+  R[Desktop Renderer React] <--> P[Typed Preload Bridge]
+  P <--> M[Electron Main]
+  M <-->|Private socket HTTP plus SSE| H[One long lived Node Host]
+  C[CLI] <-->|Same private socket| H
+  W[Web] <-->|Loopback HTTP plus SSE| H
+  H <--> D[One profile Runtime Controllers Ledger]
 ```
 
-职责：
+- **Renderer**：共享 `@tracegraph/workbench`，无Node/token/原生路径；preview独立demo adapter。
+- **Preload/Main**：具名schema bridge、可信sender、picker与项目内文件打开；typed client连接Host，三条SSE通过pull open/read/close传递，过滤private thinking字段。
+- **Host**：profile/data/session根写入owner、Runtime、Controller、credential/configuration、Git/PTY/preview/schedule资源；当前主装配在 `packages/host`。
 
-- **Renderer**：与 Web 共用 Agent 工作台 shell 和主要 UI modules，不获得 Node API；与 Web 的业务交互保持一致。
-- **Preload**：暴露窄 typed bridge；无任意 channel。
-- **Main**：窗口、菜单、更新、原生目录选择、child process 生命周期；不保存 task/session 状态。
-- **Desktop Host**：加载 exact-version Runtime、profile 和 client graph；拥有业务状态。
+### 8.3 私有原生通道与 loopback gateway
 
-### 8.3 为什么不默认开本机 HTTP 端口
+当前Desktop Main/Renderer不启动TCP listener。长期Host同时持有私有UDS/Windows pipe server与loopback HTTP gateway，两者使用同一Fastify app/Runtime。私有请求先验证discovery/token/owner identity，再进入统一bearer/Origin/replay/command ID边界；原生路径/迁移/stop仅允许私有连接。Renderer CSP仍为 `connect-src 'none'`。
 
-Desktop 使用私有 framed stdio/pipe，减少端口冲突、跨站请求、token 泄漏和版本错配。Node IPC 可负责启动/停止，但业务 RPC 使用有版本 framing，便于与内部 client 和测试复用。
+关闭所有Web/Desktop窗口不停止Host；CLI完成与订阅关闭仅detach。显式host stop结束Run、queued任务和Host-owned资源后释放写入租约。不默认安装开机启动。崩溃后恢复不自动续跑副作用，pending approval 仍重签/重验；共享 Host 恢复会比较当前 permission digest，变化时要求新 Run；用户可显式重新连接/启动，不以自动重放冒充恢复。
+
+旧 `apps/desktop-host` child/framed RPC仍有conformance/EOF/版本错配/恢复测试，但不代表当前Main按窗口管理Runtime生命周期；source见 [`main.ts`](../../../apps/desktop/src/main.ts)、[`local-host.ts`](../../../packages/host/src/local-host.ts)和 [`stream-bridge.ts`](../../../apps/desktop/src/stream-bridge.ts)。
 
 ### 8.4 Renderer 安全
 
@@ -190,9 +189,9 @@ Desktop 使用私有 framed stdio/pipe，减少端口冲突、跨站请求、tok
 
 ### 8.5 数据目录与升级
 
-- Desktop 与 CLI 可共享用户数据，但 runtime executable/plugin state 分开；
+- Web/Desktop/CLI使用同一profile owner，禁止两个Runtime共目录；显式legacy serve同样受canonical根写入lease限制；
 - 启动时先验证 Session format 和迁移计划；
-- 升级前生成 migration backup/manifest；
+- 迁移先显式source扫描/选择、拒绝activewriters/resources，备份原格式和目标，选单源并隔离冲突；failed/unknown按operation receipt对账，原source不改；
 - 新 binary 不删除旧 generation；
 - plugin/extension 与核心版本不兼容时停用并报告，不自动运行未知代码。
 
@@ -224,14 +223,16 @@ Desktop 使用私有 framed stdio/pipe，减少端口冲突、跨站请求、tok
 
 ## 11. 客户端里程碑
 
-1. 统一 CLI/Web UI/Desktop 的内部 Command/Query/Event vocabulary；
-2. 拆 Controller 与本地 Web transport；
-3. CLI 改用同一内部 client/controller；
-4. 为 Desktop Host 增加 framed RPC 与内部协议 conformance；
-5. 建 `apps/desktop-host`，先无 GUI smoke；
-6. 建 Desktop shell，复用 Web UI；
-7. 做 crash/restart、version mismatch、secret、directory picker E2E；
-8. 独立 `apps/api`、对外 SDK 和 ACP 不进入当前路线；未来如重议，需新增 Note 和产品需求证据。
+1. **已完成 API-060**：统一内部 Command/Query/Event vocabulary；
+2. **已完成 API-061**：拆出 Run/Session Controller 与本地 Web transport；
+3. **已完成 API-062**：提供 framed RPC transport/client/server conformance；
+4. **已完成 CLI-063**：CLI Run/Session slice 复用 Host Controller；
+5. **已完成 DESK-064**：建 `apps/desktop-host` 并完成无 GUI process smoke、恢复与生命周期验证；
+6. **已完成 DESK-065**：建 `apps/desktop`，使用隔离 Electron shell 并由 Web/Desktop 共用 `@tracegraph/workbench`；
+7. **已完成 DESK-066**：原生目录选择/持久项目注册、受限项目文件打开与 write-only credential bridge 已实现并验证；
+8. **已完成 CLIENT-068**：Memory/Experience 控制面接入统一协议与共享 UI；
+9. **当前共享切片 HOST-087/PAR-088/CLI-089/SET-090**：单owner/profile、完整typed操作与SSE、共享设置；DEV-091/RUN-092增加协调的开发资源和后台运行，验收以各自测试/报告为准；SNAP-070已有单独实施记录，不再标为客户端下一项；
+10. 独立 `apps/api`、对外 SDK 和 ACP 不进入当前路线；未来如重议，需新增 Note 和产品需求证据。
 
 ## 12. 验收标准
 
@@ -239,6 +240,8 @@ Desktop 使用私有 framed stdio/pipe，减少端口冲突、跨站请求、tok
 - Desktop Main/Renderer 中没有 Session/Memory 真源；
 - 重连不重复命令、不丢 durable event；
 - protocol schema 与实现由 CI 检查新鲜度；
-- Desktop 默认不开网络端口，Renderer 无 Node 权限；
+- Desktop Main/Renderer不监听网络、Renderer无Node权限；共享Host可为Web提供loopbackgateway，native调用必须走私有通道；
 - Web 的 Host transport 默认仅供本机客户端使用，不作为独立公开 API 承诺；
 - 每个客户端都能展示 Memory 来源、unknown 状态和恢复报告，而非只显示聊天文本。
+
+当前OS证据运行在macOS临时profile；Linuxarchive smoke不等价于完整新增GUI/PTY/Sandbox验收，Windows pipe尚无真实Windows运行oracle。维护者/Agent旅程与独立非维护者从零安装分开记录，签名/公证/更新不由上述切片自动获得。

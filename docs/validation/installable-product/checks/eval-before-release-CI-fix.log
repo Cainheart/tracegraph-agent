@@ -1,0 +1,71 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent
+
+ ✓ |tracegraph-evals| evals/runtime/crash-recovery.eval.ts (1 test) 2165ms
+   ✓ runtime behavior: crash recovery (1)
+     ✓ renews stale approval authority after restart and resumes the same ledger 2165ms
+ ✓ |tracegraph-evals| evals/runtime/subagent-delegation.eval.ts (1 test) 1099ms
+   ✓ runtime behavior: subagent delegation (1)
+     ✓ records six parent receipts for two children whose ledgers replay completely 1099ms
+ ✓ |tracegraph-evals| evals/runtime/attachment-multimodal.eval.ts (3 tests) 979ms
+   ✓ runtime behavior: attachments and multimodal input (3)
+     ✓ recovers a staged >5 MiB rejection and records it before Run/model execution 328ms
+     ✓ makes PDF extraction failure an explicit reference-only fallback 374ms
+ ✓ |tracegraph-evals| evals/runtime/approval-chain.eval.ts (1 test) 528ms
+   ✓ runtime behavior: approval chain (1)
+     ✓ binds one approval to the previewed patch before applying it 528ms
+ ✓ |tracegraph-evals| evals/runtime/extension-system.eval.ts (3 tests) 976ms
+   ✓ runtime behavior: extension system (3)
+     ✓ isolates a throwing event hook and records one non-recursive extension.error 382ms
+     ✓ removes one built-in capability group reversibly while later Runs still complete 591ms
+ ✓ |tracegraph-evals| evals/runtime/tool-parallel.eval.ts (1 test) 698ms
+   ✓ runtime behavior: parallel tools (1)
+     ✓ executes one safe batch concurrently while preserving requested observation order 697ms
+ ✓ |tracegraph-evals| evals/perf/performance.eval.ts (3 tests) 402ms
+ ✓ |tracegraph-evals| evals/runtime/compaction-trigger.eval.ts (1 test) 556ms
+   ✓ runtime behavior: compaction trigger (1)
+     ✓ crosses the hard budget and records a strictly reducing strategy chain 556ms
+ ✓ |tracegraph-evals| evals/runtime/sandbox-refusal.eval.ts (1 test) 418ms
+   ✓ runtime behavior: sandbox refusal (1)
+     ✓ permits a reviewable preview but rejects mutation before approval in read-only mode 418ms
+ ✓ |tracegraph-evals| evals/replay/time-travel.eval.ts (1 test) 188ms
+ ✓ |tracegraph-evals| evals/runtime/agent-team.eval.ts (1 test) 114ms
+ ✓ |tracegraph-evals| evals/quality/retrieval-rag-quality.eval.ts (2 tests) 52ms
+ ✓ |tracegraph-evals| evals/quality/codegraph-diagnostics-quality.eval.ts (1 test) 52ms
+ ❯ |tracegraph-evals| evals/docs/g22-release-consistency.eval.ts (4 tests | 1 failed) 27ms
+   ❯ G22 engineering and release consistency (4)
+     × keeps the four CI jobs least-privilege and immutable-action pinned 4ms
+     ✓ keeps documented G22 commands backed by root scripts 1ms
+     ✓ keeps every current module indexed and migration boundaries explicit 21ms
+     ✓ keeps the private artifact release boundary explicit and versioned 1ms
+ ✓ |tracegraph-evals| evals/docs/implementation-consistency.eval.ts (6 tests) 17ms
+ ✓ |tracegraph-evals| evals/support/offline-guard.eval.ts (1 test) 8ms
+ ✓ |tracegraph-evals| evals/quality/memory-context-quality.eval.ts (1 test) 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |tracegraph-evals| evals/docs/g22-release-consistency.eval.ts > G22 engineering and release consistency > keeps the four CI jobs least-privilege and immutable-action pinned
+AssertionError: expected 2 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ evals/docs/g22-release-consistency.eval.ts:37:63
+     35|     }
+     36|     expect(workflow.match(/install: false/gu)?.length).toBe(4);
+     37|     expect(releaseWorkflow.match(/install: false/gu)?.length).toBe(1);
+       |                                                               ^
+     38|     const preinstallGuard = "node scripts/verify-lockfile.mjs --skip-f…
+     39|     expect(workflow.match(new RegExp(preinstallGuard.replace(/[.*+?^${…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 16 passed (17)
+      Tests  1 failed | 31 passed (32)
+   Start at  16:47:02
+   Duration  12.40s (tests 72%, transform 13%, import 13%, setup 1%)
+

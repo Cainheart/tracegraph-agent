@@ -43,6 +43,44 @@ afterEach(async () => {
 });
 
 describe("runtime telemetry", () => {
+  it("projects a bounded provider retry fact to Telemetry", async () => {
+    const sink = new RecordingSink();
+    const safe = new SafeTelemetry(sink);
+    const projector = new RuntimeTelemetryProjector(safe);
+    const retry = sessionEvent("model.retry_scheduled", 1, {
+      retry_scope: "model_provider",
+      attempt: 1,
+      next_attempt: 2,
+      max_attempts: 3,
+      delay_ms: 250,
+      reason_code: "http_503",
+    }, {
+      model_call_id: "model-call:retry",
+      turn_id: "turn:retry",
+    });
+
+    projector.record(retry);
+    await safe.flush();
+
+    expect(sink.events).toContainEqual(expect.objectContaining({
+      kind: "metric",
+      name: "model.retry_scheduled",
+      run_id: retry.run_id,
+      value: 1,
+      unit: "retry",
+      attributes: expect.objectContaining({
+        model_call_id: "model-call:retry",
+        retry_scope: "model_provider",
+        reason_code: "http_503",
+        attempt: 1,
+        next_attempt: 2,
+        max_attempts: 3,
+        delay_ms: 250,
+      }),
+    }));
+    expect(JSON.stringify(sink.events)).not.toContain("PRIVATE_EVENT_SUMMARY_MARKER");
+  });
+
   it("defaults to a disabled zero-I/O sink", async () => {
     const harness = await createHarness("noop");
     const runtime = await createTrackedRuntime({ dataDir: harness.dataDir });

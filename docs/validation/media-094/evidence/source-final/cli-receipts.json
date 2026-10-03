@@ -1,0 +1,555 @@
+[
+  {
+    "name": "configure openai-images",
+    "args": [
+      "image",
+      "configure",
+      "--protocol",
+      "openai-images",
+      "--base-url",
+      "http://127.0.0.1:58976/v1",
+      "--model",
+      "deterministic-image-fixture",
+      "--key-stdin"
+    ],
+    "exit": 0,
+    "result": {
+      "protocol": "openai-images",
+      "base_url": "http://127.0.0.1:58976/v1",
+      "model": "deterministic-image-fixture",
+      "configured": true,
+      "has_key": true
+    }
+  },
+  {
+    "name": "generate openai-images",
+    "args": [
+      "media",
+      "generate",
+      "--command-id",
+      "command:media-proof-openai-images",
+      "--prompt",
+      "openai-images: deterministic protocol fixture",
+      "--output",
+      "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/media-094/evidence/source-final/openai-images.png"
+    ],
+    "exit": 0,
+    "result": {
+      "status": "succeeded",
+      "run_id": "run:accbcb73-e484-47dd-8b0a-bf7444376597",
+      "project_id": "chat:local",
+      "receipt_id": "receipt:65242a0a-181b-4897-bd80-640237179587",
+      "artifact": {
+        "artifact_id": "attachment:227d056b-563a-4cde-9598-b04ccfdedeb0",
+        "kind": "image/png",
+        "content_hash": "sha256:2f1a6fcdad8ad7e2ab63a104055dc38ed0d3395112b7ab303f97057831418ee7",
+        "mime_type": "image/png",
+        "byte_length": 73760,
+        "project_id": "chat:local",
+        "run_id": "run:accbcb73-e484-47dd-8b0a-bf7444376597",
+        "created_at": "2026-10-03T08:56:58.653Z"
+      },
+      "output": "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/media-094/evidence/source-final/openai-images.png"
+    }
+  },
+  {
+    "name": "exact retry openai-images",
+    "args": [
+      "media",
+      "generate",
+      "--command-id",
+      "command:media-proof-openai-images",
+      "--prompt",
+      "openai-images: deterministic protocol fixture"
+    ],
+    "exit": 0,
+    "result": {
+      "status": "succeeded",
+      "run_id": "run:accbcb73-e484-47dd-8b0a-bf7444376597",
+      "project_id": "chat:local",
+      "receipt_id": "receipt:65242a0a-181b-4897-bd80-640237179587",
+      "artifact": {
+        "artifact_id": "attachment:227d056b-563a-4cde-9598-b04ccfdedeb0",
+        "kind": "image/png",
+        "content_hash": "sha256:2f1a6fcdad8ad7e2ab63a104055dc38ed0d3395112b7ab303f97057831418ee7",
+        "mime_type": "image/png",
+        "byte_length": 73760,
+        "project_id": "chat:local",
+        "run_id": "run:accbcb73-e484-47dd-8b0a-bf7444376597",
+        "created_at": "2026-10-03T08:56:58.653Z"
+      }
+    }
+  },
+  {
+    "name": "configure openai-responses",
+    "args": [
+      "image",
+      "configure",
+      "--protocol",
+      "openai-responses",
+      "--base-url",
+      "http://127.0.0.1:58976/v1",
+      "--model",
+      "deterministic-image-fixture",
+      "--key-stdin"
+    ],
+    "exit": 0,
+    "result": {
+      "protocol": "openai-responses",
+      "base_url": "http://127.0.0.1:58976/v1",
+      "model": "deterministic-image-fixture",
+      "configured": true,
+      "has_key": true
+    }
+  },
+  {
+    "name": "generate openai-responses",
+    "args": [
+      "media",
+      "generate",
+      "--command-id",
+      "command:media-proof-openai-responses",
+      "--prompt",
+      "openai-responses: deterministic protocol fixture",
+      "--output",
+      "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/media-094/evidence/source-final/openai-responses.png"
+    ],
+    "exit": 0,
+    "result": {
+      "status": "succeeded",
+      "run_id": "run:81343d37-05ba-4b4f-8814-ff670ca20797",
+      "project_id": "chat:local",
+      "receipt_id": "receipt:78a20f47-07e1-45ce-a6fb-dabea0b49433",
+      "artifact": {
+        "artifact_id": "attachment:ec69c3d7-e1ee-46e5-83e9-691c199bdc17",
+        "kind": "image/png",
+        "content_hash": "sha256:2f1a6fcdad8ad7e2ab63a104055dc38ed0d3395112b7ab303f97057831418ee7",
+        "mime_type": "image/png",
+        "byte_length": 73760,
+        "project_id": "chat:local",
+        "run_id": "run:81343d37-05ba-4b4f-8814-ff670ca20797",
+        "created_at": "2026-10-03T08:56:59.724Z"
+      },
+      "output": "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/media-094/evidence/source-final/openai-responses.png"
+    }
+  },
+  {
+    "name": "exact retry openai-responses",
+    "args": [
+      "media",
+      "generate",
+      "--command-id",
+      "command:media-proof-openai-responses",
+      "--prompt",
+      "openai-responses: deterministic protocol fixture"
+    ],
+    "exit": 0,
+    "result": {
+      "status": "succeeded",
+      "run_id": "run:81343d37-05ba-4b4f-8814-ff670ca20797",
+      "project_id": "chat:local",
+      "receipt_id": "receipt:78a20f47-07e1-45ce-a6fb-dabea0b49433",
+      "artifact": {
+        "artifact_id": "attachment:ec69c3d7-e1ee-46e5-83e9-691c199bdc17",
+        "kind": "image/png",
+        "content_hash": "sha256:2f1a6fcdad8ad7e2ab63a104055dc38ed0d3395112b7ab303f97057831418ee7",
+        "mime_type": "image/png",
+        "byte_length": 73760,
+        "project_id": "chat:local",
+        "run_id": "run:81343d37-05ba-4b4f-8814-ff670ca20797",
+        "created_at": "2026-10-03T08:56:59.724Z"
+      }
+    }
+  },
+  {
+    "name": "configure openai-chat-images",
+    "args": [
+      "image",
+      "configure",
+      "--protocol",
+      "openai-chat-images",
+      "--base-url",
+      "http://127.0.0.1:58976/v1",
+      "--model",
+      "deterministic-image-fixture",
+      "--key-stdin"
+    ],
+    "exit": 0,
+    "result": {
+      "protocol": "openai-chat-images",
+      "base_url": "http://127.0.0.1:58976/v1",
+      "model": "deterministic-image-fixture",
+      "configured": true,
+      "has_key": true
+    }
+  },
+  {
+    "name": "generate openai-chat-images",
+    "args": [
+      "media",
+      "generate",
+      "--command-id",
+      "command:media-proof-openai-chat-images",
+      "--prompt",
+      "openai-chat-images: deterministic protocol fixture",
+      "--output",
+      "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/media-094/evidence/source-final/openai-chat-images.png"
+    ],
+    "exit": 0,
+    "result": {
+      "status": "succeeded",
+      "run_id": "run:16b61a4d-ae26-4ce1-b7db-02e58e0be740",
+      "project_id": "chat:local",
+      "receipt_id": "receipt:12d47a6a-5fdb-4170-9474-715f132a3f88",
+      "artifact": {
+        "artifact_id": "attachment:e7926ea7-459c-4891-bd90-5fc518d50ae5",
+        "kind": "image/png",
+        "content_hash": "sha256:2f1a6fcdad8ad7e2ab63a104055dc38ed0d3395112b7ab303f97057831418ee7",
+        "mime_type": "image/png",
+        "byte_length": 73760,
+        "project_id": "chat:local",
+        "run_id": "run:16b61a4d-ae26-4ce1-b7db-02e58e0be740",
+        "created_at": "2026-10-03T08:57:00.766Z"
+      },
+      "output": "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/media-094/evidence/source-final/openai-chat-images.png"
+    }
+  },
+  {
+    "name": "exact retry openai-chat-images",
+    "args": [
+      "media",
+      "generate",
+      "--command-id",
+      "command:media-proof-openai-chat-images",
+      "--prompt",
+      "openai-chat-images: deterministic protocol fixture"
+    ],
+    "exit": 0,
+    "result": {
+      "status": "succeeded",
+      "run_id": "run:16b61a4d-ae26-4ce1-b7db-02e58e0be740",
+      "project_id": "chat:local",
+      "receipt_id": "receipt:12d47a6a-5fdb-4170-9474-715f132a3f88",
+      "artifact": {
+        "artifact_id": "attachment:e7926ea7-459c-4891-bd90-5fc518d50ae5",
+        "kind": "image/png",
+        "content_hash": "sha256:2f1a6fcdad8ad7e2ab63a104055dc38ed0d3395112b7ab303f97057831418ee7",
+        "mime_type": "image/png",
+        "byte_length": 73760,
+        "project_id": "chat:local",
+        "run_id": "run:16b61a4d-ae26-4ce1-b7db-02e58e0be740",
+        "created_at": "2026-10-03T08:57:00.766Z"
+      }
+    }
+  },
+  {
+    "name": "clear image configuration",
+    "args": [
+      "image",
+      "clear"
+    ],
+    "exit": 0,
+    "result": {
+      "protocol": "openai-images",
+      "base_url": "https://api.openai.com/v1",
+      "model": "gpt-image-1",
+      "configured": false,
+      "has_key": false
+    }
+  },
+  {
+    "name": "local diagram",
+    "args": [
+      "media",
+      "diagram",
+      "--input-file",
+      "/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-media-cli-proof-1a54GT/diagram.json",
+      "--output",
+      "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/media-094/evidence/source-final/diagram.svg"
+    ],
+    "exit": 0,
+    "result": {
+      "status": "succeeded",
+      "run_id": "run:1f2c0a87-ce30-41dd-9438-9d854dfa1bfa",
+      "project_id": "chat:local",
+      "receipt_id": "receipt:f6fd8787-ce96-4539-81be-775c1540a5a8",
+      "artifact": {
+        "artifact_id": "attachment:a6286114-9727-4346-a0e4-bdd1ed54fa8e",
+        "kind": "image/svg+xml",
+        "content_hash": "sha256:e7aeb6de85eecc6ba835a19642ae7a2d2953ac46dc57d131a14893570457f226",
+        "mime_type": "image/svg+xml",
+        "byte_length": 1010,
+        "project_id": "chat:local",
+        "run_id": "run:1f2c0a87-ce30-41dd-9438-9d854dfa1bfa",
+        "created_at": "2026-10-03T08:57:01.812Z"
+      },
+      "output": "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/media-094/evidence/source-final/diagram.svg"
+    }
+  },
+  {
+    "name": "local chart",
+    "args": [
+      "media",
+      "chart",
+      "--input-file",
+      "/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-media-cli-proof-1a54GT/chart.json",
+      "--output",
+      "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/media-094/evidence/source-final/chart.svg"
+    ],
+    "exit": 0,
+    "result": {
+      "status": "succeeded",
+      "run_id": "run:3b65aa85-46a1-42cb-9583-9f50c7790361",
+      "project_id": "chat:local",
+      "receipt_id": "receipt:dc59ca90-c5b4-4c3e-b8b6-7fb4ada735bf",
+      "artifact": {
+        "artifact_id": "attachment:a402a25e-e0e4-4443-9c5c-1e5e954988e2",
+        "kind": "image/svg+xml",
+        "content_hash": "sha256:cfc95a185911f646ee61fd24ae050703431bec996e68e5582815bc48fdfd1f6f",
+        "mime_type": "image/svg+xml",
+        "byte_length": 1119,
+        "project_id": "chat:local",
+        "run_id": "run:3b65aa85-46a1-42cb-9583-9f50c7790361",
+        "created_at": "2026-10-03T08:57:02.508Z"
+      },
+      "output": "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/media-094/evidence/source-final/chart.svg"
+    }
+  },
+  {
+    "name": "configure isolated chat provider without testing or querying it",
+    "args": [
+      "model",
+      "configure",
+      "--provider",
+      "custom",
+      "--protocol",
+      "openai-chat-completions",
+      "--base-url",
+      "http://127.0.0.1:58976/v1",
+      "--model",
+      "no-chat-request-fixture",
+      "--key-stdin"
+    ],
+    "exit": 0,
+    "result": {
+      "provider": "custom",
+      "protocol": "openai-chat-completions",
+      "configured": true,
+      "base_url": "http://127.0.0.1:58976/v1",
+      "model": "no-chat-request-fixture",
+      "has_key": true,
+      "credential": {
+        "name": "TRACEGRAPH_CUSTOM_KEY_AA9C1866BFD5",
+        "backend": "private_file",
+        "writable": true,
+        "last_updated_at": "2026-10-03T08:57:02.894Z"
+      }
+    }
+  },
+  {
+    "name": "local chart with configured chat provider",
+    "args": [
+      "media",
+      "chart",
+      "--input-file",
+      "/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-media-cli-proof-1a54GT/chart-with-chat.json",
+      "--output",
+      "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/media-094/evidence/source-final/chart-with-chat.svg"
+    ],
+    "exit": 0,
+    "result": {
+      "status": "succeeded",
+      "run_id": "run:548eb958-70cf-43cb-aea7-3da232618457",
+      "project_id": "chat:local",
+      "receipt_id": "receipt:f9836911-d08e-4562-acca-1f8368e8dd49",
+      "artifact": {
+        "artifact_id": "attachment:1dc7d436-568c-49f6-8625-2c9a7dcfe2cf",
+        "kind": "image/svg+xml",
+        "content_hash": "sha256:cfc95a185911f646ee61fd24ae050703431bec996e68e5582815bc48fdfd1f6f",
+        "mime_type": "image/svg+xml",
+        "byte_length": 1119,
+        "project_id": "chat:local",
+        "run_id": "run:548eb958-70cf-43cb-aea7-3da232618457",
+        "created_at": "2026-10-03T08:57:03.461Z"
+      },
+      "output": "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/media-094/evidence/source-final/chart-with-chat.svg"
+    }
+  },
+  {
+    "name": "configure negative provider",
+    "args": [
+      "image",
+      "configure",
+      "--protocol",
+      "openai-images",
+      "--base-url",
+      "http://127.0.0.1:58976/v1",
+      "--model",
+      "negative-image-fixture",
+      "--key-stdin"
+    ],
+    "exit": 0,
+    "result": {
+      "protocol": "openai-images",
+      "base_url": "http://127.0.0.1:58976/v1",
+      "model": "negative-image-fixture",
+      "configured": true,
+      "has_key": true
+    }
+  },
+  {
+    "name": "negative prose",
+    "args": [
+      "media",
+      "generate",
+      "--command-id",
+      "command:negative-prose",
+      "--prompt",
+      "prose: negative fixture"
+    ],
+    "exit": 1,
+    "result": {
+      "status": "failed",
+      "code": "image_output_invalid",
+      "run_id": "run:d9056148-1813-42f4-8e89-697bfb58f1fd",
+      "message": "No verified successful media Artifact is recorded",
+      "receipt": {
+        "receipt_id": "receipt:100ace15-1a0a-417a-a102-5688bab7bfd7",
+        "action_id": "action:media-run:d9056148-1813-42f4-8e89-697bfb58f1fd",
+        "tool_name": "generate_image",
+        "status": "failure",
+        "transport_status": "success",
+        "business_status": "failure",
+        "code": "image_output_invalid",
+        "summary": "No verified image bytes were returned; text, code and remote URLs are not image success",
+        "started_at": "2026-10-03T08:57:04.504Z",
+        "completed_at": "2026-10-03T08:57:04.526Z",
+        "duration_ms": 22,
+        "artifact_refs": [],
+        "metadata": {
+          "output_bytes": 150,
+          "failure_code": "output_contract_violation",
+          "business_code": "image_output_invalid",
+          "execution_parallel": false
+        }
+      }
+    }
+  },
+  {
+    "name": "negative bad64",
+    "args": [
+      "media",
+      "generate",
+      "--command-id",
+      "command:negative-bad64",
+      "--prompt",
+      "bad64: negative fixture"
+    ],
+    "exit": 1,
+    "result": {
+      "status": "failed",
+      "code": "image_output_invalid",
+      "run_id": "run:b9e26717-f769-4eec-8373-4d349ab9932f",
+      "message": "No verified successful media Artifact is recorded",
+      "receipt": {
+        "receipt_id": "receipt:c14aa527-df21-433e-80e0-459e189f2c9c",
+        "action_id": "action:media-run:b9e26717-f769-4eec-8373-4d349ab9932f",
+        "tool_name": "generate_image",
+        "status": "failure",
+        "transport_status": "success",
+        "business_status": "failure",
+        "code": "image_output_invalid",
+        "summary": "No verified image bytes were returned; text, code and remote URLs are not image success",
+        "started_at": "2026-10-03T08:57:05.182Z",
+        "completed_at": "2026-10-03T08:57:05.214Z",
+        "duration_ms": 32,
+        "artifact_refs": [],
+        "metadata": {
+          "output_bytes": 150,
+          "failure_code": "output_contract_violation",
+          "business_code": "image_output_invalid",
+          "execution_parallel": false
+        }
+      }
+    }
+  },
+  {
+    "name": "negative auth",
+    "args": [
+      "media",
+      "generate",
+      "--command-id",
+      "command:negative-auth",
+      "--prompt",
+      "auth: negative fixture"
+    ],
+    "exit": 1,
+    "result": {
+      "status": "failed",
+      "code": "image_authentication_failed",
+      "run_id": "run:61a2e65d-511d-4fa7-a27f-90e49127e2da",
+      "message": "No verified successful media Artifact is recorded",
+      "receipt": {
+        "receipt_id": "receipt:fcf7ecdb-5aa2-4f95-b180-5647f442b01c",
+        "action_id": "action:media-run:61a2e65d-511d-4fa7-a27f-90e49127e2da",
+        "tool_name": "generate_image",
+        "status": "failure",
+        "transport_status": "success",
+        "business_status": "failure",
+        "code": "image_authentication_failed",
+        "summary": "Image endpoint rejected the request (401)",
+        "started_at": "2026-10-03T08:57:05.981Z",
+        "completed_at": "2026-10-03T08:57:06.027Z",
+        "duration_ms": 46,
+        "artifact_refs": [],
+        "metadata": {
+          "output_bytes": 111,
+          "failure_code": "internal",
+          "business_code": "image_authentication_failed",
+          "execution_parallel": false
+        }
+      }
+    }
+  },
+  {
+    "name": "negative unknown",
+    "args": [
+      "media",
+      "generate",
+      "--command-id",
+      "command:negative-unknown",
+      "--prompt",
+      "unknown: negative fixture"
+    ],
+    "exit": 3,
+    "result": {
+      "status": "unknown",
+      "code": "image_http_503",
+      "run_id": "run:e1c0c6ac-08cf-449b-91ed-f245115828a3",
+      "message": "Provider outcome unknown; inspect the existing Run/provider account before creating another request"
+    }
+  },
+  {
+    "name": "explicit artifact export",
+    "args": [
+      "media",
+      "export",
+      "--run-id",
+      "run:accbcb73-e484-47dd-8b0a-bf7444376597",
+      "--artifact-id",
+      "attachment:227d056b-563a-4cde-9598-b04ccfdedeb0",
+      "--output",
+      "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/media-094/evidence/source-final/exported-copy.png"
+    ],
+    "exit": 0,
+    "result": {
+      "status": "succeeded",
+      "run_id": "run:accbcb73-e484-47dd-8b0a-bf7444376597",
+      "artifact_id": "attachment:227d056b-563a-4cde-9598-b04ccfdedeb0",
+      "media_type": "image/png",
+      "sha256": "sha256:2f1a6fcdad8ad7e2ab63a104055dc38ed0d3395112b7ab303f97057831418ee7",
+      "bytes": 73760,
+      "output": "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/media-094/evidence/source-final/exported-copy.png"
+    }
+  }
+]

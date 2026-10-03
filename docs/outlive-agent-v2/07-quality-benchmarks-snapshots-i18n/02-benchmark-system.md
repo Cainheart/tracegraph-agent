@@ -10,6 +10,8 @@ last_reviewed: 2026-09-28
 
 # Benchmark 系统设计
 
+> 当前实现边界（BENCH-072/073）：仓库已有 Node 离线 harness 和八条固定用户路径场景；每个 manifest 有 correctness 命令、固定样本配置与受审 wall-time P95 上限，专用 CI job 固定 Ubuntu 24.04 / Node 22.19.0 并上传原始报告。普通 `pnpm test` 只运行 harness 契约测试，不运行性能场景。首轮本地校准为 macOS ARM64 / Node 24.21.0；CI 首次报告仍需审查后再收紧预算。当前上限是硬 guardrail，不是跨提交统计比较；v1 暂不测量进程树 RSS/CPU。
+
 ## 1. 架构位置
 
 ```mermaid
@@ -35,6 +37,12 @@ Benchmark 测性能/资源，不判断语义正确；场景必须先通过 corre
 | memory retrieve | latency、index size | required/forbidden IDs |
 | tool large output | wall time、spill bytes | receipt/artifact/truncation |
 | client catch-up | events/s、render/update cost | final store digest |
+
+BENCH-073 将首批场景固定为 Runtime/Host readiness、50-event Ledger
+append、Tool-backed Run replay、长历史 Context compaction、128 条受治理
+Memory recall、只读 `read_file` Tool、Run cancel/quiescence、pending-plan
+Run recovery。对应 manifest、正确性 oracle、初始 P95 与上限见
+`benchmarks/README.md`；场景入口位于 `benchmarks/paths/scenario.mjs`。
 
 ## 3. Measurement 模型
 
@@ -72,8 +80,14 @@ sequenceDiagram
 
 ## 6. 防作弊与可用性
 
-禁止通过减少验证、丢事件、缩短 fixture 或缓存跨 case 数据获得“优化”。Runner 默认 offline、临时目录隔离、固定 clock/seed；报告给出复现命令和 raw artifact。
+禁止通过减少验证、丢事件、缩短 fixture 或缓存跨 case 数据获得“优化”。场景 fixture 应固定 clock/seed；Runner 默认 offline、临时目录隔离，报告给出复现命令和 raw artifact。
+
+### BENCH-072 当前 Runner
+
+实现位于 `benchmarks/support/runner.mjs`，规则见 `benchmarks/AGENTS.md`。场景 JSON 固定 correctness command、工作目录、warmup/sample 次数、超时与 wall-time P95 预算；正确性失败会生成失败报告并跳过计时。每条 correctness/warmup/sample 命令都在新 Node 进程与私有临时 HOME/TMP 下执行，Node fetch/TCP/TLS/UDP/DNS 限于 loopback，凭据与代理环境变量被清除，继承的 `NODE_OPTIONS` 被替换为受控 offline guard。每次运行写一份不覆盖的有界 JSON 到忽略目录 `_tmp_benchmarks/reports/`，保留原始耗时/退出状态、median/P95/MAD/min/max、预算结果、场景配置 SHA-256、commit/dirty 状态、OS/CPU/Node 元数据；不保留 stdout/stderr、绝对路径、用户名或环境值。测试覆盖正确性 fail-closed、timeout、预算失败、离线 guard、临时目录清理与报告脱敏。
+
+Runner v1 报告 wall time；它不把机器总内存冒充测得 RSS，也没有跨进程 CPU/RSS 采样。BENCH-073 已加入路径上限和 CI 报告；首轮 CI 数据用于后续校准，不会自动改写预算。跨提交噪声模型和可移植资源适配器仍延期。G16 evals 保持独立。
 
 ## 7. 验收与实施校准
 
-同机重复运行误差可量化；故意注入慢路径能触发 gate；错误输出不能获得有效性能结果；baseline 文件可 code review。DEC-12 的 Runner class 与 PR/nightly/release 分层已接受；P7 仍需通过基线校准具体 runner label、预算和阻断阈值。是否发布公开 benchmark dashboard 属于后续发布选择，不阻塞本地 Benchmark。
+同机重复运行误差可量化；故意降低预算会触发 gate；错误输出不能获得有效性能结果；manifest 预算可 code review。DEC-12 的固定 Runner class 已落为 Ubuntu 24.04 / Node 22.19.0 CI job。上限变化必须通过 manifest diff 显式审查；是否发布公开 benchmark dashboard 属于后续发布选择，不阻塞本地 Benchmark。

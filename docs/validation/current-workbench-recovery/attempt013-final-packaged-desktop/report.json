@@ -1,0 +1,25 @@
+{
+  "status": "failed",
+  "recorded_at": "2026-10-03T13:34:40.838Z",
+  "surface": "packaged-desktop",
+  "boundary": "Maintainer-Agent controlled acceptance. Actual built renderer/Main/Host/Runtime and public typed transport; a deterministic loopback provider. No paid-provider quality, independent external-user, signing or Windows-native claim. One initial provider and an ordinary temporary project are seeded through authenticated APIs; all tested interactions use real UI or explicit external CLI.",
+  "assertions": [],
+  "screenshots": [],
+  "errors": [
+    {
+      "boundary": "acceptance",
+      "phase": "setup",
+      "message": "ENOENT: no such file or directory, realpath '/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/current-workbench-recovery-mac-final5/artifacts/mac-arm64/Outlive Agent.app/Contents/Resources/app/node_modules/examples/failing-typescript-repo/'",
+      "stack": "Error: ENOENT: no such file or directory, realpath '/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/current-workbench-recovery-mac-final5/artifacts/mac-arm64/Outlive Agent.app/Contents/Resources/app/node_modules/examples/failing-typescript-repo/'\n    at async realpath (node:internal/fs/promises:1889:10)\n    at async requireDirectory (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/current-workbench-recovery-mac-final5/artifacts/mac-arm64/Outlive%20Agent.app/Contents/Resources/app/node_modules/@tracegraph/core/dist/kernel/workspace.js:87:23)\n    at async createDisposableFixtureWorkspace (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/current-workbench-recovery-mac-final5/artifacts/mac-arm64/Outlive%20Agent.app/Contents/Resources/app/node_modules/@tracegraph/core/dist/kernel/workspace.js:29:26)\n    at async file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/current-workbench-recovery/ui-journey.mjs:67:19"
+    }
+  ],
+  "provider_requests": [],
+  "operations": [],
+  "cleanup": {
+    "completed": true,
+    "failures": [],
+    "owner_pids": [],
+    "processes_verified_exited": true,
+    "isolated_profile_removed": true
+  }
+}

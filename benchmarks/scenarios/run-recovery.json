@@ -1,0 +1,13 @@
+{
+  "schema_version": "tracegraph.benchmark-scenario.v1",
+  "id": "run-recovery",
+  "version": "1.0.0",
+  "description": "Crash an isolated blocked Run worker, recover its session, resume, and complete",
+  "working_directory": ".",
+  "correctness_command": { "args": ["benchmarks/paths/scenario.mjs", "correctness", "run-recovery"] },
+  "command": { "args": ["benchmarks/paths/scenario.mjs", "measure", "run-recovery"] },
+  "warmup_iterations": 1,
+  "sample_iterations": 5,
+  "timeout_ms": 45000,
+  "budget": { "wall_time_ms_p95_max": 6000 }
+}

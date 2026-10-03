@@ -199,6 +199,9 @@ function fakeRuntime(telemetryStatus: unknown = {
     correctMemory: vi.fn(async () => { throw new Error("correctMemory not configured by this test"); }),
     revokeMemory: vi.fn(async () => { throw new Error("revokeMemory not configured by this test"); }),
     deleteMemory: vi.fn(async () => { throw new Error("deleteMemory not configured by this test"); }),
+    listExperienceCases: vi.fn(async () => []),
+    createExperienceCandidate: vi.fn(async () => { throw new Error("createExperienceCandidate not configured by this test"); }),
+    reviewExperienceCase: vi.fn(async () => { throw new Error("reviewExperienceCase not configured by this test"); }),
     writeTodo: vi.fn(async (input) => ({
       todo: {
         todo_id: input.input.todo_id,
@@ -854,7 +857,35 @@ describe("TraceGraph Host", () => {
 
   it("authenticates Memory control and supplies Host-derived visible scopes to commands", async () => {
     const runtime = fakeRuntime();
-    vi.mocked(runtime.createMemoryCandidate).mockResolvedValue({} as never);
+    const createdMemoryItem = {
+      record: {
+        schemaVersion: 2,
+        memoryId: "memory:host-test",
+        version: 1,
+        kind: "fact",
+        claim: "Host scope is enforced.",
+        status: "candidate",
+        scope: { ownerId: "owner:host-test", projectId: "project-demo", visibility: "private" },
+        provenance: { origin: "user", evidenceRefs: [], createdBy: { type: "user", id: "user:host-test" } },
+        assessment: { sourceTrust: "unknown", verification: "asserted" },
+        validity: { validFrom: now.toISOString(), applicability: [], invalidators: [] },
+        governance: { sensitivity: "internal", consent: "explicit", retentionPolicy: "local", allowModelUse: false, allowExport: false },
+        lineage: { supersedes: [], contradictedBy: [], derivedFrom: [] },
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+      },
+      lifecycleSequence: 0,
+      feedback: {
+        ownerId: "owner:host-test",
+        memoryId: "memory:host-test",
+        memoryVersion: 1,
+        sequence: 0,
+        feedbackCounts: { helpful: 0, irrelevant: 0, incorrect: 0, stale: 0 },
+        reviewRequired: [],
+      },
+      memoryUseRequests: [],
+    };
+    vi.mocked(runtime.createMemoryCandidate).mockResolvedValue(createdMemoryItem as never);
     const writableWorkspace = {
       ...startInput.workspace,
       workspace_kind: "managed_local" as const,
@@ -900,6 +931,45 @@ describe("TraceGraph Host", () => {
       expect.objectContaining({ project_id: "project-demo" }),
       { allowedScopeIds: ["project-demo"] },
     );
+    await host.close();
+  });
+
+  it("routes Experience inspection and review through the shared controller with live Host scope", async () => {
+    const runtime = fakeRuntime();
+    const host = await createTraceGraphHost({
+      runtime,
+      projects: [{ label: "Visible project", workspace: startInput.workspace }],
+      capabilityToken: token,
+      now: () => now,
+    });
+    const headers = { authorization: `Bearer ${token}`, origin };
+    const listed = await host.app.inject({ method: "GET", url: "/api/experience", headers });
+    expect(listed.statusCode).toBe(200);
+    expect(listed.headers["cache-control"]).toBe("no-store");
+    expect(listed.json()).toEqual({ items: [] });
+    expect(runtime.listExperienceCases).toHaveBeenCalledWith({ allowedScopeIds: ["project-demo"] });
+
+    vi.mocked(runtime.reviewExperienceCase).mockRejectedValueOnce(Object.assign(new Error("stale sequence"), { code: "experience_conflict" }));
+    const reviewed = await host.app.inject({
+      method: "POST",
+      url: "/api/experience/experience:fixture/review",
+      headers: { ...headers, "x-tracegraph-command-id": "command:experience-review" },
+      payload: { command_id: "command:experience-review", expected_sequence: 0, action: "validate" },
+    });
+    expect(reviewed.statusCode).toBe(409);
+    expect(runtime.reviewExperienceCase).toHaveBeenCalledWith("experience:fixture", {
+      action: "validate",
+      expectedSequence: 0,
+      commandId: "command:experience-review",
+    }, { allowedScopeIds: ["project-demo"] });
+
+    const invalid = await host.app.inject({
+      method: "POST",
+      url: "/api/experience/experience:fixture/review",
+      headers: { ...headers, "x-tracegraph-command-id": "command:experience-invalid" },
+      payload: { command_id: "command:experience-invalid", expected_sequence: 0, action: "delete" },
+    });
+    expect(invalid.statusCode).toBe(400);
     await host.close();
   });
 
@@ -2164,7 +2234,7 @@ describe("TraceGraph Host", () => {
     expect(tampered.statusCode).toBe(500);
     expect(tampered.json()).toEqual({
       error: "internal_error",
-      message: "TraceGraph Host failed to process the request",
+      message: "Outlive Agent could not complete the request",
     });
     await host.close();
   });
@@ -2990,7 +3060,7 @@ describe("G07 subagent child Run reads", () => {
     expect(mismatched.statusCode).toBe(500);
     expect(mismatched.json()).toEqual({
       error: "internal_error",
-      message: "TraceGraph Host failed to process the request",
+      message: "Outlive Agent could not complete the request",
     });
 
     vi.mocked(runtime.getProjection).mockImplementation(async (runId) => (
@@ -3011,7 +3081,7 @@ describe("G07 subagent child Run reads", () => {
     expect(forgedProvenance.statusCode).toBe(500);
     expect(forgedProvenance.json()).toEqual({
       error: "internal_error",
-      message: "TraceGraph Host failed to process the request",
+      message: "Outlive Agent could not complete the request",
     });
 
     const entered = await host.app.inject({

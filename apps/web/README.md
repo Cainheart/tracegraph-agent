@@ -12,7 +12,7 @@ This package builds a Vite browser application; it does not expose a package lib
 
 ## Dependencies
 
-The runtime depends on `@tracegraph/contracts`, `@tracegraph/sdk`, React, React DOM, and Mermaid for diagrams.
+The Web composition root depends on `@tracegraph/workbench`, `@tracegraph/contracts`, `@tracegraph/sdk`, React, and React DOM. The shared package owns Mermaid and the Workbench UI dependency set.
 
 ## State ownership
 

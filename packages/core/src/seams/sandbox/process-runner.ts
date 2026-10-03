@@ -42,19 +42,84 @@ export async function runBoundedProcess(
     let truncated = false;
     let aborted = false;
     let closed = false;
+    let settled = false;
+    let groupTerminationStarted = false;
+    let closeExitCode: number | null = null;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let onAbort: () => void = () => undefined;
     let killTimer: ReturnType<typeof setTimeout> | undefined;
+    let groupPollTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const cleanup = () => {
+      if (timer !== undefined) clearTimeout(timer);
+      if (killTimer !== undefined) clearTimeout(killTimer);
+      if (groupPollTimer !== undefined) clearTimeout(groupPollTimer);
+      options.signal?.removeEventListener("abort", onAbort);
+    };
+
+    const settleIfQuiescent = () => {
+      if (settled || !closed) return;
+      if (process.platform !== "win32" && processGroupExists(child.pid)) {
+        if (!groupTerminationStarted) terminateGroup();
+        pollProcessGroup();
+        return;
+      }
+      settled = true;
+      cleanup();
+      resolvePromise({
+        exitCode: closeExitCode,
+        stdout,
+        stderr,
+        timedOut,
+        truncated,
+        aborted,
+      });
+    };
+
+    const pollProcessGroup = () => {
+      if (settled || process.platform === "win32") {
+        settleIfQuiescent();
+        return;
+      }
+      if (!processGroupExists(child.pid)) {
+        settleIfQuiescent();
+        return;
+      }
+      if (groupPollTimer === undefined) {
+        groupPollTimer = setTimeout(() => {
+          groupPollTimer = undefined;
+          pollProcessGroup();
+        }, 10);
+      }
+    };
+
+    const terminateGroup = () => {
+      if (groupTerminationStarted) return;
+      groupTerminationStarted = true;
+      signalProcessTree(child.pid, "SIGTERM", () => child.kill("SIGTERM"));
+      killTimer = setTimeout(() => {
+        // Keep escalation alive after the group leader closes. A descendant
+        // may still be alive in the same process group and ignore SIGTERM.
+        signalProcessTree(child.pid, "SIGKILL", () => child.kill("SIGKILL"));
+        pollProcessGroup();
+      }, PROCESS_KILL_GRACE_MS);
+      pollProcessGroup();
+    };
 
     const terminate = (reason: "timeout" | "output" | "abort") => {
       if (reason === "timeout") timedOut = true;
       if (reason === "output") truncated = true;
       if (reason === "abort") aborted = true;
-      if (closed || killTimer !== undefined) return;
-      signalProcessTree(child.pid, "SIGTERM", () => child.kill("SIGTERM"));
-      killTimer = setTimeout(() => {
-        if (process.platform !== "win32" || !closed) {
-          signalProcessTree(child.pid, "SIGKILL", () => child.kill("SIGKILL"));
+      if (process.platform === "win32") {
+        if (!closed && killTimer === undefined) {
+          child.kill("SIGTERM");
+          killTimer = setTimeout(() => {
+            if (!closed) child.kill("SIGKILL");
+          }, PROCESS_KILL_GRACE_MS);
         }
-      }, PROCESS_KILL_GRACE_MS);
+        return;
+      }
+      terminateGroup();
     };
 
     const capture = (target: "stdout" | "stderr", chunk: Buffer) => {
@@ -68,23 +133,26 @@ export async function runBoundedProcess(
 
     child.stdout.on("data", (chunk: Buffer) => capture("stdout", chunk));
     child.stderr.on("data", (chunk: Buffer) => capture("stderr", chunk));
-    const timer = setTimeout(() => terminate("timeout"), options.timeoutMs);
-    const onAbort = () => terminate("abort");
+    onAbort = () => terminate("abort");
+    timer = setTimeout(() => terminate("timeout"), options.timeoutMs);
     options.signal?.addEventListener("abort", onAbort, { once: true });
 
     child.once("error", (error) => {
       closed = true;
-      clearTimeout(timer);
-      if (killTimer !== undefined && process.platform === "win32") clearTimeout(killTimer);
-      options.signal?.removeEventListener("abort", onAbort);
+      if (settled) return;
+      settled = true;
+      cleanup();
       reject(error);
     });
     child.once("close", (exitCode) => {
       closed = true;
-      clearTimeout(timer);
-      if (killTimer !== undefined && process.platform === "win32") clearTimeout(killTimer);
-      options.signal?.removeEventListener("abort", onAbort);
-      resolvePromise({ exitCode, stdout, stderr, timedOut, truncated, aborted });
+      closeExitCode = exitCode;
+      if (process.platform !== "win32" && processGroupExists(child.pid)) {
+        terminateGroup();
+        pollProcessGroup();
+        return;
+      }
+      settleIfQuiescent();
     });
   });
 }
@@ -140,4 +208,15 @@ function signalProcessTree(
     }
   }
   fallback();
+}
+
+function processGroupExists(pid: number | undefined): boolean {
+  if (pid === undefined || process.platform === "win32") return false;
+  try {
+    process.kill(-pid, 0);
+    return true;
+  } catch (error) {
+    if (error instanceof Error && "code" in error && error.code === "ESRCH") return false;
+    return true;
+  }
 }

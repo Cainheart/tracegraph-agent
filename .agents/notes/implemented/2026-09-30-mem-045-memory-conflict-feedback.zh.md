@@ -1,5 +1,5 @@
 ---
-id: 2026-09-30-mem-045-memory-conflict-feedback-zh
+id: 2026-09-30-mem-045-memory-conflict-feedback
 title: 增加确定性 Memory 冲突、有效期与使用反馈治理
 status: implemented
 owners: [memory, contracts, evidence]

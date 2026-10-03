@@ -1,0 +1,74 @@
+{
+  "connections": [
+    {
+      "connection_id": "9a001116-e87e-4f82-978f-d66568ca4603",
+      "label": "Alpha provider",
+      "revision": 1,
+      "provider": "openai",
+      "protocol": "openai-chat-completions",
+      "base_url": "http://127.0.0.1:63499/v1",
+      "model": "gpt-4.1-mini",
+      "models": [
+        "gpt-4.1-mini",
+        "o3-mini"
+      ],
+      "reasoning_by_model": {
+        "gpt-4.1-mini": [
+          "default"
+        ],
+        "o3-mini": [
+          "default",
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max"
+        ]
+      },
+      "has_key": true,
+      "credential": {
+        "name": "TRACEGRAPH_OPENAI_KEY_95753ADB0D79",
+        "backend": "private_file",
+        "writable": true,
+        "last_updated_at": "2026-10-03T13:24:27.312Z"
+      },
+      "source": "profile",
+      "writable": true
+    },
+    {
+      "connection_id": "4a07c063-4eed-4467-a333-e3ba35d42545",
+      "label": "Beta provider",
+      "revision": 0,
+      "provider": "custom",
+      "protocol": "openai-chat-completions",
+      "base_url": "http://127.0.0.1:63499/v1",
+      "model": "synthetic-beta",
+      "models": [
+        "synthetic-beta"
+      ],
+      "reasoning_by_model": {
+        "synthetic-beta": [
+          "default"
+        ]
+      },
+      "has_key": true,
+      "credential": {
+        "name": "TRACEGRAPH_CUSTOM_KEY_A5CFF6A17B41",
+        "backend": "private_file",
+        "writable": true,
+        "last_updated_at": "2026-10-03T13:24:29.524Z"
+      },
+      "source": "profile",
+      "writable": true,
+      "test": {
+        "status": "passed",
+        "code": "connection_ok",
+        "message": "模型连接成功",
+        "checked_at": "2026-10-03T13:24:30.119Z",
+        "model": "synthetic-beta",
+        "duration_ms": 10
+      }
+    }
+  ],
+  "default_connection_id": "9a001116-e87e-4f82-978f-d66568ca4603"
+}

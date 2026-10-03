@@ -13,3 +13,19 @@ _tmp_*
 
 # Canonical Agent Trace ledgers are local workflow evidence, not release assets.
 .agent-traces/
+
+# Record-mode outputs are review candidates, never accepted fixtures by default.
+/snapshots/candidates/
+
+# VitePress cache and generated local preview.
+/docs/.vitepress/cache/
+/docs/.vitepress/dist/
+
+# Validation evidence screenshots are bulky local run artifacts; the surrounding
+# Markdown/JSON evidence stays in source. Re-add specific images only when a
+# published document links them.
+/docs/validation/**/*.png
+/docs/validation/**/*.jpg
+/docs/validation/**/*.jpeg
+/docs/validation/**/*.gif
+/docs/validation/**/*.webp

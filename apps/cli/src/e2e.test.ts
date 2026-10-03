@@ -8,6 +8,7 @@ import {
 } from "@tracegraph/core";
 import { createTraceGraphHost } from "@tracegraph/host";
 import { TraceGraphClient } from "@tracegraph/sdk";
+import { ClientEventMessageSchema, ClientReplyMessageSchema } from "@tracegraph/sdk/protocol";
 import {
   createFailingTypescriptFixture,
   createTemporaryDataDir,
@@ -15,6 +16,7 @@ import {
 import { afterEach, describe, expect, it } from "vitest";
 import { createCodeGraphProvider } from "./composition.js";
 import { createConfiguredTelemetry } from "./telemetry-config.js";
+import { runRunSessionCommand } from "./run-session-command.js";
 
 type TrackedRuntime = Awaited<ReturnType<typeof createAgentRuntime>>;
 
@@ -107,9 +109,11 @@ describe("TraceGraph vertical slice", () => {
     const data = await createTemporaryDataDir();
     const fixture = await createFailingTypescriptFixture("fixture-e2e");
     cleanups.push(data.cleanup, fixture.cleanup);
+    const sessionStore = new JsonlSessionStore(join(data.path, "sessions"));
 
     const runtime = await createTrackedRuntime({
       dataDir: data.path,
+      sessionStore,
       codeGraph: createCodeGraphProvider(),
       // Keep the transport/approval E2E portable; native sandbox behaviour is
       // exercised by the dedicated G13 Core and Runtime integration suites.
@@ -117,6 +121,7 @@ describe("TraceGraph vertical slice", () => {
     });
     const host = await createTraceGraphHost({
       runtime,
+      sessions: new DurableSessionController({ store: sessionStore, runtime }),
       projects: [{ label: "Failing TypeScript fixture", workspace: fixture.handle }],
       capabilityToken: "e2e-capability-token",
     });
@@ -137,12 +142,23 @@ describe("TraceGraph vertical slice", () => {
     expect(JSON.stringify(projects)).not.toContain(fixture.handle.real_root);
 
     const before = await readFile(join(fixture.handle.real_root, "src/add.ts"), "utf8");
-    const started = await client.startRun({
-      command_id: "command:e2e-start",
-      project_id: "fixture-e2e",
-      task: "Fix the failing test and explain the architecture change",
-      mode: "execute",
+    const cliStartOutput: string[] = [];
+    await runRunSessionCommand("run", [
+      "start",
+      "--project-id", "fixture-e2e",
+      "--task", "Fix the failing test and explain the architecture change",
+      "--mode", "execute",
+      "--command-id", "command:e2e-start",
+    ], {
+      createClient: () => client,
+      write: (line) => cliStartOutput.push(line),
     });
+    expect(cliStartOutput).toHaveLength(1);
+    const cliStartReply = ClientReplyMessageSchema.parse(JSON.parse(cliStartOutput[0]!));
+    if (cliStartReply.result.resource !== "run") throw new Error("CLI start must return a Run projection");
+    const started = cliStartReply.result.value;
+    // startRun returns the current Run projection; HTTP success is not a
+    // completion receipt. The terminal status is read from a later projection.
     expect(["indexing", "running"]).toContain(started.status);
     const pending = await waitForClientStatus(client, started.run_id, "awaiting_approval");
     expect(pending.status).toBe("awaiting_approval");
@@ -240,19 +256,67 @@ describe("TraceGraph vertical slice", () => {
     const replayed = await client.getRun(completed.run_id);
     expect(replayed.timeline).toEqual(completed.timeline);
 
+    const cliRunOutput: string[] = [];
+    await runRunSessionCommand("run", ["get", completed.run_id], {
+      createClient: () => client,
+      write: (line) => cliRunOutput.push(line),
+    });
+    const cliRunReply = ClientReplyMessageSchema.parse(JSON.parse(cliRunOutput[0]!));
+    if (cliRunReply.result.resource !== "run") throw new Error("CLI run get must return a Run projection");
+    expect(cliRunReply.result.value).toEqual(replayed);
+
+    if (completed.session_id === undefined) throw new Error("Expected the completed Run to have a Session");
+    const cliSessionsOutput: string[] = [];
+    await runRunSessionCommand("sessions", ["list", "--project-id", completed.project_id], {
+      createClient: () => client,
+      write: (line) => cliSessionsOutput.push(line),
+    });
+    const cliSessionsReply = ClientReplyMessageSchema.parse(JSON.parse(cliSessionsOutput[0]!));
+    if (cliSessionsReply.result.resource !== "sessions") {
+      throw new Error("CLI sessions list must return Session summaries");
+    }
+    expect(cliSessionsReply.result.value.sessions).toEqual(
+      expect.arrayContaining([expect.objectContaining({
+        session_id: completed.session_id,
+        run_ids: expect.arrayContaining([completed.run_id]),
+      })]),
+    );
+
+    const cliSessionOutput: string[] = [];
+    await runRunSessionCommand("sessions", ["get", completed.session_id], {
+      createClient: () => client,
+      write: (line) => cliSessionOutput.push(line),
+    });
+    const cliSessionReply = ClientReplyMessageSchema.parse(JSON.parse(cliSessionOutput[0]!));
+    if (cliSessionReply.result.resource !== "session") {
+      throw new Error("CLI sessions get must return a Session read result");
+    }
+    expect(cliSessionReply.result.value.header.session_id).toBe(completed.session_id);
+    expect(cliSessionReply.result.value.entries.length).toBeGreaterThan(0);
+
     const controller = new AbortController();
-    const streamed: number[] = [];
+    const streamed: typeof replayed.timeline[number][] = [];
     for await (const event of client.streamEvents(completed.run_id, {
       reconnect: false,
       signal: controller.signal,
     })) {
-      streamed.push(event.sequence);
-      if (streamed.length === 3) {
+      streamed.push(event);
+      if (streamed.length === replayed.timeline.length) {
         controller.abort();
         break;
       }
     }
-    expect(streamed).toEqual([1, 2, 3]);
+    expect(streamed).toEqual(replayed.timeline);
+
+    const cliEventOutput: string[] = [];
+    await runRunSessionCommand("run", ["events", completed.run_id], {
+      createClient: () => client,
+      write: (line) => cliEventOutput.push(line),
+    });
+    const cliEvents = cliEventOutput.map((line) => ClientEventMessageSchema.parse(JSON.parse(line)));
+    expect(cliEvents.map((message) => message.event)).toEqual(
+      streamed.map((event) => ({ stream: "ledger", event })),
+    );
   }, 30_000);
 
   it("recovers a killed Host session and reissues its pending approval without rerunning tools", async () => {

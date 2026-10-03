@@ -1,0 +1,18 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+  assert.ok(native.windows.some((window) => window.visible && window.preferences.preload === preload && window.preferences.sandbox === true && window.preferences.contextIsolation === true && window.preferences.nodeIntegration === false))
+
+    at file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/ui-086-workbench-ux/release/harness/installed-live.mjs:119:10 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

@@ -1,12 +1,18 @@
 # 模块 02：Agent Runtime
 
 > 定位：整个系统的执行内核。`AgentLoopCoordinator` 协调 Context、模型 Decision 与 Tool batch；`AgentRuntimeImpl` 保留公开 Run 命令、Ledger、审批/控制锁、workspace authority、Tool 执行与恢复。
-> 代码：`packages/core/src/domains/runtime/{agent-loop,run-state-machine,runtime-feature-drivers,runtime,runtime-telemetry,runtime-service-facades.test,runtime-feature-driver-registry.test,runtime-feature-drivers.test}.ts`、`kernel/{types,crypto,workspace,registration,raw-tool-result}.ts`、`kernel/tool/definition.ts`、`domains/extensions/{registration,manager}.ts`、`domains/tools/{registry,executor,policy-engine,approval-token-store,tool-output-limits,runtime-service}.ts`、`domains/{context/{context,context-compaction,token-meter,runtime-service},credentials/credentials,evidence/{action-wal,attachment,runtime-service},memory/memory,model/{fake-model,model-provider},session/{session-store,session-controller},skill/skill,subagent/subagent,team/team,todo/todo}.ts`、`packages/{evidence,session}/src/`、`seams/{sandbox,lsp,mcp}/`
+> 代码：`packages/core/src/domains/runtime/{agent-loop,no-progress-guard,no-progress-guard.test,retry-policy,retry-policy.test,run-state-machine,runtime-feature-drivers,runtime,runtime-telemetry,runtime-service-facades.test,runtime-feature-driver-registry.test,runtime-feature-drivers.test}.ts`、`kernel/{types,crypto,workspace,registration,raw-tool-result}.ts`、`kernel/tool/definition.ts`、`domains/extensions/{registration,manager}.ts`、`domains/tools/{registry,executor,policy-engine,approval-token-store,tool-output-limits,runtime-service}.ts`、`domains/{context/{context,context-compaction,token-meter,runtime-service},credentials/credentials,evidence/{action-wal,attachment,runtime-service},memory/memory,model/{fake-model,model-provider},session/{session-store,session-controller},skill/skill,subagent/subagent,team/team,todo/todo}.ts`、`packages/{evidence,session}/src/`、`seams/{sandbox,lsp,mcp}/`
 > 契约：`packages/contracts/src/{commands,action,tool,action-wal,event,context,memory,token,sandbox,permission,projection,session,steering,subagent,telemetry}.ts` 与 `packages/telemetry/src/`
-> 最后核对：2026-09-30（CORE-028 turn coordinator 与 PKG-031 Session persistence package；Core 416 项测试、Session 契约 2 项测试、CLI E2E 4 项测试）
+> 最后核对：2026-10-01（ORCH-055 后 Core build/typecheck、Memory Episode/Job/Runtime 13 项定向测试、CLI E2E 4 项与架构/文档门禁通过）
 > 实现状态：**已验证**（当前精确用例数以 Core/Test-support 测试命令为准）
 
 ---
+
+## 模型工具参数的有界纠正
+
+模型工具参数不符合注册 schema 时，Runtime 在整批执行前写入 `action.rejected` 和校验失败回执/观察；`executed=false`，没有任何工具副作用。这份实际观察进入下一轮 Context，允许模型连续两次纠正；第三次仍不合法才以可理解的信息结束。Todo 新建仍必须从 `pending` 开始，不会静默改成合法值。硬策略、capability 与沙箱拒绝不会进入此纠正路径，拒绝事件不能作为 Todo 完成证据。总轮次上限与取消规则继续生效。
+
+对应实现为 `packages/core/src/domains/runtime/agent-loop.ts`；`runtime.plan-mode.test.ts` 覆盖整批无执行、成功纠正和连续错误上限，并保留原有策略拒绝负例。
 
 ## 1. 依赖注入（`AgentRuntimeOptions`）
 
@@ -37,6 +43,7 @@
 | `codeGraph` | | `undefined` | 代码图提供方；未注入则跳过所有图事件 |
 | `contextPolicy` | | `undefined` | 由 Host 选择并传入，每轮 Context build 与 manifest 都记录它 |
 | `maxTurns` | | `12` | 轮次闸门 |
+| `noProgressPolicy` | | `{windowTurns:4,minimumNoProgressTurns:3,minimumRepeatedCallRatio:0.5}` | RUN-050 受信 Runtime policy；限制在 3..64 轮窗口、2..window-1 无进展轮与 0.5..1 重复率 |
 | `actionWal` | | `ActionWal(<dataDir>/wal)` | G-04 Patch WAL 与 exact before-image；初始化失败则 Runtime fail-closed |
 | `attachmentStore` | | `AttachmentStore(<dataDir>/attachments)` | G-18 durable staging/claim、Artifact materialization、PDF extraction 与 relation-scoped content |
 | `recoveryLedger` | | `RecoveryLedger(<dataDir>/recovery)` | 恢复 recipe/attempt 事实、自动尝试上限与报告来源 |
@@ -49,6 +56,8 @@ export const DEFAULT_MAX_TURNS = 12;
 ```
 
 `maxTurns` 是**循环次数**闸门，与 token 预算无关——两者是正交的两道防线。
+
+RUN-050 在下一轮模型调用前检查最近成功的 Tool 轮次。只有窗口已满、连续至少三轮没有新规范化结果证据，且窗口内重复调用比例达到 policy 阈值时才以 `no_progress_detected` 失败；默认需要 4 轮窗口、3 轮无进展和至少 50% 重复调用。调用/结果以哈希比较，终态的 `no_progress_guard` 只保留调用与状态哈希、有界错误码、计数和 policy，不复制原始参数或输出。结果变化、workspace patch hash、LSP diagnostics 或 Todo 状态变化作为进展信号；用户消息会重置窗口，挂起的用户输入会先于 no-progress 终止被消费。硬 `maxTurns` 仍始终生效。
 
 ---
 
@@ -84,7 +93,7 @@ export const DEFAULT_MAX_TURNS = 12;
 | `replay(runId)` | **仅** Event → Projection，不触碰模型与工具 |
 | `replayAt({session_id, run_id, until_sequence})` | G-23：完整校验 Ledger 后只投影到指定 Run-local sequence，返回 anchor 与 canonical snapshot hash |
 | `replayDiff({session_id, run_id, from, to})` | G-23：从同一次 Ledger read 派生两个端点，比较 Event/Evidence/Tool/Todo/审批/状态，不执行模型或工具 |
-| `reconcileActions(locator + workspace)` | 重算 WAL 目标，关闭未生效 prepare、补齐已生效事实或标记 divergence；不重做 patch mutation |
+| `reconcileActions(locator + workspace)` | 对 Action WAL 按 hash 分类，并查询未决且由 Host reconciler 支持的外部 operation；不重做任何 Action |
 | `rollback(input)` | 显式、默认关闭的单目标恢复；所有拒绝条件都成为 `action.rollback_refused` |
 | `markRunInterrupted(locator)` | 在 Session lease 下为无终态 Run 幂等追加 `run.interrupted` |
 | `resumeRun(input)` | 只允许 interrupted Run；待审批 Patch 重签 approval，待审批 Plan 恢复原 revision，其它状态只恢复只读视图 |
@@ -92,6 +101,8 @@ export const DEFAULT_MAX_TURNS = 12;
 | `getArtifact({artifactId, runId, projectId})` | 取工件，含六字段一致性校验 |
 | `getTelemetryStatus()` | 返回当前进程 strict sink/status/error 快照；不是 durable Run Projection |
 | `flushTelemetry()` | best-effort flush；任何 sink failure 都被隔离，不会以 Runtime 失败向上传播 |
+| `resumeMemoryExtraction()` | 重排 extractor 已可用、仍在 waiting 的已 settlement Run；已有完成 Job 不重跑 |
+| `shutdownBackgroundWork()` | 取消并等待 Runtime 自有的 Memory 后处理 Job 结清；等待态可由下次启动重建 |
 
 禁用能力的 Runtime API 统一抛出 `RuntimeCommandError(code: "feature_disabled")`，对应模型 Tool 从该 Run 的工具 schema 中移除。显式模型响应仍调用禁用 Tool 时，Runtime 在 dispatch 前写 `action.rejected` 并以 `feature_disabled` 收口。禁用 Memory/Attachment 时跳过对应 Store 初始化；禁用 Attachment 且 Run 指定 staged upload 时，在 `run.created` 前拒绝。Plan mode 依赖 Todo mutation，因此关闭 `todo` 后不能启动新的 plan Run。禁用配置不会删除 Ledger、Memory JSONL 或旧附件，也不改变历史 Run 的 Projection/replay。
 
@@ -129,9 +140,11 @@ cancelInputId?           ← 已 durable 排队、正等待安全边界完成的
 baseGraph?              ← 最近一次基线图快照
 lastPatchEventId?       ← 供 test.completed 关联
 stopped                 ← 停止标记
-abortController         ← 取消信号
+cancellation            ← 每 Run 派发栅栏、AbortSignal 与自有 job 登记表
 commandQueue            ← 该 Run 的命令串行化
 actionSignatures        ← Map<actionId, 参数签名>，用于重复动作检测
+noProgressFingerprints  ← 最近成功 Tool 轮次的 hash-only 进度指纹
+noProgressEvidence      ← 本次 Run 内已见规范化 Tool 结果签名
 canonicalActionSequence ← runtime 自有动作序号（见 §6）
 ```
 
@@ -165,6 +178,12 @@ run.created
 
 默认 preset/ceiling 是 `workspace-write`，但 preset 永远不能扩大 Workspace capability。`read-only` 的 commit policy 在 preview 完成后立即产生 `policy.evaluated(kind:"deny")` + `policy.denied` 并结束 Run，**不会创建 `approval.requested`**；`workspace-write` 才建立待批 Patch。未被规则收紧的 `full-write` 不询问用户，也不写 `approval.requested` / `approval.granted` 或签发 token；Runtime 仍重算 canonical action digest，并复用 `#approveLocked(..., "policy")` 的提交 continuation 进入 Workspace/hash/WAL 边界。`commit_patch` 不通过 SandboxRunner；模型 adapter 的 HTTP 请求也在 Host 内执行。
 
+### RUN-050 No-progress guard
+
+`no-progress-guard.ts` 从规范化 Tool 调用签名和有界 Tool 结果中构造 `ProgressFingerprint`：`normalizedToolCalls` 保存调用哈希；结果哈希由状态、稳定 code/summary、原始内容与剔除 Runtime 生成 ID 的结构化 facts 计算；`newEvidenceCount` 只统计本 Run 首次见到的调用+结果组合。存在时附加 `workspaceDeltaHash`、`diagnosticsHash`、`goalStateHash` 与有界 `unresolvedErrorCodes`。只哈希值进入 guard 终态诊断；Context/Observation/Ledger 原有数据边界不变。
+
+policy 必须落满整个窗口，并同时满足连续无新证据轮数与重复调用比例。新增结果、结果内容改变或任一已观察状态哈希改变都会打断连续计数。队列里已有 message/approve hint 时，guard 让出控制权；收到消息后清空窗口和去重集合。用户批准 Plan 或 Patch 后也开启新窗口，因为该控制迁移处于模型循环之外。窗口保存在进程内 RunState，Runtime 重启后的恢复从空窗口继续；硬轮次上限仍是最终保证。
+
 ### 3.3 G-09 Plan Mode 与 Todo Ledger
 
 `mode: "plan"` 现在是独立控制流，不再只是少开放几个工具。模型只能使用严格的只读规划白名单，以及声明 `side_effect: "none"`、`concurrency_safe: false` 的 `todo_write`；文件写入、测试执行、补丁预览与任何未知工具都会在策略层拒绝。模型结束规划前至少要建立一个 Todo，Runtime 随后追加 `plan.ready`，把 Run 置为 `awaiting_plan_approval`，而不是写入终态。
@@ -177,11 +196,11 @@ Todo 不是 UI 临时数组，而是 canonical Ledger 投影。`todo.created|upd
 
 `submitUserInput()` 不争用被 Agent 主循环长时间占有的 `commandQueue`，而是在独立的 per-Run control mutex 中原子完成：读取 Ledger、检查 command/input id、检查 terminal/cancelling/容量，再 append `user.input_queued`。`command_id` 绑定完整命令 digest；`input_id` 另绑定 raw `{kind,body}` digest，因此两段不同秘密即使公开正文都脱敏为同一字符串也不能碰撞成“重复成功”。同 input id、同 payload、不同 command id 返回原提交；不同 payload fail-closed。
 
-公开上限仍是 100 条 pending，但普通 `message|approve_hint` 到 99 条即拒绝，第 100 个槽永久留给 `cancel`；否则满队列会让停止控制本身不可达。cancel 已排队后，新的不同 input 与审批/Todo 推进被拒绝，已有命令的幂等重放仍可返回原结果而不产生新迁移。
+公开上限仍是 100 条 pending，但普通 `message|approve_hint` 到 99 条即拒绝，第 100 个槽永久留给 `cancel`；否则满队列会让停止控制本身不可达。cancel 已排队后，新的不同 input 与审批/Todo 推进被拒绝，已有命令的幂等重放仍可返回原结果而不产生新迁移。cancel finalizer 越过最多 99 条旧普通输入，但会先等 controller 确认没有活动自有 job，不能再描述为立即终止。
 
 普通 message/approve hint 只在安全点消费：工具批次完全 settle 后、下一次 Context/模型请求前，每个安全点最多一条 FIFO。Runtime 写 `user.input_consumed {input_id,kind,consumed_at,at_step,queued_event_id}` 后才把它作为 user history 加进下一次请求。若模型在输入排队期间返回 `finish`，finish Decision 被视为陈旧；`#transitionAfterFinish` 在同一 control gate 中看到 pending inbox 后让路，而不是抢先 `run.completed` 或 `plan.ready`。三条普通输入因此需要三个安全点，`at_step` 严格递增。cancel 是专用 control lane：durable finalizer 可越过最多 99 条更早的普通输入，消费指定 cancel 并立即终结；被越过的普通输入保持 pending，供终态投影解释“未被模型处理”。
 
-恢复不信任进程内数组：Projection v9 从当前 103 种事件中的 queued/consumed 差集重建 `input_queue.pending`，从 `attachment.*` 重建只读 `attachments`，从 `team.*` 重建可选 roster/mailbox/task board，并从 `code.*`/`lsp.*` 重建可选 `code_intel`；`#restoreRunState` 从所有已消费的 message/approve hint 重建 conversation history，覆盖“consumed Event 已落、内存 history 尚未更新”崩溃窗且不重复。恢复和 duplicate 返回还会按**当前** secret registry 重新脱敏并截到 8,000 字符，避免后来登记的秘密泄漏或替换文本膨胀突破契约。未消费输入在重启后仍保留。普通 running/indexing Run 仍遵守 G-01 的 fail-safe 只读恢复，不因 pending message 自动重跑未知的模型/工具；若崩溃前已有 durable pending cancel，显式 `resumeRun()` 只恢复最小 Run shell，适用于 prior indexing/running/待批状态，直接 consume+cancel，绝不重启旧 indexing/model/tool；未知外部副作用仍交给 Action WAL 对账。附件 Projection 可重放，但恢复不会重新发送历史图片或重新 claim 旧 upload；Team facts 可重放，但不会复活旧 worker 或自动重派任务。若 cancel 已 consumed、但进程在 terminal append 前崩溃，`markRunInterrupted()` 直接补唯一 `run.cancelled`，不会把它误写成 `run.interrupted`。
+恢复不信任进程内数组：Projection v9 从当前 104 种事件中的 queued/consumed 差集重建 `input_queue.pending`，从 `attachment.*` 重建只读 `attachments`，从 `team.*` 重建可选 roster/mailbox/task board，并从 `code.*`/`lsp.*` 重建可选 `code_intel`；`#restoreRunState` 从所有已消费的 message/approve hint 重建 conversation history，覆盖“consumed Event 已落、内存 history 尚未更新”崩溃窗且不重复。恢复和 duplicate 返回还会按**当前** secret registry 重新脱敏并截到 8,000 字符，避免后来登记的秘密泄漏或替换文本膨胀突破契约。未消费输入在重启后仍保留。普通 running/indexing Run 仍遵守 G-01 的 fail-safe 只读恢复，不因 pending message 自动重跑未知的模型/工具；若崩溃前已有 durable pending cancel，显式 `resumeRun()` 只恢复最小 Run shell，适用于 prior indexing/running/待批状态，直接 consume+cancel，绝不重启旧 indexing/model/tool；未知外部副作用由 Action WAL 或 RUN-052 Host reconciler 对账。附件 Projection 可重放，但恢复不会重新发送历史图片或重新 claim 旧 upload；Team facts 可重放，但不会复活旧 worker 或自动重派任务。若 cancel 已 consumed、但进程在 terminal append 前崩溃，`markRunInterrupted()` 直接补唯一 `run.cancelled`，不会把它误写成 `run.interrupted`。
 
 ### 3.5 G-15 committed-Event Telemetry 旁路
 
@@ -213,7 +232,7 @@ candidate Event 已提交、record 尚未写入，或 record 已落盘、后续 
 
 `spawn_subagent` 的模型输入只能选 `profile_name`、任务包、`isolated|fork` 与请求预算。Runtime 从 Host-owned `SubagentRegistry` 解析 provider、role prompt/version/hash、tool allowlist 与 budget ceiling，并把有效值冻结为 `SubagentSpec`。child 有自己的 Run id、Session id、Ledger 和 recovery v5 Artifact；`run.created` 额外记录 parent run/session、subagent id/depth/limits provenance，后续恢复和 Host 只读路由都重验这些关系。
 
-父账本常规只记三个节点：`subagent.started`、initial `subagent.message_sent {actor:"parent_agent"}` 与一个 terminal receipt。terminal 绑定 child terminal event id/hash 和有界 result/usage，不复制 child timeline；只有 launch 在 initial delivery 前失败才允许 `started → failed{failure_stage:"launch"}` 两事件收口。默认并发上限 2、深度 1；permit pool、step/token budget、profile ceiling 和冻结 tool allowlist 都在 Tool 执行前 fail-closed。`fork` 只携带精确绑定的有界父 Context 快照，`isolated` 不隐式继承父 history。
+父账本常规只记三个节点：`subagent.started`、initial `subagent.message_sent {actor:"parent_agent"}` 与一个 terminal receipt。terminal 绑定 child terminal event id/hash 和有界 result/usage，不复制 child timeline；只有 launch 在 initial delivery 前失败才允许 `started → failed{failure_stage:"launch"}` 两事件收口。默认并发上限 2、深度 1；同一 Runtime 内的公平 process-local permit pool 在 child launch 前强制并发硬上限，root projection 也校验活动 child 数不超过 Run 冻结限制。它不负责跨进程/跨 Host 的容量协调。step/token budget、profile ceiling 和冻结 tool allowlist 都在 Tool 执行前 fail-closed。`fork` 只携带精确绑定的有界父 Context 快照，`isolated` 不隐式继承父 history。
 
 `listSubagents/sendSubagentMessage/interruptSubagent` 只操作 direct child，且受同一 parent/project/terminal 边界约束。启动恢复不重启旧 child model loop：父 active link 已指向终态 child 时补写 hash-linked 父 receipt；child 仍非终态时先递归收口 descendants、写 child `run.cancelled`，再收口父 receipt/interrupt。父终态永远晚于其 active child 终态。
 
@@ -405,6 +424,30 @@ WAL 记录既保存进程内 `workspace_handle_id`，也保存稳定的 `sha256(
 
 restore attempt 在真正修改 before 状态前先以 `started` 落 Recovery Ledger。若进程在 filesystem restore 后、`patch.rolled_back` 前退出，启动扫描会处理这个 open attempt：磁盘为 before 时补唯一的 `patch.rolled_back` + `action.reconciled` 并关闭 attempt；仍为 after 时记失败；其它 hash 则升级为 divergence。该恢复同样只补事实，不重复 restore syscall。
 
+### 5.3 RUN-052 外部 Action 对账契约
+
+通用 Tool 执行上下文带有 Runtime 生成的 `operationId`，它与 durable `tool.started.operation_id` 相同。自定义外部 Tool 可把它与 `projectId`、`runId` 组合成远端幂等键；Host 可通过 `AgentRuntimeOptions.externalActionReconciler` 注册一个只读 Provider，并显式列出可对账的 Tool 名称。对账请求只包含 project/run/action/operation 身份、Tool 名称和触发原因，不包含 Tool 原始参数或凭据。
+
+`reconcileActions()` 会查询 Provider 明确支持且已有 `tool.started`、但没有终态结果，或收到 `tool.unknown` / timeout / cancellation 的操作。默认查询上限为 5 秒，Host 可配置到最多 30 秒。对账只查询状态，不重新派发 Tool：
+
+| Provider 结果 | 持久化事实 | 后续行为 |
+|---|---|---|
+| `confirmed` / `failed` | `action.reconciled`，并要求 Provider evidence digest | 关闭该 operation 的自动对账 |
+| `unknown`、Provider 抛错或对账超时 | `action.reconciled {outcome:"unknown"}` | 保留未知，可再次查询；不重放 Tool |
+| `diverged` 或返回了其它 operation identity | `action.diverged {automatic_rollback:false}` | 投影进入粘性 `needs_manual_review` |
+
+`confirmed` 表示 Provider 证明预期业务结果存在；`failed` 表示 Provider 证明该 Action 未生效；`unknown` 表示暂时无法判定；`diverged` 表示证据与请求的 operation 身份或预期冲突。
+
+Provider 输出先经过严格 schema 验证；无效结果按 `unknown` 记录，避免伪造确定结论。该契约在 `@tracegraph/core` 内由受控测试 Provider 验证四种结果，暂未接入外部 Agent Adapter。没有配置 Provider，或该 Provider 未列出相应 Tool 名称时，现有 Tool 结果不变。
+
+### 5.4 RUN-053 重试分类
+
+每个 `model.request_started` 都记录当前 `retry_taxonomy.v1` 快照，明确三类上限：模型 Provider 最多 3 次，Tool executor 自动派发 1 次，单个 canonical Action operation 派发 1 次。只有 `ModelRequestError` 的明确瞬时网络错误、超时，以及 HTTP 408/425/429/500/502/503/504 可重试；等待采用确定性指数退避 250 ms、500 ms，策略最大等待为 1,000 ms。每次重试前都会持久化 `model.retry_scheduled`，其中有尝试号、原因类别和准确等待时长，并投影成安全的 live model activity 与有界 Telemetry metric。模型成功或失败事实也记录 Provider 尝试数和退避时长。
+
+如果某次 Provider 调用已报告 usage，则认为响应证据已到达，不再重试；永久 HTTP 错误、取消、无效 Decision 和未分类 Adapter 异常也不重试。取消信号会清除退避 timer，且下一次模型调用仍须通过 RUN-051 的 controller 派发门。
+
+Tool 不会被 Runtime 自动重放；Tool 失败仍终止当前 Run。模型后续生成的新 Tool 调用是不同 Action，受 Run `maxTurns`、策略审批、action id 唯一性与 RUN-050 no-progress guard 约束。每个 operation identity 的 Action 只派发一次；外部结果未知时，RUN-052 只允许查询 Provider 状态，不允许重放 Action。Patch WAL 自动恢复仍由 `RecoveryLedger` 的单次自动 attempt 管理。重试等待不会跨 Host 重启续跑；达到三次上限会记录最终 `model.request_failed`。
+
 ---
 
 ## 6. 幂等与竞态
@@ -449,13 +492,15 @@ restore attempt 在真正修改 before 状态前先以 `started` 落 Recovery Le
 
 ### 6.4 G-14 取消、工具 shield 与 legacy `stop`
 
-新的交互取消使用 `submitUserInput(kind:"cancel")`。Runtime 先在 control mutex 内 durable append `user.input_queued`，再设置 `stopped` 并触发 AbortController；因此 provider 能尽快收到取消，但账本不会出现“已经 abort、却没有用户取消事实”的状态。若首次调用在 Ledger commit 后、Session index/响应前失败，Ledger-first retry 会修复索引、重新武装 abort，并再次排入幂等 finalizer；失败 Promise 不会永久毒化进程内 command cache。取消 finalizer 排在当前 `commandQueue` 后面：模型可立即结束；工具批次必须先让已开始的安全波 settle，写工具若已越过最终 signal check，则由 Host-only cancellation shield 完成原子 rename、WAL、Receipt、`patch.applied` 与 `action.verified`。已提交 Patch 不因取消回滚，也不会留下“磁盘已改但账本说 aborted”的半写状态。
+新的交互取消使用 `submitUserInput(kind:"cancel")`。Runtime 先在 control mutex 内 durable append `user.input_queued`，再通过每 Run `CancellationController` 同步封锁后续模型、审批 answerer 与 Tool executor 派发，并向当前工作触发 AbortSignal；因此账本不会出现“已经 abort、却没有用户取消事实”的状态。实际模型/审批/Tool executor Promise 由 controller 持有，即使外层 abort race 已返回也仍被追踪。若首次调用在 Ledger commit 后、Session index/响应前失败，Ledger-first retry 会修复索引、重新武装取消栅栏，并再次排入幂等 finalizer；失败 Promise 不会永久毒化进程内 command cache。取消 finalizer 排在当前 `commandQueue` 后面：工具批次必须先让已开始的安全波 settle；写工具若已越过最终 signal check，则由 Host-only cancellation shield 完成原子 rename、WAL、Receipt、`patch.applied` 与 `action.verified`。已提交 Patch 不因取消回滚，也不会留下“磁盘已改但账本说 aborted”的半写状态。
 
-到达安全边界后，Runtime 先写对应的 `user.input_consumed`，再写唯一终态 `run.cancelled {reason:"user_cancel", last_sequence:<consumed sequence>}`。`last_sequence` 精确指向取消前最后一个 durable Event，也就是该 consumed Event；重试、模型失败或工具失败不能抢写另一个终态。
+只有 controller 确认没有自有 job 后，Runtime 才写对应的 `user.input_consumed` 和唯一终态 `run.cancelled {reason:"user_cancel", last_sequence:<consumed sequence>}`。finalizer 每次最多等 1 秒；若仍有未结清 job，会保留 durable pending cancel，并在最后一个 job 结清时重试，不提前宣告取消完成。`last_sequence` 精确指向取消前最后一个 durable Event，也就是该 consumed Event；重试、模型失败或工具失败不能抢写另一个终态。Host 重启恢复只有在旧进程已退出后，才可据此完成 pending cancel。
+
+内置 `run_test` 在 POSIX 上按进程组回收：发送 SIGTERM，宽限 250 ms 后仍有成员则发送 SIGKILL，并等进程组消失后才结清 Tool job；即使组 leader 先退出，也会回收仍存活的后代。忽略 AbortSignal 且迟迟不结清的自定义进程内 executor 会让 Run 保持 pending cancel；运行时不能强行终止任意 JavaScript。当前也没有跨 Host 取消锁；Windows 进程树回收仍未实现。
 
 `submitUserInput` 的 terminal-check+append、`#transitionAfterFinish` 的 pending-check+terminal/`plan.ready`、cancel consume+terminal，以及所有 `#terminal` 都经过同一 per-Run control mutex。因此 submit 与 finish/失败/取消的竞态被串成一种顺序：要么输入先 durable，终结让路；要么终态先 durable，后来的新输入得到 `run_terminal`。cancel 已 queued 后，批准、拒绝、Todo 与其它不同输入不再推进；相同命令仍可幂等重放。
 
-`stop()` 只保留给旧调用方：它触发同一 AbortSignal，并以 `run.cancelled {code:"user_stop"}` 幂等收敛，但**不会**创建 `user.input_queued/consumed`，也不具备可展示的 inbox 生命周期。对已经终态的 Run 再 stop 会返回现有投影，不再追加第二终态或抛账本不变量错误。新 Web/SDK 交互应使用 durable cancel。
+`stop()` 只保留给旧调用方：它触发同一取消栅栏与 AbortSignal，并等自有 job 结清后以 `run.cancelled {code:"user_stop"}` 幂等收敛，但**不会**创建 `user.input_queued/consumed`，也不具备可展示的 inbox 生命周期。对已经终态的 Run 再 stop 会返回现有投影，不再追加第二终态或抛账本不变量错误。新 Web/SDK 交互应使用 durable cancel。
 
 ---
 
@@ -467,7 +512,7 @@ Runtime 主循环与 Session 恢复控制实际发出以下事件族（`credenti
 run.created  run.started  run.completed  run.failed  run.cancelled
 context.built  context.budget_warning  context.compaction_started  context.compaction_completed
 context.tool_output_spilled  context.summary_created  context.summary_failed  context.spill_refetched
-model.request_started  model.usage_reported  model.usage_anomaly
+model.request_started  model.retry_scheduled  model.usage_reported  model.usage_anomaly
 model.decision  model.request_failed  model.output_invalid
 action.rejected  action.stale  action.late_ignored  action.verified
 action.reconciled  action.diverged  action.rollback_refused
@@ -492,7 +537,7 @@ run.interrupted  run.resumed
 user.input_queued  user.input_consumed
 ```
 
-契约当前声明 **103** 种，Projection 使用 `tracegraph.projector.v9`；G-21 的四个 Memory/Retrieval 事件、G-07 的五个 subagent lifecycle、G-18 的三个 attachment lifecycle、G-17 `extension.error`、G-08 的十三个 team lifecycle、G-12 的两个 LSP lifecycle、G-20 的两个 CodeIntel lifecycle 与 MEM-042 的 `memory.use_status` 都已有生产路径。`code.intel_updated` 只记录有界 snapshot/Git/symbol/LSP 摘要事实；`code.stale_base_detected` 会使旧 Patch approval 失效并生成新的 request，而不是写盘或直接终止 Run。只有 `artifact.stored` 仍没有独立生产者（工件通过 `artifact_refs` 关联），其余 102 种由 Runtime/恢复/维护路径产生。G-15 不增加 Session Event：span/metric/log 只从 committed Event 旁路派生，使用独立 `tracegraph.telemetry-status.v1` 报告健康度。
+契约当前声明 **108** 种（最新清单见 [生成的事件目录](../generated/events.md)），Projection 使用 `tracegraph.projector.v9`；G-21 的四个 Memory/Retrieval 事件、G-07 的五个 subagent lifecycle、G-18 的三个 attachment lifecycle、G-17 `extension.error`、G-08 的十三个 team lifecycle、G-12 的两个 LSP lifecycle、G-20 的两个 CodeIntel lifecycle 与 MEM-042 的 `memory.use_status`、RUN-053 的 `model.retry_scheduled` 都已有生产路径。`code.intel_updated` 只记录有界 snapshot/Git/symbol/LSP 摘要事实；`code.stale_base_detected` 会使旧 Patch approval 失效并生成新的 request，而不是写盘或直接终止 Run。只有 `artifact.stored` 仍没有独立生产者（工件通过 `artifact_refs` 关联），其余 103 种由 Runtime/恢复/维护路径产生。G-15 不增加 Session Event：span/metric/log 只从 committed Event 旁路派生，使用独立 `tracegraph.telemetry-status.v1` 报告健康度。
 
 失败码（`run.failed` 的 `code`）可观察到的取值包括：`turn_budget_exhausted`、`model_request_failed`、`model_output_invalid`、`missing_tool_call`、`action_id_duplicate`、`action_id_conflict`、`capability_denied`、`plan_mode_denied`、`sandbox_denied`、`preset_denied`、`path_scope_denied`、`invalid_policy_path`、`policy_denied`、`approval_unavailable`、`approval_required`、`approval_expired`、`approval_binding_unavailable`、`approval_digest_mismatch`、`patch_preview_expired`、`action_digest_mismatch` 与其它 token/digest 拒绝码，以及 `schema_invalid`、`unknown_side_effect`、`stale_base`、`patch_anchor_mismatch` 等（工具业务 code 原样透传）、`graph_delta_failed`、`indexing_failed`、`runtime_failed`。G-05 的通用分类写在失败 Receipt metadata 的 `failure_code`、`tool.failed.data.code` 与 batch result 的 `failure_code`，用于跨工具控制；业务 code 则保留在 Receipt `code` 和 `business_code`，不会被覆盖。
 
@@ -525,10 +570,10 @@ user.input_queued  user.input_consumed
 23. Plan 的 `finish` 至少要有一条 Todo；它只产生 `plan.ready` 并暂停，同 Run 只有批准当前 revision 后才能转入 `execute`。
 24. Todo 写入按 Run 串行、依赖图必须无环且总数不超过 500；模型完成 Todo 必须引用同 Run、早于本次 mutation 的 eligible 独立成功执行 Event，且已有证据的 done Todo 在保持 done 时不能清空证据。该引用证明 durable execution fact，不承担 Todo 语义验收。
 24. Todo 在 `plan.ready` 后发生变化会使旧 Plan revision 失效；终态或人工复核状态禁止新写入，但相同 `command_id` 的已提交结果仍可幂等重放。
-25. `user.input_queued` 必须先于 cancel abort；普通输入只能在工具批次结束后、下一模型调用前的安全点按 FIFO 每次消费一条。cancel 是 control-lane 例外，可越过旧普通输入但仍须等待当前工具安全边界；所有 consumed Event 的 `at_step` 在同 Run 内严格递增。
+25. `user.input_queued` 必须先于 cancel abort；普通输入只能在工具批次结束后、下一模型调用前的安全点按 FIFO 每次消费一条。cancel 是 control-lane 例外，可越过旧普通输入，但必须封锁后续模型/审批/Tool 派发，并等所有自有 job 结清；所有 consumed Event 的 `at_step` 在同 Run 内严格递增。
 26. 普通输入在 pending 99 条时拒绝，给第 100 槽保留 cancel；cancel 仅在 pending 已达 100 时拒绝。
 27. submit、finish/`plan.ready` 与所有 terminal append 必须共享 per-Run control mutex；输入先 durable 时 finish 让路，终态先 durable 时输入不得追加。
-28. cancel 只能在 `user.input_consumed` 后写唯一 `run.cancelled {reason:"user_cancel",last_sequence}`；工具 cancellation shield 内已提交的 Patch 不回滚。
+28. cancel 只能在所有自有 job 结清后写 `user.input_consumed` 与唯一 `run.cancelled {reason:"user_cancel",last_sequence}`；有界等待到期但 job 仍活动时保留 pending cancel。工具 cancellation shield 内已提交的 Patch 不回滚。
 29. 恢复必须从 Ledger 保留 pending，并从已 consumed 的 message/approve hint 重建 history；cancel consumed→terminal 的崩溃窗补 cancelled，不能补成 interrupted。普通 running/indexing Run 仍只读恢复，不能仅因 pending 自动续跑。
 30. Telemetry 只能在 canonical Ledger append 成功后派生；它的 emit/flush failure 不得改变 Event、Run 终态或恢复结果。恢复与 replay 不读取/回填 Telemetry，默认 noop 不得产生网络 I/O。
 31. Sequence 是 Run-local；任何交互式 replay 都必须同时绑定 `session_id + run_id`。Diff 两端必须来自同一次完整、已校验的 Ledger read，回放不能 append Event、调用模型或执行工具。
@@ -546,9 +591,9 @@ user.input_queued  user.input_consumed
 
 ## 9. 已知缺口与未完成分支
 
-1. **只有 `artifact.stored` 没有独立生产者。** G-21 已接通 `memory.candidate_evaluated / memory.written / memory.recalled / retrieval.index_updated`；工件仍只通过 `artifact_refs` 被引用，从不单独记账。Memory 目前也没有 Host/SDK/Web 管理 API，标准 CLI 会自动召回已有索引，但不会替用户自动创造候选或爬取整个仓库。
+1. **只有 `artifact.stored` 没有独立生产者。** G-21 已接通 `memory.candidate_evaluated / memory.written / memory.recalled / retrieval.index_updated`；工件仍只通过 `artifact_refs` 被引用，从不单独记账。G-21 V1 `remember/recall` 没有对应的用户管理 API；另有 MEM-046/CLIENT-068 的 V2 owner-scoped 控制面，支持 Web/Desktop 等入口显式管理 V2 记录。标准 CLI 会自动召回已有 V1 索引，但不会替用户自动创造候选或爬取整个仓库。
 
-2. **Action WAL 不是通用副作用事务层。** 当前只接入单目标 `commit_patch`；`run_test`、provider usage 与未来外部 Tool 不受其保护。WAL/Recovery Ledger 只有进程内串行，Session lease 也不是跨进程 target lock；启动只对仍已注册且能解析可信 workspace 的项目对账。before-image 是权限收紧的本地精确字节，不是加密备份。
+2. **Action WAL 不是通用副作用事务层。** 当前文件 WAL 只接入单目标 `commit_patch`；RUN-052 的通用 external reconciler 只查询 Host 明确支持的 operation 状态，不提供 WAL、凭据治理或执行重试。`run_test`、provider usage 与未配置 Provider 的外部 Tool 不受文件 WAL 保护。WAL/Recovery Ledger 只有进程内串行，Session lease 也不是跨进程 target lock；启动只对仍已注册且能解析可信 workspace 的项目对账。before-image 是权限收紧的本地精确字节，不是加密备份。
 
 3. **Loop 阶段仍集中在一个 coordinator 方法**：`AgentLoopCoordinator.continueRun()` 协调 Context 组装、模型调用、usage、Decision 校验、批动作授权与 Tool 调度。CORE-028 已将它从 Runtime 实现中移出；本任务只抽取边界，不拆分单轮各阶段，也不把 Ledger、审批或 workspace authority 移交给 Loop。
 
@@ -562,7 +607,7 @@ user.input_queued  user.input_consumed
 
 8. **`getArtifact` 依赖投影。** 每次取工件都要先 `getProjection(runId)`（读全账本 + 投影），复杂度随 Run 长度增长；且若投影因任何原因失败，工件也变得不可取。
 
-9. **`maxTurns` 只按轮次计数，不区分"有效进展"。** 12 轮用尽即失败，即使每轮都有实质进展。
+9. **RUN-050 进度信号采取保守的可观测子集。** 当前使用规范化 Tool 调用/结果、显式 workspace patch facts、LSP diagnostics 与 Todo 输出；模型语义上的目标状态尚无独立 oracle。易变结果字段可能让等价结果被视为新证据，从而延后 guard；硬 `maxTurns` 仍兜底。
 
 10. **`reject` 使 Run 直接终止。** 拒绝补丁等于取消整个 Run，无法"拒绝这一版预览、让模型换个方案"。
 
@@ -572,7 +617,7 @@ user.input_queued  user.input_consumed
 
 13. **显式 rollback 的产品面仍很窄。** CLI 策略默认关闭，P0 只支持单目标；Recovery Markdown 仅有 Core API，Web 没有回滚或报告导出按钮。它不是任意历史版本切换或跨文件事务回滚。
 
-14. **G-05/G-14 并发与取消都不是跨进程强隔离。** scheduler 与 per-Run control mutex 只协调当前 Runtime；没有跨 Host lock。通用 Tool timeout 通过 AbortSignal/Promise race 及时 settle，但忽略 signal 的第三方 executor 仍可能继续占用后台资源。`commit_patch` 在最终 signal check 与原子 rename 之间 arm Host-only cancellation shield：durable cancel、legacy stop 或 timeout 发生在此后时先完成 applied WAL、Tool Receipt、`patch.applied` 与 `action.verified`，再进入取消终态，避免“文件已改却记成 tool_aborted”；这不是任意 Tool 的通用事务。内置 `run_test` 经 G-13 SandboxRunner 启动，并在 POSIX 上有进程组 SIGTERM→SIGKILL 回收。
+14. **G-05/G-14 并发与取消都不是跨进程强隔离。** scheduler、CancellationController 与 per-Run control mutex 只协调当前 Runtime；没有跨 Host lock。取消栅栏阻止后续模型/审批/Tool executor 派发；`run.cancelled` 只在已登记 job 结清后提交。executor 忽略 AbortSignal 且不结清时，1 秒有界等待到期会保留 pending cancel，并在 job 结清时重试；运行时不会强制终止任意进程内 JavaScript。通用 Tool timeout 仍通过 AbortSignal/Promise race 及时返回，因此非取消路径的忽略 signal executor 可能继续占用后台资源。`commit_patch` 在最终 signal check 与原子 rename 之间 arm Host-only cancellation shield：durable cancel、legacy stop 或 timeout 发生在此后时先完成 applied WAL、Tool Receipt、`patch.applied` 与 `action.verified`，再进入取消终态，避免“文件已改却记成 tool_aborted”；这不是任意 Tool 的通用事务。内置 `run_test` 经 G-13 SandboxRunner 启动；POSIX 进程组发 SIGTERM、宽限 250 ms 后发 SIGKILL，并等进程组消失才结清，Windows 后代进程树治理仍未实现。
 
 15. **G-13 不是 Host 级容器。** 当前只把内置 `run_test` 子进程送进平台 runner；provider HTTP、Context/Artifact/Ledger 与 `commit_patch` 都留在 Host。Linux 仅探测固定 bwrap 路径但未启用 backend，Windows 也无 backend，因此受限模式报告 `none + unmet_constraints` 并拒绝 child；`danger-full-access` 才直跑。macOS 依赖 Apple 的 `/usr/bin/sandbox-exec` 与 `system.sb`，可移植性有限；native runner 当前只产出 `full` 或 `none`，`partial` 仅由契约/UI预留。
 
@@ -583,6 +628,8 @@ user.input_queued  user.input_consumed
 18. **G-15 Telemetry 不是可靠投递或恢复系统。** sink queue、错误计数、最后错误时间和关联 Map 都只在进程内，重启会丢；启动不 backfill 历史 Ledger。OTLP 仅将网络/超时失败及 HTTP `429/502/503/504` 的对应 signal 放回有界内存队首，后续 flush 可能重复；`400` 等不可重试响应与 HTTP 200 `partialSuccess` 拒收会计错并丢弃该 signal 批次。200 响应正文最多读 64 KiB 以解析 rejected count，Collector 文本不回显。当前没有自动 retry/backoff、持久队列、完整 OTel SDK/processor/sampling/propagation 或真实 Collector 集成验证；CLI 的 5 秒关停 flush 预算也不保证 drain。它只能作为 best-effort 观测，不能替代 Ledger。
 
 19. **G-08 是 durable 协调面，不是通用异步/分布式 scheduler。** roster/mailbox/task board 与 heartbeat/loss 已在 root Ledger 闭环，单 Host optimistic version 保证 task 单 owner；但 `spawn_subagent` 仍同步等 child 终态，Team 并行只来自 G-05 batch + G-07 permit。没有跨 Host consensus、自动 heartbeat/sweep、旧 worker 自动重启或任务自动重派。若 child terminal 已 durable 而父 receipt 持续写不进，父保持 running 且 permit 不释放，需 Host restart 才依据 Ledger reconciliation；这是为避免同进程双重 child 和伪终态，不是可用性保证。
+
+20. **RUN-050 的检测窗口不是 durable checkpoint。** 每个 Run 在当前进程内保留已见结果签名；Runtime restart 会从空窗口恢复，窗口阈值也不会跨重启累计。成功用户 steering 与批准 Plan/Patch 会清空窗口，确保显式控制/副作用变化不会沿用旧停滞状态。硬 `maxTurns` 与现有 Ledger 仍可回放停机终态。
 
 ---
 

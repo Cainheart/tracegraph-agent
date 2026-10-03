@@ -1,0 +1,36 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent
+
+ ✓ |tracegraph-evals| evals/runtime/crash-recovery.eval.ts (1 test) 1147ms
+   ✓ runtime behavior: crash recovery (1)
+     ✓ renews stale approval authority after restart and resumes the same ledger 1147ms
+ ✓ |tracegraph-evals| evals/runtime/subagent-delegation.eval.ts (1 test) 764ms
+   ✓ runtime behavior: subagent delegation (1)
+     ✓ records six parent receipts for two children whose ledgers replay completely 763ms
+ ✓ |tracegraph-evals| evals/runtime/extension-system.eval.ts (3 tests) 579ms
+   ✓ runtime behavior: extension system (3)
+     ✓ removes one built-in capability group reversibly while later Runs still complete 392ms
+ ✓ |tracegraph-evals| evals/runtime/attachment-multimodal.eval.ts (3 tests) 539ms
+ ✓ |tracegraph-evals| evals/runtime/approval-chain.eval.ts (1 test) 380ms
+   ✓ runtime behavior: approval chain (1)
+     ✓ binds one approval to the previewed patch before applying it 379ms
+ ✓ |tracegraph-evals| evals/runtime/tool-parallel.eval.ts (1 test) 343ms
+   ✓ runtime behavior: parallel tools (1)
+     ✓ executes one safe batch concurrently while preserving requested observation order 342ms
+ ✓ |tracegraph-evals| evals/runtime/compaction-trigger.eval.ts (1 test) 260ms
+ ✓ |tracegraph-evals| evals/perf/performance.eval.ts (3 tests) 250ms
+ ✓ |tracegraph-evals| evals/runtime/sandbox-refusal.eval.ts (1 test) 212ms
+ ✓ |tracegraph-evals| evals/runtime/agent-team.eval.ts (1 test) 115ms
+ ✓ |tracegraph-evals| evals/replay/time-travel.eval.ts (1 test) 125ms
+ ✓ |tracegraph-evals| evals/quality/codegraph-diagnostics-quality.eval.ts (1 test) 45ms
+ ✓ |tracegraph-evals| evals/quality/retrieval-rag-quality.eval.ts (2 tests) 57ms
+ ✓ |tracegraph-evals| evals/docs/g22-release-consistency.eval.ts (4 tests) 28ms
+ ✓ |tracegraph-evals| evals/docs/implementation-consistency.eval.ts (6 tests) 15ms
+ ✓ |tracegraph-evals| evals/support/offline-guard.eval.ts (1 test) 8ms
+ ✓ |tracegraph-evals| evals/quality/memory-context-quality.eval.ts (1 test) 2ms
+
+ Test Files  17 passed (17)
+      Tests  32 passed (32)
+   Start at  20:37:39
+   Duration  8.44s (tests 64%, import 21%, transform 13%, setup 1%)
+

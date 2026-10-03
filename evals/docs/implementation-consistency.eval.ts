@@ -53,7 +53,7 @@ const IDENTIFIER_FACTS = [
   {
     identifier: "TeamPanel",
     documentation: ["docs/modules/10-Web-工作台.md", "docs/modules/16-Agent-Team.md"],
-    implementation: "apps/web/src/components/TeamPanel.tsx",
+    implementation: "packages/workbench/src/components/TeamPanel.tsx",
   },
   {
     identifier: "SkillRegistry",
@@ -166,12 +166,12 @@ const IDENTIFIER_FACTS = [
   {
     identifier: "captureGitContext",
     documentation: ["docs/modules/07-CodeGraph-代码图.md", "docs/modules/11-CLI-与装配.md"],
-    implementation: "apps/cli/src/composition.ts",
+    implementation: "packages/host/src/composition/composition.ts",
   },
   {
     identifier: "ChangesView",
     documentation: ["docs/modules/10-Web-工作台.md"],
-    implementation: "apps/web/src/components/ChangesView.tsx",
+    implementation: "packages/workbench/src/components/ChangesView.tsx",
   },
 ] as const;
 
@@ -481,7 +481,7 @@ describe("G16 documentation consistency", () => {
     }
   });
 
-  it("pins the post-MEM-042 Event set while preserving G20 projector, tools, and recovery versions", async () => {
+  it("pins the shared-workbench Event set while preserving G20 projector, tools, and recovery versions", async () => {
     const commonContract = await readRepositoryFile("packages/contracts/src/common.ts");
     const eventContract = await readRepositoryFile("packages/contracts/src/event.ts");
     const actionContract = await readRepositoryFile("packages/contracts/src/action.ts");
@@ -496,8 +496,10 @@ describe("G16 documentation consistency", () => {
     const eventTypes = assignedStringArray(eventContract, "EventTypeSchema");
 
     expect(assignedConstantLiteral(commonContract, "PROJECTOR_VERSION")).toBe(g20ProjectorVersion);
-    expect(eventTypes).toHaveLength(103);
+    expect(eventTypes).toHaveLength(108);
     expect(eventTypes).toContain("memory.use_status");
+    expect(eventTypes).toContain("model.retry_scheduled");
+    expect(eventTypes.slice(-4)).toEqual(["workbench.command_requested", "workbench.command_completed", "workbench.command_failed", "schedule.trigger_recorded"]);
     expect(eventTypes.filter((event) => event.startsWith("team."))).toHaveLength(13);
     expect(eventTypes.filter((event) => event.startsWith("skill."))).toHaveLength(3);
     expect(eventTypes.filter((event) => event.startsWith("lsp."))).toHaveLength(2);
@@ -517,7 +519,7 @@ describe("G16 documentation consistency", () => {
     expect(recoveryContract.slice(recoveryV5Start, recoveryV5Start + 500))
       .toMatch(/version:\s*z\.literal\(5\)/u);
 
-    expect(teamModule).toMatch(/canonical Event 当前共 103 种/u);
+    expect(teamModule).toMatch(/canonical Event 当前共 108 种/u);
     expect(teamModule).toMatch(/Run recovery 仍为 v5/u);
     expect(teamModule).toMatch(/内置 run-state 扩展中新增以下五个 Tool/u);
     expect(teamModule).not.toMatch(/内置 Tool 总数从 \d+ 增到 \d+/u);
@@ -563,7 +565,9 @@ describe("G16 documentation consistency", () => {
   });
 
   it("keeps implemented README and module routes registered by Host", async () => {
-    const host = await readRepositoryFile("packages/host/src/index.ts");
+    const host = await readRepositoryFile("packages/host/src/webserver/index.ts");
+    expect(await readRepositoryFile("packages/host/src/index.ts"))
+      .toContain('export * from "./webserver/index.js"');
     for (const fact of ROUTE_FACTS) {
       const documentation = await readRepositoryFile(fact.documentation);
       expect(

@@ -34,6 +34,24 @@ async function createService(now: () => Date = () => new Date("2026-09-30T12:00:
 const localScope = { allowedScopeIds: ["project:one"] } as const;
 
 describe("Memory V2 control plane", () => {
+  it("binds explicit export consent to exact authored content and clears it on correction", async () => {
+    const { service } = await createService();
+    const input = { command_id: "command:export-consent", kind: "fact", claim: "Public fixture port is 4310.", project_id: "project:one", sensitivity: "public", allow_export: true };
+    const candidate = await service.createCandidate(input, localScope);
+    expect(candidate.record.governance).toMatchObject({ consent: "explicit", allowExport: true, allowModelUse: false });
+    await expect(service.createCandidate({ ...input, allow_export: false }, localScope)).rejects.toMatchObject({ code: "memory_control_conflict" });
+    const corrected = await service.correct(candidate.record.memoryId, { command_id: "command:export-correction", expected_sequence: 0, claim: "Public fixture port is 4311." }, localScope);
+    expect(corrected.record.governance.allowExport).toBe(false);
+    const correctionInput = { command_id: "command:export-fresh-consent", expected_sequence: 0, claim: "Public fixture port is 4312.", allow_export: true };
+    const exportableCorrection = await service.correct(corrected.record.memoryId, correctionInput, localScope);
+    expect(exportableCorrection.record.governance.allowExport).toBe(true);
+    await expect(service.correct(corrected.record.memoryId, { ...correctionInput, allow_export: false }, localScope)).rejects.toMatchObject({ code: "memory_control_conflict" });
+    const denied = await service.createCandidate({ ...input, command_id: "command:no-export", allow_export: undefined }, localScope);
+    expect(denied.record.governance.allowExport).toBe(false);
+    await expect(service.createCandidate({ ...input, command_id: "command:export-secret", sensitivity: "secret" }, localScope)).rejects.toThrow();
+    await expect(service.createCandidate({ ...input, command_id: "command:export-cross-scope", project_id: "project:two" }, localScope)).rejects.toMatchObject({ code: "memory_control_scope_denied" });
+  });
+
   it("creates review-gated candidates, replays review/revoke, and exposes provenance/use feedback read models", async () => {
     const { service, ledger } = await createService();
     const candidate = await service.createCandidate({

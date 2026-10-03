@@ -18,6 +18,7 @@ export * from "./domains/memory/memory-use.js";
 export * from "./domains/memory/memory-migration.js";
 export * from "./domains/memory/legacy-capsule.js";
 export * from "./seams/mcp/index.js";
+export * from "./seams/media/index.js";
 export * from "./seams/lsp/index.js";
 export * from "./domains/model/model-provider.js";
 export * from "./domains/runtime/runtime.js";

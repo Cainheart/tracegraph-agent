@@ -19,11 +19,11 @@ export async function runMcpCommand(
 ): Promise<void> {
   const subcommand = args[0];
   if (subcommand !== "list" && subcommand !== "restart") {
-    throw new Error("Usage: tracegraph mcp list|restart <server>");
+    throw new Error("Usage: outlive mcp list|restart <server>");
   }
   const name = args[1];
   if (subcommand === "restart" && (name === undefined || name.startsWith("--"))) {
-    throw new Error("Usage: tracegraph mcp restart <server>");
+    throw new Error("Usage: outlive mcp restart <server>");
   }
   const environment = dependencies.environment ?? process.env;
   const baseUrl = readFlag(args, "--host-url")

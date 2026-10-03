@@ -1,7 +1,7 @@
 # 模块 17：Skill 系统（G-10）
 
 > 定位：把 Agent Skill 作为可审计的本地 Markdown 能力目录，先向模型公开有限的目录元数据，再由 `load_skill` 按需载入正文；Skill 不能扩大 G-06 权限，只能在当前 Run 内进一步收紧工具面。
-> 代码：`packages/contracts/src/skill.ts`、`packages/core/src/domains/skill/skill.ts`、`packages/core/src/domains/tools/registry.ts`、`packages/context/src/{context,context-compaction}.ts`、`packages/core/src/domains/runtime/runtime.ts`、`apps/cli/src/skill-command.ts`、`packages/host/src/index.ts`、`packages/sdk/src/index.ts`、`apps/web/src/components/SettingsPanel.tsx`
+> 代码：`packages/contracts/src/skill.ts`、`packages/core/src/domains/skill/skill.ts`、`packages/core/src/domains/tools/registry.ts`、`packages/context/src/{context,context-compaction}.ts`、`packages/core/src/domains/runtime/runtime.ts`、`apps/cli/src/skill-command.ts`、`packages/host/src/webserver/index.ts`、`packages/sdk/src/index.ts`、`packages/workbench/src/components/SettingsPanel.tsx`
 > 实现状态：**已实现/已验证**；G-10 追加 3 个 canonical Event，G-11 再追加 5 个 MCP Event，G-12 再追加 2 个 LSP Event，G-20 再追加 2 个 CodeIntel Event，MEM-042 再追加 `memory.use_status`，当前为 103 种 Event、20 个内置 Tool（含 `load_skill`）；`PROJECTOR_VERSION = "tracegraph.projector.v9"`。
 
 ## 1. 文件布局与安全边界

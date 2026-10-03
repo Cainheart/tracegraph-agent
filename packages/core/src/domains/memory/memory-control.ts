@@ -2,6 +2,7 @@ import { constants as fsConstants } from "node:fs";
 import { mkdir, open, readFile, rename, unlink } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import {
+  MemoryConsolidationResultSchema,
   MemoryCandidateCreateRequestSchema,
   MemoryControlEventDraftSchema,
   MemoryControlListResponseSchema,
@@ -13,6 +14,7 @@ import {
   MemoryReviewRequestSchema,
   MemoryRevokeRequestSchema,
   MemoryUseRequestSummarySchema,
+  type MemoryConsolidationResult,
   type MemoryControlEvent,
   type MemoryControlEventDraft,
   type MemoryControlItem,
@@ -243,6 +245,25 @@ export class MemoryControlService {
   }
 
   /** Core-only path for an extractor result; it can only create a review candidate. */
+  consolidateDerivedCandidate(inputValue: unknown): Promise<MemoryConsolidationResult> {
+    return this.#mutate(async () => {
+      const input = MemoryDerivedCandidateRequestSchema.parse(inputValue);
+      const item = await this.#createDerivedCandidate(input);
+      const expectedId = `memory:${sha256(`${this.#ownerId}:${input.command_id}`).slice("sha256:".length, 40)}`;
+      const action = item.record.memoryId === expectedId ? "candidate" : "unchanged";
+      const comparedMemoryIds = action === "unchanged" ? [item.record.memoryId] : item.record.lineage.derivedFrom.slice(0, 32);
+      const records = await this.#records.list(this.#ownerId);
+      const sourceRunIds = new Set([input.run_id]);
+      for (const record of records) {
+        if (!comparedMemoryIds.includes(record.memoryId) || record.scope.projectId !== input.project_id) continue;
+        for (const ref of record.provenance.evidenceRefs) {
+          if ("runId" in ref && ref.projectId === input.project_id) sourceRunIds.add(ref.runId);
+        }
+      }
+      return MemoryConsolidationResultSchema.parse({ action, requestDigest: sha256(stableStringify(input)), memoryId: item.record.memoryId, comparedMemoryIds, sourceRunIds: [...sourceRunIds].slice(0, 128) });
+    });
+  }
+
   createDerivedCandidate(inputValue: unknown): Promise<MemoryControlItem> {
     return this.#mutate(() => this.#createDerivedCandidate(inputValue));
   }
@@ -296,6 +317,7 @@ export class MemoryControlService {
           || priorLifecycle.relatedMemoryId !== replacementId
           || priorLifecycle.actor.id !== this.#actorId
           || existing.claim !== input.claim
+          || existing.governance.allowExport !== (input.allow_export ?? false)
           || existing.normalizedKey !== expectedNormalizedKey) {
           throw new MemoryControlError("memory_control_conflict", "Correction command id was reused for different content or intent");
         }
@@ -314,6 +336,8 @@ export class MemoryControlService {
         claim: input.claim,
         contentDigest: sha256(input.claim),
         contentArtifactRef: undefined,
+        // Export consent covers exact authored content, not a later correction.
+        governance: { ...oldSeed.governance, allowExport: input.allow_export ?? false },
         ...(input.normalized_key === undefined ? {} : { normalizedKey: input.normalized_key }),
         status: "candidate",
         provenance: {
@@ -334,6 +358,7 @@ export class MemoryControlService {
         updatedAt: now,
       });
       if (existing !== undefined && (existing.claim !== input.claim
+        || existing.governance.allowExport !== (input.allow_export ?? false)
         || existing.normalizedKey !== (input.normalized_key ?? oldSeed.normalizedKey)
         || existing.lineage.supersedes[0] !== oldSeed.memoryId)) {
         throw new MemoryControlError("memory_control_conflict", "Correction command id was reused for different content");
@@ -511,7 +536,7 @@ export class MemoryControlService {
         consent: "explicit",
         retentionPolicy: input.retention_policy ?? "user-managed",
         allowModelUse: input.allow_model_use ?? false,
-        allowExport: false,
+        allowExport: input.allow_export ?? false,
       },
       lineage: { supersedes: [], contradictedBy: [], derivedFrom: [] },
       createdAt: now,
@@ -561,15 +586,6 @@ export class MemoryControlService {
     const memoryId = `memory:${sha256(`${this.#ownerId}:${input.command_id}`).slice("sha256:".length, 40)}`;
     const contentDigest = sha256(claim);
     const records = await this.#records.list(this.#ownerId);
-    const sameScope = records.filter((record) => record.scope.projectId === input.project_id);
-    const exactDuplicate = sameScope.find((record) => record.claim === claim);
-    if (exactDuplicate !== undefined && exactDuplicate.memoryId !== memoryId) {
-      const projected = await this.#lifecycle.read(exactDuplicate);
-      return this.#item(exactDuplicate, projected.record, projected.sequence);
-    }
-    const relatedByKey = input.normalized_key === undefined
-      ? []
-      : sameScope.filter((record) => record.normalizedKey === input.normalized_key && record.claim !== claim);
     const prior = records.find((record) => record.memoryId === memoryId);
     const priorEvents = await this.#journal.listMemoryControl(this.#ownerId, memoryId);
     if (priorEvents.some((event) => event.action === "deleted")) {
@@ -577,6 +593,10 @@ export class MemoryControlService {
     }
     const priorCreation = priorEvents.find(isMemoryCreationEvent);
     if (prior !== undefined && (prior.claim !== claim
+      || prior.kind !== input.kind
+      || prior.assessment.inferenceConfidence !== input.inference_confidence
+      || stableStringify(prior.provenance.evidenceRefs) !== stableStringify(input.evidence_refs)
+      || prior.provenance.createdBy.id !== input.extractor_id
       || prior.contentDigest !== contentDigest
       || prior.provenance.createdFromEpisode !== input.episode_id
       || prior.scope.projectId !== input.project_id
@@ -592,6 +612,18 @@ export class MemoryControlService {
     if (priorCreation !== undefined && prior === undefined) {
       throw new MemoryControlError("memory_control_corrupt", "Derived candidate creation fact has no matching immutable payload");
     }
+    const eligible = await this.#consolidationSources(records.filter((record) => record.memoryId !== memoryId
+      && record.scope.ownerId === this.#ownerId && record.scope.projectId === input.project_id
+      && record.scope.workspaceId === undefined && record.scope.sessionId === undefined && record.scope.runId === undefined
+      && record.kind === input.kind
+      && (record.claim === claim && record.normalizedKey === input.normalized_key
+        || input.normalized_key !== undefined && record.normalizedKey === input.normalized_key)), records);
+    const exactDuplicate = eligible.find((record) => record.claim === claim && record.normalizedKey === input.normalized_key);
+    if (prior === undefined && exactDuplicate !== undefined) {
+      const projected = await this.#lifecycle.read(exactDuplicate);
+      return this.#item(exactDuplicate, projected.record, projected.sequence);
+    }
+    const relatedByKey = eligible.filter((record) => record.claim !== claim).slice(0, 32);
     const now = this.#now().toISOString();
     const record = prior ?? MemoryRecordV2Schema.parse({
       schemaVersion: 2,
@@ -643,6 +675,77 @@ export class MemoryControlService {
     }
     const projected = await this.#lifecycle.read(record);
     return this.#item(record, projected.record, projected.sequence);
+  }
+
+  async #consolidationSources(records: readonly MemoryRecordV2[], allRecords: readonly MemoryRecordV2[]): Promise<MemoryRecordV2[]> {
+    const eligible: MemoryRecordV2[] = [];
+    const byId = new Map(allRecords.map((record) => [record.memoryId, record]));
+    for (const seed of [...records].sort((a, b) => a.memoryId.localeCompare(b.memoryId))) {
+      if (eligible.length >= 32) break;
+      const events = await this.#journal.listMemoryControl(this.#ownerId, seed.memoryId);
+      const creation = events.find(isMemoryCreationEvent);
+      if (creation === undefined || events.some((event) => event.action === "deleted")
+        || creation.contentDigest !== seed.contentDigest) continue;
+      const { record } = await this.#lifecycle.read(seed);
+      if (record.status !== "active" && record.status !== "candidate") continue;
+      if (record.assessment.sourceTrust !== "authoritative" && record.assessment.sourceTrust !== "trusted") continue;
+      if (Date.parse(record.validity.validFrom) > this.#now().getTime()
+        || record.validity.validUntil !== undefined && Date.parse(record.validity.validUntil) <= this.#now().getTime()) continue;
+      if (record.provenance.origin === "model_inference" && !await this.#validModelSourceChain(seed, byId)) continue;
+      eligible.push(seed);
+    }
+    return eligible;
+  }
+
+  async #validModelSourceChain(seed: MemoryRecordV2, records: ReadonlyMap<string, MemoryRecordV2>): Promise<boolean> {
+    if (this.#journal.list === undefined) return false;
+    const visited = new Set<string>();
+    let current = seed;
+    for (let depth = 0; depth < 64; depth += 1) {
+      if (visited.has(current.memoryId) || stableStringify(current.scope) !== stableStringify(seed.scope)
+        || current.kind !== seed.kind || current.provenance.origin !== "model_inference") return false;
+      visited.add(current.memoryId);
+      const events = await this.#journal.listMemoryControl(this.#ownerId, current.memoryId);
+      const creation = events.find(isMemoryCreationEvent);
+      if (creation === undefined || creation.contentDigest !== current.contentDigest
+        || events.some((event) => event.action === "deleted")) return false;
+      if (creation.action === "corrected") {
+        const parent = records.get(creation.relatedMemoryId);
+        if (parent === undefined || current.version !== parent.version + 1
+          || creation.actor.type !== "user" || current.provenance.createdBy.type !== "user"
+          || current.provenance.createdBy.id !== creation.actor.id
+          || current.provenance.createdFromEpisode !== parent.provenance.createdFromEpisode
+          || stableStringify(current.lineage.supersedes) !== stableStringify([...new Set([parent.memoryId, ...parent.lineage.supersedes])])) return false;
+        const expectedRefs = [...parent.provenance.evidenceRefs, {
+          source_id: `source:${sha256(`${this.#ownerId}:${creation.idempotencyKey}`).slice("sha256:".length, 40)}`,
+          source_type: "user", trust: "trusted", description: "User-authored correction",
+        }];
+        if (stableStringify(current.provenance.evidenceRefs) !== stableStringify(expectedRefs)) return false;
+        // The correction command is not settled until the prior aggregate has
+        // the matching validated lifecycle transition as well as the new seed.
+        await this.#lifecycle.read(parent);
+        const lifecycle = await this.#journal.listMemoryLifecycle(this.#ownerId, parent.memoryId);
+        const transition = lifecycle.find((event) => event.idempotencyKey === `correction:${creation.idempotencyKey}`);
+        if (transition === undefined || transition.actor.type !== "user" || transition.actor.id !== creation.actor.id
+          || !["supersede", "resolve_superseded", "review_reject", "revoke"].includes(transition.action)
+          || (transition.action === "supersede" || transition.action === "resolve_superseded") && transition.relatedMemoryId !== current.memoryId) return false;
+        current = parent;
+        continue;
+      }
+      if (creation.action !== "derived_candidate_created") return false;
+      const refs = current.provenance.evidenceRefs.filter((ref): ref is MemoryRunEvidenceRef => "runId" in ref);
+      const runId = refs[0]?.runId;
+      if (runId === undefined || refs.length !== current.provenance.evidenceRefs.length) return false;
+      try {
+        const runEvents = await this.#journal.list(runId);
+        const episode = projectMemoryEpisode(runEvents);
+        if (episode.projectId !== current.scope.projectId || episode.episodeId !== creation.episodeId
+          || episode.sourceDigest !== creation.sourceDigest || current.provenance.createdFromEpisode !== episode.episodeId) return false;
+        const canonical = assertCandidateEvidenceSequences(episode, runEvents, refs.map((ref) => ref.sequence));
+        return stableStringify(canonical) === stableStringify(refs);
+      } catch { return false; }
+    }
+    return false;
   }
 
   async #createImportedCandidate(inputValue: unknown, scope: MemoryControlScope): Promise<MemoryControlItem> {
@@ -880,7 +983,7 @@ function candidateMatchesInput(
     && record.governance.consent === "explicit"
     && record.governance.retentionPolicy === (input.retention_policy ?? "user-managed")
     && record.governance.allowModelUse === (input.allow_model_use ?? false)
-    && record.governance.allowExport === false;
+    && record.governance.allowExport === (input.allow_export ?? false);
 }
 
 function sameStringSet(left: readonly string[], right: readonly string[]): boolean {

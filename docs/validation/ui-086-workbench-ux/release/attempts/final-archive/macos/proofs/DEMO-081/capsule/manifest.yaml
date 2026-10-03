@@ -1,0 +1,34 @@
+capsule_id: capsule:public-proof
+checksum_algorithm: sha256
+consent:
+  consentedAt: 2026-10-03T00:00:00.000Z
+  consentedBy: user:public-proof
+  externalCopyWarningAcknowledged: true
+  purpose: Export this selected synthetic demonstration fact.
+created_at: 2026-10-03T00:00:00.000Z
+included:
+  experience_count: 0
+  memory_count: 1
+  scope_kinds:
+    - project
+payload_digests:
+  README.md: sha256:7eccf49abc80f49ffdbeeca6d051f3d189476b5b1805cf86741f2a0264d359a9
+  experiences.jsonl: sha256:e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+  memories.jsonl: sha256:b5a23d838e55b2590f86e85a6f55e18003f9a9536bd9f9ac0d8017d5a1521ee0
+  policies/usage-consent.yaml: sha256:806f2b4f29c65c72b628dbda277c4a23ec708835c4732242661aa1ae764c0fd7
+principals:
+  authorized_by:
+    id: user:public-proof
+  content_creator:
+    id: user:public-proof
+  described_subject:
+    id: subject:synthetic
+  export_operator:
+    id: user:public-proof
+redaction:
+  entry_digests: []
+  redacted_entry_count: 0
+  redacted_value_count: 0
+required_migrations: []
+schema_version: tracegraph.legacy-capsule.v1
+source_instance_id: instance:public-proof

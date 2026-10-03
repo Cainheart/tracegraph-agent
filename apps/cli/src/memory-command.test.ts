@@ -22,7 +22,7 @@ describe("Memory CLI command", () => {
     await runMemoryCommand([
       "candidate", "add", "--host-url", "http://127.0.0.1:4999",
       "--kind", "fact", "--claim", "CLI uses the shared Memory service.",
-      "--project-id", "project-demo", "--allow-model-use",
+      "--project-id", "project-demo", "--allow-model-use", "--allow-export",
     ], {
       environment: {},
       createClient(baseUrl) {
@@ -40,6 +40,7 @@ describe("Memory CLI command", () => {
         claim: "CLI uses the shared Memory service.",
         project_id: "project-demo",
         allow_model_use: true,
+        allow_export: true,
       }],
     ]);
     expect(write).toHaveBeenCalledWith(expect.stringContaining('"memoryId": "memory:test"'));

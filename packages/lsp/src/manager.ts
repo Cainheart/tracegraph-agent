@@ -213,6 +213,15 @@ export class LspManager {
     return this.#locations(session, result);
   }
 
+  /** Explicit Host operation: stop this configured server; next scoped query initializes it lazily. */
+  async restart(name: string): Promise<ReturnType<LspManager["snapshot"]>> {
+    const server=this.#servers.get(name);
+    if(!server)throw new LspProtocolError("lsp_server_not_found","Configured LSP server was not found");
+    for(const [key,session] of this.#sessions){if(session.server.config.name!==name)continue;await session.client?.stop("host_restart");this.#sessions.delete(key);}
+    server.status=this.#status(server.config,"stopped",0);
+    return this.snapshot();
+  }
+
   async stop(): Promise<void> {
     for (const session of this.#sessions.values()) {
       if (session.client?.running === true) {

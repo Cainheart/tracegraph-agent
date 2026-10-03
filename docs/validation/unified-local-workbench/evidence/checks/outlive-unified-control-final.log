@@ -1,0 +1,25 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+ ❯ src/workbench-control.test.ts (13 tests | 1 failed) 1081ms
+   ❯ actual developer resources (2)
+     × real PTY output survives view detach; explicit close releases the workspace 375ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/workbench-control.test.ts > actual developer resources > real PTY output survives view detach; explicit close releases the workspace
+Error: Terminal supervisor cleanup is unknown
+ ❯ ChildProcess.<anonymous> src/terminal-owner.ts:10:188
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  13:46:18
+   Duration  1.67s (tests 67%, transform 25%, import 8%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/workbench-control.test.ts

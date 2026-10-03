@@ -1,0 +1,830 @@
+{
+  "task_ids": [
+    "UX-086",
+    "SET-090",
+    "DEV-091"
+  ],
+  "recorded_at": "2026-10-03T05:33:49.388Z",
+  "status": "failed",
+  "boundary": "Synthetic loopback model; real built Web/local authenticated Host/Runtime/Git/PTY/preview/schedules. Disposable fixtures only. No external provider-quality or external-user acceptance claim.",
+  "assertions": [
+    "Conversation first; no top Settings/Pinned/current-run/permanent main tabs; no overflow at 3 viewport sizes",
+    "All 10 settings categories render actual source/scope/effective/capability status at 3 sizes",
+    "Provider connection test uses real synthetic endpoint and persists separately from config",
+    "Real public operation/queued guidance; one Stop; inline details default closed; live Run remains writable after inspection",
+    "Real Git exact-path discard preview HEAD + stage external-state oracle; review cancellation preserves file",
+    "Actual xterm keyboard input -> scoped Host PTY -> observable transcript; explicit close",
+    "Controlled loopback preview is rendered with sandbox; disconnect does not terminate unowned service"
+  ],
+  "screenshots": [
+    {
+      "state": "empty",
+      "width": 1440,
+      "height": 900,
+      "file": "web-empty-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "empty",
+      "width": 1280,
+      "height": 800,
+      "file": "web-empty-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "empty",
+      "width": 1024,
+      "height": 768,
+      "file": "web-empty-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "settings-general",
+      "width": 1440,
+      "height": 900,
+      "file": "web-settings-general-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "settings-general",
+      "width": 1280,
+      "height": 800,
+      "file": "web-settings-general-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "settings-general",
+      "width": 1024,
+      "height": 768,
+      "file": "web-settings-general-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "settings-appearance",
+      "width": 1440,
+      "height": 900,
+      "file": "web-settings-appearance-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "settings-appearance",
+      "width": 1280,
+      "height": 800,
+      "file": "web-settings-appearance-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "settings-appearance",
+      "width": 1024,
+      "height": 768,
+      "file": "web-settings-appearance-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "settings-models",
+      "width": 1440,
+      "height": 900,
+      "file": "web-settings-models-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "settings-models",
+      "width": 1280,
+      "height": 800,
+      "file": "web-settings-models-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "settings-models",
+      "width": 1024,
+      "height": 768,
+      "file": "web-settings-models-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "settings-permissions",
+      "width": 1440,
+      "height": 900,
+      "file": "web-settings-permissions-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "settings-permissions",
+      "width": 1280,
+      "height": 800,
+      "file": "web-settings-permissions-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "settings-permissions",
+      "width": 1024,
+      "height": 768,
+      "file": "web-settings-permissions-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "settings-memory-and-privacy",
+      "width": 1440,
+      "height": 900,
+      "file": "web-settings-memory-and-privacy-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "settings-memory-and-privacy",
+      "width": 1280,
+      "height": 800,
+      "file": "web-settings-memory-and-privacy-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "settings-memory-and-privacy",
+      "width": 1024,
+      "height": 768,
+      "file": "web-settings-memory-and-privacy-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "settings-developer",
+      "width": 1440,
+      "height": 900,
+      "file": "web-settings-developer-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "settings-developer",
+      "width": 1280,
+      "height": 800,
+      "file": "web-settings-developer-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "settings-developer",
+      "width": 1024,
+      "height": 768,
+      "file": "web-settings-developer-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "settings-skills-and-extensions",
+      "width": 1440,
+      "height": 900,
+      "file": "web-settings-skills-and-extensions-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "settings-skills-and-extensions",
+      "width": 1280,
+      "height": 800,
+      "file": "web-settings-skills-and-extensions-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "settings-skills-and-extensions",
+      "width": 1024,
+      "height": 768,
+      "file": "web-settings-skills-and-extensions-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "settings-mcp-and-lsp",
+      "width": 1440,
+      "height": 900,
+      "file": "web-settings-mcp-and-lsp-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "settings-mcp-and-lsp",
+      "width": 1280,
+      "height": 800,
+      "file": "web-settings-mcp-and-lsp-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "settings-mcp-and-lsp",
+      "width": 1024,
+      "height": 768,
+      "file": "web-settings-mcp-and-lsp-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "settings-usage-and-diagnostics",
+      "width": 1440,
+      "height": 900,
+      "file": "web-settings-usage-and-diagnostics-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "settings-usage-and-diagnostics",
+      "width": 1280,
+      "height": 800,
+      "file": "web-settings-usage-and-diagnostics-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "settings-usage-and-diagnostics",
+      "width": 1024,
+      "height": 768,
+      "file": "web-settings-usage-and-diagnostics-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "settings-about",
+      "width": 1440,
+      "height": 900,
+      "file": "web-settings-about-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "settings-about",
+      "width": 1280,
+      "height": 800,
+      "file": "web-settings-about-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "settings-about",
+      "width": 1024,
+      "height": 768,
+      "file": "web-settings-about-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "model-test",
+      "width": 1440,
+      "height": 900,
+      "file": "web-model-test-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "model-test",
+      "width": 1280,
+      "height": 800,
+      "file": "web-model-test-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "model-test",
+      "width": 1024,
+      "height": 768,
+      "file": "web-model-test-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "memory",
+      "width": 1440,
+      "height": 900,
+      "file": "web-memory-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "memory",
+      "width": 1280,
+      "height": 800,
+      "file": "web-memory-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "memory",
+      "width": 1024,
+      "height": 768,
+      "file": "web-memory-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "experience",
+      "width": 1440,
+      "height": 900,
+      "file": "web-experience-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "experience",
+      "width": 1280,
+      "height": 800,
+      "file": "web-experience-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "experience",
+      "width": 1024,
+      "height": 768,
+      "file": "web-experience-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "memory-jobs",
+      "width": 1440,
+      "height": 900,
+      "file": "web-memory-jobs-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "memory-jobs",
+      "width": 1280,
+      "height": 800,
+      "file": "web-memory-jobs-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "memory-jobs",
+      "width": 1024,
+      "height": 768,
+      "file": "web-memory-jobs-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "running",
+      "width": 1440,
+      "height": 900,
+      "file": "web-running-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "running",
+      "width": 1280,
+      "height": 800,
+      "file": "web-running-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "running",
+      "width": 1024,
+      "height": 768,
+      "file": "web-running-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "details",
+      "width": 1440,
+      "height": 900,
+      "file": "web-details-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "details",
+      "width": 1280,
+      "height": 800,
+      "file": "web-details-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "details",
+      "width": 1024,
+      "height": 768,
+      "file": "web-details-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "review-files",
+      "width": 1440,
+      "height": 900,
+      "file": "web-review-files-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "review-files",
+      "width": 1280,
+      "height": 800,
+      "file": "web-review-files-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "review-files",
+      "width": 1024,
+      "height": 768,
+      "file": "web-review-files-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "review-diff",
+      "width": 1440,
+      "height": 900,
+      "file": "web-review-diff-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "review-diff",
+      "width": 1280,
+      "height": 800,
+      "file": "web-review-diff-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "review-diff",
+      "width": 1024,
+      "height": 768,
+      "file": "web-review-diff-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "review-architecture",
+      "width": 1440,
+      "height": 900,
+      "file": "web-review-architecture-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "review-architecture",
+      "width": 1280,
+      "height": 800,
+      "file": "web-review-architecture-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "review-architecture",
+      "width": 1024,
+      "height": 768,
+      "file": "web-review-architecture-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "git-discard",
+      "width": 1440,
+      "height": 900,
+      "file": "web-git-discard-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "git-discard",
+      "width": 1280,
+      "height": 800,
+      "file": "web-git-discard-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "git-discard",
+      "width": 1024,
+      "height": 768,
+      "file": "web-git-discard-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "git-staged",
+      "width": 1440,
+      "height": 900,
+      "file": "web-git-staged-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "git-staged",
+      "width": 1280,
+      "height": 800,
+      "file": "web-git-staged-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "git-staged",
+      "width": 1024,
+      "height": 768,
+      "file": "web-git-staged-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "terminal",
+      "width": 1440,
+      "height": 900,
+      "file": "web-terminal-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "terminal",
+      "width": 1280,
+      "height": 800,
+      "file": "web-terminal-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "terminal",
+      "width": 1024,
+      "height": 768,
+      "file": "web-terminal-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    },
+    {
+      "state": "preview",
+      "width": 1440,
+      "height": 900,
+      "file": "web-preview-1440x900.png",
+      "dimensions": {
+        "width": 1440,
+        "scrollWidth": 1440,
+        "height": 900
+      }
+    },
+    {
+      "state": "preview",
+      "width": 1280,
+      "height": 800,
+      "file": "web-preview-1280x800.png",
+      "dimensions": {
+        "width": 1280,
+        "scrollWidth": 1280,
+        "height": 800
+      }
+    },
+    {
+      "state": "preview",
+      "width": 1024,
+      "height": 768,
+      "file": "web-preview-1024x768.png",
+      "dimensions": {
+        "width": 1024,
+        "scrollWidth": 1024,
+        "height": 768
+      }
+    }
+  ],
+  "errors": [
+    {
+      "boundary": "acceptance",
+      "message": "locator.fill: Error: strict mode violation: getByLabel('Task', { exact: true }) resolved to 2 elements:\n    1) <textarea rows=\"2\" aria-label=\"Task\" placeholder=\"Describe what you want the Agent to do…\"></textarea> aka getByPlaceholder('Describe what you want the')\n    2) <textarea rows=\"3\"></textarea> aka getByRole('complementary', { name: 'Workspace tools' }).getByLabel('Task')\n\nCall log:\n\u001b[2m  - waiting for getByLabel('Task', { exact: true })\u001b[22m\n",
+      "stack": "locator.fill: Error: strict mode violation: getByLabel('Task', { exact: true }) resolved to 2 elements:\n    1) <textarea rows=\"2\" aria-label=\"Task\" placeholder=\"Describe what you want the Agent to do…\"></textarea> aka getByPlaceholder('Describe what you want the')\n    2) <textarea rows=\"3\"></textarea> aka getByRole('complementary', { name: 'Workspace tools' }).getByLabel('Task')\n\nCall log:\n\u001b[2m  - waiting for getByLabel('Task', { exact: true })\u001b[22m\n\n    at /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/unified-local-workbench/ui-journey.mjs:50:274"
+    }
+  ],
+  "user_bubble": {
+    "x": 1026.40625,
+    "y": 76,
+    "width": 206.59375,
+    "height": 52.09375
+  },
+  "cleanup": {
+    "completed": true,
+    "failures": []
+  }
+}

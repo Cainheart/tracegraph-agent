@@ -1,0 +1,15 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+Error: ENOENT: no such file or directory, open '/private/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/tracegraph-fixture-gevdjZ/src/add.ts'
+    at async open (node:internal/fs/promises:1345:25)
+    at async readFile (node:internal/fs/promises:1996:14)
+    at async file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/ui-086-workbench-ux/release/harness/installed-live.mjs:71:24 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/private/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/tracegraph-fixture-gevdjZ/src/add.ts'
+}
+
+Node.js v24.21.0

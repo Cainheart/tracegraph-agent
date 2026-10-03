@@ -15,7 +15,7 @@ export async function runSkillsCommand(
 ): Promise<void> {
   const subcommand = args[0];
   if (subcommand !== "list" && subcommand !== "validate") {
-    throw new Error("Usage: tracegraph skills list|validate [--project-root <path>] [--user-root <path>]");
+    throw new Error("Usage: outlive skills list|validate [--project-root <path>] [--user-root <path>]");
   }
   const environment = dependencies.environment ?? process.env;
   const projectRoot = resolve(readFlag(args, "--project-root") ?? environment.TRACEGRAPH_PROJECT_ROOT ?? dependencies.cwd ?? process.cwd());

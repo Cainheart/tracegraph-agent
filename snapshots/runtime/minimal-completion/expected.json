@@ -1,0 +1,148 @@
+{
+  "schema_version": "tracegraph.recorded-session.result.v2",
+  "status": "completed",
+  "outcome": "The synthetic recorded-session task is complete.",
+  "failure_code": null,
+  "events": [
+    {
+      "type": "run.created",
+      "summary": "Run created"
+    },
+    {
+      "type": "session.opened",
+      "summary": "Durable session opened"
+    },
+    {
+      "type": "permission.configured",
+      "summary": "Permission preset configured as custom"
+    },
+    {
+      "type": "skill.registry_loaded",
+      "summary": "Loaded 0 local Skill catalog entries"
+    },
+    {
+      "type": "sandbox.configured",
+      "summary": "Sandbox mode configured as danger-full-access"
+    },
+    {
+      "type": "sandbox.disabled",
+      "summary": "OS sandbox explicitly disabled by Host configuration"
+    },
+    {
+      "type": "run.started",
+      "summary": "Workspace preflight and indexing started"
+    },
+    {
+      "type": "context.built",
+      "summary": "Context built with 145 input tokens"
+    },
+    {
+      "type": "model.request_started",
+      "summary": "Requesting a decision from scripted-v1; default reasoning is unsupported and was not sent"
+    },
+    {
+      "type": "model.decision",
+      "summary": "This synthetic fixture needs no workspace changes."
+    },
+    {
+      "type": "run.completed",
+      "summary": "Run completed"
+    }
+  ],
+  "workspace": {
+    "before": [
+      {
+        "path": "README.md",
+        "kind": "file",
+        "content_hash": "sha256:616cbe14dff17f926d625a8084e2454c7a718ec5240f02a54d91041e908afd36"
+      },
+      {
+        "path": "README.zh.md",
+        "kind": "file",
+        "content_hash": "sha256:27e0e7c1eb6c6069606300e315aa3613df86f26427daed7cca34020ae0f6e372"
+      },
+      {
+        "path": "package.json",
+        "kind": "file",
+        "content_hash": "sha256:ca35669be4919a85ccdb097a6d9f9baf4070ca25227cb1967f05677b812258c9"
+      },
+      {
+        "path": "src",
+        "kind": "directory",
+        "content_hash": null
+      },
+      {
+        "path": "src/add.ts",
+        "kind": "file",
+        "content_hash": "sha256:0e6cf789846139c8cc7a8e252486ee3433e1df45557d1cfb6e0c98b94a283b33"
+      },
+      {
+        "path": "src/index.ts",
+        "kind": "file",
+        "content_hash": "sha256:1153bb908b2c2d5a3855e202283e58aac8c088cccaa4e2425e8485371de40654"
+      },
+      {
+        "path": "test",
+        "kind": "directory",
+        "content_hash": null
+      },
+      {
+        "path": "test/run.mjs",
+        "kind": "file",
+        "content_hash": "sha256:74b59da19104b82fb68e7f97e59df160be2f88263aa9969d3bd0ebd4ee4da780"
+      },
+      {
+        "path": "tsconfig.json",
+        "kind": "file",
+        "content_hash": "sha256:b1672974f652f4152cc096e4258c93172986a99a0fb82c9e7c209cec8ae7a6af"
+      }
+    ],
+    "after": [
+      {
+        "path": "README.md",
+        "kind": "file",
+        "content_hash": "sha256:616cbe14dff17f926d625a8084e2454c7a718ec5240f02a54d91041e908afd36"
+      },
+      {
+        "path": "README.zh.md",
+        "kind": "file",
+        "content_hash": "sha256:27e0e7c1eb6c6069606300e315aa3613df86f26427daed7cca34020ae0f6e372"
+      },
+      {
+        "path": "package.json",
+        "kind": "file",
+        "content_hash": "sha256:ca35669be4919a85ccdb097a6d9f9baf4070ca25227cb1967f05677b812258c9"
+      },
+      {
+        "path": "src",
+        "kind": "directory",
+        "content_hash": null
+      },
+      {
+        "path": "src/add.ts",
+        "kind": "file",
+        "content_hash": "sha256:0e6cf789846139c8cc7a8e252486ee3433e1df45557d1cfb6e0c98b94a283b33"
+      },
+      {
+        "path": "src/index.ts",
+        "kind": "file",
+        "content_hash": "sha256:1153bb908b2c2d5a3855e202283e58aac8c088cccaa4e2425e8485371de40654"
+      },
+      {
+        "path": "test",
+        "kind": "directory",
+        "content_hash": null
+      },
+      {
+        "path": "test/run.mjs",
+        "kind": "file",
+        "content_hash": "sha256:74b59da19104b82fb68e7f97e59df160be2f88263aa9969d3bd0ebd4ee4da780"
+      },
+      {
+        "path": "tsconfig.json",
+        "kind": "file",
+        "content_hash": "sha256:b1672974f652f4152cc096e4258c93172986a99a0fb82c9e7c209cec8ae7a6af"
+      }
+    ]
+  }
+}

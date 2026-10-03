@@ -58,6 +58,11 @@ export async function verifyRelease(root, options = {}) {
     if (entry.relativePath === "apps/web/package.json") {
       await requireRegularFile(join(dirname(entry.path), "dist/index.html"), "apps/web/dist/index.html");
     }
+    if (entry.relativePath === "apps/desktop/package.json") {
+      for (const path of ["dist/main.js", "dist/preload.cjs", "dist/renderer/index.html"]) {
+        await requireRegularFile(join(dirname(entry.path), path), `apps/desktop/${path}`);
+      }
+    }
   }
 
   const releaseManifest = await createReleaseManifest(canonicalRoot, {
@@ -119,6 +124,7 @@ async function discoverPackageManifests(root) {
 function collectDistributionTargets(manifest) {
   const targets = new Set();
   collectExportStrings(manifest.exports, targets);
+  if (typeof manifest.main === "string") targets.add(manifest.main.startsWith("dist/") ? `./${manifest.main}` : manifest.main);
   if (typeof manifest.bin === "string") targets.add(manifest.bin);
   if (manifest.bin !== null && typeof manifest.bin === "object") {
     for (const value of Object.values(manifest.bin)) if (typeof value === "string") targets.add(value);

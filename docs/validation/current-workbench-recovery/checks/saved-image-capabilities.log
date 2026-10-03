@@ -1,0 +1,102 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent
+
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+ ❯ packages/host/src/saved-image-capabilities.test.ts (4 tests | 3 failed) 224ms
+   ❯ saved per-model image declarations through the Host (4)
+     × admits real inline PNG bytes through public routes and persists the declaration without an environment flag 121ms
+     × rejects inline delivery for an undeclared selected model rather than inferring known model support 37ms
+     × keeps an admitted capability and credential frozen when the saved declaration and key change 34ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  packages/host/src/saved-image-capabilities.test.ts > saved per-model image declarations through the Host > admits real inline PNG bytes through public routes and persists the declaration without an environment flag
+AssertionError: expected 201 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 201
+
+ ❯ Object.upload packages/host/src/saved-image-capabilities.test.ts:83:33
+     81|         origin, authorization: `Bearer ${token}`, "x-tracegraph-comman…
+     82|       }, payload: png});
+     83|       expect(result.statusCode).toBe(200);
+       |                                 ^
+     84|       expect(result.json()).toMatchObject({status: "accepted", deliver…
+     85|       return result.json().upload_id as string;
+ ❯ packages/host/src/saved-image-capabilities.test.ts:133:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  packages/host/src/saved-image-capabilities.test.ts > saved per-model image declarations through the Host > rejects inline delivery for an undeclared selected model rather than inferring known model support
+AssertionError: expected 201 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 201
+
+ ❯ Object.upload packages/host/src/saved-image-capabilities.test.ts:83:33
+     81|         origin, authorization: `Bearer ${token}`, "x-tracegraph-comman…
+     82|       }, payload: png});
+     83|       expect(result.statusCode).toBe(200);
+       |                                 ^
+     84|       expect(result.json()).toMatchObject({status: "accepted", deliver…
+     85|       return result.json().upload_id as string;
+ ❯ packages/host/src/saved-image-capabilities.test.ts:152:61
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  packages/host/src/saved-image-capabilities.test.ts > saved per-model image declarations through the Host > keeps an admitted capability and credential frozen when the saved declaration and key change
+AssertionError: expected 201 to be 200 // Object.is equality
+
+- Expected
++ Received
+
+- 200
++ 201
+
+ ❯ Object.upload packages/host/src/saved-image-capabilities.test.ts:83:33
+     81|         origin, authorization: `Bearer ${token}`, "x-tracegraph-comman…
+     82|       }, payload: png});
+     83|       expect(result.statusCode).toBe(200);
+       |                                 ^
+     84|       expect(result.json()).toMatchObject({status: "accepted", deliver…
+     85|       return result.json().upload_id as string;
+ ❯ packages/host/src/saved-image-capabilities.test.ts:168:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 1 passed (4)
+   Start at  21:29:51
+   Duration  986ms (transform 56%, tests 24%, import 20%)
+

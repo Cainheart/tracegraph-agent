@@ -1,0 +1,21 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: {"error":{"code":"invalid_arguments","message":"Unknown flag --host-url"}}
+
+
+2 !== 0
+
+    at main (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/unified-local-workbench-20261003-install/outlive-agent-0.1.0-alpha.0-preview/scripts/preview-smoke.mjs:32:12)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/unified-local-workbench-20261003-install/outlive-agent-0.1.0-alpha.0-preview/scripts/preview-smoke.mjs:85:72 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 2,
+  expected: 0,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

@@ -56,8 +56,8 @@ LSP 诊断不是第二份日志，也不是静态 CodeGraph 的替代品。
 | lazy session、workspace containment、bounded summary、unavailable 降级 | `packages/lsp/src/manager.ts`、`packages/lsp/src/lsp.test.ts` |
 | Core Tool bridge、端口和 extension deactivation | `packages/core/src/seams/lsp/tool-extension.ts`、`ports.ts`、`tool-extension.test.ts` |
 | Runtime Tool bridge 与 canonical Trace | `packages/core/src/domains/runtime/runtime.ts`、`packages/core/src/domains/evidence/projection.ts` |
-| Host/SDK status route | `packages/host/src/index.ts`、`packages/host/src/index.test.ts`、`packages/sdk/src/index.ts` |
-| CLI 装配与 Web Settings | `apps/cli/src/index.ts`、`apps/web/src/live-client.ts`、`apps/web/src/components/SettingsPanel.tsx` |
+| Host/SDK status route | `packages/host/src/webserver/index.ts`、`packages/host/src/index.test.ts`、`packages/sdk/src/index.ts` |
+| CLI 装配与 Web Settings | `apps/cli/src/index.ts`、`packages/workbench/src/live-client.ts`、`packages/workbench/src/components/SettingsPanel.tsx` |
 | 文档/标识符/路由/事件一致性 | `evals/docs/implementation-consistency.eval.ts` |
 
 ## 6. 明确限制

@@ -1,0 +1,23 @@
+{
+  "task_id": "PAR-088",
+  "recorded_at": "2026-10-03T05:31:47.227Z",
+  "status": "failed",
+  "model_boundary": "Synthetic loopback provider; actual packaged Electron Main/preload, HTTP over private local channel, shared Host/Runtime/ledger, real fixture patch and test processes. No provider-quality or external-user claims.",
+  "assertions": [
+    "Desktop Main and private typed client share model configuration and one Runtime owner",
+    "Desktop and loopback Web gateway observe the same settings revision; stale CAS rejected",
+    "Fixed settings/status/skills/extensions/MCP/LSP/usage/telemetry routes reach the shared Host"
+  ],
+  "errors": [
+    {
+      "boundary": "acceptance",
+      "message": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('dialog', { name: 'Settings', exact: true }) to be visible\u001b[22m\n",
+      "stack": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('dialog', { name: 'Settings', exact: true }) to be visible\u001b[22m\n\n    at settings (/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/unified-workbench/desktop-matrix.mjs:20:71)\n    at async theme (/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/unified-workbench/desktop-matrix.mjs:30:5)\n    at async Object.core (/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/unified-workbench/desktop-matrix.mjs:52:7)\n    at async file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/unified-workbench/desktop-transport.mjs:126:5"
+    }
+  ],
+  "screenshots": [],
+  "cleanup": {
+    "completed": true,
+    "failures": []
+  }
+}

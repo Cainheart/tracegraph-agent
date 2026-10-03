@@ -1,0 +1,7 @@
+#!/bin/sh
+# Delivery launcher: fixed resources only; no external Node or package manager.
+set -eu
+outlive_resources=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd -P)
+unset NODE_OPTIONS NODE_PATH ELECTRON_RUN_AS_NODE
+export PATH="$outlive_resources/runtime/bin:${PATH:-/usr/bin:/bin}"
+exec "$outlive_resources/runtime/bin/node" "$outlive_resources/app/apps/cli/dist/index.js" "$@"

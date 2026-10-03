@@ -16,10 +16,19 @@ import type { SandboxRunner } from "./sandbox-port.js";
 export type { RawToolResult } from "@tracegraph/contracts";
 
 export interface ToolExecutionContext {
+  /** Runtime-owned binary publication; refs become canonical only with this dispatch's receipt. */
+  publishArtifactBytes?(input:{mimeType:"image/png"|"image/jpeg"|"image/webp"|"image/svg+xml";bytes:Uint8Array}):Promise<ArtifactRef>;
   projectId: string;
   runId: string;
+  /** Runtime-minted identity for this dispatch, reused by the recovery provider. */
+  operationId?: string;
   workspace: WorkspaceHandle;
   signal?: AbortSignal;
+  /**
+   * Host-owned dispatch gate and job registry. Runtime supplies this so an
+   * executor that outlives the abort race remains owned until it settles.
+   */
+  startOwnedJob?: <T>(start: () => T | PromiseLike<T>) => Promise<T> | undefined;
   /**
    * Host-selected child-process isolation. Runtime always supplies both
    * fields; they remain optional so standalone Tool contract tests can inject
@@ -152,6 +161,10 @@ export interface ToolPresentationMeta {
 }
 
 export interface ToolDefinition<TInput = unknown, TOutput = RawToolResult> {
+  /** Optional trusted immutable executor lease; public Tool authority must remain identical. */
+  forRun?(): {definition:ToolDefinition<TInput,TOutput>;release():void};
+  /** Trusted definition only. Internal evidence operations need no filesystem grant. */
+  readonly workspaceIndependent?:boolean;
   readonly name: ToolName;
   readonly description: string;
   readonly inputSchema: ZodType<TInput>;

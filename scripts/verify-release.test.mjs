@@ -74,6 +74,17 @@ test("release verification fails closed on tag, changelog, and output drift", as
       await rm(root, { recursive: true, force: true });
     }
   });
+
+  await t.test("missing Desktop main entrypoint", async () => {
+    const root = await fixture();
+    try {
+      await mkdir(join(root, "apps/desktop/dist/renderer"), { recursive: true });
+      await writeJson(join(root, "apps/desktop/package.json"), { name: "@tracegraph/desktop", version: "0.1.0-alpha.0", private: true, main: "dist/main.js" });
+      await writeFile(join(root, "apps/desktop/dist/preload.cjs"), "module.exports = {};\n");
+      await writeFile(join(root, "apps/desktop/dist/renderer/index.html"), "<!doctype html>\n");
+      await assert.rejects(verifyRelease(root), /dist\/main\.js/u);
+    } finally { await rm(root, { recursive: true, force: true }); }
+  });
 });
 
 async function fixture() {

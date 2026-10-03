@@ -14,7 +14,10 @@ linkWorkspacePackages: true
 preferWorkspacePackages: true
 
 allowBuilds:
+  # NSIS is the Windows target; the optional Squirrel installer is not used.
+  electron-winstaller: false
   esbuild: true
+  node-pty: true
 
 catalog:
   '@fastify/cors': 11.3.0

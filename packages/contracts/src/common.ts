@@ -63,6 +63,7 @@ export const ArtifactKindSchema = z.enum([
   "tool_output",
   "spilled_tool_output",
   "context_source_archive",
+  "project_file_context",
   "patch_preview",
   "diff",
   "test_log",
@@ -73,6 +74,8 @@ export const ArtifactKindSchema = z.enum([
   "report",
   "image/png",
   "image/jpeg",
+  "image/webp",
+  "image/svg+xml",
   "application/pdf",
 ]);
 export type ArtifactKind = z.infer<typeof ArtifactKindSchema>;

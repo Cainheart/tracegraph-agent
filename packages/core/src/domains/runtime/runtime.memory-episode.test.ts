@@ -80,6 +80,9 @@ describe("MEM-043 Runtime behavior", () => {
     });
 
     try {
+      expect(await runtime.listMemoryControl({ allowedScopeIds: [] })).toEqual({
+        items: [], conflicts: [], backgroundJobs: [], backgroundJobsLoading: false,
+      });
       const started = await runtime.startRun(startInput(harness.workspace, "first"));
       const completed = await waitForStatus(runtime, started.run_id, "completed");
       const extractionInput = await extractionEntered.promise;
@@ -87,7 +90,7 @@ describe("MEM-043 Runtime behavior", () => {
       expect(completed.timeline.at(-1)?.type).toBe("run.completed");
       expect(extractionInput.runId).toBe(started.run_id);
       expect(await runtime.listMemoryControl({ allowedScopeIds: [harness.workspace.project_id] }))
-        .toMatchObject({ items: [] });
+        .toMatchObject({ items: [], backgroundJobs: [{ runId: started.run_id, status: "running", attempts: 0 }] });
 
       // The extractor is intentionally still blocked here; the settled Run is already observable.
       releaseExtraction();

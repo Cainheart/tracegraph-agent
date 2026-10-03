@@ -1,0 +1,81 @@
+PAR-088 synthetic fixture repair
+Local
+Review
+1
+Outlive
+New chat
+Memory
+Projects
+tracegraph-fixture-BhCIl9
+Open project file
+Open local folder
+Recents
+PAR-088 synthetic fixture repair
+10月3日 13:39 · 1 runs
+O
+Outlive Agent
+Local workspace
+Recovered session view
+This view was rebuilt from the durable ledger. Opening it did not execute tools.
+
+PAR-088 synthetic fixture repair
+
+Return the synthetic acceptance result.
+
+Return the synthetic acceptance result.
+Completed
+
+Synthetic PAR-088 fixture repair completed.
+
+Run 00:08
+Context 1.1K / 226K
+Healthy
+Attach image or PDF
+synthetic-par088
+Default
+Test / raw log
+Enter to send · Shift+Enter for a new line
+Review changes
+REVIEW WORKSPACE
+Architecture-aware changes
+Files
+Diff
+Architecture
+Source event
+src/add.ts
++1
+−1
+-- a/src/add.ts
+++ b/src/add.ts
+@@
+0
+−
+return left - right;
+1
++
+return left + right;
+2
+Diff
+event:1727aa6d-4e24-4325-a398-e920c9ef9215
+Semantic impact
+Static declaration analysis
+1 files
+1 symbols
+AFFECTED FILES
+1
+src/add.ts
+CHANGED SYMBOLS
+1
+~
+add
+function · src/add.ts:1
+DIAGNOSTIC SUMMARY
+Not recorded
+
+No LSP diagnostic summary was recorded for this event.
+
+Test evidence available
+test_log Artifact verified by the Host
+event:1727aa6d-4e24-4325-a398-e920c9ef9215
+artifact:abcc60bd-6f93-419f-9c87-f6339415b5ef
+artifact:ceaff2ba-2557-432c-b833-9d62f9b08a15

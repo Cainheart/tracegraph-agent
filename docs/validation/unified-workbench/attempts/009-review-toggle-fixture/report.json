@@ -1,0 +1,611 @@
+{
+  "task_id": "PAR-088",
+  "recorded_at": "2026-10-03T05:59:18.665Z",
+  "status": "failed",
+  "model_boundary": "Synthetic loopback provider; actual packaged Electron Main/preload, HTTP over private local channel, shared Host/Runtime/ledger, real fixture patch and test processes. No provider-quality or external-user claims.",
+  "assertions": [
+    "Desktop Main and private typed client share model configuration and one Runtime owner",
+    "Desktop and loopback Web gateway observe the same settings revision; stale CAS rejected",
+    "Fixed settings/status/skills/extensions/MCP/LSP/usage/telemetry routes reach the shared Host",
+    "Actual Desktop keyboard navigation/palette/settings controls and DOM composition Enter/newline semantics are verified",
+    "Actual packaged CLI shares owner/settings/model and rejects command-line credentials without printing values",
+    "Desktop composer stages the actual fixture image and Enter starts an executable task through fixed transport",
+    "Three actual SSE feeds preserve independent cursors; public model/operation events forwarded, unsubscribe does not cancel Run",
+    "Exact approval command retry does not double-write; actual patch file, success receipt and 2/2 test-log Artifact agree"
+  ],
+  "errors": [
+    {
+      "boundary": "acceptance",
+      "message": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('complementary', { name: 'Review changes', exact: true }) to be visible\u001b[22m\n",
+      "stack": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('complementary', { name: 'Review changes', exact: true }) to be visible\u001b[22m\n\n    at /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/unified-workbench/desktop-transport.mjs:201:204\n    at async Object.core (/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/unified-workbench/desktop-matrix.mjs:62:26)\n    at async file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/unified-workbench/desktop-transport.mjs:201:5"
+    }
+  ],
+  "product": {
+    "artifact_mode": "source",
+    "repository_root": "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent",
+    "hashes": {
+      "apps/desktop/dist/main.js": "a45de85080cb47f4fc6c5cd9574872548a62e8f9c3b28a4387afa57c4beab53c",
+      "apps/desktop/dist/preload.cjs": "9a270f2c5a6d066309adab0d7ca02acef81770ad72241ff31fc729208ef731de",
+      "apps/desktop/dist/renderer/index.html": "c94ae364177068f328b4520b13ab9c20643c679c94a9ad62a9fce992d966dfc4",
+      "apps/cli/dist/index.js": "bfd1bbbed588a2f37fb639d3abf4f182fa14a2fef924b7d8aad50ab079ae4d9d",
+      "apps/cli/dist/workbench-command.js": "e68ee152cecf84a340d07667ac21c89d60dfb2cbeb6d81bb780af7599ee69624",
+      "packages/host/dist/local-host-worker.js": "f3ee9f70ca4c3c5142138a4b2c6fbf34357967ff99e85eae3295382a37e27ddd",
+      "packages/sdk/dist/index.js": "e07a1d6d09391320c775ecb83412ab69150be74073233aad7fd016298d23fc3d",
+      "apps/desktop/dist/renderer/assets/index-DPna1y8f.js": "2c101f2730848ed60144b8c96645437e9b02e80b180ba42e802a32631cce2b63",
+      "apps/desktop/dist/renderer/assets/chunk-Y2CYZVJY-DsF7k-Jl.js": "a74e3669f356ad0d67cc5232f1e0f62ff4544fdb8e7057cf9a5001a0ea6fc2cc",
+      "apps/desktop/dist/renderer/assets/src-D_iIdUkB.js": "e9388a1b6412ffa2b395fc348df2ed61bb10bdcfdd51ffa2bc7b5d4527e8279c",
+      "apps/desktop/dist/renderer/assets/chunk-O7XYJQB3-CKKWJ5qg.js": "d84493326d919d2cbdc52afc59d9e1bb806d2fabb9a0dde356ae4741101be5f7",
+      "apps/desktop/dist/renderer/assets/dist-Bfr8PhAA.js": "77e45d626ece635e7105ffc9e36c5a177ac803e0f8380d86f6236ff460e18586",
+      "apps/desktop/dist/renderer/assets/chunk-ZIGJFQKS-CEpNxTiJ.js": "2c752abd2c1665fcc3b5aafcc8ec23fd67edfec70ad1d594a2470c795003ce5c",
+      "apps/desktop/dist/renderer/assets/path-fybaL0A-.js": "71b62c60fd6659668995a83955af7c0ffd1bc05496148191841e017441afe36b",
+      "apps/desktop/dist/renderer/assets/array-BifhSqXX.js": "63126646dbf611a0cf9e2293a9f636ac3c93c815a8f7d1e97d783151ab8529b9",
+      "apps/desktop/dist/renderer/assets/line-CnaOAfv0.js": "e7f6a4e731b07c23383808ffc3044da619d3d9b08d4942b1473fe88ae4862961",
+      "apps/desktop/dist/renderer/assets/chunk-7PRAP22T-DyBrMsFS.js": "89d2ee87cd53161f176e735d2b0b2f17d29b75d80cf2b3ee4c2d657ca6ea8e5d",
+      "apps/desktop/dist/renderer/assets/chunk-742MDFTN-C2DSAlGM.js": "8a72cc226bd7da4e2b8b35dea3baa4af6cf282f03119f32b71395c41ce5b0df3",
+      "apps/desktop/dist/renderer/assets/chunk-MBY4JIJT-BLxfLtrC.js": "42c51180ce9a0c2404a601e4060bfacffb50101d3f9b4f2068a63b173555241d",
+      "apps/desktop/dist/renderer/assets/chunk-J5ZVWO5B-oDCd-gWO.js": "9ef2dc3eac1cfcec79acc9e2d21b546b3007482f6f67953492e76710abb2ba71",
+      "apps/desktop/dist/renderer/assets/rough.esm-Dy-Kn_BL.js": "ef405c5eaa3316c75428f63ec698e39993bdcc2da358dbc7ebd355d18901f63f",
+      "apps/desktop/dist/renderer/assets/chunk-7INBJB4K-C1cBX-ES.js": "79a0f7a3f439f7a9327345b75f257a49bcd12c8ced025e7ac119ec2584c48513",
+      "apps/desktop/dist/renderer/assets/chunk-5DYCD2WN-D0pLhIqt.js": "da37fbe83369c2249ca35a42250baa5e764e2923b285e464470a6e1f901d7183",
+      "apps/desktop/dist/renderer/assets/index-Bfi-l9Vv.css": "464008faa47b6b8a7f8ff38053043a5f5a5f5fee85f28a0255bf6d3d7ff85427"
+    }
+  },
+  "screenshots": [
+    {
+      "file": "screenshots/empty-light-1440x900.png",
+      "state": "empty",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "086614054d3129a86b0109f95a23aa07b0743259941488ade6242e640c0b51b6",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/empty-light-1280x800.png",
+      "state": "empty",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "87013e04cf523f6d614201fb6ef85c091f1dcf841df6a36632a47725aad3d7b4",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/empty-light-1024x768.png",
+      "state": "empty",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "c0e990e5664c8fc9cd0150966c1bf9f95b20d1633570c1e7e866ed2e996ebf66",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/empty-dark-1440x900.png",
+      "state": "empty",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "7cccd3d6502120fa11ecc476f58607174dbcea058c7d6f2a2e8de09db609f394",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/empty-dark-1280x800.png",
+      "state": "empty",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "fa62242da9b1b1b86eefd3af332a16a50db170499b658fe0366172da60699884",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/empty-dark-1024x768.png",
+      "state": "empty",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "4bf23ba9f53da5a272850d94074916b8fef95b3161f7c13fedf5db0c4ac1c2bf",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/project-ready-light-1440x900.png",
+      "state": "project-ready",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "0f6abf9cc3641ee0e960ec39256a8ee3f5b1138d3437a5bd8d07400beafaa7bc",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/project-ready-light-1280x800.png",
+      "state": "project-ready",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "84b71d164eb522fad35b91377c6429e4f860415a7a69268d7f0f9a045b8dd36f",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/project-ready-light-1024x768.png",
+      "state": "project-ready",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "6f4663a938e4f60b1a119bf187519ab2e07eec707907c3696a0ff7f6a1d0ee4d",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/project-ready-dark-1440x900.png",
+      "state": "project-ready",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "cca2f886d3948300e424eff53156dcfd422aa2a99591383e4593c861c9cad115",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/project-ready-dark-1280x800.png",
+      "state": "project-ready",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "22e05564149213a93710e6af3b1afdcb5b39013b1c930640913688e8695522dd",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/project-ready-dark-1024x768.png",
+      "state": "project-ready",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "9780f7514249c309b0f18bdda3e4ca99b9c65ced71f0687f765537e9590244f4",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/active-run-light-1440x900.png",
+      "state": "active-run",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "05acc7550e64eedd646ec3192d43b999fc75b9f96b6de5550a46c1f727d2cae5",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/active-run-light-1280x800.png",
+      "state": "active-run",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "46e613ba4bce0553f886378f3357cfa446d62739c555f4876dfdcec0037962cd",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/active-run-light-1024x768.png",
+      "state": "active-run",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "0231d53fc4311ae3aebddfc01e1d19335be1d8fd337bfdb3e7585f45909ead44",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/active-run-dark-1440x900.png",
+      "state": "active-run",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "957b213ccd2b2ab71047870d03f56cd54cdfb76a3b3e5c0be497930b91470b17",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/active-run-dark-1280x800.png",
+      "state": "active-run",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "8f829a0d77fd181f459708a693d659aa726b8c229691684c70d0a6ec93ffd76a",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/active-run-dark-1024x768.png",
+      "state": "active-run",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "638c4f4643bcc2c5e5ca3ad1abe5cd339bdb8916c7869c34926486caa4c07d3e",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/approval-light-1440x900.png",
+      "state": "approval",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "e8e71cd9aab9b7d6ff8779b16a71a9bf9077440490289cf90c2ac0392977612a",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/approval-light-1280x800.png",
+      "state": "approval",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "e4693fc8f1344428e77d07cd60cb884fed5b11202dfa9581c2348fb8f9fca818",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/approval-light-1024x768.png",
+      "state": "approval",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "656dad928f2efbd7960e2d7e5ef163a8519f34b6a4a69e7432c338f905197c9c",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/approval-dark-1440x900.png",
+      "state": "approval",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "ef0c8f05ad7f4eafdf3cad35d0a7d368c2d6361a734d0ba652975cc2d5b97dd6",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/approval-dark-1280x800.png",
+      "state": "approval",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "64c246228e9f03cf7937ccf12c7ff4ca3d13afcfb363dcf05bc90e51830c341c",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/approval-dark-1024x768.png",
+      "state": "approval",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "249edf028b78b907a89856f167c3f6565bed7f304a87b8cac2ccc69327be8cc1",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/tool-result-light-1440x900.png",
+      "state": "tool-result",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "145b9da40fac76615b1aa7a5d7451c4c184a2ab8bd48814b4211ac5e1a54aca2",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/tool-result-light-1280x800.png",
+      "state": "tool-result",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "34afcff3fe08d3a4de93a27048e3b63d109f8d8cf23bd49afecb26e0b3e0e8ad",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/tool-result-light-1024x768.png",
+      "state": "tool-result",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "7800054248eda2ae902e5f3d40acfe0e70e3cf743e48924f562575bbf6fb0fd3",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/tool-result-dark-1440x900.png",
+      "state": "tool-result",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "327fe93387af172e443b259a4358c95652696c63bcbef99b849b715538b25a56",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/tool-result-dark-1280x800.png",
+      "state": "tool-result",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "ac8392873fa89f305aec84e55bb82e653a8a32962ce971abe5a2bd8ff4821659",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/tool-result-dark-1024x768.png",
+      "state": "tool-result",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "2adb6d43975355f4e5831c65f58cbbe125915f46cbc0f656a798f8d46691e0af",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/change-review-light-1440x900.png",
+      "state": "change-review",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "0ac8da226a6a14b818282a04771b2a068c08bcda632442d20741fbc36e3ef802",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "horizontalOverflow": [],
+        "reviewRect": {
+          "left": 828.4375,
+          "top": 52,
+          "width": 611.5625,
+          "height": 848,
+          "right": 1440,
+          "bottom": 900
+        }
+      }
+    },
+    {
+      "file": "screenshots/change-review-light-1280x800.png",
+      "state": "change-review",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "9b579070af0589a914553094c82429ecc77973bbe1960c32aab60530ecb01a6c",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "horizontalOverflow": [],
+        "reviewRect": {
+          "left": 246,
+          "top": 52,
+          "width": 1034,
+          "height": 748,
+          "right": 1280,
+          "bottom": 800
+        }
+      }
+    },
+    {
+      "file": "screenshots/change-review-light-1024x768.png",
+      "state": "change-review",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "a8fd94c165c4eec2321bf98b81746db0deac15f63e95f012e738472a9e50ba8f",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "horizontalOverflow": [],
+        "reviewRect": {
+          "left": 220,
+          "top": 52,
+          "width": 804,
+          "height": 716,
+          "right": 1024,
+          "bottom": 768
+        }
+      }
+    }
+  ],
+  "cleanup": {
+    "completed": true,
+    "failures": []
+  }
+}

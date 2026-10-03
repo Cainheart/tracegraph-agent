@@ -155,9 +155,9 @@ describe("G20 semantic CodeGraph contracts", () => {
   });
 
   it("appends the two canonical semantic lifecycle facts", () => {
-    expect(EventTypeSchema.options.slice(-2)).toEqual([
-      "code.intel_updated",
-      "code.stale_base_detected",
-    ]);
+    const intelUpdated = EventTypeSchema.options.indexOf("code.intel_updated");
+    const staleBaseDetected = EventTypeSchema.options.indexOf("code.stale_base_detected");
+    expect(staleBaseDetected).toBe(intelUpdated + 1);
+    expect(EventTypeSchema.options.at(-5)).toBe("model.retry_scheduled");
   });
 });

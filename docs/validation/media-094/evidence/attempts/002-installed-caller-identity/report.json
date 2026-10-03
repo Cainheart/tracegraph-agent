@@ -1,0 +1,36 @@
+{
+  "schema": "outlive.media-evidence.v1",
+  "execution_inputs_sha256": "sha256:dcb27cfbea73b95e027ec06927e9d5e5cd491921ac880ddb3a7dbe4cdf90a75b",
+  "status": "failed",
+  "repository_root": "/Users/cain/Applications/Outlive Agent.app/Contents/Resources/app",
+  "provider_boundary": "Deterministic loopback HTTP image protocol fixture returning algorithm-generated PNG; no live provider key, no generative quality/billing claim",
+  "node_executable": "/Users/cain/Applications/Outlive Agent.app/Contents/Resources/runtime/bin/node",
+  "cli_environment_path": "/usr/bin:/bin",
+  "owner_boot_nonce": "d72f9c7b-1244-4142-a5e0-dbdd9efa3cf8",
+  "completed_at": "2026-10-03T09:01:14.495Z",
+  "assertions": [
+    {
+      "name": "detached shared Host is a separate process",
+      "passed": true
+    },
+    {
+      "name": "chat model is unconfigured",
+      "passed": true
+    },
+    {
+      "name": "configure openai-images no credential leakage",
+      "passed": true
+    },
+    {
+      "name": "configure openai-images exit",
+      "passed": false,
+      "actual_exit": 1,
+      "expected_exit": 0
+    }
+  ],
+  "artifact_count": 0,
+  "cli_count": 1,
+  "provider_request_count": 0,
+  "cleanup": true,
+  "error": "Media oracle failed: configure openai-images exit"
+}

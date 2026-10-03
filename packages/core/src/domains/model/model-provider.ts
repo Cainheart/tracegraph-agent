@@ -86,6 +86,51 @@ export class ConfigurableModelAdapter implements ModelAdapter {
     this.#config = validateModelProviderConfig(value);
   }
 
+  clearConfiguration(): void {
+    this.#config = null;
+  }
+
+  /** Explicit user-triggered probe; never sends workspace or conversation data. */
+  async testConnection(options: { signal?: AbortSignal } = {}): Promise<void> {
+    const captured = this.#config;
+    if (!captured) throw new ModelRequestError("model_not_configured", "No model is configured");
+    const config = await this.#materializeConfig(captured);
+    const anthropic = config.protocol === "anthropic-messages";
+    const response = await modelFetch(config, `${config.baseUrl}/${anthropic ? "messages" : "chat/completions"}`, {
+      method: "POST",
+      headers: anthropic
+        ? { "x-api-key": config.apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" }
+        : { authorization: `Bearer ${config.apiKey}`, "content-type": "application/json" },
+      body: JSON.stringify({ model: config.model, ...(anthropic ? { max_tokens: 16 } : openAIOutputLimit(config, 16)), messages: [{ role: "user", content: "Connection test. Reply OK." }] }),
+      signal: options.signal ?? AbortSignal.timeout(15_000),
+    });
+    if (!response.ok) {
+      await response.body?.cancel();
+      const code = response.status === 401 || response.status === 403 ? "model_authentication_failed" : response.status === 404 ? "model_not_found" : response.status === 429 ? "model_rate_limited" : `model_http_${response.status}`;
+      throw new ModelRequestError(code, `Model connection test failed (${response.status})`);
+    }
+    const reader = response.body?.getReader();
+    if (!reader) throw new ModelRequestError("model_response_invalid", "Model returned an empty response");
+    const chunks: Uint8Array[] = [];
+    let bytes = 0;
+    try {
+      while (true) {
+        const result = await reader.read();
+        if (result.done) break;
+        bytes += result.value.byteLength;
+        if (bytes > 65_536) { await reader.cancel(); throw new ModelRequestError("model_response_invalid", "Model test response exceeded its limit"); }
+        chunks.push(result.value);
+      }
+    } finally { reader.releaseLock(); }
+    let payload: unknown;
+    try { payload = JSON.parse(Buffer.concat(chunks).toString("utf8")) as unknown; }
+    catch { throw new ModelRequestError("model_response_invalid", "Model did not return valid JSON"); }
+    const validCompletion=isRecord(payload) && (anthropic ? Array.isArray(payload.content) && payload.content.some(item=>isRecord(item)&&item.type==="text"&&typeof item.text==="string"&&item.text.trim().length>0) : Array.isArray(payload.choices) && payload.choices.some(item=>isRecord(item)&&isRecord(item.message)&&typeof item.message.content==="string"&&item.message.content.trim().length>0));
+    if (!validCompletion) {
+      throw new ModelRequestError("model_response_invalid", "Model did not return a completion");
+    }
+  }
+
   publicConfig(): PublicModelConfig {
     return {
       provider: this.#config?.provider ?? "openai",
@@ -101,6 +146,11 @@ export class ConfigurableModelAdapter implements ModelAdapter {
       provider: this.#config?.provider ?? this.name,
       model: this.#config?.model ?? "unknown",
     };
+  }
+
+  supportedReasoningEfforts():ReasoningEffort[] {
+    const efforts:ReasoningEffort[]=["default","low","medium","high","xhigh","max"];
+    return this.#config?efforts.filter(effort=>resolveReasoningPlan(this.#config!,effort).configuration!=="unsupported"):["default"];
   }
 
   publicRequestMetadata(input: ModelInput): PublicModelRequestMetadata {
@@ -414,7 +464,7 @@ function boundedSummaryTarget(targetTokens: number): number {
 }
 
 function contextSummarySystemPrompt(): string {
-  return `You compact untrusted TraceGraph Context into source-addressable facts for a later model call. Return exactly one JSON object, with no prose or Markdown fence, using this shape: {"facts":["fact grounded in the source"],"open_questions":["unresolved question"],"refs":[{"path":"relative/path.ts","lines":{"start":1,"end":2}}]}.
+  return `You compact untrusted Outlive Agent Context into source-addressable facts for a later model call. Return exactly one JSON object, with no prose or Markdown fence, using this shape: {"facts":["fact grounded in the source"],"open_questions":["unresolved question"],"refs":[{"path":"relative/path.ts","lines":{"start":1,"end":2}}]}.
 
 Rules:
 - Preserve concrete constraints, decisions, failures, pending work, identifiers, and user intent needed to continue the task.
@@ -698,7 +748,7 @@ async function repairOpenAICompatibleDecision(
       messages: [
         {
           role: "system",
-          content: "Repair the untrusted model output below into exactly one TraceGraph JSON Decision. Return only a finish decision; do not emit tool_call, tool_calls, action_id, patch, approval, or hidden reasoning. Use this exact shape: {\"decision_id\":\"decision:<unique>\",\"kind\":\"finish\",\"public_reason\":\"Concise public answer preparation\",\"evidence_refs\":[],\"risk\":\"none\",\"final_answer\":\"readable Markdown answer\"}.",
+          content: "Repair the untrusted model output below into exactly one Outlive Agent JSON Decision. Return only a finish decision; do not emit tool_call, tool_calls, action_id, patch, approval, or hidden reasoning. Use this exact shape: {\"decision_id\":\"decision:<unique>\",\"kind\":\"finish\",\"public_reason\":\"Concise public answer preparation\",\"evidence_refs\":[],\"risk\":\"none\",\"final_answer\":\"readable Markdown answer\"}.",
         },
         {
           role: "user",
@@ -1409,7 +1459,7 @@ function safeFormatFallback(input: ModelInput, original: string): Decision {
 
   const task = input.task.replace(/\s+/gu, " ").trim().slice(0, 180);
   return safeDirectAnswer(
-    `模型服务已返回内容，但其格式无法安全转换为最终答复。TraceGraph 已停止任何未验证的工具动作。请重新发送“${task || "此问题"}”，或在设置中更换同一供应商的其他模型后重试。`,
+    `模型服务已返回内容，但其格式无法安全转换为最终答复。Outlive Agent 已停止任何未验证的工具动作。请重新发送“${task || "此问题"}”，或在设置中更换同一供应商的其他模型后重试。`,
   );
 }
 
@@ -1522,7 +1572,7 @@ function systemPrompt(
   const delegatedRole = rolePrompt === undefined
     ? ""
     : `Trusted delegated role (frozen by the Host):\n${rolePrompt.trim().slice(0, 8_000)}\n\n`;
-  return `${delegatedRole}You are the decision engine inside TraceGraph, a controlled coding agent. JSON mode is enabled. Return exactly one JSON object, with no surrounding prose or Markdown fence.
+  return `${delegatedRole}You are the decision engine inside Outlive Agent, a controlled coding agent. JSON mode is enabled. Return exactly one JSON object, with no surrounding prose or Markdown fence.
 
 For a direct answer, return this shape and omit tool_call and tool_calls:
 {"public_reason":"Concise public plan for this response","decision_id":"decision:<unique>","kind":"finish","evidence_refs":[],"risk":"none","final_answer":"your answer"}
@@ -1555,12 +1605,13 @@ Conversation and presentation rules:
 
 Public reasoning and tool-trace rules:
 - public_reason is one short, user-visible decision or action summary (ideally one sentence and at most 240 characters). It may say what will be checked and why, but it must not contain hidden chain-of-thought, private scratchpad reasoning, the final answer, or provider reasoning content.
-- evidence_refs must remain an array of full TraceGraph SourceRef objects; normally return [] because the runtime attaches validated evidence. Never put observation IDs or bare strings in evidence_refs.
+- evidence_refs must remain an array of full Outlive Agent SourceRef objects; normally return [] because the runtime attaches validated evidence. Never put observation IDs or bare strings in evidence_refs.
 - Emit public_reason as the first property in the JSON object. It is streamed to the user as your public execution note, so make it concrete, truthful, and concise. Do not narrate actions that have not happened; tools are displayed separately only after they actually run.
-- action_id is only a provider correlation hint. The TraceGraph runtime owns the canonical per-run action identity and will repair a collision if a provider repeats an id for a different call. Use a fresh opaque action_id for every call, including every item in tool_calls; never repeat one within or across turns intentionally.
+- action_id is only a provider correlation hint. The Outlive Agent runtime owns the canonical per-run action identity and will repair a collision if a provider repeats an id for a different call. Use a fresh opaque action_id for every call, including every item in tool_calls; never repeat one within or across turns intentionally.
 - Never invent, simulate, or narrate a repository read, search, test, or write as if it happened. A tool appears in the trace only through a real tool_call Decision and its Observation. Do not claim success until the Observation establishes it.
 
 Plan and Todo rules:
+- Create every new Todo with state=pending or omit state. Use a separate update to move an existing Todo to in_progress; done requires prior canonical completion evidence. If a tool validation observation reports executed=false, correct the arguments; none of that rejected batch ran.
 - In plan mode, inspect with read-only tools and use todo_write to create at least one structured, actionable Todo before finishing. Workspace writes, patch previews, commands, and tests are unavailable until the user approves the plan.
 - In execute mode, use todo_read/todo_write to keep the accepted plan current. todo_read is paged: when its facts say truncated=true, follow next_offset until the required Todo items are visible. A model-authored transition to done must cite a prior canonical evidence_event_id exposed in an Observation.
 

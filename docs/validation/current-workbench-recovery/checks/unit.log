@@ -1,0 +1,140 @@
+Scope: 22 of 23 workspace projects
+packages/contracts test:unit$ vitest run src
+packages/retrieval test:unit$ vitest run tests
+packages/telemetry test:unit$ vitest run tests
+packages/retrieval test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/retrieval
+packages/contracts test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/contracts
+packages/telemetry test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/telemetry
+packages/telemetry test:unit:  Test Files  2 passed (2)
+packages/telemetry test:unit:       Tests  26 passed (26)
+packages/telemetry test:unit:    Start at  20:33:01
+packages/telemetry test:unit:    Duration  304ms (transform 67%, import 17%, tests 15%, worker 1%)
+packages/telemetry test:unit: Done
+packages/retrieval test:unit:  Test Files  3 passed (3)
+packages/retrieval test:unit:       Tests  22 passed (22)
+packages/retrieval test:unit:    Start at  20:33:01
+packages/retrieval test:unit:    Duration  627ms (tests 48%, transform 46%, import 5%, worker 1%)
+packages/retrieval test:unit: Done
+packages/contracts test:unit:  Test Files  32 passed (32)
+packages/contracts test:unit:       Tests  187 passed (187)
+packages/contracts test:unit:    Start at  20:33:01
+packages/contracts test:unit:    Duration  1.17s (transform 71%, import 25%, tests 3%, worker 1%)
+packages/contracts test:unit:   Transform  transforming modules took 9.57s · 71% of tracked time, re-done on every run
+packages/contracts test:unit:              persist transforms across runs with fsModuleCache: true
+packages/contracts test:unit:              learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+packages/contracts test:unit: Done
+apps/retrieval-service test:unit$ vitest run tests
+packages/codegraph test:unit$ vitest run tests
+packages/api test:unit$ vitest run src
+packages/evidence test:unit$ vitest run src
+apps/retrieval-service test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/retrieval-service
+packages/api test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/api
+packages/codegraph test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/codegraph
+packages/evidence test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/evidence
+apps/retrieval-service test:unit:  Test Files  2 passed (2)
+apps/retrieval-service test:unit:       Tests  14 passed (14)
+apps/retrieval-service test:unit:    Start at  20:33:03
+apps/retrieval-service test:unit:    Duration  384ms (tests 40%, transform 32%, import 28%, worker 1%)
+apps/retrieval-service test:unit: Done
+packages/lsp test:unit$ vitest run src
+packages/api test:unit:  Test Files  3 passed (3)
+packages/api test:unit:       Tests  16 passed (16)
+packages/api test:unit:    Start at  20:33:03
+packages/api test:unit:    Duration  499ms (transform 71%, import 26%, tests 2%, worker 1%)
+packages/api test:unit: Done
+packages/mcp test:unit$ vitest run src
+packages/lsp test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/lsp
+packages/evidence test:unit:  Test Files  1 passed (1)
+packages/evidence test:unit:       Tests  5 passed (5)
+packages/evidence test:unit:    Start at  20:33:03
+packages/evidence test:unit:    Duration  607ms (transform 59%, import 21%, tests 20%, worker 1%)
+packages/evidence test:unit: Done
+packages/sdk test:unit$ vitest run src
+packages/mcp test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/mcp
+packages/sdk test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/sdk
+packages/codegraph test:unit:  Test Files  1 passed (1)
+packages/codegraph test:unit:       Tests  12 passed (12)
+packages/codegraph test:unit:    Start at  20:33:03
+packages/codegraph test:unit:    Duration  1.11s (tests 58%, transform 30%, import 12%)
+packages/codegraph test:unit: Done
+packages/session test:unit$ vitest run src
+packages/session test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/session
+packages/lsp test:unit:  Test Files  1 passed (1)
+packages/lsp test:unit:       Tests  2 passed (2)
+packages/lsp test:unit:    Start at  20:33:03
+packages/lsp test:unit:    Duration  746ms (transform 61%, tests 23%, import 16%)
+packages/lsp test:unit: Done
+packages/tool test:unit$ vitest run src
+packages/mcp test:unit:  Test Files  1 passed (1)
+packages/mcp test:unit:       Tests  6 passed (6)
+packages/mcp test:unit:    Start at  20:33:03
+packages/mcp test:unit:    Duration  751ms (transform 60%, tests 23%, import 16%)
+packages/mcp test:unit: Done
+packages/tool test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/tool
+packages/session test:unit:  Test Files  1 passed (1)
+packages/session test:unit:       Tests  2 passed (2)
+packages/session test:unit:    Start at  20:33:04
+packages/session test:unit:    Duration  428ms (transform 58%, import 25%, tests 16%)
+packages/session test:unit: Done
+packages/tool test:unit:  Test Files  3 passed (3)
+packages/tool test:unit:       Tests  24 passed (24)
+packages/tool test:unit:    Start at  20:33:04
+packages/tool test:unit:    Duration  376ms (transform 67%, import 28%, tests 4%, worker 1%)
+packages/tool test:unit: Done
+packages/sdk test:unit:  Test Files  8 passed (8)
+packages/sdk test:unit:       Tests  68 passed (68)
+packages/sdk test:unit:    Start at  20:33:04
+packages/sdk test:unit:    Duration  2.55s (transform 43%, tests 42%, import 14%)
+packages/sdk test:unit:   Transform  transforming modules took 2.46s · 43% of tracked time, re-done on every run
+packages/sdk test:unit:              persist transforms across runs with fsModuleCache: true
+packages/sdk test:unit:              learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+packages/sdk test:unit: Done
+packages/workbench test:unit$ vitest run src
+packages/context test:unit$ vitest run src
+packages/context test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/context
+packages/workbench test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench
+packages/context test:unit:  Test Files  2 passed (2)
+packages/context test:unit:       Tests  28 passed (28)
+packages/context test:unit:    Start at  20:33:06
+packages/context test:unit:    Duration  733ms (transform 64%, import 18%, tests 17%)
+packages/context test:unit: Done
+packages/workbench test:unit:  Test Files  29 passed (29)
+packages/workbench test:unit:       Tests  221 passed (221)
+packages/workbench test:unit:    Start at  20:33:06
+packages/workbench test:unit:    Duration  2.69s (transform 55%, import 27%, tests 12%, environment 5%)
+packages/workbench test:unit:   Transform  transforming modules took 10.47s · 55% of tracked time, re-done on every run
+packages/workbench test:unit:              persist transforms across runs with fsModuleCache: true
+packages/workbench test:unit:              learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+packages/workbench test:unit: Done
+apps/web test:unit$ vitest run src
+packages/core test:unit$ vitest run src
+packages/core test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/core
+apps/web test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/web
+apps/web test:unit:  Test Files  1 passed (1)
+apps/web test:unit:       Tests  1 passed (1)
+apps/web test:unit:    Start at  20:33:09
+apps/web test:unit:    Duration  411ms (transform 70%, import 25%, tests 4%, worker 1%)
+apps/web test:unit: Done
+packages/core test:unit:  ❯ src/domains/runtime/runtime.permission.test.ts (13 tests | 1 failed) 32755ms
+packages/core test:unit:    ❯ G06 Runtime permission integration (13)
+packages/core test:unit:      × persists the v5 recovery state and restores its effective policy 5134ms
+packages/core test:unit: ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+packages/core test:unit:  FAIL  src/domains/runtime/runtime.permission.test.ts > G06 Runtime permission integration > persists the v5 recovery state and restores its effective policy
+packages/core test:unit: Error: Test timed out in 5000ms.
+packages/core test:unit: If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+packages/core test:unit:  ❯ src/domains/runtime/runtime.permission.test.ts:546:3
+packages/core test:unit:     544|   });
+packages/core test:unit:     545|
+packages/core test:unit:     546|   it("persists the v5 recovery state and restores its effective policy…
+packages/core test:unit:        |   ^
+packages/core test:unit:     547|     const harness = await createHarness("recovery-policy");
+packages/core test:unit:     548|     const originalPolicy = createEffectivePermissionPolicy({
+packages/core test:unit: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+packages/core test:unit:  Test Files  1 failed | 57 passed (58)
+packages/core test:unit:       Tests  1 failed | 509 passed (510)
+packages/core test:unit:    Start at  20:33:09
+packages/core test:unit:    Duration  50.57s (tests 96%, transform 2%, import 1%)
+packages/core test:unit: Failed
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/core:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @tracegraph/core@0.1.0-alpha.0 test:unit: `vitest run src`
+Exit status 1

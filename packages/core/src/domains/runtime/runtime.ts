@@ -1,3 +1,4 @@
+import {validateProjectFileContexts,persistProjectFileContexts,restoreProjectFileContext,ProjectFileContextError} from "./project-file-context.js";
 import { constants as fsConstants } from "node:fs";
 import { randomUUID } from "node:crypto";
 import { lstat, mkdir, open, readFile, realpath, rename, unlink } from "node:fs/promises";
@@ -19,6 +20,8 @@ import {
   CodeStaleBaseDetectedDataSchema,
   DEFAULT_SUBAGENT_LIMITS,
   DecisionSchema,
+  ExternalActionReconciliationDecisionSchema,
+  ExternalActionReconciliationRequestSchema,
   GraphDeltaSchema,
   GraphSnapshotSchema,
   GitBaseContextSchema,
@@ -109,6 +112,7 @@ import {
   TodoWriteInputSchema,
   UserInputConsumedDataSchema,
   UserInputQueuedDataSchema,
+  ToolNameSchema,
   WorkspaceHandleSchema,
   isTerminalEventType,
   type ApprovalCommand,
@@ -189,6 +193,9 @@ import {
   type McpToolCatalogEntry,
   type ExperienceCase,
   type ExperienceLifecycleAction,
+  type ExternalActionReconciliationDecision,
+  type ExternalActionReconciliationOutcome,
+  type ExternalActionReconciliationRequest,
 } from "@tracegraph/contracts";
 import {
   NoopTelemetrySink,
@@ -352,6 +359,14 @@ import {
   type ToolExecutionBinding,
   type ValidatedToolCall,
 } from "./agent-loop.js";
+import { CancellationController } from "./cancellation-controller.js";
+import {
+  resolveNoProgressPolicy,
+  type NoProgressPolicy,
+  type ProgressFingerprint,
+} from "./no-progress-guard.js";
+
+export type { NoProgressPolicy } from "./no-progress-guard.js";
 
 export { RUNTIME_FEATURE_IDS } from "./runtime-feature-drivers.js";
 export type { RuntimeFeatureDriver, RuntimeFeatureId } from "./runtime-feature-drivers.js";
@@ -376,6 +391,22 @@ export interface ActionReconciliationResult {
   reconciledActionIds: string[];
   abortedActionIds: string[];
   divergedActionIds: string[];
+  externalOutcomes?: Array<{
+    actionId: string;
+    outcome: ExternalActionReconciliationOutcome;
+  }>;
+}
+
+export interface ExternalActionReconciler {
+  /** Host identity for bounded public reconciliation facts. */
+  readonly providerId: string;
+  /** Only declared Tool names are eligible for this provider. */
+  readonly supportedToolNames: ReadonlySet<ToolName>;
+  /** Query external state only; this callback must never re-execute the Action. */
+  reconcile(
+    request: ExternalActionReconciliationRequest,
+    options: { signal: AbortSignal },
+  ): Promise<unknown>;
 }
 
 export interface AgentRuntimeOptions {
@@ -395,6 +426,10 @@ export interface AgentRuntimeOptions {
   rollbackPolicy?: Partial<RollbackPolicy>;
   /** Deterministic crash seam used by adversarial durability tests. */
   actionCommitFaultInjector?: (point: ActionCommitFaultPoint) => void | Promise<void>;
+  /** Optional Host-owned provider for reconciling uncertain external Tool outcomes. */
+  externalActionReconciler?: ExternalActionReconciler;
+  /** Bounded provider query timeout; timed out queries are recorded as unknown. */
+  externalActionReconciliationTimeoutMs?: number;
   model?: ModelAdapter;
   now?: () => Date;
   idFactory?: (prefix: string) => string;
@@ -425,8 +460,10 @@ export interface AgentRuntimeOptions {
   memoryV2RecordStore?: MemoryV2RecordStore;
   /** V2 eligibility-gated Runtime Recall is opt-in and remains off by default. */
   v2MemoryRecallEnabled?: boolean;
+  v2MemoryRecallProjectIds?:readonly string[];
   /** Validated Experience retrieval/context handoff is opt-in and remains off by default. */
   experienceRecallEnabled?: boolean;
+  experienceRecallProjectIds?:readonly string[];
   experienceCaseStore?: ExperienceCaseStore;
   /** Host-supplied structured facts; absent/unknown facts cannot satisfy applicability. */
   experienceFactsProvider?: (input: { projectId: string; task: string }) =>
@@ -436,6 +473,8 @@ export interface AgentRuntimeOptions {
   /** Host composition can disable built-in Runtime feature contributions independently. */
   disabledRuntimeFeatures?: readonly RuntimeFeatureId[];
   maxTurns?: number;
+  /** Runtime-owned repeated-work policy; browser/client input cannot override it. */
+  noProgressPolicy?: Partial<NoProgressPolicy>;
   /** Maximum number of explicitly concurrency-safe tool calls run at once. */
   maxToolConcurrency?: number;
   /** Trusted child-agent profiles and optional profile-specific providers. */
@@ -474,6 +513,8 @@ export interface ApprovalAnswererRequest {
   readonly scope: readonly string[];
   readonly expiresAt: string;
   readonly explanation: string;
+  /** Active Run cancellation signal; integrations should stop pending requests when it aborts. */
+  readonly signal?: AbortSignal;
 }
 
 /** Default guard against an unbounded model/tool loop. This is not a token limit. */
@@ -488,6 +529,8 @@ export interface AgentRuntime {
   flushTelemetry(): Promise<void>;
   /** Administrative lifecycle hooks for nonblocking background Memory work. */
   shutdownBackgroundWork?(): Promise<void>;
+  /** Explicit Host stop aborts and settles every root/child Run before authority is released. */
+  shutdownRuns?(): Promise<void>;
   resumeMemoryExtraction?(): Promise<void>;
   /** Read-only inspection used by CLI/Host settings; no Run is created. */
   inspectSkills(workspace: WorkspaceHandle): Promise<SkillProjectInspection>;
@@ -499,7 +542,8 @@ export interface AgentRuntime {
     runId: string;
     projectId: string;
   }): Promise<AttachmentContent>;
-  startRun(input: StartRunInput): Promise<RunProjection>;
+  startRun(input: StartRunInput, trusted?:{model:ModelAdapter;backgroundModelDerivation?:false;permissionPolicy?:EffectivePermissionPolicy;projectFileContexts?:readonly import("@tracegraph/contracts").ProjectFileContextSnapshot[];modelBinding?:{connection_id:string;revision:number;model:string;image_input?:boolean}}): Promise<RunProjection>;
+  getArtifactContent(input:{artifactId:string;runId:string;projectId:string}):Promise<import("@tracegraph/evidence").BinaryArtifactReadResult>;
   submitUserInput(command: SubmitUserInputCommand): Promise<SubmitUserInputResult>;
   approvePlan(command: ApprovePlanCommand): Promise<RunProjection>;
   readTodos(runId: string, projectId: string): Promise<TodoList>;
@@ -644,6 +688,7 @@ interface SessionScopedState {
 }
 
 interface RunState extends SessionScopedState {
+  toolBindings?:Map<ToolName,{definition:import("@tracegraph/tool").ToolDefinition<any,any>;release():void}>;
   task: string;
   conversationHistory: StartRunInput["conversation_history"];
   mode: RunMode;
@@ -678,6 +723,8 @@ interface RunState extends SessionScopedState {
   observations: Observation[];
   /** Volatile image bytes admitted only to the first model request. */
   modelImages: ModelImageInput[];
+  noProgressFingerprints: ProgressFingerprint[];
+  noProgressEvidence: Set<string>;
   turn: number;
   pendingPatch?: PendingPatch;
   pendingPlan?: { planEventId: string; todoIds: readonly string[] };
@@ -688,7 +735,7 @@ interface RunState extends SessionScopedState {
   codeIntelGitContext?: GitBaseContext;
   lastPatchEventId?: string;
   stopped: boolean;
-  abortController: AbortController;
+  cancellation: CancellationController;
   commandQueue: Promise<void>;
   actionSignatures: Map<string, string>;
   /**
@@ -699,6 +746,10 @@ interface RunState extends SessionScopedState {
    */
   canonicalActionSequence: number;
 }
+
+const CANCELLATION_QUIESCENCE_WAIT_MS = 1_000;
+const DEFAULT_EXTERNAL_ACTION_RECONCILIATION_TIMEOUT_MS = 5_000;
+const MAX_EXTERNAL_ACTION_RECONCILIATION_TIMEOUT_MS = 30_000;
 
 interface PendingModelSurface {
   readonly runId: string;
@@ -726,7 +777,32 @@ type RuntimeEventProposal = Omit<
 
 export async function createAgentRuntime(options: AgentRuntimeOptions): Promise<AgentRuntime> {
   const maxToolConcurrency = options.maxToolConcurrency ?? DEFAULT_MAX_TOOL_CONCURRENCY;
+  const noProgressPolicy = resolveNoProgressPolicy(options.noProgressPolicy);
   const sandboxMode = SandboxModeSchema.parse(options.sandboxMode ?? DEFAULT_SANDBOX_MODE);
+  if (options.externalActionReconciler !== undefined) {
+    IdentifierSchema.parse(options.externalActionReconciler.providerId);
+    if (
+      typeof options.externalActionReconciler.supportedToolNames?.has !== "function"
+      || typeof options.externalActionReconciler.supportedToolNames?.[Symbol.iterator] !== "function"
+      || typeof options.externalActionReconciler.reconcile !== "function"
+    ) {
+      throw new TypeError("externalActionReconciler requires supportedToolNames and reconcile");
+    }
+    for (const toolName of options.externalActionReconciler.supportedToolNames) {
+      ToolNameSchema.parse(toolName);
+    }
+  }
+  const externalActionReconciliationTimeoutMs = options.externalActionReconciliationTimeoutMs
+    ?? DEFAULT_EXTERNAL_ACTION_RECONCILIATION_TIMEOUT_MS;
+  if (
+    !Number.isInteger(externalActionReconciliationTimeoutMs)
+    || externalActionReconciliationTimeoutMs < 1
+    || externalActionReconciliationTimeoutMs > MAX_EXTERNAL_ACTION_RECONCILIATION_TIMEOUT_MS
+  ) {
+    throw new RangeError(
+      `externalActionReconciliationTimeoutMs must be an integer between 1 and ${MAX_EXTERNAL_ACTION_RECONCILIATION_TIMEOUT_MS}`,
+    );
+  }
   SandboxPlatformSchema.parse(process.platform);
   if (
     !Number.isInteger(maxToolConcurrency)
@@ -806,6 +882,7 @@ export async function createAgentRuntime(options: AgentRuntimeOptions): Promise<
     ...options,
     disabledRuntimeFeatures: [...disabledRuntimeFeatures],
     maxToolConcurrency,
+    noProgressPolicy,
     sandboxMode,
     sandboxRunner: options.sandboxRunner ?? createSandboxRunner(),
     now,
@@ -840,6 +917,8 @@ class AgentRuntimeImpl implements AgentRuntime {
   readonly #model: ModelAdapter;
   readonly #tokenMeter: TokenMeter;
   readonly #actionWal: ActionWal;
+  readonly #externalActionReconciler: ExternalActionReconciler | undefined;
+  readonly #externalActionReconciliationTimeoutMs: number;
   readonly #recoveryLedger: RecoveryLedger;
   readonly #rollbackPolicy: RollbackPolicy;
   readonly #actionCommitFaultInjector: AgentRuntimeOptions["actionCommitFaultInjector"];
@@ -851,8 +930,10 @@ class AgentRuntimeImpl implements AgentRuntime {
   readonly #memoryControl: MemoryControlService;
   readonly #memoryControlOwnerId: string;
   readonly #v2MemoryRecallEnabled: boolean;
+  readonly #v2MemoryRecallProjectIds:ReadonlySet<string>|undefined;
   readonly #experienceCases: ExperienceCaseService;
   readonly #experienceRecallEnabled: boolean;
+  readonly #experienceRecallProjectIds:ReadonlySet<string>|undefined;
   readonly #experienceFactsProvider: AgentRuntimeOptions["experienceFactsProvider"];
   readonly #memoryBackgroundPipeline: MemoryBackgroundPipeline;
   readonly #memoryBackgroundUnsubscribe: () => void;
@@ -901,6 +982,7 @@ class AgentRuntimeImpl implements AgentRuntime {
   constructor(options: AgentRuntimeOptions & {
     now: () => Date;
     idFactory: (prefix: string) => string;
+    noProgressPolicy: NoProgressPolicy;
     ledger: JsonlEventLedger;
     artifacts: ArtifactStore;
     attachmentStore: AttachmentStore;
@@ -927,6 +1009,16 @@ class AgentRuntimeImpl implements AgentRuntime {
     this.#model = options.model;
     this.#tokenMeter = options.tokenMeter;
     this.#actionWal = options.actionWal;
+    const suppliedExternalActionReconciler = options.externalActionReconciler;
+    this.#externalActionReconciler = suppliedExternalActionReconciler === undefined
+      ? undefined
+      : {
+        providerId: IdentifierSchema.parse(suppliedExternalActionReconciler.providerId),
+        supportedToolNames: new Set(suppliedExternalActionReconciler.supportedToolNames),
+        reconcile: suppliedExternalActionReconciler.reconcile.bind(suppliedExternalActionReconciler),
+      };
+    this.#externalActionReconciliationTimeoutMs = options.externalActionReconciliationTimeoutMs
+      ?? DEFAULT_EXTERNAL_ACTION_RECONCILIATION_TIMEOUT_MS;
     this.#recoveryLedger = options.recoveryLedger;
     this.#rollbackPolicy = {
       enabled: options.rollbackPolicy?.enabled ?? false,
@@ -1023,6 +1115,7 @@ class AgentRuntimeImpl implements AgentRuntime {
     const memoryOwnerId = IdentifierSchema.parse(options.memoryControlOwnerId ?? "local-owner:default");
     this.#memoryControlOwnerId = memoryOwnerId;
     this.#v2MemoryRecallEnabled = options.v2MemoryRecallEnabled === true;
+    this.#v2MemoryRecallProjectIds=options.v2MemoryRecallProjectIds?new Set(options.v2MemoryRecallProjectIds):undefined;
     const memoryV2Store = options.memoryV2RecordStore
       ?? new JsonlMemoryV2RecordStore(join(options.dataDir, "memory-v2", "records"));
     this.#memoryControl = new MemoryControlService({
@@ -1034,6 +1127,7 @@ class AgentRuntimeImpl implements AgentRuntime {
       now: this.#now,
     });
     this.#experienceRecallEnabled = options.experienceRecallEnabled === true;
+    this.#experienceRecallProjectIds=options.experienceRecallProjectIds?new Set(options.experienceRecallProjectIds):undefined;
     this.#experienceFactsProvider = options.experienceFactsProvider;
     this.#experienceCases = new ExperienceCaseService({
       ownerId: memoryOwnerId,
@@ -1060,7 +1154,7 @@ class AgentRuntimeImpl implements AgentRuntime {
     this.#featureDrivers.register({
       id: "memory",
       contributeTurn: async ({ projectId, runId, sessionId, task, signal }) => {
-        if (this.#v2MemoryRecallEnabled) {
+        if (this.#v2MemoryRecallEnabled && (!this.#v2MemoryRecallProjectIds || this.#v2MemoryRecallProjectIds.has(projectId))) {
           try {
             const snapshot = await this.#memoryControl.listAllForGovernance();
             const gate = evaluateMemoryRecallEligibility({
@@ -1106,7 +1200,7 @@ class AgentRuntimeImpl implements AgentRuntime {
     this.#featureDrivers.register({
       id: "experience",
       contributeTurn: async ({ projectId, task }) => {
-        if (!this.#experienceRecallEnabled || this.#experienceFactsProvider === undefined) {
+        if (!this.#experienceRecallEnabled || (this.#experienceRecallProjectIds && !this.#experienceRecallProjectIds.has(projectId)) || this.#experienceFactsProvider === undefined) {
           return { retrievedExperience: [] };
         }
         try {
@@ -1225,13 +1319,14 @@ class AgentRuntimeImpl implements AgentRuntime {
         publicModelRequestMetadata,
         publicPlanForDecision,
         toolBatchFailureCode,
-        toolBypassesWorkspaceCapabilities,
+        toolBypassesWorkspaceCapabilities: (name) => toolBypassesWorkspaceCapabilities(name) || this.#toolRegistry.get(name)?.workspaceIndependent === true,
         toolSerializationReason,
       },
       idFactory: this.#idFactory,
       isTerminal: (runId) => this.#isTerminal(runId),
       ledger: this.#ledger,
       maxToolConcurrency: this.#maxToolConcurrency,
+      noProgressPolicy: options.noProgressPolicy,
       now: this.#now,
       planModeDenialDecision: (state, call, definition, digest) => (
         this.#planModeDenialDecision(state, call, definition, digest)
@@ -1255,7 +1350,22 @@ class AgentRuntimeImpl implements AgentRuntime {
     return this.#telemetry.status();
   }
 
+  async shutdownRuns():Promise<void> {
+    const states=[...this.#runs.values()];
+    for(const state of states){state.stopped=true;state.modelImages.length=0;state.cancellation.abort(new Error("Local Host stopped"));}
+    const settling=Promise.all(states.map(async state=>{
+      await state.commandQueue;
+      if(!await state.cancellation.waitForQuiescence(10_000))throw new RuntimeCommandError("shutdown_not_quiescent","Run work has not settled; the Host retains its exclusive writer lease");
+      await this.#finalizeLegacyStop(state,"Local Host stopped");
+      state.model.releaseRun?.();
+    }));
+    let timer:ReturnType<typeof setTimeout>|undefined;
+    try{await Promise.race([settling,new Promise<never>((_resolve,reject)=>{timer=setTimeout(()=>reject(new RuntimeCommandError("shutdown_not_quiescent","Run work has not settled; the Host retains its exclusive writer lease")),15_000);})]);}
+    finally{if(timer)clearTimeout(timer);}
+  }
+
   async shutdownBackgroundWork(): Promise<void> {
+    for (const state of this.#runs.values()) state.model.releaseRun?.();
     this.#memoryBackgroundUnsubscribe();
     await this.#memoryBackgroundPipeline.shutdown();
   }
@@ -1295,9 +1405,11 @@ class AgentRuntimeImpl implements AgentRuntime {
     return this.#attachmentStore.stageAttachment(input);
   }
 
-  async startRun(inputValue: StartRunInput): Promise<RunProjection> {
+  async startRun(inputValue: StartRunInput, trusted?:{model:ModelAdapter;backgroundModelDerivation?:false;permissionPolicy?:EffectivePermissionPolicy;projectFileContexts?:readonly import("@tracegraph/contracts").ProjectFileContextSnapshot[];modelBinding?:{connection_id:string;revision:number;model:string;image_input?:boolean}}): Promise<RunProjection> {
     const input = StartRunInputSchema.parse(inputValue);
-    const signature = commandSignature(input);
+    let projectFileContexts:import("@tracegraph/contracts").ProjectFileContextSnapshot[];
+    try{projectFileContexts=validateProjectFileContexts(input.project_id,input.file_contexts??[],trusted?.projectFileContexts);}catch(error){if(error instanceof ProjectFileContextError)throw new RuntimeCommandError(error.code,error.message);throw error;}
+    const signature = commandSignature({...input,...(trusted===undefined?{}:{trusted_adapter:trusted.model.name,...(trusted.backgroundModelDerivation===false?{background_model_derivation:false}:{})})});
     return this.#runCommand(input.command_id, signature, async () => {
       if (input.project_id !== input.workspace.project_id) {
         throw new RuntimeCommandError("workspace_project_mismatch", "WorkspaceHandle belongs to another project");
@@ -1311,7 +1423,7 @@ class AgentRuntimeImpl implements AgentRuntime {
       const extensionSnapshot = extensionLease.snapshot;
       let permissionPolicy: EffectivePermissionPolicy;
       try {
-        permissionPolicy = await this.#resolvePermissionPolicy(workspace, extensionSnapshot);
+        permissionPolicy = await this.#resolvePermissionPolicy(workspace, extensionSnapshot,trusted?.permissionPolicy);
       } catch (error) {
         extensionLease.release();
         throw error;
@@ -1367,7 +1479,10 @@ class AgentRuntimeImpl implements AgentRuntime {
         await session.lease?.release().catch(() => undefined);
         throw error;
       }
+      let executors:{model:ModelAdapter;toolBindings:NonNullable<RunState["toolBindings"]>};
+      try{executors=this.#bindRunExecutors(trusted?.model ?? this.#model);}catch(error){extensionLease.release();await session.lease?.release().catch(()=>undefined);throw error;}
       const state: RunState = {
+        ...executors,
         runId,
         sessionId: session.sessionId,
         projectId: input.project_id,
@@ -1376,7 +1491,7 @@ class AgentRuntimeImpl implements AgentRuntime {
         mode: input.mode,
         reasoningEffort: input.reasoning_effort ?? "default",
         workspace,
-        model: this.#model,
+
         orchestration: { depth: 0, limits: this.#subagentLimits },
         maxTurns: this.#maxTurns,
         permissionPolicy,
@@ -1386,9 +1501,11 @@ class AgentRuntimeImpl implements AgentRuntime {
         extensionLease,
         observations: [],
         modelImages: [],
+        noProgressFingerprints: [],
+        noProgressEvidence: new Set(),
         turn: 0,
         stopped: false,
-        abortController: new AbortController(),
+        cancellation: new CancellationController(),
         commandQueue: Promise.resolve(),
         actionSignatures: new Map(),
         canonicalActionSequence: 0,
@@ -1403,6 +1520,9 @@ class AgentRuntimeImpl implements AgentRuntime {
           idempotency_key: commandEventKey(input.command_id, "run.created"),
           data: {
             task: recoveryState.task,
+            ...(trusted?.backgroundModelDerivation===false?{background_model_derivation:false}:{}),
+            ...(trusted?.modelBinding?{model_binding:trusted.modelBinding}:{}),
+            ...(projectFileContexts.length?{file_contexts:projectFileContexts.map(({path,sha256,byte_length})=>({path,source_sha256:sha256,byte_length}))}:{}),
             mode: input.mode,
             reasoning_effort: state.reasoningEffort,
             workspace_kind: workspace.workspace_kind,
@@ -1414,6 +1534,7 @@ class AgentRuntimeImpl implements AgentRuntime {
             subagent_limits: this.#subagentLimits,
           },
         });
+        state.observations.push(...await persistProjectFileContexts({projectId:state.projectId,runId:state.runId,snapshots:projectFileContexts,artifacts:this.#artifacts,append:proposal=>this.#append(state,proposal)}));
         await this.#featureDrivers.onRunCreated({
           projectId: state.projectId,
           runId: state.runId,
@@ -1447,6 +1568,8 @@ class AgentRuntimeImpl implements AgentRuntime {
         });
         this.#runs.set(runId, state);
       } catch (error) {
+        state.model.releaseRun?.();
+        for(const binding of state.toolBindings?.values()??[])binding.release();state.toolBindings?.clear();
         extensionLease.release();
         await state.sessionLease?.release().catch(() => undefined);
         throw error;
@@ -1994,6 +2117,7 @@ class AgentRuntimeImpl implements AgentRuntime {
         });
         state.mode = "execute";
         delete state.pendingPlan;
+        this.#agentLoop.resetNoProgress(state);
         const after = await this.#ledger.list(state.runId);
         const result = projectRun(after);
         if (approved.type !== "plan.approved" || result.mode !== "execute") {
@@ -2342,9 +2466,13 @@ class AgentRuntimeImpl implements AgentRuntime {
     });
   }
 
-  listMemoryControl(scope: MemoryControlScope): Promise<MemoryControlListResponse> {
+  async listMemoryControl(scope: MemoryControlScope): Promise<MemoryControlListResponse> {
     this.#requireRuntimeFeature("memory");
-    return this.#memoryControl.list(scope);
+    const historyWasLoading = !this.#memoryBackgroundPipeline.historyLoaded;
+    const [snapshot, backgroundJobs] = await Promise.all([
+      this.#memoryControl.list(scope), this.#memoryBackgroundPipeline.listJobs(scope),
+    ]);
+    return { ...snapshot, backgroundJobs, backgroundJobsLoading: scope.allowedScopeIds.length > 0 && (historyWasLoading || !this.#memoryBackgroundPipeline.historyLoaded) };
   }
 
   createMemoryCandidate(input: MemoryCandidateCreateRequest, scope: MemoryControlScope): Promise<MemoryControlItem> {
@@ -2713,9 +2841,9 @@ class AgentRuntimeImpl implements AgentRuntime {
             base: state.baseGraph,
             result: resultGraph,
             patchEventId: patchEvent.event_id,
-            signal: state.abortController.signal,
+            signal: state.cancellation.signal,
           }),
-          state.abortController.signal,
+          state.cancellation.signal,
         ));
         if (
           delta.project_id !== state.projectId
@@ -2767,7 +2895,12 @@ class AgentRuntimeImpl implements AgentRuntime {
         return this.getProjection(state.runId);
       }
     }
-    if (!state.stopped) await this.#agentLoop.continueRun(state);
+    if (!state.stopped) {
+      // Applying a user-approved patch is an explicit progress boundary outside
+      // the model/tool loop; begin a fresh no-progress window after it settles.
+      this.#agentLoop.resetNoProgress(state);
+      await this.#agentLoop.continueRun(state);
+    }
     return this.getProjection(state.runId);
   }
 
@@ -2821,12 +2954,11 @@ class AgentRuntimeImpl implements AgentRuntime {
       const state = this.#requireRun(command.run_id, command.project_id);
       state.modelImages.length = 0;
       state.stopped = true;
-      state.abortController.abort(new Error("Run stopped by user"));
-      return this.#enqueue(state, async () => {
-        delete state.pendingPatch;
-        await this.#terminal(state, "run.cancelled", command.reason ?? "Run stopped by user", { code: "user_stop" });
-        return this.getProjection(state.runId);
-      });
+      state.cancellation.abort(new Error("Run stopped by user"));
+      return this.#enqueue(state, () => this.#finalizeLegacyStop(
+        state,
+        command.reason ?? "Run stopped by user",
+      ));
     });
   }
 
@@ -2927,7 +3059,10 @@ class AgentRuntimeImpl implements AgentRuntime {
     assertRunBelongsToSession(initialEvents, input);
     const records = await this.#actionWal.list(input.runId);
     const latest = latestWalRecords(records);
-    if (latest.length === 0) {
+    const externalCandidates = this.#externalActionReconciler === undefined
+      ? []
+      : pendingExternalActionReconciliations(initialEvents, this.#externalActionReconciler);
+    if (latest.length === 0 && externalCandidates.length === 0) {
       return { runId: input.runId, reconciledActionIds: [], abortedActionIds: [], divergedActionIds: [] };
     }
 
@@ -3084,10 +3219,121 @@ class AgentRuntimeImpl implements AgentRuntime {
           throw error;
         }
       }
+      if (externalCandidates.length > 0) {
+        const externalOutcomes = await this.#reconcileExternalActions(
+          scope.state,
+          externalCandidates,
+          initialEvents,
+        );
+        if (externalOutcomes.length > 0) result.externalOutcomes = externalOutcomes;
+      }
     } finally {
       await scope.release();
     }
     return result;
+  }
+
+  async #reconcileExternalActions(
+    state: SessionScopedState,
+    candidates: readonly PendingExternalActionReconciliation[],
+    priorEvents: readonly SessionEvent[],
+  ): Promise<NonNullable<ActionReconciliationResult["externalOutcomes"]>> {
+    const reconciler = this.#externalActionReconciler;
+    if (reconciler === undefined) return [];
+    const providerId = IdentifierSchema.parse(reconciler.providerId);
+    const outcomes: NonNullable<ActionReconciliationResult["externalOutcomes"]> = [];
+    for (const candidate of candidates) {
+      const timeout = AbortSignal.timeout(this.#externalActionReconciliationTimeoutMs);
+      let rawDecision: unknown;
+      let timedOut = false;
+      try {
+        rawDecision = await abortable(
+          Promise.resolve().then(() => reconciler.reconcile(candidate.request, { signal: timeout })),
+          timeout,
+        );
+      } catch {
+        timedOut = timeout.aborted;
+      }
+
+      let decision: ExternalActionReconciliationDecision;
+      if (timedOut) {
+        decision = unknownExternalActionDecision(
+          candidate.request.operation_id,
+          "reconciliation_timeout",
+          "Provider query timed out; external action state remains unknown",
+        );
+      } else if (rawDecision === undefined) {
+        decision = unknownExternalActionDecision(
+          candidate.request.operation_id,
+          "provider_unavailable",
+          "Provider query failed; external action state remains unknown",
+        );
+      } else {
+        const parsed = ExternalActionReconciliationDecisionSchema.safeParse(rawDecision);
+        if (!parsed.success) {
+          decision = unknownExternalActionDecision(
+            candidate.request.operation_id,
+            "provider_contract_invalid",
+            "Provider returned an invalid reconciliation result; external action state remains unknown",
+          );
+        } else if (parsed.data.operation_id !== candidate.request.operation_id) {
+          decision = ExternalActionReconciliationDecisionSchema.parse({
+            operation_id: candidate.request.operation_id,
+            outcome: "diverged",
+            reason_code: "operation_identity_mismatch",
+            summary: "Provider evidence belongs to a different operation identity",
+            evidence_digest: parsed.data.evidence_digest
+              ?? sha256(stableStringify({
+                expected_operation_id: candidate.request.operation_id,
+                returned_operation_id: parsed.data.operation_id,
+                returned_outcome: parsed.data.outcome,
+              })),
+          });
+        } else {
+          decision = parsed.data;
+        }
+      }
+
+      const attempt = priorEvents.filter((event) => (
+        event.operation_id === candidate.request.operation_id
+        && (event.type === "action.reconciled" || event.type === "action.diverged")
+      )).length + 1;
+      const eventIdempotencyKey = `external-action:${sha256(candidate.request.operation_id)}:reconcile:${attempt}`;
+      const summary = redactSensitiveText(decision.summary).slice(0, 2_000)
+        || "External action reconciliation completed";
+      const data = {
+        provider_id: providerId,
+        outcome: decision.outcome,
+        trigger: candidate.request.trigger,
+        attempt,
+        reason_code: decision.reason_code,
+        ...(decision.evidence_digest === undefined ? {} : {
+          evidence_digest: decision.evidence_digest,
+        }),
+        ...(decision.outcome === "diverged" ? { automatic_rollback: false } : {}),
+      };
+      if (decision.outcome === "diverged") {
+        await this.#appendScoped(state, {
+          type: "action.diverged",
+          summary,
+          idempotency_key: eventIdempotencyKey,
+          action_id: candidate.request.action_id,
+          operation_id: candidate.request.operation_id,
+          data,
+        });
+      } else {
+        await this.#appendScoped(state, {
+          type: "action.reconciled",
+          summary,
+          idempotency_key: eventIdempotencyKey,
+          action_id: candidate.request.action_id,
+          operation_id: candidate.request.operation_id,
+          data,
+        });
+      }
+      outcomes.push({ actionId: candidate.request.action_id, outcome: decision.outcome });
+    }
+    return outcomes;
   }
 
   async rollback(inputValue: RollbackActionInput): Promise<RunProjection> {
@@ -3422,7 +3668,7 @@ class AgentRuntimeImpl implements AgentRuntime {
         this.#runs.set(locator.runId, state);
         leaseTransferred = true;
         state.stopped = true;
-        state.abortController.abort(new Error("Run cancelled by recovered user input"));
+        state.cancellation.abort(new Error("Run cancelled by recovered user input"));
         await this.#finalizeUserCancellation(state, recoveredCancel.input_id);
         return this.getProjection(locator.runId);
       }
@@ -3742,6 +3988,15 @@ class AgentRuntimeImpl implements AgentRuntime {
     return result;
   }
 
+  async getArtifactContent(input:{artifactId:string;runId:string;projectId:string}):Promise<import("@tracegraph/evidence").BinaryArtifactReadResult> {
+    const projection=await this.getProjection(input.runId);
+    const expected=projection.artifact_refs.find(ref=>ref.artifact_id===input.artifactId);
+    if(projection.project_id!==input.projectId||expected===undefined)return {status:"unavailable",artifactId:input.artifactId,reason:"out_of_scope"};
+    const result=await this.#artifacts.getBytesInternal({...input,maximumBytes:20*1024*1024});
+    if(result.status==="available"&&(result.artifact.content_hash!==expected.content_hash||result.artifact.project_id!==expected.project_id||result.artifact.run_id!==expected.run_id||result.artifact.mime_type!==expected.mime_type||result.artifact.kind!==expected.kind||result.artifact.byte_length!==expected.byte_length))return {status:"corrupt",artifactId:input.artifactId,expectedHash:expected.content_hash,reason:"Artifact metadata differs from its canonical relation"};
+    return result;
+  }
+
   async getAttachmentContent(input: {
     attachmentId: string;
     runId: string;
@@ -3920,7 +4175,7 @@ class AgentRuntimeImpl implements AgentRuntime {
       );
     }
 
-    const controlSignal = control.signal ?? parent.abortController.signal;
+    const controlSignal = control.signal ?? parent.cancellation.signal;
     const releasePermit = await this.#subagentPermits.acquire(controlSignal);
     const link = SubagentRunLinkSchema.parse({
       subagent_id: this.#idFactory("subagent"),
@@ -4055,7 +4310,7 @@ class AgentRuntimeImpl implements AgentRuntime {
       });
 
       if (launchTerminal !== undefined) {
-        return this.#recordSubagentTerminal(parent, startedData, launchTerminal);
+        return await this.#recordSubagentTerminal(parent, startedData, launchTerminal);
       }
 
       const cascade = () => {
@@ -4066,7 +4321,7 @@ class AgentRuntimeImpl implements AgentRuntime {
       if (controlSignal.aborted) cascade();
 
       const childTerminal = await this.#waitForRunTerminal(link.child_run_id);
-      return this.#recordSubagentTerminal(parent, startedData, childTerminal);
+      return await this.#recordSubagentTerminal(parent, startedData, childTerminal);
     } catch (error) {
       if (childStarted && !recoveryPending) {
         // A parent Session-index failure after durable child launch must not
@@ -4154,7 +4409,10 @@ class AgentRuntimeImpl implements AgentRuntime {
       await session.lease?.release().catch(() => undefined);
       throw error;
     }
+    let executors:{model:ModelAdapter;toolBindings:NonNullable<RunState["toolBindings"]>};
+    try{executors=this.#bindRunExecutors(profile.model);}catch(error){extensionLease.release();await session.lease?.release().catch(()=>undefined);throw error;}
     const state: RunState = {
+      ...executors,
       runId: link.child_run_id,
       sessionId: link.child_session_id,
       projectId: parent.projectId,
@@ -4163,7 +4421,7 @@ class AgentRuntimeImpl implements AgentRuntime {
       mode: "execute",
       reasoningEffort: parent.reasoningEffort,
       workspace: parent.workspace,
-      model: profile.model,
+
       rolePrompt: profile.rolePrompt,
       toolAllowlist: new Set(spec.tool_allowlist as ToolName[]),
       skills,
@@ -4183,9 +4441,11 @@ class AgentRuntimeImpl implements AgentRuntime {
         ? []
         : parent.observations.map((observation) => ObservationSchema.parse(observation)),
       modelImages: [],
+      noProgressFingerprints: [],
+      noProgressEvidence: new Set(),
       turn: 0,
       stopped: false,
-      abortController: new AbortController(),
+      cancellation: new CancellationController(),
       commandQueue: Promise.resolve(),
       actionSignatures: new Map(),
       canonicalActionSequence: 0,
@@ -4693,7 +4953,7 @@ class AgentRuntimeImpl implements AgentRuntime {
     const workspace = new Set<ToolName>();
     for (const definition of this.#toolRegistry.list()) {
       if (
-        toolBypassesWorkspaceCapabilities(definition.name)
+        definition.workspaceIndependent === true || toolBypassesWorkspaceCapabilities(definition.name)
         || state.workspace.capabilities[definition.capability]
       ) {
         if (this.#featureDrivers.isToolEnabled(definition.name)) workspace.add(definition.name);
@@ -5031,7 +5291,7 @@ class AgentRuntimeImpl implements AgentRuntime {
     const policyDecision = state.policyEngine.evaluate({
       toolName: call.tool_name,
       sideEffect: validated.definition.sideEffect,
-      capabilityAllowed: toolBypassesWorkspaceCapabilities(call.tool_name)
+      capabilityAllowed: validated.definition.workspaceIndependent === true || toolBypassesWorkspaceCapabilities(call.tool_name)
         || state.workspace.capabilities[validated.definition.capability],
       runMode: state.mode,
       ...policyTargetForCall(validated.parsedInput),
@@ -5098,8 +5358,11 @@ class AgentRuntimeImpl implements AgentRuntime {
     prepared: PreparedToolCall,
     startedAt: Date,
   ): Promise<PendingToolExecution> {
-    const { call, validated } = prepared;
+    const call=prepared.call;
+    const binding=state.toolBindings?.get(call.tool_name);
+    const validated=binding?{...prepared.validated,definition:binding.definition}:prepared.validated;
     let raw: RawToolResult;
+    const publishedArtifacts:ArtifactRef[]=[];
     let transportFailed = false;
     let appliedWalRecord: ActionWalRecord | undefined;
     let walTransactionId: string | undefined;
@@ -5130,8 +5393,18 @@ class AgentRuntimeImpl implements AgentRuntime {
       raw = await executeToolDefinition(validated.definition, validated.parsedInput, {
         projectId: state.projectId,
         runId: state.runId,
+        operationId: call.action_id,
         workspace: state.workspace,
-        signal: state.abortController.signal,
+        signal: state.cancellation.signal,
+        publishArtifactBytes: async ({mimeType,bytes}) => {
+          if(state.cancellation.signal.aborted)throw new Error("Artifact publication was cancelled");
+          if(publishedArtifacts.length>=4||bytes.byteLength===0||bytes.byteLength>20*1024*1024)throw new TypeError("Binary publication exceeds its limit");
+          const ref=await this.#artifacts.putBytes({projectId:state.projectId,runId:state.runId,kind:mimeType,mimeType,content:bytes});
+          publishedArtifacts.push(ref);return ref;
+        },
+        startOwnedJob: <T>(start: () => T | PromiseLike<T>) => (
+          state.cancellation.startJob(`tool:${call.tool_name}`, start)
+        ),
         sandboxMode: state.permissionPolicy.preset.sandbox_mode,
         sandboxRunner: this.#sandboxRunner,
         ...featureToolContext,
@@ -5188,7 +5461,7 @@ class AgentRuntimeImpl implements AgentRuntime {
           }
           const isArchivedContextSource = result.artifact.kind === "spilled_tool_output"
             || result.artifact.kind === "context_source_archive";
-          if (!isArchivedContextSource && result.artifact.kind !== "context_manifest") {
+          if (!isArchivedContextSource && result.artifact.kind !== "context_manifest" && result.artifact.kind !== "project_file_context") {
             throw new Error("Artifact locator does not reference a readable Context artifact");
           }
           // A manifest is a readable, current-Run Context artifact, but it is
@@ -5344,6 +5617,11 @@ class AgentRuntimeImpl implements AgentRuntime {
     const artifactRefs: ArtifactRef[] = readArtifactRef === undefined
       ? []
       : [readArtifactRef];
+    if(raw.status==="success")for(const ref of publishedArtifacts){
+      const verified=await this.#artifacts.getBytesInternal({artifactId:ref.artifact_id,projectId:state.projectId,runId:state.runId,maximumBytes:20*1024*1024});
+      if(verified.status!=="available"||verified.artifact.content_hash!==ref.content_hash)throw new Error("Published binary Artifact could not be verified");
+      artifactRefs.push(ref);
+    }
     // list_artifacts is a bounded metadata view over canonical refs. Persisting
     // its JSON response would make each listing appear in the next listing and
     // recursively pollute the run Artifact index.
@@ -5701,7 +5979,7 @@ class AgentRuntimeImpl implements AgentRuntime {
       return false;
     }
 
-    const capabilityAllowed = toolBypassesWorkspaceCapabilities(prepared.call.tool_name)
+    const capabilityAllowed = prepared.validated.definition.workspaceIndependent === true || toolBypassesWorkspaceCapabilities(prepared.call.tool_name)
       || state.workspace.capabilities[prepared.validated.definition.capability];
     const finalDecision = state.policyEngine.evaluate({
       toolName: prepared.call.tool_name,
@@ -5776,10 +6054,11 @@ class AgentRuntimeImpl implements AgentRuntime {
   async #resolvePermissionPolicy(
     workspace: WorkspaceHandle,
     extensionSnapshot: ExtensionRunSnapshot,
+    supplied?:EffectivePermissionPolicy,
   ): Promise<EffectivePermissionPolicy> {
-    const candidate = this.#permissionPolicyResolver === undefined
+    const candidate = supplied ?? (this.#permissionPolicyResolver === undefined
       ? this.#defaultPermissionPolicy
-      : await this.#permissionPolicyResolver(workspace);
+      : await this.#permissionPolicyResolver(workspace));
     // Reconstructing the engine validates both layers and deliberately keeps
     // the supplied digest. A malformed Host integration fails before a Run is
     // created instead of silently falling back to a broader preset.
@@ -5937,21 +6216,21 @@ class AgentRuntimeImpl implements AgentRuntime {
     let outcome: ApprovalOutcome;
     try {
       if (this.#approvalAnswerer === undefined) throw new Error("Approval answerer is unavailable");
-      outcome = ApprovalOutcomeSchema.parse(await abortable(
-        Promise.resolve(this.#approvalAnswerer({
-          approvalId,
-          projectId: state.projectId,
-          runId: state.runId,
-          actionId: call.action_id,
-          toolName: call.tool_name,
-          actionDigest,
-          policyDigest: state.permissionPolicy.policy_digest,
-          scope,
-          expiresAt,
-          explanation: decision.explanation,
-        })),
-        state.abortController.signal,
-      ));
+      const answer = state.cancellation.startJob("approval-answerer", () => this.#approvalAnswerer!({
+        approvalId,
+        projectId: state.projectId,
+        runId: state.runId,
+        actionId: call.action_id,
+        toolName: call.tool_name,
+        actionDigest,
+        policyDigest: state.permissionPolicy.policy_digest,
+        scope,
+        expiresAt,
+        explanation: decision.explanation,
+        signal: state.cancellation.signal,
+      }));
+      if (answer === undefined) return undefined;
+      outcome = ApprovalOutcomeSchema.parse(await abortable(answer, state.cancellation.signal));
     } catch (error) {
       if (state.stopped || state.cancelInputId !== undefined) return undefined;
       const explanation = `Approval answerer unavailable: ${publicError(error)}`;
@@ -6284,12 +6563,12 @@ class AgentRuntimeImpl implements AgentRuntime {
       return GitBaseContextSchema.parse(await abortable(
         this.#codeGraph.captureGitContext({
           workspaceRoot: state.workspace.real_root,
-          signal: state.abortController.signal,
+          signal: state.cancellation.signal,
         }),
-        state.abortController.signal,
+        state.cancellation.signal,
       ));
     } catch (error) {
-      if (state.abortController.signal.aborted) throw error;
+      if (state.cancellation.signal.aborted) throw error;
       return GitBaseContextSchema.parse({
         status: "unavailable",
         captured_at: capturedAt,
@@ -6434,9 +6713,9 @@ class AgentRuntimeImpl implements AgentRuntime {
       this.#codeGraph.createSnapshot({
         projectId: state.projectId,
         workspaceRoot: state.workspace.real_root,
-        signal: state.abortController.signal,
+        signal: state.cancellation.signal,
       }),
-      state.abortController.signal,
+      state.cancellation.signal,
     ));
     if (snapshot.project_id !== state.projectId) {
       throw new Error("CodeGraph snapshot belongs to another project");
@@ -6981,6 +7260,9 @@ class AgentRuntimeImpl implements AgentRuntime {
       if (observation.success) {
         observations.push(observationWithEligibleEvidence(observation.data, event));
       }
+      if(event.type==="artifact.created"&&event.artifact_refs.some(ref=>ref.kind==="project_file_context")){
+        try{observations.push(await restoreProjectFileContext(event,this.#artifacts));}catch(error){if(error instanceof ProjectFileContextError)throw new RuntimeCommandError(error.code,error.message);throw error;}
+      }
       if (event.type === "attachment.added") {
         observations.push(attachmentObservation(
           AttachmentAddedDataSchema.parse(event.data),
@@ -7075,8 +7357,11 @@ class AgentRuntimeImpl implements AgentRuntime {
       && typeof (loadedFacts.facts as { skill_name?: unknown }).skill_name === "string"
       ? (loadedFacts.facts as { skill_name: string }).skill_name
       : undefined;
+    let executors:{model:ModelAdapter;toolBindings:NonNullable<RunState["toolBindings"]>};
+    try{executors=this.#bindRunExecutors(profile?.model ?? this.#model);}catch(error){extensionLease.release();await input.sessionState.sessionLease?.release().catch(()=>undefined);throw error;}
     return {
       ...input.sessionState,
+      ...executors,
       task: input.recovery.task,
       // The recovery Artifact is immutable start state. Steering messages are
       // rebuilt from queued+consumed Ledger facts so a crash after committing
@@ -7086,7 +7371,7 @@ class AgentRuntimeImpl implements AgentRuntime {
       mode: projection.mode,
       reasoningEffort: input.recovery.reasoning_effort,
       workspace: input.workspace,
-      model: profile?.model ?? this.#model,
+
       ...(profile === undefined ? {} : { rolePrompt: profile.rolePrompt }),
       ...(delegation === undefined ? {} : {
         toolAllowlist: new Set(delegation.spec.tool_allowlist as ToolName[]),
@@ -7110,6 +7395,8 @@ class AgentRuntimeImpl implements AgentRuntime {
       // Raw image bytes are never reconstructed from Ledger events during a
       // resume. Interrupted Runs continue reference-only and remain replay-safe.
       modelImages: [],
+      noProgressFingerprints: [],
+      noProgressEvidence: new Set(),
       turn: input.events.filter((event) => event.type === "context.built").length,
       ...(input.pendingPatch === undefined ? {} : { pendingPatch: input.pendingPatch }),
       ...(projection.pending_plan === undefined ? {} : {
@@ -7128,7 +7415,7 @@ class AgentRuntimeImpl implements AgentRuntime {
         ? {}
         : { codeIntelGitContext: projection.code_intel.git_context }),
       stopped: false,
-      abortController: new AbortController(),
+      cancellation: new CancellationController(),
       commandQueue: Promise.resolve(),
       actionSignatures,
       canonicalActionSequence: 0,
@@ -7668,6 +7955,7 @@ class AgentRuntimeImpl implements AgentRuntime {
       if (events.some((event) => isTerminalEventType(event.type))) {
         state.modelImages.length = 0;
         state.stopped = true;
+        state.cancellation.fence();
         await this.#releaseSessionLease(state);
         return;
       }
@@ -7703,12 +7991,22 @@ class AgentRuntimeImpl implements AgentRuntime {
       );
     }
     state.stopped = true;
+    state.cancellation.fence();
     state.modelImages.length = 0;
     await this.#releaseSessionLease(state);
     return event;
   }
 
+  #bindRunExecutors(model:ModelAdapter){const boundModel=model.forRun?.()??model;try{return{model:boundModel,toolBindings:this.#bindToolsForRun()};}catch(error){boundModel.releaseRun?.();throw error;}}
+
+  #bindToolsForRun(){
+    const bindings=new Map<ToolName,{definition:import("@tracegraph/tool").ToolDefinition<any,any>;release():void}>();
+    try{for(const definition of this.#toolRegistry.list()){if(!definition.forRun)continue;const binding=definition.forRun();const snapshot=new ToolRegistry([binding.definition]);const same=stableStringify(snapshot.descriptors()[0])===stableStringify(this.#toolRegistry.descriptors().find(value=>value.name===definition.name))&&binding.definition.capability===definition.capability&&binding.definition.requiresApproval===definition.requiresApproval;if(!same){binding.release();throw new TypeError("Run Tool binding may not change public Tool authority");}bindings.set(definition.name,binding);}return bindings;}catch(error){for(const binding of bindings.values())binding.release();throw error;}
+  }
+
   async #releaseSessionLease(state: RunState): Promise<void> {
+    state.model.releaseRun?.();
+    for(const binding of state.toolBindings?.values()??[])binding.release();state.toolBindings?.clear();
     if (state.sessionLease === undefined) return;
     const lease = state.sessionLease;
     delete state.sessionLease;
@@ -7726,17 +8024,23 @@ class AgentRuntimeImpl implements AgentRuntime {
       if (queued === undefined) {
         throw new RuntimeCommandError("input_queue_corrupt", "Pending user input has no queued event");
       }
+      if (pending.kind === "cancel") {
+        state.cancelInputId = pending.input_id;
+        state.modelImages.length = 0;
+        state.stopped = true;
+        state.cancellation.abort(new Error(
+          pending.actor === "parent_agent" ? "Run cancelled by parent agent" : "Run cancelled by user input",
+        ));
+        consumedInput = pending;
+        return "cancelled" as const;
+      }
       const consumedAt = this.#now().toISOString();
       const consumedAtStep = nextUserInputStep(events, atStep);
       const consumed = await this.#append(state, {
         type: "user.input_consumed",
-        summary: pending.kind === "cancel"
-          ? pending.actor === "parent_agent"
-            ? "Parent-agent cancellation consumed at a safe boundary"
-            : "User cancellation consumed at a safe boundary"
-          : pending.actor === "parent_agent"
-            ? "Parent-agent message consumed before the next model request"
-            : "User input consumed before the next model request",
+        summary: pending.actor === "parent_agent"
+          ? "Parent-agent message consumed before the next model request"
+          : "User input consumed before the next model request",
         idempotency_key: userInputConsumedEventKey(state.runId, pending.input_id),
         caused_by_event_id: queued.event.event_id,
         data: UserInputConsumedDataSchema.parse({
@@ -7749,25 +8053,11 @@ class AgentRuntimeImpl implements AgentRuntime {
       });
       assertConsumedUserInputEvent(consumed, pending.input_id, queued.event.event_id);
       consumedInput = pending;
-      if (pending.kind === "cancel") {
-        state.cancelInputId = pending.input_id;
-        state.stopped = true;
-        state.abortController.abort(new Error(
-          pending.actor === "parent_agent" ? "Run cancelled by parent agent" : "Run cancelled by user input",
-        ));
-        await this.#appendTerminalLocked(
-          state,
-          "run.cancelled",
-          pending.actor === "parent_agent" ? "Child Run cancelled by parent agent" : "Run cancelled by user",
-          {
-            reason: pending.actor === "parent_agent" ? "parent_agent_cancel" : "user_cancel",
-            last_sequence: consumed.sequence,
-          },
-        );
-        return "cancelled" as const;
-      }
       return "message" as const;
     });
+    if (outcome === "cancelled" && consumedInput !== undefined) {
+      this.#scheduleUserCancellationFinalizer(state, consumedInput.input_id);
+    }
     if (outcome === "message" && consumedInput !== undefined) {
       state.conversationHistory = [
         ...(state.conversationHistory ?? []),
@@ -7778,6 +8068,10 @@ class AgentRuntimeImpl implements AgentRuntime {
   }
 
   async #finalizeUserCancellation(state: RunState, inputId: string): Promise<void> {
+    if (!await state.cancellation.waitForQuiescence(CANCELLATION_QUIESCENCE_WAIT_MS)) {
+      this.#retryCancellationWhenQuiescent(state, () => this.#scheduleUserCancellationFinalizer(state, inputId));
+      return;
+    }
     await this.#withRunControl(state.runId, async () => {
       const events = await this.#ledger.list(state.runId);
       const terminal = events.find((event) => isTerminalEventType(event.type));
@@ -7851,7 +8145,7 @@ class AgentRuntimeImpl implements AgentRuntime {
     state.cancelInputId = inputId;
     state.modelImages.length = 0;
     state.stopped = true;
-    state.abortController.abort(new Error("Run cancelled by durable user input"));
+    state.cancellation.abort(new Error("Run cancelled by durable user input"));
     return true;
   }
 
@@ -7861,6 +8155,26 @@ class AgentRuntimeImpl implements AgentRuntime {
     // Session indexing; all steps below are ledger-idempotent and re-runnable.
     void this.#enqueue(state, () => this.#finalizeUserCancellation(state, inputId))
       .catch(() => undefined);
+  }
+
+  async #finalizeLegacyStop(state: RunState, reason: string): Promise<RunProjection> {
+    if (!await state.cancellation.waitForQuiescence(CANCELLATION_QUIESCENCE_WAIT_MS)) {
+      this.#retryCancellationWhenQuiescent(state, () => {
+        void this.#enqueue(state, () => this.#finalizeLegacyStop(state, reason)).catch(() => undefined);
+      });
+      return this.getProjection(state.runId);
+    }
+    delete state.pendingPatch;
+    await this.#terminal(state, "run.cancelled", reason, { code: "user_stop" });
+    return this.getProjection(state.runId);
+  }
+
+  #retryCancellationWhenQuiescent(state: RunState, retry: () => void): void {
+    let unsubscribe = (): void => undefined;
+    unsubscribe = state.cancellation.onQuiescent(() => {
+      unsubscribe();
+      retry();
+    });
   }
 
   async #bindDuplicateUserInputCommandLocked(
@@ -8285,6 +8599,91 @@ function actionCommitInterrupted(message: string, cause: unknown): ActionCommitI
 interface WalDiskState {
   classification: "before" | "after" | "diverged";
   hashes: string[];
+}
+
+interface PendingExternalActionReconciliation {
+  request: ExternalActionReconciliationRequest;
+}
+
+function pendingExternalActionReconciliations(
+  events: readonly SessionEvent[],
+  reconciler: ExternalActionReconciler,
+): PendingExternalActionReconciliation[] {
+  const candidates: PendingExternalActionReconciliation[] = [];
+  const seenOperations = new Set<string>();
+  for (const start of events) {
+    if (start.type !== "tool.started" || start.action_id === undefined) continue;
+    const operationId = start.operation_id;
+    const toolName = ToolNameSchema.safeParse(start.data.tool_name);
+    if (operationId === undefined || !toolName.success || toolName.data === "commit_patch") continue;
+    if (seenOperations.has(operationId)) continue;
+    seenOperations.add(operationId);
+    if (!reconciler.supportedToolNames.has(toolName.data)) continue;
+
+    const operationEvents = events.filter((event) => (
+      event.operation_id === operationId && event.sequence > start.sequence
+    ));
+    const terminal = operationEvents.find((event) => (
+      event.type === "tool.completed"
+      || event.type === "tool.failed"
+      || event.type === "tool.unknown"
+    ));
+    let trigger: ExternalActionReconciliationRequest["trigger"];
+    if (terminal === undefined) {
+      trigger = "dispatch_incomplete";
+    } else if (terminal.type === "tool.unknown") {
+      trigger = "unknown_result";
+    } else if (
+      terminal.type === "tool.failed"
+      && (
+        terminal.data.code === "timeout"
+        || terminal.data.business_code === "timeout"
+      )
+    ) {
+      trigger = "timeout";
+    } else if (
+      terminal.type === "tool.failed"
+      && terminal.data.business_code === "tool_aborted"
+    ) {
+      trigger = "cancelled";
+    } else {
+      continue;
+    }
+
+    const reconciliationEvents = operationEvents.filter((event) => (
+      event.type === "action.reconciled" || event.type === "action.diverged"
+    ));
+    if (reconciliationEvents.some((event) => event.type === "action.diverged")) continue;
+    const lastReconciliation = reconciliationEvents.at(-1);
+    if (
+      lastReconciliation?.type === "action.reconciled"
+      && (lastReconciliation.data.outcome === "confirmed" || lastReconciliation.data.outcome === "failed")
+    ) continue;
+
+    const request = ExternalActionReconciliationRequestSchema.safeParse({
+      project_id: start.project_id,
+      run_id: start.run_id,
+      action_id: start.action_id,
+      operation_id: operationId,
+      tool_name: toolName.data,
+      trigger,
+    });
+    if (request.success) candidates.push({ request: request.data });
+  }
+  return candidates;
+}
+
+function unknownExternalActionDecision(
+  operationId: string,
+  reasonCode: string,
+  summary: string,
+): ExternalActionReconciliationDecision {
+  return ExternalActionReconciliationDecisionSchema.parse({
+    operation_id: operationId,
+    outcome: "unknown",
+    reason_code: reasonCode,
+    summary,
+  });
 }
 
 function latestWalRecords(records: readonly ActionWalRecord[]): ActionWalRecord[] {
@@ -9641,6 +10040,10 @@ function toLivePublicActivity(event: SessionEvent): LivePublicActivity | undefin
     case "model.request_started":
       kind = "model";
       status = "started";
+      break;
+    case "model.retry_scheduled":
+      kind = "model";
+      status = "info";
       break;
     case "model.decision":
       kind = "model";

@@ -1,0 +1,78 @@
+{
+  "connections": [
+    {
+      "connection_id": "3eba3779-faac-409d-8de8-60e597b05257",
+      "label": "Alpha provider",
+      "revision": 1,
+      "provider": "openai",
+      "protocol": "openai-chat-completions",
+      "base_url": "http://127.0.0.1:64980/v1",
+      "model": "gpt-4.1-mini",
+      "models": [
+        "gpt-4.1-mini",
+        "o3-mini"
+      ],
+      "image_input_models": [
+        "gpt-4.1-mini"
+      ],
+      "reasoning_by_model": {
+        "gpt-4.1-mini": [
+          "default"
+        ],
+        "o3-mini": [
+          "default",
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max"
+        ]
+      },
+      "has_key": true,
+      "credential": {
+        "name": "TRACEGRAPH_OPENAI_KEY_6647DFF21A2E",
+        "backend": "private_file",
+        "writable": true,
+        "last_updated_at": "2026-10-03T13:31:51.488Z"
+      },
+      "source": "profile",
+      "writable": true
+    },
+    {
+      "connection_id": "8ae788ed-0c29-4882-82f1-ddffaf3228b1",
+      "label": "Beta provider",
+      "revision": 0,
+      "provider": "custom",
+      "protocol": "openai-chat-completions",
+      "base_url": "http://127.0.0.1:64980/v1",
+      "model": "synthetic-beta",
+      "models": [
+        "synthetic-beta"
+      ],
+      "image_input_models": [],
+      "reasoning_by_model": {
+        "synthetic-beta": [
+          "default"
+        ]
+      },
+      "has_key": true,
+      "credential": {
+        "name": "TRACEGRAPH_CUSTOM_KEY_1AA26D6C719D",
+        "backend": "private_file",
+        "writable": true,
+        "last_updated_at": "2026-10-03T13:31:53.694Z"
+      },
+      "source": "profile",
+      "writable": true,
+      "test": {
+        "status": "passed",
+        "code": "connection_ok",
+        "message": "模型连接成功",
+        "checked_at": "2026-10-03T13:31:54.276Z",
+        "model": "synthetic-beta",
+        "duration_ms": 10
+      }
+    }
+  ],
+  "default_connection_id": "3eba3779-faac-409d-8de8-60e597b05257"
+}

@@ -1,0 +1,30 @@
+{
+  "status": "failed",
+  "recorded_at": "2026-10-03T09:01:36.692Z",
+  "surface": "packaged-desktop",
+  "boundary": "Maintainer Agent simulated local acceptance, built Web or packaged Desktop and real authenticated Host/Runtime. Synthetic loopback chat and image provider; no external AI quality/signed/public/external user claim.",
+  "screenshots": [],
+  "assertions": [],
+  "errors": [
+    {
+      "boundary": "acceptance",
+      "message": "ENOENT: no such file or directory, scandir '/Users/cain/Applications/Outlive Agent.app/Contents/Resources/app/packages/host/dist'",
+      "stack": "Error: ENOENT: no such file or directory, scandir '/Users/cain/Applications/Outlive Agent.app/Contents/Resources/app/packages/host/dist'\n    at async readdirRecursive (node:internal/fs/promises:1581:7)\n    at async file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/install-use-workbench/ui-journey.mjs:27:397"
+    }
+  ],
+  "provider_requests": [],
+  "installed_binary": "/Users/cain/Applications/Outlive Agent.app/Contents/MacOS/Outlive Agent",
+  "runtime_manifest": {
+    "schema_version": "outlive.bundled-runtime.v1",
+    "node_version": "24.21.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "executable": "bin/node",
+    "sha256": "e4b5a3af0e05c75de2eae013904145f40fe7fc2a6e6f17510128bf45cca4e79b",
+    "product_build_id": "12a5147f36069667dc3482549ddce3f8d7ed7f823e7faa054df89eab46a97328"
+  },
+  "cleanup": {
+    "completed": true,
+    "failures": []
+  }
+}

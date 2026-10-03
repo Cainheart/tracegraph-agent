@@ -1,0 +1,29 @@
+import {cp,mkdir,mkdtemp,readFile,rm,writeFile} from "node:fs/promises";
+import {join} from "node:path";
+import {tmpdir} from "node:os";
+import {describe,it,expect} from "vitest";
+import {DeterministicFakeModel,PrivateFileCredentialStore} from "@tracegraph/core";
+import {createHostComposition} from "./host-composition.js";
+import type {RunProjection} from "@tracegraph/contracts";
+
+async function waitFor(read:()=>Promise<RunProjection>,status:RunProjection["status"]){const deadline=Date.now()+8000;while(Date.now()<deadline){const result=await read();if(result.status===status)return result;if(["completed","failed","cancelled"].includes(result.status))throw new Error(`Unexpected fixture terminal ${result.status}`);await new Promise(done=>setTimeout(done,20));}throw new Error(`Fixture did not reach ${status}`);}
+async function compose(root:string,ceiling="workspace-write",rollback=false){return createHostComposition({dataDir:join(root,"data"),sessionDir:join(root,"sessions"),permissionConfigPath:join(root,"config.json"),credentialStore:new PrivateFileCredentialStore(join(root,"credentials.json")),environment:{TRACEGRAPH_PERMISSION_PRESET:ceiling,TRACEGRAPH_ROLLBACK_ENABLED:String(rollback)},runtimeModel:new DeterministicFakeModel(),useEnvironmentModel:false,nativePicker:false,admission:"workspace"});}
+async function fixture(){const root=await mkdtemp(join(tmpdir(),"outlive-recovery-policy-"));const workspaceRoot=join(root,"workspace");await mkdir(join(workspaceRoot,"src"),{recursive:true});await writeFile(join(workspaceRoot,"src","add.ts"),"export function add(left: number, right: number): number { return left - right; }\n");const source=join(root,"source"),snapshot=join(root,"snapshot");const host=await compose(source);const project=await host.registerProject(workspaceRoot,"read_write");const started=await host.host.runSessions.startRun({command_id:"fixture:start",project_id:project.workspace.project_id,task:"Fix the deterministic addition defect",mode:"execute"});const pending=await waitFor(()=>host.runtime.getProjection(started.run_id),"awaiting_approval");return {root,workspaceRoot,source,snapshot,host,project,pending};}
+// Capture durable pre-shutdown facts; ephemeral owner locks cannot be cloned as authority.
+async function snapshotFixture(f:Awaited<ReturnType<typeof fixture>>){await mkdir(f.snapshot);await cp(join(f.source,"data"),join(f.snapshot,"data"),{recursive:true});await cp(join(f.source,"sessions"),join(f.snapshot,"sessions"),{recursive:true,filter:path=>!path.endsWith(".lock")});await f.host.close();}
+const approval=(p:RunProjection)=>({type:"approve" as const,command_id:"fixture:approval",project_id:p.project_id,run_id:p.run_id,approval_id:p.pending_approval!.approval_id,action_id:p.pending_approval!.action_id});
+
+describe("shared Host recovered authority",()=>{
+ it("binds active Run policy while a new selected preset changes, and reports rollback startup policy truthfully",async()=>{
+  const f=await fixture();try{expect(f.host.capabilityOverrides["rollback.write"].state).toBe("policy-denied");await f.host.permissionConfig.setUserPreset("read-only");const response=await f.host.host.app.inject({method:"POST",url:`/api/runs/${f.pending.run_id}/approve`,headers:{authorization:`Bearer ${f.host.host.token}`,origin:"http://127.0.0.1:4310","x-tracegraph-command-id":"fixture:approval"},payload:approval(f.pending)});expect(response.statusCode).toBe(200);expect(await readFile(join(f.workspaceRoot,"src/add.ts"),"utf8")).toContain("return left + right;");}
+  finally{await f.host.close();await rm(f.root,{recursive:true,force:true});}
+ });
+ it("rejects a recovered old write policy before resume when the Host ceiling is reduced",async()=>{
+  const f=await fixture();let current:Awaited<ReturnType<typeof compose>>|undefined;try{await snapshotFixture(f);current=await compose(f.snapshot,"read-only",true);expect(current.capabilityOverrides["rollback.write"].state).toBe("available");await expect(current.host.runSessions.resumeSession(f.pending.session_id,{command_id:"fixture:resume"})).rejects.toMatchObject({code:"resume_policy_changed",statusCode:409});expect((await current.runtime.getProjection(f.pending.run_id)).status).toBe("interrupted");expect(await readFile(join(f.workspaceRoot,"src/add.ts"),"utf8")).toContain("return left - right;");expect(current.workspaceCoordinator.list()).toEqual([]);}
+  finally{await current?.close();await f.host.close();await rm(f.root,{recursive:true,force:true});}
+ });
+ it("resumes an unchanged extension-aware policy, then refuses approval after stricter project rules",async()=>{
+  const f=await fixture();let current:Awaited<ReturnType<typeof compose>>|undefined;try{await snapshotFixture(f);current=await compose(f.snapshot);await current.host.runSessions.resumeSession(f.pending.session_id,{command_id:"fixture:resume"});const restored=await current.runtime.getProjection(f.pending.run_id);expect(restored.status).toBe("awaiting_approval");await mkdir(join(f.workspaceRoot,".tracegraph"),{recursive:true});await writeFile(join(f.workspaceRoot,".tracegraph/policy.json"),JSON.stringify({policy_version:1,rules:[{rule_id:"deny:fixture",priority:100,when:{tool:"commit_patch"},then:"deny",explanation:"The project now denies writes"}]}));const response=await current.host.app.inject({method:"POST",url:`/api/runs/${restored.run_id}/approve`,headers:{authorization:`Bearer ${current.host.token}`,origin:"http://127.0.0.1:4310","x-tracegraph-command-id":"fixture:approval"},payload:approval(restored)});expect(response.statusCode).toBe(409);expect(response.json().error).toBe("resume_policy_changed");expect(await readFile(join(f.workspaceRoot,"src/add.ts"),"utf8")).toContain("return left - right;");}
+  finally{await current?.close();await f.host.close();await rm(f.root,{recursive:true,force:true});}
+ });
+});

@@ -5,7 +5,7 @@ status: proposed
 scope: memory-episode
 language: zh-CN
 parent: README.md
-last_reviewed: 2026-09-26
+last_reviewed: 2026-10-03
 ---
 
 # Evidence 到 Episode 的经历派生管线
@@ -29,7 +29,7 @@ flowchart LR
 
 Episode 是从已提交历史得到的**可重建经历派生物**，用来给学习和评审建立边界。它不等于 Session/Run 页面查询读模型，也不等于供 LLM 使用的模型消息历史或跨 Session Memory 状态投影。它不修改原始 Session，也不能凭摘要新增事实。Episode 默认属于其源 Session/Run 的证据范围；跨 Session 经验通过显式 EvidenceRef 连接多个 Episode，不把来源执行流改造成长期 Memory 的所有者。候选必须到可查看/修改/接受/拒绝的控制面后，才可进入独立的 Memory aggregate stream。
 
-**当前实现切片（MEM-043，focused/runtime 验证通过）：**Core 对一个完整 terminal Run 生成一个确定性 Episode projection，不另存 canonical Episode；校验单 Run scope、连续 sequence、成功/失败/放弃结果、唯一 terminal event 与整条 hash chain。后台 sidecar 在 owner 级 lease 下串行扫描/恢复 terminal Runs，状态文件只保留 run ID、source digest、attempt、next retry 和错误码。可选提取器只收到 allowlist + redaction 后的有界 JSON，输出候选必须引用模型实际收到且仍匹配 Ledger 的事件。Focused 和 Runtime 测试覆盖恢复、重试/幂等、跨进程与过期 lease、来源不匹配/删除、取消 fail-closed、review-gated 候选及 V2 Recall 关闭。候选进入 MEM-046 控制面并保持 candidate；不做跨 Run 切分/合并、Experience Case、active Memory 改写或 V2 Recall。
+**当前实现切片（MEM-043，focused/runtime 验证通过）：**Core 对一个完整 terminal Run 生成一个确定性 Episode projection，不另存 canonical Episode；校验单 Run scope、连续 sequence、成功/失败/放弃结果、唯一 terminal event 与整条 hash chain。后台 sidecar 在 owner 级 lease 下串行扫描/恢复 terminal Runs，v2 状态文件只保留 run ID、source digest、attempt、next retry、白名单错误码和无正文的 consolidation result refs。可选提取器只收到 allowlist + redaction 后的有界 JSON，输出候选必须引用模型实际收到且仍匹配 Ledger 的事件。Focused 和 Runtime 测试覆盖恢复、重试/幂等、跨进程与过期 lease、来源不匹配/删除、取消 fail-closed、review-gated 候选及 V2 Recall 关闭。候选进入 MEM-046 控制面并保持 candidate。2026-10-03 补齐同 owner/project 内跨 Run 的确定性去重/候选差异：验证历史来源，精确相同 kind/key/claim 为 unchanged，同 key 异文只生成带对照 lineage 的候选；不会改写 active Memory。用户纠正后的模型 Memory 必须沿已提交 correction/lifecycle 链验证回原始 Run 才参与归并。共享 Web/Desktop 面板通过 memory.list 查看持久后台任务与来源/差异；请求只读每项目最近 100 条的可回放投影，合并最多 100 条。后台恢复重建、成功写入更新；历史未恢复完整时显式标记 loading，旧 v1 任务明确无差异明细。语义跨 Run 综合、跨 Run Episode 边界和独立 canonical Episode store 仍是后续设计。MEM-049 已单独实现显式 opt-in V2 Recall。
 
 ## 2. Episode 数据模型
 

@@ -1,0 +1,78 @@
+{
+  "connections": [
+    {
+      "connection_id": "fa9664ff-86f1-4784-8d5e-2abf9b96c9f6",
+      "label": "Alpha provider",
+      "revision": 1,
+      "provider": "openai",
+      "protocol": "openai-chat-completions",
+      "base_url": "http://127.0.0.1:52101/v1",
+      "model": "gpt-4.1-mini",
+      "models": [
+        "gpt-4.1-mini",
+        "o3-mini"
+      ],
+      "image_input_models": [
+        "gpt-4.1-mini"
+      ],
+      "reasoning_by_model": {
+        "gpt-4.1-mini": [
+          "default"
+        ],
+        "o3-mini": [
+          "default",
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max"
+        ]
+      },
+      "has_key": true,
+      "credential": {
+        "name": "TRACEGRAPH_OPENAI_KEY_D4EDBBC9114B",
+        "backend": "private_file",
+        "writable": true,
+        "last_updated_at": "2026-10-03T13:54:59.741Z"
+      },
+      "source": "profile",
+      "writable": true
+    },
+    {
+      "connection_id": "5c979ee0-88fb-49da-b7fb-03b8b0f4671a",
+      "label": "Beta provider",
+      "revision": 0,
+      "provider": "custom",
+      "protocol": "openai-chat-completions",
+      "base_url": "http://127.0.0.1:52101/v1",
+      "model": "synthetic-beta",
+      "models": [
+        "synthetic-beta"
+      ],
+      "image_input_models": [],
+      "reasoning_by_model": {
+        "synthetic-beta": [
+          "default"
+        ]
+      },
+      "has_key": true,
+      "credential": {
+        "name": "TRACEGRAPH_CUSTOM_KEY_B55919D3C27E",
+        "backend": "private_file",
+        "writable": true,
+        "last_updated_at": "2026-10-03T13:55:01.356Z"
+      },
+      "source": "profile",
+      "writable": true,
+      "test": {
+        "status": "passed",
+        "code": "connection_ok",
+        "message": "模型连接成功",
+        "checked_at": "2026-10-03T13:55:02.213Z",
+        "model": "synthetic-beta",
+        "duration_ms": 14
+      }
+    }
+  ],
+  "default_connection_id": "fa9664ff-86f1-4784-8d5e-2abf9b96c9f6"
+}

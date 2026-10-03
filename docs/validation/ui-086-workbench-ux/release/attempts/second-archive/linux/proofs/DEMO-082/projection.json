@@ -1,0 +1,578 @@
+{
+  "schema_version": "tracegraph.session-event.v1",
+  "projector_version": "tracegraph.projector.v9",
+  "project_id": "project:proof-cancel",
+  "session_id": "session:5b96f498-2bfb-413c-8eec-436e31a77c66",
+  "run_id": "run:1bea9957-0db4-40dc-821d-d544f8eb98b9",
+  "task": "Execute the controlled cancel public proof.",
+  "mode": "execute",
+  "reasoning_effort": "default",
+  "workspace_kind": "disposable_fixture",
+  "status": "cancelled",
+  "last_sequence": 17,
+  "timeline": [
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:b98fe1e5-cf1f-407b-addb-cc01a680eb6a",
+      "project_id": "project:proof-cancel",
+      "run_id": "run:1bea9957-0db4-40dc-821d-d544f8eb98b9",
+      "session_id": "session:5b96f498-2bfb-413c-8eec-436e31a77c66",
+      "sequence": 1,
+      "occurred_at": "2026-10-02T23:40:30.332Z",
+      "type": "run.created",
+      "summary": "Run created",
+      "artifact_refs": [],
+      "data": {
+        "task": "Execute the controlled cancel public proof.",
+        "mode": "execute",
+        "reasoning_effort": "default",
+        "workspace_kind": "disposable_fixture",
+        "conversation_message_count": 0,
+        "max_turns": 12,
+        "subagent_limits": {
+          "max_parallel_subagents": 2,
+          "max_depth": 1
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:30c59b8c-f442-41b5-aa3c-d78355bb5351",
+      "project_id": "project:proof-cancel",
+      "run_id": "run:1bea9957-0db4-40dc-821d-d544f8eb98b9",
+      "session_id": "session:5b96f498-2bfb-413c-8eec-436e31a77c66",
+      "sequence": 2,
+      "occurred_at": "2026-10-02T23:40:30.334Z",
+      "type": "session.opened",
+      "summary": "Durable session opened",
+      "artifact_refs": [],
+      "data": {
+        "session_version": 1
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:d24687f6-934f-486a-a51e-af2a02276ebe",
+      "project_id": "project:proof-cancel",
+      "run_id": "run:1bea9957-0db4-40dc-821d-d544f8eb98b9",
+      "session_id": "session:5b96f498-2bfb-413c-8eec-436e31a77c66",
+      "sequence": 3,
+      "occurred_at": "2026-10-02T23:40:30.336Z",
+      "type": "permission.configured",
+      "summary": "Permission preset configured as custom",
+      "artifact_refs": [],
+      "data": {
+        "permission": {
+          "preset_key": "custom",
+          "label": "Legacy danger full access",
+          "sandbox_mode": "danger-full-access",
+          "approval_policy": "on-write",
+          "policy_digest": "sha256:883f560287947e3aad6d98fb02eeb541cd6a066df405a032a681330b2a0a2c2e"
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:98dd40c0-622c-4c1d-920f-f4bf2ab0fd17",
+      "project_id": "project:proof-cancel",
+      "run_id": "run:1bea9957-0db4-40dc-821d-d544f8eb98b9",
+      "session_id": "session:5b96f498-2bfb-413c-8eec-436e31a77c66",
+      "sequence": 4,
+      "occurred_at": "2026-10-02T23:40:30.338Z",
+      "type": "skill.registry_loaded",
+      "summary": "Loaded 0 local Skill catalog entries",
+      "artifact_refs": [],
+      "data": {
+        "registry_digest": "sha256:5989480b657835d0bb128def01535daf86488acba961e63dec82d5b75ed91e59",
+        "skill_names": [],
+        "loaded_count": 0,
+        "conflict_count": 0,
+        "diagnostic_count": 0
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:1eda4442-8a45-4c89-ae42-05ff7493f647",
+      "project_id": "project:proof-cancel",
+      "run_id": "run:1bea9957-0db4-40dc-821d-d544f8eb98b9",
+      "session_id": "session:5b96f498-2bfb-413c-8eec-436e31a77c66",
+      "sequence": 5,
+      "occurred_at": "2026-10-02T23:40:30.339Z",
+      "type": "sandbox.configured",
+      "summary": "Sandbox mode configured as danger-full-access",
+      "artifact_refs": [],
+      "data": {
+        "mode": "danger-full-access",
+        "platform": "linux"
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:8a4f8fc6-b32b-4524-acc3-0209b693313e",
+      "project_id": "project:proof-cancel",
+      "run_id": "run:1bea9957-0db4-40dc-821d-d544f8eb98b9",
+      "session_id": "session:5b96f498-2bfb-413c-8eec-436e31a77c66",
+      "sequence": 6,
+      "occurred_at": "2026-10-02T23:40:30.341Z",
+      "type": "sandbox.disabled",
+      "summary": "OS sandbox explicitly disabled by Host configuration",
+      "artifact_refs": [],
+      "data": {
+        "reason": "explicit_danger_full_access",
+        "sandbox_report": {
+          "report_version": 1,
+          "mode": "danger-full-access",
+          "enforcement": "none",
+          "platform": "linux",
+          "mechanisms": [],
+          "unmet_constraints": []
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:989c20a7-39f6-48b7-8be6-754490c608d4",
+      "project_id": "project:proof-cancel",
+      "run_id": "run:1bea9957-0db4-40dc-821d-d544f8eb98b9",
+      "session_id": "session:5b96f498-2bfb-413c-8eec-436e31a77c66",
+      "sequence": 7,
+      "occurred_at": "2026-10-02T23:40:30.343Z",
+      "type": "run.started",
+      "summary": "Workspace preflight and indexing started",
+      "artifact_refs": [],
+      "data": {
+        "phase": "indexing"
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:1378c605-ef87-44ff-b98d-1e60da83f5f0",
+      "project_id": "project:proof-cancel",
+      "run_id": "run:1bea9957-0db4-40dc-821d-d544f8eb98b9",
+      "session_id": "session:5b96f498-2bfb-413c-8eec-436e31a77c66",
+      "sequence": 8,
+      "occurred_at": "2026-10-02T23:40:30.349Z",
+      "type": "context.built",
+      "summary": "Context built with 133 input tokens",
+      "artifact_refs": [
+        {
+          "artifact_id": "artifact:c3712aec-b1e5-4749-a803-b70867cc5c2a",
+          "kind": "context_manifest",
+          "content_hash": "sha256:9d10d021825e526084cc4483748f6abf00c3e93bb609079061019efea084b467",
+          "mime_type": "application/json",
+          "byte_length": 3241,
+          "project_id": "project:proof-cancel",
+          "run_id": "run:1bea9957-0db4-40dc-821d-d544f8eb98b9",
+          "created_at": "2026-10-02T23:40:30.348Z"
+        }
+      ],
+      "turn_id": "turn:550271bc-91dd-4c03-ad62-51069360e275",
+      "context_manifest_ref": "context:e4c52787-13ca-4489-8a31-d683489392c3",
+      "model_call_id": "model-call:5a6a44e9-c691-41c9-855a-d1ad01da71a0",
+      "data": {
+        "manifest_id": "context:e4c52787-13ca-4489-8a31-d683489392c3",
+        "input_tokens": 133,
+        "token_limit": 258000,
+        "reserved_output_tokens": 32000,
+        "token_estimate": {
+          "estimator_id": "heuristic_v2",
+          "confidence": "estimated",
+          "input_tokens": 133,
+          "output_tokens": 0,
+          "per_section": {
+            "system": 119,
+            "goal": 14,
+            "history": 0,
+            "tool": 0,
+            "repo": 0,
+            "memory": 0,
+            "experience": 0
+          }
+        },
+        "input_budget_tokens": 226000,
+        "warning_threshold_tokens": 158200,
+        "compression_threshold_tokens": 180800,
+        "token_estimator": "heuristic_v2",
+        "context_status": "healthy",
+        "compression": {
+          "strategy": "none",
+          "applied_strategy": "none",
+          "trigger": "within_budget",
+          "before_tokens": 133,
+          "after_tokens": 133,
+          "checkpoint_tokens": 0,
+          "preserved_recent_message_count": 0,
+          "compacted_history_message_count": 0,
+          "steps": []
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:6d1d0d2a-913b-4cda-992e-87a68f8976fb",
+      "project_id": "project:proof-cancel",
+      "run_id": "run:1bea9957-0db4-40dc-821d-d544f8eb98b9",
+      "session_id": "session:5b96f498-2bfb-413c-8eec-436e31a77c66",
+      "sequence": 9,
+      "occurred_at": "2026-10-02T23:40:30.351Z",
+      "type": "model.request_started",
+      "summary": "Requesting a decision from public-proof-cancel with provider-default reasoning",
+      "artifact_refs": [],
+      "turn_id": "turn:550271bc-91dd-4c03-ad62-51069360e275",
+      "context_manifest_ref": "context:e4c52787-13ca-4489-8a31-d683489392c3",
+      "model_call_id": "model-call:5a6a44e9-c691-41c9-855a-d1ad01da71a0",
+      "data": {
+        "adapter": "public-proof-cancel",
+        "requested_reasoning_effort": "default",
+        "reasoning_configuration": "provider_default",
+        "retry_taxonomy": {
+          "version": "retry-taxonomy.v1",
+          "model_provider": {
+            "max_attempts": 3,
+            "retryable_http_statuses": [
+              408,
+              425,
+              429,
+              500,
+              502,
+              503,
+              504
+            ],
+            "retryable_transport_classes": [
+              "timeout",
+              "selected_network_errors"
+            ],
+            "base_backoff_ms": 250,
+            "max_backoff_ms": 1000,
+            "stop_after_provider_usage": true
+          },
+          "tool": {
+            "max_automatic_dispatch_attempts": 1,
+            "replay_policy": "disabled",
+            "new_model_authored_actions_are_separate": true,
+            "run_turn_limit": 12
+          },
+          "action": {
+            "max_dispatch_attempts_per_operation": 1,
+            "unknown_outcome": "reconcile_only"
+          }
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:30d60161-cd91-4033-bb97-d0b9150e40d1",
+      "project_id": "project:proof-cancel",
+      "run_id": "run:1bea9957-0db4-40dc-821d-d544f8eb98b9",
+      "session_id": "session:5b96f498-2bfb-413c-8eec-436e31a77c66",
+      "sequence": 10,
+      "occurred_at": "2026-10-02T23:40:30.353Z",
+      "type": "model.decision",
+      "summary": "Execute the controlled public proof action.",
+      "artifact_refs": [],
+      "turn_id": "turn:550271bc-91dd-4c03-ad62-51069360e275",
+      "context_manifest_ref": "context:e4c52787-13ca-4489-8a31-d683489392c3",
+      "model_call_id": "model-call:5a6a44e9-c691-41c9-855a-d1ad01da71a0",
+      "action_id": "action:proof:cancel-test",
+      "data": {
+        "decision_kind": "tool_call",
+        "risk": "low",
+        "evidence_ref_count": 0,
+        "public_plan": "Execute the controlled public proof action.",
+        "tool_name": "run_test",
+        "adapter": "public-proof-cancel",
+        "requested_reasoning_effort": "default",
+        "reasoning_configuration": "provider_default",
+        "provider_attempts": 1,
+        "provider_retry_count": 0,
+        "provider_retry_delays_ms": []
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:ee7bb45c-6301-4440-aa80-77c6e91550ee",
+      "project_id": "project:proof-cancel",
+      "run_id": "run:1bea9957-0db4-40dc-821d-d544f8eb98b9",
+      "session_id": "session:5b96f498-2bfb-413c-8eec-436e31a77c66",
+      "sequence": 11,
+      "occurred_at": "2026-10-02T23:40:30.356Z",
+      "type": "policy.evaluated",
+      "summary": "Permission preset custom allows this Tool action",
+      "artifact_refs": [],
+      "action_id": "action:proof:cancel-test",
+      "data": {
+        "decision": {
+          "decision_id": "policy-decision:f354ae17-efb2-4421-a50e-6ddd1c9575aa",
+          "preset_key": "custom",
+          "policy_digest": "sha256:883f560287947e3aad6d98fb02eeb541cd6a066df405a032a681330b2a0a2c2e",
+          "tool_name": "run_test",
+          "side_effect": "execute",
+          "kind": "allow",
+          "source": "preset-default",
+          "explanation": "Permission preset custom allows this Tool action",
+          "action_digest": "sha256:5f852c40dfa423508d2e73ea9e46bf5342e33042cdabe4b3248a188f6da7e75e"
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:6b2fae2a-164f-4bbf-9d3c-de4b9c900065",
+      "project_id": "project:proof-cancel",
+      "run_id": "run:1bea9957-0db4-40dc-821d-d544f8eb98b9",
+      "session_id": "session:5b96f498-2bfb-413c-8eec-436e31a77c66",
+      "sequence": 12,
+      "occurred_at": "2026-10-02T23:40:30.360Z",
+      "type": "tool.started",
+      "summary": "Running test suite fixture",
+      "artifact_refs": [],
+      "operation_id": "action:proof:cancel-test",
+      "action_id": "action:proof:cancel-test",
+      "data": {
+        "tool_name": "run_test",
+        "activity": "test",
+        "suite": "fixture"
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:60a2b125-6981-4bba-99e5-3835f36e917b",
+      "project_id": "project:proof-cancel",
+      "run_id": "run:1bea9957-0db4-40dc-821d-d544f8eb98b9",
+      "session_id": "session:5b96f498-2bfb-413c-8eec-436e31a77c66",
+      "sequence": 13,
+      "occurred_at": "2026-10-02T23:40:30.381Z",
+      "type": "user.input_queued",
+      "summary": "User requested Run cancellation",
+      "artifact_refs": [],
+      "data": {
+        "input": {
+          "input_id": "input:proof:cancel",
+          "run_id": "run:1bea9957-0db4-40dc-821d-d544f8eb98b9",
+          "kind": "cancel",
+          "body": "Stop the public demonstration and all child work.",
+          "actor": "user",
+          "submitted_at": "2026-10-02T23:40:30.380Z"
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:84d52095-4d62-43b0-a197-bc67da019f5d",
+      "project_id": "project:proof-cancel",
+      "run_id": "run:1bea9957-0db4-40dc-821d-d544f8eb98b9",
+      "session_id": "session:5b96f498-2bfb-413c-8eec-436e31a77c66",
+      "sequence": 14,
+      "occurred_at": "2026-10-02T23:40:30.384Z",
+      "type": "tool.failed",
+      "summary": "Test execution was blocked because the sandbox result could not be verified",
+      "artifact_refs": [],
+      "operation_id": "action:proof:cancel-test",
+      "action_id": "action:proof:cancel-test",
+      "data": {
+        "receipt": {
+          "receipt_id": "receipt:0f451add-728f-4a39-89a8-2049220e0fb4",
+          "action_id": "action:proof:cancel-test",
+          "tool_name": "run_test",
+          "status": "failure",
+          "transport_status": "success",
+          "business_status": "failure",
+          "code": "sandbox_unavailable",
+          "summary": "Test execution was blocked because the sandbox result could not be verified",
+          "started_at": "2026-10-02T23:40:30.359Z",
+          "completed_at": "2026-10-02T23:40:30.382Z",
+          "duration_ms": 23,
+          "artifact_refs": [],
+          "metadata": {
+            "output_bytes": 308,
+            "sandbox_report": {
+              "report_version": 1,
+              "mode": "danger-full-access",
+              "enforcement": "none",
+              "platform": "linux",
+              "mechanisms": [],
+              "unmet_constraints": []
+            },
+            "failure_code": "denied",
+            "business_code": "sandbox_unavailable",
+            "execution_parallel": false
+          }
+        },
+        "observation": {
+          "observation_id": "observation:48bec0a7-bdb5-4d07-9675-6fc7c4bab5a4",
+          "action_id": "action:proof:cancel-test",
+          "receipt_id": "receipt:0f451add-728f-4a39-89a8-2049220e0fb4",
+          "status": "failure",
+          "summary": "Test execution was blocked because the sandbox result could not be verified",
+          "facts": {
+            "tool_name": "run_test",
+            "code": "sandbox_unavailable",
+            "sandbox_report": {
+              "report_version": 1,
+              "mode": "danger-full-access",
+              "enforcement": "none",
+              "platform": "linux",
+              "mechanisms": [],
+              "unmet_constraints": []
+            },
+            "started": false
+          },
+          "artifact_refs": [],
+          "created_at": "2026-10-02T23:40:30.382Z"
+        },
+        "sandbox_report": {
+          "report_version": 1,
+          "mode": "danger-full-access",
+          "enforcement": "none",
+          "platform": "linux",
+          "mechanisms": [],
+          "unmet_constraints": []
+        },
+        "code": "denied",
+        "business_code": "sandbox_unavailable"
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:9a7000b4-a838-4350-8429-186668f7e22f",
+      "project_id": "project:proof-cancel",
+      "run_id": "run:1bea9957-0db4-40dc-821d-d544f8eb98b9",
+      "session_id": "session:5b96f498-2bfb-413c-8eec-436e31a77c66",
+      "sequence": 15,
+      "occurred_at": "2026-10-02T23:40:30.387Z",
+      "type": "test.completed",
+      "summary": "Test execution was blocked because the sandbox result could not be verified",
+      "artifact_refs": [],
+      "action_id": "action:proof:cancel-test",
+      "test_receipt_id": "receipt:0f451add-728f-4a39-89a8-2049220e0fb4",
+      "data": {
+        "receipt": {
+          "receipt_id": "receipt:0f451add-728f-4a39-89a8-2049220e0fb4",
+          "action_id": "action:proof:cancel-test",
+          "tool_name": "run_test",
+          "status": "failure",
+          "transport_status": "success",
+          "business_status": "failure",
+          "code": "sandbox_unavailable",
+          "summary": "Test execution was blocked because the sandbox result could not be verified",
+          "started_at": "2026-10-02T23:40:30.359Z",
+          "completed_at": "2026-10-02T23:40:30.382Z",
+          "duration_ms": 23,
+          "artifact_refs": [],
+          "metadata": {
+            "output_bytes": 308,
+            "sandbox_report": {
+              "report_version": 1,
+              "mode": "danger-full-access",
+              "enforcement": "none",
+              "platform": "linux",
+              "mechanisms": [],
+              "unmet_constraints": []
+            },
+            "failure_code": "denied",
+            "business_code": "sandbox_unavailable",
+            "execution_parallel": false
+          }
+        },
+        "sandbox_report": {
+          "report_version": 1,
+          "mode": "danger-full-access",
+          "enforcement": "none",
+          "platform": "linux",
+          "mechanisms": [],
+          "unmet_constraints": []
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:7bf7d642-2fe7-4f4f-a42b-8f346026d6bc",
+      "project_id": "project:proof-cancel",
+      "run_id": "run:1bea9957-0db4-40dc-821d-d544f8eb98b9",
+      "session_id": "session:5b96f498-2bfb-413c-8eec-436e31a77c66",
+      "sequence": 16,
+      "occurred_at": "2026-10-02T23:40:30.638Z",
+      "type": "user.input_consumed",
+      "summary": "User cancellation consumed at a safe boundary",
+      "artifact_refs": [],
+      "caused_by_event_id": "event:60a2b125-6981-4bba-99e5-3835f36e917b",
+      "data": {
+        "input_id": "input:proof:cancel",
+        "kind": "cancel",
+        "consumed_at": "2026-10-02T23:40:30.636Z",
+        "at_step": 1,
+        "queued_event_id": "event:60a2b125-6981-4bba-99e5-3835f36e917b"
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:39659877-369a-4490-b08c-adfb65213425",
+      "project_id": "project:proof-cancel",
+      "run_id": "run:1bea9957-0db4-40dc-821d-d544f8eb98b9",
+      "session_id": "session:5b96f498-2bfb-413c-8eec-436e31a77c66",
+      "sequence": 17,
+      "occurred_at": "2026-10-02T23:40:30.642Z",
+      "type": "run.cancelled",
+      "summary": "Run cancelled by user",
+      "artifact_refs": [],
+      "data": {
+        "reason": "user_cancel",
+        "last_sequence": 16
+      }
+    }
+  ],
+  "todos": {
+    "items": [],
+    "last_sequence": 17
+  },
+  "input_queue": {
+    "pending": [],
+    "last_consumed": {
+      "input_id": "input:proof:cancel",
+      "kind": "cancel",
+      "consumed_at": "2026-10-02T23:40:30.636Z",
+      "at_step": 1,
+      "queued_event_id": "event:60a2b125-6981-4bba-99e5-3835f36e917b"
+    }
+  },
+  "subagents": {
+    "items": [],
+    "active_count": 0,
+    "last_sequence": 17,
+    "limits": {
+      "max_parallel_subagents": 2,
+      "max_depth": 1
+    }
+  },
+  "attachments": {
+    "items": [],
+    "last_sequence": 0
+  },
+  "sandbox_report": {
+    "report_version": 1,
+    "mode": "danger-full-access",
+    "enforcement": "none",
+    "platform": "linux",
+    "mechanisms": [],
+    "unmet_constraints": []
+  },
+  "permission": {
+    "preset_key": "custom",
+    "label": "Legacy danger full access",
+    "sandbox_mode": "danger-full-access",
+    "approval_policy": "on-write",
+    "policy_digest": "sha256:883f560287947e3aad6d98fb02eeb541cd6a066df405a032a681330b2a0a2c2e"
+  },
+  "artifact_refs": [
+    {
+      "artifact_id": "artifact:c3712aec-b1e5-4749-a803-b70867cc5c2a",
+      "kind": "context_manifest",
+      "content_hash": "sha256:9d10d021825e526084cc4483748f6abf00c3e93bb609079061019efea084b467",
+      "mime_type": "application/json",
+      "byte_length": 3241,
+      "project_id": "project:proof-cancel",
+      "run_id": "run:1bea9957-0db4-40dc-821d-d544f8eb98b9",
+      "created_at": "2026-10-02T23:40:30.348Z"
+    }
+  ],
+  "outcome": "Run cancelled by user"
+}

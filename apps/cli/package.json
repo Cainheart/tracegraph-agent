@@ -4,12 +4,13 @@
   "private": true,
   "type": "module",
   "bin": {
+    "outlive": "./dist/index.js",
     "tracegraph": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "dev": "tsx src/index.ts serve",
+    "dev": "tsx src/index.ts serve --http-port 4311",
     "serve": "tsx src/index.ts serve",
     "test:e2e": "vitest run src/e2e.test.ts",
     "test:unit": "vitest run src --exclude src/e2e.test.ts"

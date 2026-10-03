@@ -238,6 +238,7 @@ export const ToolBatchCompletedDataSchema = z.object({
 export type ToolBatchCompletedData = z.infer<typeof ToolBatchCompletedDataSchema>;
 
 export const ToolDescriptorSchema = z.object({
+  workspace_independent:z.boolean().optional(),
   name: ToolNameSchema,
   description: NonEmptyStringSchema.max(2_000),
   input_schema: RootObjectJsonSchemaSchema,

@@ -1,0 +1,158 @@
+{
+  "status": "diagnostic-ready-reload-passed",
+  "recorded_at": "2026-10-03T13:58:36.320Z",
+  "surface": "packaged-desktop",
+  "boundary": "Maintainer-Agent controlled acceptance. Actual built renderer/Main/Host/Runtime and public typed transport; a deterministic loopback provider. No paid-provider quality, independent external-user, signing or Windows-native claim. One initial provider and an ordinary temporary project are seeded through authenticated APIs; all tested interactions use real UI or explicit external CLI.",
+  "assertions": [
+    "Explicit reload after fully-ready actual native UI returns to a usable configured composer and the same authenticated owner without provider requests or tasks."
+  ],
+  "screenshots": [],
+  "errors": [],
+  "provider_requests": [],
+  "operations": [],
+  "cleanup": {
+    "completed": true,
+    "failures": [],
+    "owner_pids": [
+      23795
+    ],
+    "processes_verified_exited": true,
+    "isolated_profile_removed": true
+  },
+  "diagnostic": "Native fully-ready reload only. Two observations do not claim the full GUI journey or prove the earlier initial-navigation timeout cause.",
+  "fixture_template": {
+    "root": "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/current-workbench-recovery-mac-final6/artifacts/mac-arm64/Outlive Agent.app/Contents/Resources/app/examples/failing-typescript-repo",
+    "boundary": "Actual delivered app/examples resource; explicit public Core factory input. No source fallback or installation writes.",
+    "entries": [
+      {
+        "path": "README.md",
+        "bytes": 1775,
+        "sha256": "sha256:616cbe14dff17f926d625a8084e2454c7a718ec5240f02a54d91041e908afd36"
+      },
+      {
+        "path": "README.zh.md",
+        "bytes": 379,
+        "sha256": "sha256:27e0e7c1eb6c6069606300e315aa3613df86f26427daed7cca34020ae0f6e372"
+      },
+      {
+        "path": "package.json",
+        "bytes": 168,
+        "sha256": "sha256:ca35669be4919a85ccdb097a6d9f9baf4070ca25227cb1967f05677b812258c9"
+      },
+      {
+        "path": "src/add.ts",
+        "bytes": 140,
+        "sha256": "sha256:0e6cf789846139c8cc7a8e252486ee3433e1df45557d1cfb6e0c98b94a283b33"
+      },
+      {
+        "path": "src/index.ts",
+        "bytes": 32,
+        "sha256": "sha256:1153bb908b2c2d5a3855e202283e58aac8c088cccaa4e2425e8485371de40654"
+      },
+      {
+        "path": "test/run.mjs",
+        "bytes": 240,
+        "sha256": "sha256:74b59da19104b82fb68e7f97e59df160be2f88263aa9969d3bd0ebd4ee4da780"
+      },
+      {
+        "path": "tsconfig.json",
+        "bytes": 186,
+        "sha256": "sha256:b1672974f652f4152cc096e4258c93172986a99a0fb82c9e7c209cec8ae7a6af"
+      }
+    ]
+  },
+  "fixture_source": {
+    "helper": "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/current-workbench-recovery-mac-final6/artifacts/mac-arm64/Outlive Agent.app/Contents/Resources/app/node_modules/@tracegraph/core/dist/index.js",
+    "src_add_before_sha256": "sha256:0e6cf789846139c8cc7a8e252486ee3433e1df45557d1cfb6e0c98b94a283b33"
+  },
+  "installed_binary": "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/current-workbench-recovery-mac-final6/artifacts/mac-arm64/Outlive Agent.app/Contents/MacOS/Outlive Agent",
+  "runtime_manifest": {
+    "schema_version": "outlive.bundled-runtime.v1",
+    "node_version": "24.21.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "executable": "bin/node",
+    "sha256": "e4b5a3af0e05c75de2eae013904145f40fe7fc2a6e6f17510128bf45cca4e79b",
+    "product_build_id": "7c07335476e0c48a314fe36b9c8435b830d289f489e10e1dc1961032f030457f"
+  },
+  "desktop_pid": 23789,
+  "initial_owner": {
+    "pid": 23795,
+    "boot_nonce": "1bfdf856-a915-4fd6-b4ad-037de6864059",
+    "profile_id": "fc569170-5c1f-42c0-bab9-b636f45ecef9",
+    "http_address": "http://127.0.0.1:52684",
+    "product_build_id": "7c07335476e0c48a314fe36b9c8435b830d289f489e10e1dc1961032f030457f"
+  },
+  "project_id": "project:local:f4d6dd98a7371d95",
+  "native_console": [],
+  "native_page_events": [
+    {
+      "event": "close",
+      "phase": "fully-ready-native-reload"
+    }
+  ],
+  "native_initial_document": {
+    "ready_state": "complete",
+    "title": "Outlive Agent",
+    "protocol": "file:",
+    "composer_count": 1
+  },
+  "native_initial_connection": {
+    "state": "connected",
+    "generation": 1,
+    "profile_id": "fc569170-5c1f-42c0-bab9-b636f45ecef9",
+    "owner_nonce": "1bfdf856-a915-4fd6-b4ad-037de6864059"
+  },
+  "native_navigation_ready_at": "Actual first-load DOMContentLoaded, visible unified composer and connected fixed bridge. No artificial reload; each later operation awaits actual control and receipt.",
+  "renderer_url": "file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/current-workbench-recovery-mac-final6/artifacts/mac-arm64/Outlive%20Agent.app/Contents/Resources/app/apps/desktop/dist/renderer/index.html",
+  "native_ready_reload": {
+    "requested_at": "2026-10-03T13:58:37.559Z",
+    "elapsed_ms": 107,
+    "observations": [
+      {
+        "name": "fully-ready-before-reload",
+        "recorded_at": "2026-10-03T13:58:37.559Z",
+        "document": {
+          "ready_state": "complete",
+          "title": "Outlive Agent",
+          "composer_count": 1
+        },
+        "connection": {
+          "state": "connected",
+          "generation": 1,
+          "profile_id": "fc569170-5c1f-42c0-bab9-b636f45ecef9",
+          "owner_nonce": "1bfdf856-a915-4fd6-b4ad-037de6864059"
+        },
+        "file": "fully-ready-before-reload.png",
+        "bytes": 55695,
+        "sha256": "sha256:e65172bfc94febea105c937c9e6a8b437250fca386e88650c4e6b196ee65a562",
+        "png_width": 1440,
+        "png_height": 900
+      },
+      {
+        "name": "fully-ready-after-reload",
+        "recorded_at": "2026-10-03T13:58:37.665Z",
+        "document": {
+          "ready_state": "complete",
+          "title": "Outlive Agent",
+          "composer_count": 1
+        },
+        "connection": {
+          "state": "connected",
+          "generation": 1,
+          "profile_id": "fc569170-5c1f-42c0-bab9-b636f45ecef9",
+          "owner_nonce": "1bfdf856-a915-4fd6-b4ad-037de6864059"
+        },
+        "file": "fully-ready-after-reload.png",
+        "bytes": 51975,
+        "sha256": "sha256:0c31a2b2e86865d6c45860312f37f2641df9e734a6f96e5da8680039c552f02e",
+        "png_width": 1440,
+        "png_height": 900
+      }
+    ],
+    "same_owner": true,
+    "no_provider_request": true,
+    "no_run_created": true,
+    "boundary": "Explicit CDP reload after observed usable initial UI. Earlier reload during initial navigation remains a retained unexplained timeout; this result narrows scope without proving cause."
+  }
+}

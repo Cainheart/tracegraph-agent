@@ -1,0 +1,36 @@
+{
+  "name": "@tracegraph/desktop",
+  "version": "0.1.0-alpha.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "pnpm run build:renderer && pnpm run build:main && pnpm run build:preload",
+    "build:renderer": "vite build",
+    "build:main": "tsc -p tsconfig.main.json",
+    "build:preload": "tsc -p tsconfig.preload.json",
+    "typecheck": "tsc -p tsconfig.test.json --noEmit",
+    "test:unit": "vitest run --config vitest.config.ts",
+    "start": "electron .",
+    "preview": "pnpm run build && electron . --preview"
+  },
+  "dependencies": {
+    "@tracegraph/contracts": "workspace:*",
+    "@tracegraph/desktop-host": "workspace:*",
+    "@tracegraph/sdk": "workspace:*",
+    "@tracegraph/workbench": "workspace:*",
+    "react": "catalog:",
+    "react-dom": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@types/react": "catalog:",
+    "@types/react-dom": "catalog:",
+    "@vitejs/plugin-react": "catalog:",
+    "electron": "44.5.1",
+    "typescript": "catalog:",
+    "vite": "catalog:",
+    "vitest": "catalog:"
+  }
+}

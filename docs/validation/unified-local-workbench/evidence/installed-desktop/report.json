@@ -1,0 +1,2346 @@
+{
+  "task_id": "PAR-088",
+  "recorded_at": "2026-10-03T06:27:57.843Z",
+  "status": "passed",
+  "model_boundary": "Synthetic loopback provider; actual packaged Electron Main/preload, HTTP over private local channel, shared Host/Runtime/ledger, real fixture patch and test processes. No provider-quality or external-user claims.",
+  "assertions": [
+    "Desktop Main and private typed client share model configuration and one Runtime owner",
+    "Desktop and loopback Web gateway observe the same settings revision; stale CAS rejected",
+    "Fixed settings/status/skills/extensions/MCP/LSP/usage/telemetry routes reach the shared Host",
+    "Actual Desktop keyboard navigation/palette/settings controls and DOM composition Enter/newline semantics are verified",
+    "Actual packaged CLI shares owner/settings/model and rejects command-line credentials without printing values",
+    "Desktop composer stages the actual fixture image and Enter starts an executable task through fixed transport",
+    "Current public activity stays collapsed until the user opens actual operation history, then closes again",
+    "Three actual SSE feeds preserve independent cursors; public model/operation events forwarded, unsubscribe does not cancel Run",
+    "Exact approval command retry does not double-write; actual patch file, success receipt and 2/2 test-log Artifact agree",
+    "Test output is absent before an actual test and opens the same real Artifact content through the visible Desktop control",
+    "Attachment upload and relation-scoped read preserve exact bytes/media/hash across preload/private transport",
+    "Replay authority is opaque in renderer and read-only writes are rejected until explicit exit",
+    "Default rollback policy disables the UI action and records actual same-Action refusal without changing the file hash",
+    "Explicit isolated Host policy restart enables real UI force confirmation; durable same-Action rollback and external file hash restore agree",
+    "CLI queued holder cancellation removes only queued work, preserving the active Run and model dispatch",
+    "Closing Electron leaves the same owner and Run active; a new Desktop reconnects to that Run and receives completion",
+    "Explicit CLI cancellation exits zero only for canonical cancelled; task read remains exit 1 and next model dispatch is prevented",
+    "Actual CLI resource commands share PTY/preview/schedule receipts; isolated native preview has no Node/app bridge and closing view preserves service",
+    "Configured external editor executes one confined native-selected file with fixed argv",
+    "Native-selected migration exposes only metadata/source IDs, preserves source, backs up and rebinds Desktop to the new owner",
+    "Explicit Host stop yields actual offline readiness; native start reconnects the same profile without auto-restarting"
+  ],
+  "errors": [],
+  "product": {
+    "artifact_mode": "installed",
+    "repository_root": "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/unified-local-workbench-20261003-complete-install/outlive-agent-0.1.0-alpha.0-preview",
+    "hashes": {
+      "apps/desktop/dist/main.js": "b717460b34830502e84036d923f4698bcf1c76114de7c3ee1fabfb486f3a15a8",
+      "apps/desktop/dist/preload.cjs": "9a270f2c5a6d066309adab0d7ca02acef81770ad72241ff31fc729208ef731de",
+      "apps/desktop/dist/renderer/index.html": "f29c7e9fd6a5fd09584fe6601e85dba3a38e3a0e5b4717c54d7ea1825aba81ad",
+      "apps/cli/dist/index.js": "bfd1bbbed588a2f37fb639d3abf4f182fa14a2fef924b7d8aad50ab079ae4d9d",
+      "apps/cli/dist/workbench-command.js": "e68ee152cecf84a340d07667ac21c89d60dfb2cbeb6d81bb780af7599ee69624",
+      "packages/host/dist/local-host-worker.js": "f3ee9f70ca4c3c5142138a4b2c6fbf34357967ff99e85eae3295382a37e27ddd",
+      "packages/sdk/dist/index.js": "e07a1d6d09391320c775ecb83412ab69150be74073233aad7fd016298d23fc3d",
+      "apps/desktop/dist/renderer/assets/index-DYWus0AG.js": "622dee82af67bf07cf1a9c685d877cdc13968274cfc425fe46f9ab015ad5e32a",
+      "apps/desktop/dist/renderer/assets/chunk-Y2CYZVJY-DsF7k-Jl.js": "a74e3669f356ad0d67cc5232f1e0f62ff4544fdb8e7057cf9a5001a0ea6fc2cc",
+      "apps/desktop/dist/renderer/assets/src-D_iIdUkB.js": "e9388a1b6412ffa2b395fc348df2ed61bb10bdcfdd51ffa2bc7b5d4527e8279c",
+      "apps/desktop/dist/renderer/assets/chunk-O7XYJQB3-CKKWJ5qg.js": "d84493326d919d2cbdc52afc59d9e1bb806d2fabb9a0dde356ae4741101be5f7",
+      "apps/desktop/dist/renderer/assets/dist-Bfr8PhAA.js": "77e45d626ece635e7105ffc9e36c5a177ac803e0f8380d86f6236ff460e18586",
+      "apps/desktop/dist/renderer/assets/chunk-ZIGJFQKS-CEpNxTiJ.js": "2c752abd2c1665fcc3b5aafcc8ec23fd67edfec70ad1d594a2470c795003ce5c",
+      "apps/desktop/dist/renderer/assets/path-fybaL0A-.js": "71b62c60fd6659668995a83955af7c0ffd1bc05496148191841e017441afe36b",
+      "apps/desktop/dist/renderer/assets/array-BifhSqXX.js": "63126646dbf611a0cf9e2293a9f636ac3c93c815a8f7d1e97d783151ab8529b9",
+      "apps/desktop/dist/renderer/assets/line-CnaOAfv0.js": "e7f6a4e731b07c23383808ffc3044da619d3d9b08d4942b1473fe88ae4862961",
+      "apps/desktop/dist/renderer/assets/chunk-7PRAP22T-DyBrMsFS.js": "89d2ee87cd53161f176e735d2b0b2f17d29b75d80cf2b3ee4c2d657ca6ea8e5d",
+      "apps/desktop/dist/renderer/assets/chunk-742MDFTN-C2DSAlGM.js": "8a72cc226bd7da4e2b8b35dea3baa4af6cf282f03119f32b71395c41ce5b0df3",
+      "apps/desktop/dist/renderer/assets/chunk-MBY4JIJT-BLxfLtrC.js": "42c51180ce9a0c2404a601e4060bfacffb50101d3f9b4f2068a63b173555241d",
+      "apps/desktop/dist/renderer/assets/chunk-J5ZVWO5B-oDCd-gWO.js": "9ef2dc3eac1cfcec79acc9e2d21b546b3007482f6f67953492e76710abb2ba71",
+      "apps/desktop/dist/renderer/assets/rough.esm-Dy-Kn_BL.js": "ef405c5eaa3316c75428f63ec698e39993bdcc2da358dbc7ebd355d18901f63f",
+      "apps/desktop/dist/renderer/assets/chunk-7INBJB4K-C1cBX-ES.js": "79a0f7a3f439f7a9327345b75f257a49bcd12c8ced025e7ac119ec2584c48513",
+      "apps/desktop/dist/renderer/assets/chunk-5DYCD2WN-D0pLhIqt.js": "da37fbe83369c2249ca35a42250baa5e764e2923b285e464470a6e1f901d7183",
+      "apps/desktop/dist/renderer/assets/index-Bfi-l9Vv.css": "464008faa47b6b8a7f8ff38053043a5f5a5f5fee85f28a0255bf6d3d7ff85427"
+    }
+  },
+  "fixture_template": {
+    "root": "examples/failing-typescript-repo",
+    "hashes": {
+      "package.json": "ca35669be4919a85ccdb097a6d9f9baf4070ca25227cb1967f05677b812258c9",
+      "src/add.ts": "0e6cf789846139c8cc7a8e252486ee3433e1df45557d1cfb6e0c98b94a283b33",
+      "src/index.ts": "1153bb908b2c2d5a3855e202283e58aac8c088cccaa4e2425e8485371de40654",
+      "test/run.mjs": "74b59da19104b82fb68e7f97e59df160be2f88263aa9969d3bd0ebd4ee4da780",
+      "tsconfig.json": "b1672974f652f4152cc096e4258c93172986a99a0fb82c9e7c209cec8ae7a6af",
+      "README.md": "616cbe14dff17f926d625a8084e2454c7a718ec5240f02a54d91041e908afd36",
+      "README.zh.md": "27e0e7c1eb6c6069606300e315aa3613df86f26427daed7cca34020ae0f6e372"
+    }
+  },
+  "screenshots": [
+    {
+      "file": "screenshots/empty-light-1440x900.png",
+      "state": "empty",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "f38ebfe914cde4fd46d2c8b2a196f6bfcbceb12adf69204141ac7eb660918c54",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/empty-light-1280x800.png",
+      "state": "empty",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "1bba2aff83295b652c3d71ca5267bb943e4d21712fc8c5032894ba8867e82944",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/empty-light-1024x768.png",
+      "state": "empty",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "685cf352d5af651f38e8c4b2bdd246ddfb7035c3f3440c3e80ebebe7ea51c33a",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/empty-dark-1440x900.png",
+      "state": "empty",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "aba589cc9218035a2d16ca6d14ca07c52d3a2616fd36cb70febdc5fd1d9ca087",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/empty-dark-1280x800.png",
+      "state": "empty",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "f12bfc0c91bd6f9630b77691bb09d48d2c2c63b1a829126d7acd35267177b1d1",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/empty-dark-1024x768.png",
+      "state": "empty",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "ff64333f7d0fbcee7df22472c3ff155fd5f2470ac0e6c28b82fb6f1dee9e509e",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/project-ready-light-1440x900.png",
+      "state": "project-ready",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "b828def2e39af783ee2210c3fd469ec617787deb9060d65c0fc58aea0277dd4d",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/project-ready-light-1280x800.png",
+      "state": "project-ready",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "fa8d8fc241f6552d479a9d396934aaa38a9a6dbcf42756c288e898fd83811ceb",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/project-ready-light-1024x768.png",
+      "state": "project-ready",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "0e4dde68bd213cf28a8c48ea74143fa7319b785905c195fe08a3bd878f138e78",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/project-ready-dark-1440x900.png",
+      "state": "project-ready",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "8e145d0d420b67b3071b9994c932470ab7095189f5e075f58a901ddae5cf3627",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/project-ready-dark-1280x800.png",
+      "state": "project-ready",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "45f88a32bff9d724643473535d86f2b61adac6898cf12b3183ce604027361b04",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/project-ready-dark-1024x768.png",
+      "state": "project-ready",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "127da2b402b91c8ac0abf5c3a81187690b0a4967f2d0684e129cb32b6678fe1a",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/active-run-light-1440x900.png",
+      "state": "active-run",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "6a9bb1d6f24658bca7bef973a23192b4525cee9a69f3da4d42670db53b5bda11",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/active-run-light-1280x800.png",
+      "state": "active-run",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "fb6b7aef87861de4b9c92229fa5f61a105307542be14b11672fe01827f15aed0",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/active-run-light-1024x768.png",
+      "state": "active-run",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "55608ee61833d40a4658815a37cbf3715888edd0e4e038dde387a30f0ee53310",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/active-run-dark-1440x900.png",
+      "state": "active-run",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "ba692b6752a787fa42526b975bfe48cce79a9508cd8a2a39ee02e2510b4e6aa4",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/active-run-dark-1280x800.png",
+      "state": "active-run",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "329c33db1e8edc9ee146077355572f9233f382fe9862fd0db56a21a8cd1808dd",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/active-run-dark-1024x768.png",
+      "state": "active-run",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "136c798fd51ab1a4cab570da982f5a6562583ff854ddaa78a9f3ef01e2bca997",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/approval-light-1440x900.png",
+      "state": "approval",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "387edc1894903847dcb04f160e88ea60d2791a88ec677a286fa5e5134adbbe5c",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/approval-light-1280x800.png",
+      "state": "approval",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "fdc267aa3f97a760136bdedc9edf178f527c9aa71e744ee41570879732178cda",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/approval-light-1024x768.png",
+      "state": "approval",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "bd1e0f93033269d44bdf8897bd0ed6e2de828fdfd162c7bcda518fa155fd163b",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/approval-dark-1440x900.png",
+      "state": "approval",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "0c27c64c6d51c0b04df1f57ac940a60e735562cf51310e848fd4e479ca6ec42f",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/approval-dark-1280x800.png",
+      "state": "approval",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "609d95dc18f2557e79815f77bb9ee22cbda68a2629ac1b683b4686dac86c5fa7",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/approval-dark-1024x768.png",
+      "state": "approval",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "610d2d23f8df35a6304175b636026db074286521e980a7e30730779286ff71b9",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/tool-result-light-1440x900.png",
+      "state": "tool-result",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "6a95e79805ceea28e3d87abf5372da7fc5a137eb2fb6dc8d2c24b7e398af14c2",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/tool-result-light-1280x800.png",
+      "state": "tool-result",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "71eb544c4c966dfc392ad31e8cc854ef2764f5d72727f08d112d0dbbb61d9159",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/tool-result-light-1024x768.png",
+      "state": "tool-result",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "bf9e486b9cb520ec4af56f1e8098c1194d586f767699d5311a8f80feb1979306",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/tool-result-dark-1440x900.png",
+      "state": "tool-result",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "cb4ae243f66b5f0cb50ce4986a3e79501c3dd149bbcfe329fd6143ab551be50b",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/tool-result-dark-1280x800.png",
+      "state": "tool-result",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "f39532d26095db52b66d79bb5bbfe168070db91951066d4d6f1f07e79ae4d7c5",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/tool-result-dark-1024x768.png",
+      "state": "tool-result",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "2e5056ebfb3123a57174f530d5640e36a39db99217e892691122d59a8278ffaa",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/change-review-light-1440x900.png",
+      "state": "change-review",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "507be432f818a1d5bf9890c1320fe29a43b035a4f7708fc79bdc3de9291ba771",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "horizontalOverflow": [],
+        "reviewRect": {
+          "left": 828.4375,
+          "top": 52,
+          "width": 611.5625,
+          "height": 848,
+          "right": 1440,
+          "bottom": 900
+        }
+      }
+    },
+    {
+      "file": "screenshots/change-review-light-1280x800.png",
+      "state": "change-review",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "c41973523860e753a48ddcb68b91fff8acb68bbe36e3b32f902006a7a8393b4c",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "horizontalOverflow": [],
+        "reviewRect": {
+          "left": 246,
+          "top": 52,
+          "width": 1034,
+          "height": 748,
+          "right": 1280,
+          "bottom": 800
+        }
+      }
+    },
+    {
+      "file": "screenshots/change-review-light-1024x768.png",
+      "state": "change-review",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "6a5c4f7eeeaf50efeaf55a144b05589c2e546a2aa8baf4b331620dfec6aaa899",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "horizontalOverflow": [],
+        "reviewRect": {
+          "left": 220,
+          "top": 52,
+          "width": 804,
+          "height": 716,
+          "right": 1024,
+          "bottom": 768
+        }
+      }
+    },
+    {
+      "file": "screenshots/change-review-dark-1440x900.png",
+      "state": "change-review",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "532f8a7ee0697cf87e499c14d4bcc350ec63750acfbeb86e510d72950ba71b59",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "horizontalOverflow": [],
+        "reviewRect": {
+          "left": 828.4375,
+          "top": 52,
+          "width": 611.5625,
+          "height": 848,
+          "right": 1440,
+          "bottom": 900
+        }
+      }
+    },
+    {
+      "file": "screenshots/change-review-dark-1280x800.png",
+      "state": "change-review",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "25d8b72536d8e9f0021e4dd91bb731d7388752070eceb87047c27eae96a1abc2",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "horizontalOverflow": [],
+        "reviewRect": {
+          "left": 246,
+          "top": 52,
+          "width": 1034,
+          "height": 748,
+          "right": 1280,
+          "bottom": 800
+        }
+      }
+    },
+    {
+      "file": "screenshots/change-review-dark-1024x768.png",
+      "state": "change-review",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "8444ea7c1105817dca0362372468e51f4f91d53847cf0a02bc7132baf76646fb",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "horizontalOverflow": [],
+        "reviewRect": {
+          "left": 220,
+          "top": 52,
+          "width": 804,
+          "height": 716,
+          "right": 1024,
+          "bottom": 768
+        }
+      }
+    },
+    {
+      "file": "screenshots/settings-01-light-1440x900.png",
+      "state": "settings-01",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "6599b0ab50766c1da327a8d793886b9b77726599cca3ecd9ea6bb5830aafc959",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-01-light-1280x800.png",
+      "state": "settings-01",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "8f6f1816003cfa937e01e1113f1aff12c8a1578d4c0ffcd6c25c4c29d91a8d11",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-01-light-1024x768.png",
+      "state": "settings-01",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "e0141f370dad6f03ee5c224a8bf39597c4a9c77046a1a3c7f33d57d697fd9439",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-02-light-1440x900.png",
+      "state": "settings-02",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "bcc6c3910c80328882499c7d344d9da24726949570a1a23c73016f80764ead15",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-02-light-1280x800.png",
+      "state": "settings-02",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "21099c45770fa09611188625872387ec6407bc5a1bc1dd7cc61e825d0556d29e",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-02-light-1024x768.png",
+      "state": "settings-02",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "48a0879f97c3d0aaf06989c0c350d4d697c81724ea642612bb041c892eda2d90",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-03-light-1440x900.png",
+      "state": "settings-03",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "1c696118b6f3a687683c6ee23bffe970a69baf5473ed982e463f4343c8b2e42a",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-03-light-1280x800.png",
+      "state": "settings-03",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "b34575d069333c449f38e0fbcb3df40420238432fad4fff5bddfcb510d2ce45a",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-03-light-1024x768.png",
+      "state": "settings-03",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "76aab02353e89985972d824a4ea63b73857d9c42c68679d4e4da034834258bee",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-04-light-1440x900.png",
+      "state": "settings-04",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "13b0fc8ec8b414b50419b553b317111ab5cff431bac1e813d6de07ffb07f8a34",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-04-light-1280x800.png",
+      "state": "settings-04",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "094b72fece16064dfcc917a71c4e9cbdf067b45bd968857905f2636ca378c241",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-04-light-1024x768.png",
+      "state": "settings-04",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "a5684ff6419f67bb11971fc656898311425fbee8112e395965ea61b502f89ea6",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-05-light-1440x900.png",
+      "state": "settings-05",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "2c613df0bf7612be92d985c04fd267b6c373bd60de2d9d287bea4c172637f0ed",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-05-light-1280x800.png",
+      "state": "settings-05",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "5ef6418035d320623781e43433fe754bd7b229ac2d1706cc270e142b431ee2ca",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-05-light-1024x768.png",
+      "state": "settings-05",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "0190471599e2d585473265e65059d75330659ed3b02f78e60b2cf40eefb7626c",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-06-light-1440x900.png",
+      "state": "settings-06",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "2483f828ef2ff1a05c7370099beec1b455f7b5d39cadb0f2064016b8ee54e0cc",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-06-light-1280x800.png",
+      "state": "settings-06",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "ecedaae02729d21cd355c9bc7e3f38493d3aaa5bb0ff27a280c8e2fde77f2065",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-06-light-1024x768.png",
+      "state": "settings-06",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "f25a82946ffd60a0606673284bab6e4e4041b095e70585029c72580fc8b28bdb",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-07-light-1440x900.png",
+      "state": "settings-07",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "53dbbdfd32c050382e0772e518097a5e72101afc6f8df89001cf236fa7970d0a",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-07-light-1280x800.png",
+      "state": "settings-07",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "f60c27d9cdbe70eacf3b590d3669badcc80217ee1106aa48d3b9b1a77908f8aa",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-07-light-1024x768.png",
+      "state": "settings-07",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "c7902ff9830a8f7d9aaaeb082a07c3d04b55e3bde05217a69a314f26657acf25",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-08-light-1440x900.png",
+      "state": "settings-08",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "9cf0313f91fb847cd129d4fd0c1cbd1513d687ecf2b04ce6039d9bacfbc07733",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-08-light-1280x800.png",
+      "state": "settings-08",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "2f88f7618f4274d71dc83b435612e4325c0f7914232f34874497d67611a77a75",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-08-light-1024x768.png",
+      "state": "settings-08",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "ced6fed27bf4e1b7018709d0ef4900327667d7b35bb0cf7f0e8d15c9dae70c77",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-09-light-1440x900.png",
+      "state": "settings-09",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "79505797e5f9d0493e4785306e2e5e2a0c30939dbbdf8849fc157968275db7e5",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-09-light-1280x800.png",
+      "state": "settings-09",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "95fe757bbe174937ff17d6e58fed59822513956642447753e1c3d39db445bf91",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-09-light-1024x768.png",
+      "state": "settings-09",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "ec29ff86b0a48308b9ed69d363d6ee5f84b95f2b04cbe5bd9cebd71ee4ba9393",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-10-light-1440x900.png",
+      "state": "settings-10",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "a2cb41e13b4373f1a1499c707bc70ac37cce47f9c6fb40a1e7c58a97b84280d3",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-10-light-1280x800.png",
+      "state": "settings-10",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "ebe8b300c7aa62e9dfcc546222c761b53ced9ba9351ce4e9bb80bf9a2559f874",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-10-light-1024x768.png",
+      "state": "settings-10",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "8bb4701322ec638132d6e54f4f596807976803ae8c250794e42ecd1af83272b7",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-search-light-1024x768.png",
+      "state": "settings-search",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "ec7a317c710fe811d55d4403441dd63b5bc6e2616536761099eb374859be3949",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-01-dark-1440x900.png",
+      "state": "settings-01",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "46021a349e33f802978ef03363ceb1acd41a38285a9cc00c4d7e2cd679fedc7e",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-01-dark-1280x800.png",
+      "state": "settings-01",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "4bbb4e7b38f930fc76a99ba6d98efbff81ca4e69a5948fb7f6c92a48733c3898",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-01-dark-1024x768.png",
+      "state": "settings-01",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "9bde8b903314b9e7326d32473358edc3d0e314952db340f3ffc6a2b0aaf833bf",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-02-dark-1440x900.png",
+      "state": "settings-02",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "5a5434d16da56d9ceefd170b3eb5c89f99a024327c8df2e21faaad912f0d0b09",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-02-dark-1280x800.png",
+      "state": "settings-02",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "d5aa688b20639918bb96c5ca69c8203e220bf4f67a866e3dc8274fe83429a8c7",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-02-dark-1024x768.png",
+      "state": "settings-02",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "470a01bbe4286ecf10f657d9809dbda4cdb728d9344cdfad182ae8568e8adeaa",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-03-dark-1440x900.png",
+      "state": "settings-03",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "098a41cc4a2187b3864c01fcdcaaaa8be04f527f80c32d94424d08622c089d3f",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-03-dark-1280x800.png",
+      "state": "settings-03",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "ad43ca9bc33ee51bf9ebbf245268f6b0e3115740ab37c2f1764c9ac950b9030b",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-03-dark-1024x768.png",
+      "state": "settings-03",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "f74634d1617f44be09254ece9b87979ffcaf037cf65d917a37c2255ae5eb5395",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-04-dark-1440x900.png",
+      "state": "settings-04",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "58646b13e8b21cb092a2226ba5963a4947d83e6385e9b5905fee668ab0b2e01b",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-04-dark-1280x800.png",
+      "state": "settings-04",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "2b6bcb87b258dacea7585710369fed664ced64e00b3853f81f5fae087f59597c",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-04-dark-1024x768.png",
+      "state": "settings-04",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "dbaeedf79f825184c5462c70cd5ace76d11ee28c2ebd1c7a9e627734b382c2d2",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-05-dark-1440x900.png",
+      "state": "settings-05",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "5bc1a1b6a1b79fd41058ec46deaec2ec8fe935b4cb80475979eede3ff72dcf66",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-05-dark-1280x800.png",
+      "state": "settings-05",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "93d4159cc3a3a2e50f7ce214968f36f0c1bb43eafaff78919fb711764331f357",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-05-dark-1024x768.png",
+      "state": "settings-05",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "f925a0fd242d5f2eec74dcc8a96f7fc1a6a81283ef0e87c6090354969384e7dc",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-06-dark-1440x900.png",
+      "state": "settings-06",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "f3c17e101746e16dd6041810f76a06a431f705950caf054f67cfaba5c70c338f",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-06-dark-1280x800.png",
+      "state": "settings-06",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "d4e02ab55a33e236046589a29c98d011f2846313a81249ccb2ad17d5b1227da3",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-06-dark-1024x768.png",
+      "state": "settings-06",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "435b8fad6da827a1281a1937c784d562b6bdbbe197a1c83418fd2a4f043d7fd1",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-07-dark-1440x900.png",
+      "state": "settings-07",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "ca3f39ed09349369649e13ee74dc82b29c3a0299096fa27dd5d985e7224eb39b",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-07-dark-1280x800.png",
+      "state": "settings-07",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "8bc714569f7ee0d516fd65936ca141d885f3a02cd55ae10bd1cf9a520c8a95ed",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-07-dark-1024x768.png",
+      "state": "settings-07",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "aa292b1196d7f7f47a158d775a8bc8f22786bce6574da9c81d386e5366b817c3",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-08-dark-1440x900.png",
+      "state": "settings-08",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "238ce600fb264e7068ad4cf8999ba823a47e098c4b5f7f30fca7c020a4502dd9",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-08-dark-1280x800.png",
+      "state": "settings-08",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "7db213e02203299d737ff5b95d4cf5f59cb9277e28aff41895e9217df13e8439",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-08-dark-1024x768.png",
+      "state": "settings-08",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "eebb64dad807898a850bd5b413f99586fd7f829af7c5208549bc9e8fee21a28e",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-09-dark-1440x900.png",
+      "state": "settings-09",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "f9fe43cdf7a9396855fad6a33fab08ac7cfed8447b934b91408fc5a59a895829",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-09-dark-1280x800.png",
+      "state": "settings-09",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "f59c46c1bd46ce3113051c6b3090ed507fdef69364a8226faff0da62960f082f",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-09-dark-1024x768.png",
+      "state": "settings-09",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "a9cdcc2b949fe469008b80fd6f0cfd550be3ff30bcb0a54a0fe294c7bf9d07a7",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-10-dark-1440x900.png",
+      "state": "settings-10",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "cce7d9f010f804dfa62cef1339fac500e94e84a200022a6a237f5d3b36da9a0d",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-10-dark-1280x800.png",
+      "state": "settings-10",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "8fa563d5b159404ceda12fdaa53968e8d7d5015ff2faa64b0226ee7b40baba3f",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-10-dark-1024x768.png",
+      "state": "settings-10",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "6ccf7973e4ed64080e1f375cb320d4e3dac1da8074a102d29023a4a0a9f363c7",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/settings-search-dark-1024x768.png",
+      "state": "settings-search",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "0d633c0dd7585ec678de6cfbbc5007f75ca5f73ee2db193a866b8fa09b35d357",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "dialog": "Settings",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-01-light-1440x900.png",
+      "state": "resources-01",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "d94d5f642f4e1ae298311b806f3b1e50e419cf28184b81635624f00a11baa0e1",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-01-light-1280x800.png",
+      "state": "resources-01",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "49eebd205e9b8e92dca5d84511ac9cd76f6eeef0588ce13ff81f557811315fb0",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-01-light-1024x768.png",
+      "state": "resources-01",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "802ef5b7d7c4be0993a57538852ac4cae06139cbdd4859c101a8504c727f09a8",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-02-light-1440x900.png",
+      "state": "resources-02",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "7eeebe07057fdc3c2fbe3ae652945d4d303a6eb3d597dcf56e57d62b07dd9063",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-02-light-1280x800.png",
+      "state": "resources-02",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "1e62be81b5cc6aec1f7f7057a5a1944af1db22fabc6feb079f3b8c54c4c0f164",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-02-light-1024x768.png",
+      "state": "resources-02",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "8c6132dceadea67e147d24b113e434e58b099c8f8d5a1dd9f2d2905c8a8b3da8",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-03-light-1440x900.png",
+      "state": "resources-03",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "e4f778f8ce99ccf999189de42bb3923d9d77382dd2cda75f1803b581acefdf45",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-03-light-1280x800.png",
+      "state": "resources-03",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "3efc0986ee4e72646fac2c012602b5d04aa228c2415cfe662430482f6a6029da",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-03-light-1024x768.png",
+      "state": "resources-03",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "9ef723cb46ec922d448ce8ec63fe897a388c9d2d530751cdbf84c7c3ad796ccf",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-04-light-1440x900.png",
+      "state": "resources-04",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "411b41636fbe87b07af46eb326bc9cf5ca4e9738d30bda7367c2db3ab4622ee5",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-04-light-1280x800.png",
+      "state": "resources-04",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "7213c0be779572a6ffd339d9c8b8cc584d585d0b3ab56c68944b7aaa9e996a8a",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-04-light-1024x768.png",
+      "state": "resources-04",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "fdc898108669eb105528bbda9f1c6febb9fed24f1d8f72c68f22e69ff889ce7e",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-05-light-1440x900.png",
+      "state": "resources-05",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "a88107ac206bf9dec0f6c1d342ff6c69865f2b2e859138f8777755f345b8c128",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-05-light-1280x800.png",
+      "state": "resources-05",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "5f645c37cf01d200da75a399ffca6d6d15a945ea431c659e42ad5b0ba9748e31",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-05-light-1024x768.png",
+      "state": "resources-05",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "c507be0c3c47b197a3954ecb97addb4ba206040a4567df2e7d26412d350968be",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-06-light-1440x900.png",
+      "state": "resources-06",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "d4f524dd3b31496fade1a5be19a5d05c69301061818c3f2c2e3fb3215e75a4ae",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-06-light-1280x800.png",
+      "state": "resources-06",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "5276e6dc9130b2987818ae3882ab105ff61f0fbc46d9435a96ead06a2a8e5ec6",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-06-light-1024x768.png",
+      "state": "resources-06",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "6a1006084bc148b5764a0ee0334454b8ef97fddb2820f7cb9679c640103b63ef",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-01-dark-1440x900.png",
+      "state": "resources-01",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "4000292de4a6040343872f4ed020c16353a97dce9f3b94d349e1f708e4e5613f",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-01-dark-1280x800.png",
+      "state": "resources-01",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "d290d3ec2560503ee785da475a0fc16022e6589108cc93932c5ccf9947b1e646",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-01-dark-1024x768.png",
+      "state": "resources-01",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "2250205d06febd79fd44075afc80e7326606d21e0edecf3e819bd6d8842382bf",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-02-dark-1440x900.png",
+      "state": "resources-02",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "3cad37f00ed1b7998d3d64a1cf941a096cd1c8a3a7901fb826f737d3466c153e",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-02-dark-1280x800.png",
+      "state": "resources-02",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "81bee48debbcd3291508432966d08f0d1f1c5c561f3c88bb64b61c5cdf62b86c",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-02-dark-1024x768.png",
+      "state": "resources-02",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "565a6371a6f8ec3c2cd77ab5461870dd012971b2bf620bc3cf79d8997270da55",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-03-dark-1440x900.png",
+      "state": "resources-03",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "8436e110b02948dda04bba9e161cfda31b1aa806049decf56fce1da02581b412",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-03-dark-1280x800.png",
+      "state": "resources-03",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "7a06ee6edf33054bbc3523f5616cacdff8e18d0963948f49f7e384560d02f3c6",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-03-dark-1024x768.png",
+      "state": "resources-03",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "3deda3bd7fd5a5b324836c752729d50b8af8b1b9175a3affe2c5a0e64987ac06",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-04-dark-1440x900.png",
+      "state": "resources-04",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "85392ef7fe3daf4b2cf777e6689c30ea440b39c3f69d6b3a3322eae110cf7ff1",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-04-dark-1280x800.png",
+      "state": "resources-04",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "421e2735440036088bf67a28f3d47a9904ee49a2066fde40604fb468bb6d8b2f",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-04-dark-1024x768.png",
+      "state": "resources-04",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "825ecfc85d36c3b942a0f7f92fe842989e6d3af9d9806e11a7bde3f007e55b9b",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-05-dark-1440x900.png",
+      "state": "resources-05",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "2fbd7a4e325cad682bb5a257af92309349d775b5c826dfed840926d77efc933a",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-05-dark-1280x800.png",
+      "state": "resources-05",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "e9445812c920f7168aad75c33062085f367784a2f71f510fbc7371d6645f6560",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-05-dark-1024x768.png",
+      "state": "resources-05",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "b0e8cc3350d977426af028004c74873570cc5f465694ab78b0aee9a256824605",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-06-dark-1440x900.png",
+      "state": "resources-06",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "004096fab4cb1d0ac5ca8d799561e7527d288405fd06343537196e3e605e42d2",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-06-dark-1280x800.png",
+      "state": "resources-06",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "522a9f7c82be69fa26a94f3e37373794c87d33544fc53cfff54697912c979340",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/resources-06-dark-1024x768.png",
+      "state": "resources-06",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "1ae60c450b7eccd5e64adb07599e7ed2e52288bcfb4aa7eaf857c16d08cf8a1b",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    }
+  ],
+  "cleanup": {
+    "completed": true,
+    "failures": []
+  },
+  "owner_processes": [
+    {
+      "pid": 32728,
+      "exited": true
+    },
+    {
+      "pid": 32886,
+      "exited": true
+    },
+    {
+      "pid": 33161,
+      "exited": true
+    }
+  ]
+}

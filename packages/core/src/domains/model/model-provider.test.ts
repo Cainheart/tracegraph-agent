@@ -719,7 +719,7 @@ describe("ConfigurableModelAdapter", () => {
     expect(decision).toMatchObject({ kind: "finish", risk: "none" });
     expect(decision.final_answer).not.toContain("UNSAFE_ORIGINAL_ANSWER");
     expect(decision.final_answer).not.toContain("UNSAFE_REPAIR_ANSWER");
-    expect(decision.final_answer).toContain("TraceGraph");
+    expect(decision.final_answer).toContain("Outlive Agent");
   });
 
   it("repairs an unbounded malformed Decision JSON as a single read-only final answer", async () => {
@@ -1503,4 +1503,12 @@ describe("ConfigurableModelAdapter", () => {
       evidenceSequences: [1],
     })).rejects.toMatchObject({ code: "model_not_configured" });
   });
+});
+
+describe("explicit model connection probe",()=>{
+  function probe(){const model=testModelAdapter("probe-secret-value");model.configure({provider:"openai",protocol:"openai-chat-completions",baseUrl:"http://127.0.0.1:9999/v1",model:"probe-model",credentialRef:TEST_CREDENTIAL_REFERENCE});return model;}
+  it("sends only a tiny public request and distinguishes a valid response",async()=>{let payload:unknown;vi.stubGlobal("fetch",vi.fn(async(_url,init)=>{payload=JSON.parse(init.body);return new Response(JSON.stringify({choices:[{message:{content:"OK"}}]}));}));await probe().testConnection();expect(payload).toEqual({model:"probe-model",max_completion_tokens:16,messages:[{role:"user",content:"Connection test. Reply OK."}]});expect(JSON.stringify(payload)).not.toContain("project");});
+  it.each([[401,"model_authentication_failed"],[404,"model_not_found"],[429,"model_rate_limited"]])("classifies HTTP %s without echoing provider diagnostics",async(status,code)=>{vi.stubGlobal("fetch",vi.fn(async()=>new Response("probe-secret-value and private provider text",{status})));await expect(probe().testConnection()).rejects.toMatchObject({code});});
+  it("maps timeout and invalid response separately",async()=>{vi.stubGlobal("fetch",vi.fn(async()=>{throw new DOMException("timeout","TimeoutError");}));const signal=AbortSignal.abort(new DOMException("timeout","TimeoutError"));await expect(probe().testConnection({signal})).rejects.toMatchObject({code:"model_timeout"});vi.stubGlobal("fetch",vi.fn(async()=>new Response("{}")));await expect(probe().testConnection()).rejects.toMatchObject({code:"model_response_invalid"});});
+  it("does not start after clearing the configuration",async()=>{const model=probe();model.clearConfiguration();vi.stubGlobal("fetch",vi.fn());await expect(model.testConnection()).rejects.toMatchObject({code:"model_not_configured"});expect(fetch).not.toHaveBeenCalled();});
 });

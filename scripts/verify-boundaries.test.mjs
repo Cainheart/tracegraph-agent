@@ -22,8 +22,8 @@ test("the current workspace dependency and import graph satisfies architecture-p
   const outcome = await verifyBoundaries(REPOSITORY_ROOT);
   assert.deepEqual(outcome.errors, []);
   assert.equal(outcome.ok, true);
-  assert.equal(outcome.packageCount, 18);
-  assert.equal(outcome.dependencyCount, 34);
+  assert.equal(outcome.packageCount, 22);
+  assert.equal(outcome.dependencyCount, 58);
   assert.ok(outcome.importCount > 0);
 });
 

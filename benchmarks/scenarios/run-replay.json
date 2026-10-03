@@ -1,0 +1,13 @@
+{
+  "schema_version": "tracegraph.benchmark-scenario.v1",
+  "id": "run-replay",
+  "version": "1.0.0",
+  "description": "Complete a deterministic Tool-backed Run and replay its final sequence",
+  "working_directory": ".",
+  "correctness_command": { "args": ["benchmarks/paths/scenario.mjs", "correctness", "run-replay"] },
+  "command": { "args": ["benchmarks/paths/scenario.mjs", "measure", "run-replay"] },
+  "warmup_iterations": 1,
+  "sample_iterations": 5,
+  "timeout_ms": 30000,
+  "budget": { "wall_time_ms_p95_max": 2000 }
+}

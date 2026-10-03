@@ -5,7 +5,7 @@ status: proposed
 scope: design-index
 language: zh-CN
 parent: ../outlive-agent-v2.md
-last_reviewed: 2026-09-29
+last_reviewed: 2026-10-03
 ---
 
 # Outlive Agent V2 · 设计文档索引
@@ -133,7 +133,7 @@ flowchart TB
 | DEC-06 | **已接受；待 P6 协议实施** | 长任务以可查询的 Operation Resource 作为当前状态与重连真相；durable event stream 供实时更新、游标续传和观察，不单独承担最终状态。断线后重新读 Resource/Snapshot，再续订事件，沿用 DSH Job 的“资源控制 + 事件观察”组合。 | [命令、查询与事件模型](01-system-architecture/02-command-query-event-model.md) |
 | DEC-07 | **已接受；待 P6 Desktop 实施** | Desktop 采用 Electron 壳、独立 Host 和 Web 共享工作台 UI；Renderer 通过受限 Preload/Bridge 与 Main 通信，Main 通过私有 framed RPC 调用 Host。业务状态归 Host/Runtime，不归 Electron Main。 | [Desktop 客户端设计](06-clients-protocols-desktop/README.md)；[Desktop 进程安全](06-clients-protocols-desktop/03-desktop-process-security.md) |
 | DEC-08 | **已接受原则；指标阈值待 P8 基线后确定** | 默认不外发产品遥测；如后续启用，必须由用户明确 opt-in，按事件白名单发送，不收集 Prompt/响应、源码、Session/Memory 正文或自动身份标识。Langfuse 独立承载用户授权的模型/任务质量评估。README 只发布有定义、分母、窗口、隐私说明和可复核证据的指标；样本量与回归阈值在基线后制定。 | [成功指标与决策机制](00-product-charter/03-success-metrics-decisions.md)；P8 |
-| DEC-09 | **已接受；待 P0 `GOV-001` / `DOC-002` 实施** | 评审结果记录在本登记表/Note 正文，Note `status` 只表示提案、实现、否决或归档生命周期；接受但未实现仍是 `proposed`。Skill 的“两次真实使用”是成熟度复核建议，不是创建/启用硬门槛。目录级 `AGENTS.md` 只按子树独有、高风险规则增设。 | [AGENTS、Notes 与 Skills](02-repository-governance/01-agents-notes-skills.md) |
+| DEC-09 | **已接受；`GOV-001` / `DOC-002` 已核验** | 治理入口已存在，V2 manifest/roadmap DAG checker 与违规 fixtures 于 2026-10-03 重新通过。评审结果记录在本登记表/Note 正文，Note `status` 只表示提案、实现、否决或归档生命周期；接受但未实现仍是 `proposed`。Skill 的“两次真实使用”是成熟度复核建议，不是创建/启用硬门槛。目录级 `AGENTS.md` 只按子树独有、高风险规则增设。 | [AGENTS、Notes 与 Skills](02-repository-governance/01-agents-notes-skills.md)；[校验器](../../scripts/verify-v2-docs.mjs) |
 | DEC-10 | **已接受；待 P7 文档治理、P8 Website 实施** | 文档按文档族指定单一源语言；公开 API/用户指南采用英文为 canonical、中文为人工审校配对版，现有中文 V2 设计集继续以中文为源，直到抽取公开文档。接受静态站点从版本化 docs 投影；使用 VitePress 路线，Website 延后至 P1–P7 开发完成。社区翻译可通过 PR 贡献，但必须经术语/事实审校及配对检查，不接受未审校机器译文直接发布。 | [文档、生成与国际化](02-repository-governance/02-docs-generation-i18n.md)；[Docs/Website 设计](07-quality-benchmarks-snapshots-i18n/04-docs-i18n-website.md) |
 | DEC-11 | **已接受；待 P3 首批 package 发布前实施** | `@outlive/*` 属于同一 Monorepo 发布族，包版本跟随仓库统一版本；兼容性和破坏性变更按统一 SemVer/迁移说明发布，不采用每包独立版本或 Changesets 作为版本真源。真正公开发布前再确定注册表、发布凭据和自动化细节。 | [变更门禁与发布](02-repository-governance/03-change-gates-release.md)；[包拓扑](03-package-topology/README.md) |
 | DEC-12 | **已接受原则；固定 Runner/预算待 P7 门禁实施时校准** | 性能门禁采用可复现的固定 Runner class 和受控运行时；PR 运行短小的关键路径集，较大场景放到 nightly/release。先以观察模式量化噪声，再对少数用户关键路径阻断；基线绑定 commit、场景、硬件/运行时指纹和原始样本。借鉴 DSH 的独立 PR Benchmark lane，不照搬其专用 Runner 的资源规格。 | [Benchmark 系统](07-quality-benchmarks-snapshots-i18n/02-benchmark-system.md)；[变更门禁与发布](02-repository-governance/03-change-gates-release.md) |

@@ -1,0 +1,47 @@
+panic: bundled: /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/installed-product-complete-mac/artifacts/mac-arm64/Outlive Agent.app/Contents/Resources/app/node_modules/@typescript/typescript-darwin-arm64/lib/lib.d.ts does not exist; this executable may be misplaced [recovered, repanicked]
+
+goroutine 1 [running]:
+github.com/microsoft/typescript-go/internal/bundled.init.OnceValue[...].func8.1.1()
+	sync/oncefunc.go:63 +0x7c
+panic({0x1039ebd60?, 0x496c3d6307f0?})
+	runtime/panic.go:860 +0x12c
+github.com/microsoft/typescript-go/internal/bundled.init.func4()
+	github.com/microsoft/typescript-go/internal/bundled/noembed.go:40 +0x124
+github.com/microsoft/typescript-go/internal/bundled.init.OnceValue[...].func8.1()
+	sync/oncefunc.go:66 +0x54
+sync.(*Once).doSlow(0x496c3d6f7d28?, 0x102f2d780?)
+	sync/once.go:78 +0xdc
+sync.(*Once).Do(0x496c3d6f7d28?, 0x102f2d798?)
+	sync/once.go:69 +0x24
+github.com/microsoft/typescript-go/internal/bundled.init.OnceValue[...].func8()
+	sync/oncefunc.go:58 +0x3c
+github.com/microsoft/typescript-go/internal/bundled.LibPath(...)
+	github.com/microsoft/typescript-go/internal/bundled/bundled.go:31
+main.runAPI({0x496c3d60a0a0, 0x2, 0x2})
+	github.com/microsoft/typescript-go/cmd/tsgo/api.go:28 +0x1b0
+main.runMain()
+	github.com/microsoft/typescript-go/cmd/tsgo/main.go:25 +0xb8
+main.main()
+	github.com/microsoft/typescript-go/cmd/tsgo/main.go:14 +0x1c
+file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/installed-product-complete-mac/artifacts/mac-arm64/Outlive%20Agent.app/Contents/Resources/app/node_modules/@tracegraph/codegraph/dist/analyze.js:221
+            throw new CodeGraphAnalysisError("typescript_analysis_failed", `TypeScript analysis failed: ${redactWorkspaceRoot(error instanceof Error ? error.message : String(error), workspaceRoot)}`, { cause: error });
+                  ^
+
+CodeGraphAnalysisError: TypeScript analysis failed: Unexpected EOF while reading from child process (unknown reason)
+    at analyzeCodeGraph (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/installed-product-complete-mac/artifacts/mac-arm64/Outlive%20Agent.app/Contents/Resources/app/node_modules/@tracegraph/codegraph/dist/analyze.js:221:19)
+    at async file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/[eval1]:2:14 {
+  code: 'typescript_analysis_failed',
+  [cause]: Error: Unexpected EOF while reading from child process (unknown reason)
+      at SyncRpcChannel.eofError (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/installed-product-complete-mac/artifacts/mac-arm64/Outlive%20Agent.app/Contents/Resources/app/node_modules/typescript/dist/api/syncChannel.js:395:16)
+      at SyncRpcChannel.fillReadBuffer (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/installed-product-complete-mac/artifacts/mac-arm64/Outlive%20Agent.app/Contents/Resources/app/node_modules/typescript/dist/api/syncChannel.js:431:32)
+      at SyncRpcChannel.readByte (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/installed-product-complete-mac/artifacts/mac-arm64/Outlive%20Agent.app/Contents/Resources/app/node_modules/typescript/dist/api/syncChannel.js:400:18)
+      at SyncRpcChannel.readTuple (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/installed-product-complete-mac/artifacts/mac-arm64/Outlive%20Agent.app/Contents/Resources/app/node_modules/typescript/dist/api/syncChannel.js:346:29)
+      at SyncRpcChannel.requestBytesSync (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/installed-product-complete-mac/artifacts/mac-arm64/Outlive%20Agent.app/Contents/Resources/app/node_modules/typescript/dist/api/syncChannel.js:223:18)
+      at SyncRpcChannel.requestSync (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/installed-product-complete-mac/artifacts/mac-arm64/Outlive%20Agent.app/Contents/Resources/app/node_modules/typescript/dist/api/syncChannel.js:164:29)
+      at Client.apiRequest (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/installed-product-complete-mac/artifacts/mac-arm64/Outlive%20Agent.app/Contents/Resources/app/node_modules/typescript/dist/api/sync/client.js:58:37)
+      at API.ensureInitialized (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/installed-product-complete-mac/artifacts/mac-arm64/Outlive%20Agent.app/Contents/Resources/app/node_modules/typescript/dist/api/sync/api.js:55:42)
+      at API.updateSnapshot (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/installed-product-complete-mac/artifacts/mac-arm64/Outlive%20Agent.app/Contents/Resources/app/node_modules/typescript/dist/api/sync/api.js:67:14)
+      at analyzeCodeGraph (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/installed-product-complete-mac/artifacts/mac-arm64/Outlive%20Agent.app/Contents/Resources/app/node_modules/@tracegraph/codegraph/dist/analyze.js:97:41)
+}
+
+Node.js v24.21.0

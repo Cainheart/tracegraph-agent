@@ -1,0 +1,43 @@
+{
+  "schema_version": "outlive.windows-static-verification.v1",
+  "status": "passed",
+  "checks": {
+    "windows_x64_main": true,
+    "branded_product": true,
+    "branded_icon": true,
+    "signature_not_claimed": true
+  },
+  "product_build_id": "23c674c49a4868e1d0929e8ab66d4ecd5da0203ac95e85625ab5079464180732",
+  "pe_metadata": {
+    "CompanyName": "Outlive Agent contributors",
+    "FileDescription": "Outlive Agent",
+    "FileVersion": "0.1.0-alpha.0",
+    "InternalName": "Outlive Agent",
+    "LegalCopyright": "Copyright © 2026 Outlive Agent contributors",
+    "OriginalFilename": "",
+    "ProductName": "Outlive Agent",
+    "ProductVersion": "0.1.0.0",
+    "SquirrelAwareVersion": "1"
+  },
+  "artifacts": [
+    {
+      "file": "Outlive-Agent-0.1.0-alpha.0-win-x64.zip",
+      "byte_length": 258103189,
+      "sha256": "602ff1557481fa96a80c150d3d6a8312e8d1be5919c11293d018d004f4160f55"
+    },
+    {
+      "file": "Outlive-Agent-0.1.0-alpha.0-win-x64.exe.blockmap",
+      "byte_length": 212817,
+      "sha256": "c5dc5e11b26c261ff3f3f20e68ef6f110068199e3f6c441bc58cb22b2b880b6d"
+    },
+    {
+      "file": "Outlive-Agent-0.1.0-alpha.0-win-x64.exe",
+      "byte_length": 204944827,
+      "sha256": "282f29259275c0ba7bbcee6ea072522ea9a954dfd091bad1ae2305a0e116d1fa"
+    }
+  ],
+  "native_launch": "not-run",
+  "native_install": "not-run",
+  "native_pty": "not-run",
+  "signature_status": "not-requested"
+}

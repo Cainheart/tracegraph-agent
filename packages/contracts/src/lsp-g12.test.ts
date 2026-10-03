@@ -52,7 +52,7 @@ describe("G12 LSP contracts", () => {
       project_id: "project:test",
       diagnostic_count: 1,
     });
-    expect(EventTypeSchema.options.slice(-4, -2)).toEqual([
+    expect(EventTypeSchema.options.slice(-9, -7)).toEqual([
       "lsp.diagnostics_received",
       "lsp.server_unavailable",
     ]);

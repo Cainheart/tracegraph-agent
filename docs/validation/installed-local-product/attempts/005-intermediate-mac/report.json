@@ -1,0 +1,95 @@
+{
+  "schema_version": "outlive.product-smoke.v1",
+  "status": "passed",
+  "platform": "darwin",
+  "arch": "arm64",
+  "product_build_id": "326e9ba6940ab12284593f1c03de9eb337a5496a929d0938021261da898420d9",
+  "provider": "isolated deterministic loopback fixture",
+  "external_node_on_child_path": false,
+  "external_pnpm_on_child_path": false,
+  "assertions": [
+    {
+      "id": "bundled-main-owner",
+      "pid": 56843,
+      "boot_nonce": "cdf50566-984f-4177-b589-3ab8f1aad51d",
+      "gateway": "http://127.0.0.1:56982",
+      "status": "passed"
+    },
+    {
+      "id": "actual-packaged-window",
+      "screenshot": "first-window.png",
+      "status": "passed"
+    },
+    {
+      "id": "same-owner-packaged-web",
+      "gateway": "http://127.0.0.1:56982",
+      "status": "passed"
+    },
+    {
+      "id": "model-save",
+      "configured": true,
+      "status": "passed"
+    },
+    {
+      "id": "explicit-model-test",
+      "status": "passed"
+    },
+    {
+      "id": "bundled-cli-shared-model",
+      "model": "installed-fixture",
+      "has_key": true,
+      "status": "passed"
+    },
+    {
+      "id": "managed-project-create",
+      "project_id": "project:installed-smoke-project:3b7cba42",
+      "status": "passed"
+    },
+    {
+      "id": "bundled-node-child-pty",
+      "version": "24.21.0",
+      "closed": true,
+      "status": "passed"
+    },
+    {
+      "id": "window-close-keeps-owner",
+      "boot_nonce": "cdf50566-984f-4177-b589-3ab8f1aad51d",
+      "status": "passed"
+    },
+    {
+      "id": "background-run-completes",
+      "run_id": "run:4cee5bc6-2279-40ca-b658-bd3907705d34",
+      "run_status": "completed",
+      "status": "passed"
+    },
+    {
+      "id": "reopen-reuses-owner",
+      "boot_nonce": "cdf50566-984f-4177-b589-3ab8f1aad51d",
+      "status": "passed"
+    },
+    {
+      "id": "idle-settings-restart-rebind",
+      "boot_nonce": "79b813ae-f835-4c69-a9fe-9d77cd29c143",
+      "pending_restart": [],
+      "status": "passed"
+    }
+  ],
+  "cleanup": {
+    "owner_stopped": true,
+    "apps_exited": true,
+    "isolated_profile_removed": true,
+    "app_processes": [
+      {
+        "pid": 56837,
+        "exit_code": 0,
+        "signal": null
+      },
+      {
+        "pid": 56926,
+        "exit_code": null,
+        "signal": "SIGKILL"
+      }
+    ]
+  },
+  "provider_calls": 2
+}

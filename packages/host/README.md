@@ -8,15 +8,15 @@ Expose Host-owned project, Session, Run, artifact, Memory control, command, and 
 
 ## Public API
 
-The package root exports `createTraceGraphHost` and the Host option, controller, project, and lifecycle types. Memory control routes delegate to Runtime's single Core command/query service and derive scope from the Host-visible project registry. The package also has a development entry point; the regular public export is `.`.
+The package root preserves the `createTraceGraphHost` and Host type exports as a compatibility facade; the Fastify implementation is available at `@tracegraph/host/webserver`. Run start/read and Session list/read/resume orchestration is shared through `@tracegraph/api`; HTTP authentication, status mapping, cache headers, and SSE remain in the webserver adapter. Memory control routes delegate to Runtime's single Core command/query service and derive scope from the Host-visible project registry. The package also exposes `ensureLocalHost`, `connectLocalHost`, `readLocalHostStatus`, `startLocalHost`, and `stopLocalHost`, shared profile discovery and owner leases, workspace admission, and explicit legacy migration preview/commit operations. Web HTTP and private local HTTP use the same Fastify routes and Runtime. Client `close()` detaches; explicit Host stop shuts down Runs and resources.
 
 ## Dependencies
 
-It depends on `@tracegraph/contracts`, `@tracegraph/core`, Fastify, `@fastify/cors`, and Zod. The SDK is a client of Host and is not a Host dependency.
+It depends on `@tracegraph/api`, `@tracegraph/contracts`, `@tracegraph/core`, Fastify, `@fastify/cors`, and Zod. The SDK supplies the authenticated private local client facade; Host-owned composition also uses the public Session, MCP, LSP, retrieval and telemetry packages. `node-pty` provides the managed terminal backend.
 
 ## State ownership
 
-Host owns the in-process composition and transport lifecycle. Core remains the canonical owner of Run facts and durable stores; Host does not create a parallel Run ledger.
+Host owns the in-process composition and transport lifecycle. Core remains the canonical owner of Run facts and durable stores. Host settings and resource indexes are durable projections; business commands and schedule triggers use the existing validated SessionEvent Ledger format. Requested commands without a receipt are not retried after restart.
 
 ## Extension points
 
@@ -28,7 +28,7 @@ Host does not infer model decisions. It validates and routes user commands to th
 
 ## Verification
 
-Run `pnpm run build && pnpm --filter @tracegraph/host test:unit` from the repository root.
+Run `pnpm --filter @tracegraph/host build && pnpm --filter @tracegraph/host test:unit` from the repository root.
 
 ## Known limitations
 

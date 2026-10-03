@@ -1,0 +1,34 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent
+
+ ✓ |tracegraph-evals| evals/runtime/crash-recovery.eval.ts (1 test) 1180ms
+   ✓ runtime behavior: crash recovery (1)
+     ✓ renews stale approval authority after restart and resumes the same ledger 1180ms
+ ✓ |tracegraph-evals| evals/runtime/subagent-delegation.eval.ts (1 test) 669ms
+   ✓ runtime behavior: subagent delegation (1)
+     ✓ records six parent receipts for two children whose ledgers replay completely 668ms
+ ✓ |tracegraph-evals| evals/runtime/attachment-multimodal.eval.ts (3 tests) 562ms
+ ✓ |tracegraph-evals| evals/runtime/extension-system.eval.ts (3 tests) 408ms
+ ✓ |tracegraph-evals| evals/runtime/approval-chain.eval.ts (1 test) 456ms
+   ✓ runtime behavior: approval chain (1)
+     ✓ binds one approval to the previewed patch before applying it 456ms
+ ✓ |tracegraph-evals| evals/runtime/tool-parallel.eval.ts (1 test) 340ms
+   ✓ runtime behavior: parallel tools (1)
+     ✓ executes one safe batch concurrently while preserving requested observation order 339ms
+ ✓ |tracegraph-evals| evals/runtime/compaction-trigger.eval.ts (1 test) 257ms
+ ✓ |tracegraph-evals| evals/perf/performance.eval.ts (3 tests) 242ms
+ ✓ |tracegraph-evals| evals/runtime/sandbox-refusal.eval.ts (1 test) 210ms
+ ✓ |tracegraph-evals| evals/replay/time-travel.eval.ts (1 test) 116ms
+ ✓ |tracegraph-evals| evals/runtime/agent-team.eval.ts (1 test) 108ms
+ ✓ |tracegraph-evals| evals/quality/retrieval-rag-quality.eval.ts (2 tests) 52ms
+ ✓ |tracegraph-evals| evals/quality/codegraph-diagnostics-quality.eval.ts (1 test) 38ms
+ ✓ |tracegraph-evals| evals/docs/implementation-consistency.eval.ts (6 tests) 11ms
+ ✓ |tracegraph-evals| evals/docs/g22-release-consistency.eval.ts (4 tests) 14ms
+ ✓ |tracegraph-evals| evals/support/offline-guard.eval.ts (1 test) 7ms
+ ✓ |tracegraph-evals| evals/quality/memory-context-quality.eval.ts (1 test) 2ms
+
+ Test Files  17 passed (17)
+      Tests  32 passed (32)
+   Start at  14:03:04
+   Duration  7.77s (tests 68%, import 21%, transform 10%, setup 1%)
+

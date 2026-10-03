@@ -1,0 +1,18 @@
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: readonly (parallel 2, depth 1)
+file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/unified-local-workbench-20261003-final-install/outlive-agent-0.1.0-alpha.0-preview/packages/sdk/dist/index.js:696
+            throw new Error("TraceGraph client is not bootstrapped");
+                  ^
+
+Error: TraceGraph client is not bootstrapped
+    at #headers (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/unified-local-workbench-20261003-final-install/outlive-agent-0.1.0-alpha.0-preview/packages/sdk/dist/index.js:696:19)
+    at #requestResponse (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/unified-local-workbench-20261003-final-install/outlive-agent-0.1.0-alpha.0-preview/packages/sdk/dist/index.js:663:33)
+    at #requestUnknown (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/unified-local-workbench-20261003-final-install/outlive-agent-0.1.0-alpha.0-preview/packages/sdk/dist/index.js:649:53)
+    at TraceGraphClient.listSessions (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/unified-local-workbench-20261003-final-install/outlive-agent-0.1.0-alpha.0-preview/packages/sdk/dist/index.js:233:74)
+    at main (file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/unified-local-workbench-20261003-final-install/outlive-agent-0.1.0-alpha.0-preview/scripts/preview-smoke.mjs:30:41)
+    at async file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/unified-local-workbench-20261003-final-install/outlive-agent-0.1.0-alpha.0-preview/scripts/preview-smoke.mjs:82:72
+
+Node.js v24.21.0

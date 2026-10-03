@@ -1,0 +1,2376 @@
+{
+  "surface": "packaged-desktop",
+  "cli_executable": "/Users/cain/Applications/Outlive Agent.app/Contents/Resources/bin/outlive",
+  "cli_exit_code": 0,
+  "project_id": "project:local:bbf47aac8992e438",
+  "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+  "approval_id": "approval:a649f542-d85b-4331-a04e-b09cca442f3f",
+  "action_id": "action:installed-patch-4",
+  "event_id": "event:1ec0cf70-6c2d-4665-a863-9b9c78d0efeb",
+  "before_hash": "sha256:0e6cf789846139c8cc7a8e252486ee3433e1df45557d1cfb6e0c98b94a283b33",
+  "applied_hash": "sha256:e78fb1037ff4324bfede1601d61ddda3db365fe9bc9ef7b900e488ac43223abb",
+  "projection": {
+    "schema_version": "tracegraph.session-event.v1",
+    "projector_version": "tracegraph.projector.v9",
+    "project_id": "project:local:bbf47aac8992e438",
+    "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+    "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+    "task": "Actual installed patch approval and review",
+    "mode": "execute",
+    "reasoning_effort": "default",
+    "workspace_kind": "managed_local",
+    "status": "completed",
+    "last_sequence": 54,
+    "timeline": [
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:345b1136-6b4d-4393-a8ed-268da1527c49",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 1,
+        "occurred_at": "2026-10-03T09:18:18.439Z",
+        "type": "run.created",
+        "summary": "Run created",
+        "artifact_refs": [],
+        "data": {
+          "task": "Actual installed patch approval and review",
+          "mode": "execute",
+          "reasoning_effort": "default",
+          "workspace_kind": "managed_local",
+          "conversation_message_count": 0,
+          "max_turns": 12,
+          "subagent_limits": {
+            "max_parallel_subagents": 2,
+            "max_depth": 1
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:4d433c6c-b1ee-4439-919e-57ecc281d8a7",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 2,
+        "occurred_at": "2026-10-03T09:18:18.460Z",
+        "type": "session.opened",
+        "summary": "Durable session opened",
+        "artifact_refs": [],
+        "data": {
+          "session_version": 1
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:6f07d663-5564-49b5-abe3-a0b5549b4022",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 3,
+        "occurred_at": "2026-10-03T09:18:18.482Z",
+        "type": "permission.configured",
+        "summary": "Permission preset configured as workspace-write",
+        "artifact_refs": [],
+        "data": {
+          "permission": {
+            "preset_key": "workspace-write",
+            "label": "Workspace write",
+            "sandbox_mode": "workspace-write",
+            "approval_policy": "on-write",
+            "policy_digest": "sha256:8a007dbb9f361639b82a7b17941c3c8f8a3761d4eb805cb9f08bdac7f0e4ae1d"
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:e4ab9664-1846-4853-b182-b994fa23c884",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 4,
+        "occurred_at": "2026-10-03T09:18:18.506Z",
+        "type": "skill.registry_loaded",
+        "summary": "Loaded 0 local Skill catalog entries",
+        "artifact_refs": [],
+        "data": {
+          "registry_digest": "sha256:cfd7a252974f7d974251d383272d845c0c44b5295051650764ee275b99d401f6",
+          "skill_names": [],
+          "loaded_count": 0,
+          "conflict_count": 0,
+          "diagnostic_count": 0
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:def39495-24c0-470d-9c8d-82c0e2820aba",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 5,
+        "occurred_at": "2026-10-03T09:18:18.544Z",
+        "type": "sandbox.configured",
+        "summary": "Sandbox mode configured as workspace-write",
+        "artifact_refs": [],
+        "data": {
+          "mode": "workspace-write",
+          "platform": "darwin"
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:01d3a850-affd-4ce9-b27b-97ef6da43423",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 6,
+        "occurred_at": "2026-10-03T09:18:18.564Z",
+        "type": "sandbox.enforced",
+        "summary": "OS sandbox enforcement is active",
+        "artifact_refs": [],
+        "data": {
+          "sandbox_report": {
+            "report_version": 1,
+            "mode": "workspace-write",
+            "enforcement": "full",
+            "platform": "darwin",
+            "mechanisms": [
+              "seatbelt:/usr/bin/sandbox-exec",
+              "filesystem:workspace-write",
+              "path-scope:canonical-workspace",
+              "network:denied",
+              "process:shell-false"
+            ],
+            "unmet_constraints": []
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:9b9ebb4d-2703-44f3-a25e-e50d5bc9f726",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 7,
+        "occurred_at": "2026-10-03T09:18:18.585Z",
+        "type": "run.started",
+        "summary": "Workspace preflight and indexing started",
+        "artifact_refs": [],
+        "data": {
+          "phase": "indexing"
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:5eaddae6-2a15-47be-b5a4-087c2f9fc3e7",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 8,
+        "occurred_at": "2026-10-03T09:18:18.654Z",
+        "type": "graph.snapshot_created",
+        "summary": "Baseline graph snapshot created",
+        "artifact_refs": [
+          {
+            "artifact_id": "artifact:d3c3e1af-1dcb-45b6-8bd0-ea68f5af0d7e",
+            "kind": "graph_snapshot",
+            "content_hash": "sha256:987e71de150f8505db29696fb4c8e470e7edc10e910c3df3740db677b27eac1b",
+            "mime_type": "application/json",
+            "byte_length": 3570,
+            "project_id": "project:local:bbf47aac8992e438",
+            "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+            "created_at": "2026-10-03T09:18:18.653Z"
+          }
+        ],
+        "data": {
+          "snapshot_id": "graph_snapshot:sha256:d5da8b9b4576e8e2c1ba7c8274b0cae83ffc26a7a1f236d1e23b669ac65b451c",
+          "workspace_hash": "sha256:569a31f97c33c7341433bcb3c761ae62f54155c66eee00ac09013c60e27b21e6"
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:fcb82aa3-da32-438b-9554-27e9d8a348f4",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 9,
+        "occurred_at": "2026-10-03T09:18:18.676Z",
+        "type": "code.intel_updated",
+        "summary": "Semantic CodeGraph baseline captured",
+        "artifact_refs": [],
+        "data": {
+          "project_id": "project:local:bbf47aac8992e438",
+          "phase": "baseline",
+          "git_context": {
+            "status": "unavailable",
+            "captured_at": "2026-10-03T09:18:18.606Z",
+            "reason": "not_git_repository"
+          },
+          "base_snapshot_id": "graph_snapshot:sha256:d5da8b9b4576e8e2c1ba7c8274b0cae83ffc26a7a1f236d1e23b669ac65b451c",
+          "changed_files": [],
+          "changed_files_truncated": false,
+          "changed_symbols": [],
+          "changed_symbols_truncated": false
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:300737c2-ccc0-4558-bf43-2fc51b0b0687",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 10,
+        "occurred_at": "2026-10-03T09:18:18.700Z",
+        "type": "memory.recalled",
+        "summary": "Recalled 0 memory items within 0 tokens",
+        "artifact_refs": [],
+        "data": {
+          "retrieval_id": "memory-retrieval:676a428a-9014-4b3e-ab69-6bb3efa57b2e",
+          "query_hash": "sha256:0fb7efdaf5e6c404ab2ca71caf2100765ef69a0b511e2565d67ac186c0a1c668",
+          "status": "completed",
+          "budget": {
+            "max_tokens": 4096,
+            "max_hits": 8
+          },
+          "hits": [],
+          "blocked_hits": [],
+          "injected_tokens": 0
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:c38e2182-29c5-41a7-b7e3-281ed7e7398b",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 11,
+        "occurred_at": "2026-10-03T09:18:18.723Z",
+        "type": "context.built",
+        "summary": "Context built with 131 input tokens",
+        "artifact_refs": [
+          {
+            "artifact_id": "artifact:a2d7f3a5-f59e-44ac-ac52-358a1fbc442f",
+            "kind": "context_manifest",
+            "content_hash": "sha256:322bc81134e79ef11838248177ca561706bf55fd52f80e0930a620c4470c89d5",
+            "mime_type": "application/json",
+            "byte_length": 3245,
+            "project_id": "project:local:bbf47aac8992e438",
+            "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+            "created_at": "2026-10-03T09:18:18.722Z"
+          }
+        ],
+        "turn_id": "turn:379e26c8-9aea-489d-9947-3b8bb18533ab",
+        "context_manifest_ref": "context:3ab6fb53-cecc-48fd-8dcb-e4a635b819da",
+        "model_call_id": "model-call:3887d745-b60f-4048-8190-76bee43b6be9",
+        "data": {
+          "manifest_id": "context:3ab6fb53-cecc-48fd-8dcb-e4a635b819da",
+          "input_tokens": 131,
+          "token_limit": 258000,
+          "reserved_output_tokens": 32000,
+          "token_estimate": {
+            "estimator_id": "heuristic_v2",
+            "confidence": "estimated",
+            "input_tokens": 131,
+            "output_tokens": 0,
+            "per_section": {
+              "system": 117,
+              "goal": 14,
+              "history": 0,
+              "tool": 0,
+              "repo": 0,
+              "memory": 0,
+              "experience": 0
+            }
+          },
+          "input_budget_tokens": 226000,
+          "warning_threshold_tokens": 158200,
+          "compression_threshold_tokens": 180800,
+          "token_estimator": "heuristic_v2",
+          "context_status": "healthy",
+          "compression": {
+            "strategy": "none",
+            "applied_strategy": "none",
+            "trigger": "within_budget",
+            "before_tokens": 131,
+            "after_tokens": 131,
+            "checkpoint_tokens": 0,
+            "preserved_recent_message_count": 0,
+            "compacted_history_message_count": 0,
+            "steps": []
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:ec14b194-7d91-467f-8a77-788779bc4116",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 12,
+        "occurred_at": "2026-10-03T09:18:18.745Z",
+        "type": "model.request_started",
+        "summary": "Requesting a decision from synthetic-first-use with provider-default reasoning",
+        "artifact_refs": [],
+        "turn_id": "turn:379e26c8-9aea-489d-9947-3b8bb18533ab",
+        "context_manifest_ref": "context:3ab6fb53-cecc-48fd-8dcb-e4a635b819da",
+        "model_call_id": "model-call:3887d745-b60f-4048-8190-76bee43b6be9",
+        "data": {
+          "adapter": "configurable-model-provider",
+          "provider": "custom",
+          "model": "synthetic-first-use",
+          "requested_reasoning_effort": "default",
+          "reasoning_configuration": "provider_default",
+          "retry_taxonomy": {
+            "version": "retry-taxonomy.v1",
+            "model_provider": {
+              "max_attempts": 3,
+              "retryable_http_statuses": [
+                408,
+                425,
+                429,
+                500,
+                502,
+                503,
+                504
+              ],
+              "retryable_transport_classes": [
+                "timeout",
+                "selected_network_errors"
+              ],
+              "base_backoff_ms": 250,
+              "max_backoff_ms": 1000,
+              "stop_after_provider_usage": true
+            },
+            "tool": {
+              "max_automatic_dispatch_attempts": 1,
+              "replay_policy": "disabled",
+              "new_model_authored_actions_are_separate": true,
+              "run_turn_limit": 12
+            },
+            "action": {
+              "max_dispatch_attempts_per_operation": 1,
+              "unknown_outcome": "reconcile_only"
+            }
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:1127c744-547f-44aa-89ae-258e856c2754",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 13,
+        "occurred_at": "2026-10-03T09:18:18.769Z",
+        "type": "model.decision",
+        "summary": "Run the actual synthetic search operation.",
+        "artifact_refs": [],
+        "turn_id": "turn:379e26c8-9aea-489d-9947-3b8bb18533ab",
+        "context_manifest_ref": "context:3ab6fb53-cecc-48fd-8dcb-e4a635b819da",
+        "model_call_id": "model-call:3887d745-b60f-4048-8190-76bee43b6be9",
+        "action_id": "action:installed-patch-2",
+        "data": {
+          "decision_kind": "tool_call",
+          "risk": "low",
+          "evidence_ref_count": 0,
+          "public_plan": "Run the actual synthetic search operation.",
+          "tool_name": "search",
+          "adapter": "configurable-model-provider",
+          "provider": "custom",
+          "model": "synthetic-first-use",
+          "requested_reasoning_effort": "default",
+          "reasoning_configuration": "provider_default",
+          "provider_attempts": 1,
+          "provider_retry_count": 0,
+          "provider_retry_delays_ms": []
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:0a29f2d5-a812-4505-9964-dab05a078964",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 14,
+        "occurred_at": "2026-10-03T09:18:18.792Z",
+        "type": "policy.evaluated",
+        "summary": "Permission preset workspace-write allows this Tool action",
+        "artifact_refs": [],
+        "action_id": "action:installed-patch-2",
+        "data": {
+          "decision": {
+            "decision_id": "policy-decision:095efd10-801d-44d0-8c6a-374a78764d32",
+            "preset_key": "workspace-write",
+            "policy_digest": "sha256:8a007dbb9f361639b82a7b17941c3c8f8a3761d4eb805cb9f08bdac7f0e4ae1d",
+            "tool_name": "search",
+            "side_effect": "read",
+            "kind": "allow",
+            "source": "preset-default",
+            "explanation": "Permission preset workspace-write allows this Tool action",
+            "action_digest": "sha256:7f7d340872e5bb745b126a655660fa70bd8ecb676e5097de48da9cc1d1a12e1f"
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:2e99dfd2-15d0-44d7-bc76-c6ead8c8bae4",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 15,
+        "occurred_at": "2026-10-03T09:18:18.814Z",
+        "type": "tool.started",
+        "summary": "Searching the repository for return left - right;",
+        "artifact_refs": [],
+        "operation_id": "action:installed-patch-2",
+        "action_id": "action:installed-patch-2",
+        "data": {
+          "tool_name": "search",
+          "activity": "search",
+          "pattern": "return left - right;"
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:4504f103-425d-443f-9bc2-a31c4c2092e9",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 16,
+        "occurred_at": "2026-10-03T09:18:18.838Z",
+        "type": "tool.completed",
+        "summary": "Found 1 match(es) for return left - right;",
+        "artifact_refs": [
+          {
+            "artifact_id": "artifact:428b5b49-84bc-466f-8d7d-ad1490dd2865",
+            "kind": "tool_output",
+            "content_hash": "sha256:02fa06c01316c94597bd8488aa4b46539df7ca706e4cf46e66d9f0a8ae9fa72b",
+            "mime_type": "application/json",
+            "byte_length": 89,
+            "project_id": "project:local:bbf47aac8992e438",
+            "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+            "created_at": "2026-10-03T09:18:18.837Z"
+          }
+        ],
+        "operation_id": "action:installed-patch-2",
+        "action_id": "action:installed-patch-2",
+        "data": {
+          "receipt": {
+            "receipt_id": "receipt:1be611ef-ac3e-492b-8b27-dd865a7cb85a",
+            "action_id": "action:installed-patch-2",
+            "tool_name": "search",
+            "status": "success",
+            "transport_status": "success",
+            "business_status": "success",
+            "code": "search_completed",
+            "summary": "Found 1 match(es) for return left - right;",
+            "started_at": "2026-10-03T09:18:18.814Z",
+            "completed_at": "2026-10-03T09:18:18.837Z",
+            "duration_ms": 23,
+            "artifact_refs": [
+              {
+                "artifact_id": "artifact:428b5b49-84bc-466f-8d7d-ad1490dd2865",
+                "kind": "tool_output",
+                "content_hash": "sha256:02fa06c01316c94597bd8488aa4b46539df7ca706e4cf46e66d9f0a8ae9fa72b",
+                "mime_type": "application/json",
+                "byte_length": 89,
+                "project_id": "project:local:bbf47aac8992e438",
+                "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+                "created_at": "2026-10-03T09:18:18.837Z"
+              }
+            ],
+            "metadata": {
+              "output_bytes": 565,
+              "execution_parallel": false
+            }
+          },
+          "observation": {
+            "observation_id": "observation:636f0d2d-9084-4854-a54f-7a9e85cdcadd",
+            "action_id": "action:installed-patch-2",
+            "receipt_id": "receipt:1be611ef-ac3e-492b-8b27-dd865a7cb85a",
+            "status": "success",
+            "summary": "Found 1 match(es) for return left - right;",
+            "facts": {
+              "tool_name": "search",
+              "code": "search_completed",
+              "matches": [
+                {
+                  "path": "src/add.ts",
+                  "line": 3,
+                  "text": "  return left - right;"
+                }
+              ],
+              "first_match_path": "src/add.ts",
+              "files_scanned": 7,
+              "bytes_scanned": 2920,
+              "incomplete": false,
+              "limit_reasons": []
+            },
+            "artifact_refs": [
+              {
+                "artifact_id": "artifact:428b5b49-84bc-466f-8d7d-ad1490dd2865",
+                "kind": "tool_output",
+                "content_hash": "sha256:02fa06c01316c94597bd8488aa4b46539df7ca706e4cf46e66d9f0a8ae9fa72b",
+                "mime_type": "application/json",
+                "byte_length": 89,
+                "project_id": "project:local:bbf47aac8992e438",
+                "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+                "created_at": "2026-10-03T09:18:18.837Z"
+              }
+            ],
+            "created_at": "2026-10-03T09:18:18.837Z"
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:1acc8731-6460-4b46-873c-f26acc59b54b",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 17,
+        "occurred_at": "2026-10-03T09:18:18.863Z",
+        "type": "memory.recalled",
+        "summary": "Recalled 0 memory items within 0 tokens",
+        "artifact_refs": [],
+        "data": {
+          "retrieval_id": "memory-retrieval:f4b5a945-2274-4fe8-a5db-dbc68ccc3c92",
+          "query_hash": "sha256:0fb7efdaf5e6c404ab2ca71caf2100765ef69a0b511e2565d67ac186c0a1c668",
+          "status": "completed",
+          "budget": {
+            "max_tokens": 4096,
+            "max_hits": 8
+          },
+          "hits": [],
+          "blocked_hits": [],
+          "injected_tokens": 0
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:7a959b00-9f33-4e37-ab32-b7f82c9569ba",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 18,
+        "occurred_at": "2026-10-03T09:18:18.886Z",
+        "type": "context.built",
+        "summary": "Context built with 286 input tokens",
+        "artifact_refs": [
+          {
+            "artifact_id": "artifact:5a37888b-e008-4ea0-8aab-df1365bc4f8c",
+            "kind": "context_manifest",
+            "content_hash": "sha256:ab99b154d4d9c4a39b6f1af569a3fe7079c112cc014fda3665950a9973f058e3",
+            "mime_type": "application/json",
+            "byte_length": 4923,
+            "project_id": "project:local:bbf47aac8992e438",
+            "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+            "created_at": "2026-10-03T09:18:18.885Z"
+          }
+        ],
+        "turn_id": "turn:d8a01d82-087a-43e5-86a0-4556cb13fef5",
+        "context_manifest_ref": "context:4b3f37c5-78c0-408e-bff1-ee56dcc385c7",
+        "model_call_id": "model-call:9602e8d9-59cd-472f-86dd-fe6daa5fa769",
+        "data": {
+          "manifest_id": "context:4b3f37c5-78c0-408e-bff1-ee56dcc385c7",
+          "input_tokens": 286,
+          "token_limit": 258000,
+          "reserved_output_tokens": 32000,
+          "token_estimate": {
+            "estimator_id": "heuristic_v2",
+            "confidence": "estimated",
+            "input_tokens": 286,
+            "output_tokens": 0,
+            "per_section": {
+              "system": 117,
+              "goal": 14,
+              "history": 0,
+              "tool": 155,
+              "repo": 0,
+              "memory": 0,
+              "experience": 0
+            }
+          },
+          "input_budget_tokens": 226000,
+          "warning_threshold_tokens": 158200,
+          "compression_threshold_tokens": 180800,
+          "token_estimator": "heuristic_v2",
+          "context_status": "healthy",
+          "compression": {
+            "strategy": "none",
+            "applied_strategy": "none",
+            "trigger": "within_budget",
+            "before_tokens": 286,
+            "after_tokens": 286,
+            "checkpoint_tokens": 0,
+            "preserved_recent_message_count": 0,
+            "compacted_history_message_count": 0,
+            "steps": []
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:facac2b1-3131-4cf6-a0a2-e80b6a9298aa",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 19,
+        "occurred_at": "2026-10-03T09:18:18.910Z",
+        "type": "model.request_started",
+        "summary": "Requesting a decision from synthetic-first-use with provider-default reasoning",
+        "artifact_refs": [],
+        "turn_id": "turn:d8a01d82-087a-43e5-86a0-4556cb13fef5",
+        "context_manifest_ref": "context:4b3f37c5-78c0-408e-bff1-ee56dcc385c7",
+        "model_call_id": "model-call:9602e8d9-59cd-472f-86dd-fe6daa5fa769",
+        "data": {
+          "adapter": "configurable-model-provider",
+          "provider": "custom",
+          "model": "synthetic-first-use",
+          "requested_reasoning_effort": "default",
+          "reasoning_configuration": "provider_default",
+          "retry_taxonomy": {
+            "version": "retry-taxonomy.v1",
+            "model_provider": {
+              "max_attempts": 3,
+              "retryable_http_statuses": [
+                408,
+                425,
+                429,
+                500,
+                502,
+                503,
+                504
+              ],
+              "retryable_transport_classes": [
+                "timeout",
+                "selected_network_errors"
+              ],
+              "base_backoff_ms": 250,
+              "max_backoff_ms": 1000,
+              "stop_after_provider_usage": true
+            },
+            "tool": {
+              "max_automatic_dispatch_attempts": 1,
+              "replay_policy": "disabled",
+              "new_model_authored_actions_are_separate": true,
+              "run_turn_limit": 12
+            },
+            "action": {
+              "max_dispatch_attempts_per_operation": 1,
+              "unknown_outcome": "reconcile_only"
+            }
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:5905b278-eb07-4e2e-98fc-008f16ac8bad",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 20,
+        "occurred_at": "2026-10-03T09:18:18.935Z",
+        "type": "model.decision",
+        "summary": "Run the actual synthetic read_file operation.",
+        "artifact_refs": [],
+        "turn_id": "turn:d8a01d82-087a-43e5-86a0-4556cb13fef5",
+        "context_manifest_ref": "context:4b3f37c5-78c0-408e-bff1-ee56dcc385c7",
+        "model_call_id": "model-call:9602e8d9-59cd-472f-86dd-fe6daa5fa769",
+        "action_id": "action:installed-patch-3",
+        "data": {
+          "decision_kind": "tool_call",
+          "risk": "low",
+          "evidence_ref_count": 0,
+          "public_plan": "Run the actual synthetic read_file operation.",
+          "tool_name": "read_file",
+          "adapter": "configurable-model-provider",
+          "provider": "custom",
+          "model": "synthetic-first-use",
+          "requested_reasoning_effort": "default",
+          "reasoning_configuration": "provider_default",
+          "provider_attempts": 1,
+          "provider_retry_count": 0,
+          "provider_retry_delays_ms": []
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:618a423b-d6d3-43e3-bf9f-aea4dae146df",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 21,
+        "occurred_at": "2026-10-03T09:18:18.957Z",
+        "type": "policy.evaluated",
+        "summary": "Permission preset workspace-write allows this Tool action",
+        "artifact_refs": [],
+        "action_id": "action:installed-patch-3",
+        "data": {
+          "decision": {
+            "decision_id": "policy-decision:8594f41c-6640-401e-936f-e47309780216",
+            "preset_key": "workspace-write",
+            "policy_digest": "sha256:8a007dbb9f361639b82a7b17941c3c8f8a3761d4eb805cb9f08bdac7f0e4ae1d",
+            "tool_name": "read_file",
+            "side_effect": "read",
+            "kind": "allow",
+            "source": "preset-default",
+            "explanation": "Permission preset workspace-write allows this Tool action",
+            "action_digest": "sha256:ca3550867477e9a1267faed44c3b170d9fe76b2ecb36336ccd463f467d8e1483"
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:81ba70aa-4254-46c9-aa3f-2896599af10f",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 22,
+        "occurred_at": "2026-10-03T09:18:18.981Z",
+        "type": "tool.started",
+        "summary": "Reading src/add.ts",
+        "artifact_refs": [],
+        "operation_id": "action:installed-patch-3",
+        "action_id": "action:installed-patch-3",
+        "data": {
+          "tool_name": "read_file",
+          "activity": "read",
+          "path": "src/add.ts"
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:4a349e1a-4c7b-4a58-acba-09a4adec49fa",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 23,
+        "occurred_at": "2026-10-03T09:18:19.005Z",
+        "type": "tool.completed",
+        "summary": "Read src/add.ts",
+        "artifact_refs": [
+          {
+            "artifact_id": "artifact:968803a6-fda1-47ba-934e-6d8d4d86dfa4",
+            "kind": "tool_output",
+            "content_hash": "sha256:0e6cf789846139c8cc7a8e252486ee3433e1df45557d1cfb6e0c98b94a283b33",
+            "mime_type": "text/plain",
+            "byte_length": 140,
+            "project_id": "project:local:bbf47aac8992e438",
+            "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+            "created_at": "2026-10-03T09:18:19.003Z"
+          }
+        ],
+        "operation_id": "action:installed-patch-3",
+        "action_id": "action:installed-patch-3",
+        "data": {
+          "receipt": {
+            "receipt_id": "receipt:041dca1a-845c-481f-a811-4a02dbe76acd",
+            "action_id": "action:installed-patch-3",
+            "tool_name": "read_file",
+            "status": "success",
+            "transport_status": "success",
+            "business_status": "success",
+            "code": "file_read",
+            "summary": "Read src/add.ts",
+            "started_at": "2026-10-03T09:18:18.980Z",
+            "completed_at": "2026-10-03T09:18:19.003Z",
+            "duration_ms": 23,
+            "artifact_refs": [
+              {
+                "artifact_id": "artifact:968803a6-fda1-47ba-934e-6d8d4d86dfa4",
+                "kind": "tool_output",
+                "content_hash": "sha256:0e6cf789846139c8cc7a8e252486ee3433e1df45557d1cfb6e0c98b94a283b33",
+                "mime_type": "text/plain",
+                "byte_length": 140,
+                "project_id": "project:local:bbf47aac8992e438",
+                "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+                "created_at": "2026-10-03T09:18:19.003Z"
+              }
+            ],
+            "metadata": {
+              "output_bytes": 592,
+              "execution_parallel": false
+            }
+          },
+          "observation": {
+            "observation_id": "observation:94569b8a-f37c-4692-8834-800b51403637",
+            "action_id": "action:installed-patch-3",
+            "receipt_id": "receipt:041dca1a-845c-481f-a811-4a02dbe76acd",
+            "status": "success",
+            "summary": "Read src/add.ts",
+            "facts": {
+              "tool_name": "read_file",
+              "code": "file_read",
+              "path": "src/add.ts",
+              "content_excerpt": "export function add(left: number, right: number): number {\n  // TRACEGRAPH_FIXTURE_BUG: the test expects addition.\n  return left - right;\n}\n",
+              "bytes_read": 140,
+              "truncated": false
+            },
+            "artifact_refs": [
+              {
+                "artifact_id": "artifact:968803a6-fda1-47ba-934e-6d8d4d86dfa4",
+                "kind": "tool_output",
+                "content_hash": "sha256:0e6cf789846139c8cc7a8e252486ee3433e1df45557d1cfb6e0c98b94a283b33",
+                "mime_type": "text/plain",
+                "byte_length": 140,
+                "project_id": "project:local:bbf47aac8992e438",
+                "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+                "created_at": "2026-10-03T09:18:19.003Z"
+              }
+            ],
+            "created_at": "2026-10-03T09:18:19.003Z"
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:e0d3f57e-4527-45eb-af03-5cadbad73651",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 24,
+        "occurred_at": "2026-10-03T09:18:19.030Z",
+        "type": "memory.recalled",
+        "summary": "Recalled 0 memory items within 0 tokens",
+        "artifact_refs": [],
+        "data": {
+          "retrieval_id": "memory-retrieval:6e53687e-3c06-4840-9d03-b352d99e920e",
+          "query_hash": "sha256:0fb7efdaf5e6c404ab2ca71caf2100765ef69a0b511e2565d67ac186c0a1c668",
+          "status": "completed",
+          "budget": {
+            "max_tokens": 4096,
+            "max_hits": 8
+          },
+          "hits": [],
+          "blocked_hits": [],
+          "injected_tokens": 0
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:6ada1cf8-5fb8-413a-a3f1-2a6218b16bff",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 25,
+        "occurred_at": "2026-10-03T09:18:19.054Z",
+        "type": "context.built",
+        "summary": "Context built with 439 input tokens",
+        "artifact_refs": [
+          {
+            "artifact_id": "artifact:8ce2320b-d59b-4f9e-8e2e-9393c896bfd5",
+            "kind": "context_manifest",
+            "content_hash": "sha256:6f37829c5011cb2b5d53311cbc67da0a4f1d3fbfb5d1300cd2b77171d69631f1",
+            "mime_type": "application/json",
+            "byte_length": 6591,
+            "project_id": "project:local:bbf47aac8992e438",
+            "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+            "created_at": "2026-10-03T09:18:19.052Z"
+          }
+        ],
+        "turn_id": "turn:4561b000-c8fe-45b6-aee9-f54b812e2717",
+        "context_manifest_ref": "context:c33ae8e4-d798-4716-930f-c431ebd27839",
+        "model_call_id": "model-call:5a17e3fd-f9a9-4d05-b338-f6cdfbf055ed",
+        "data": {
+          "manifest_id": "context:c33ae8e4-d798-4716-930f-c431ebd27839",
+          "input_tokens": 439,
+          "token_limit": 258000,
+          "reserved_output_tokens": 32000,
+          "token_estimate": {
+            "estimator_id": "heuristic_v2",
+            "confidence": "estimated",
+            "input_tokens": 439,
+            "output_tokens": 0,
+            "per_section": {
+              "system": 117,
+              "goal": 14,
+              "history": 0,
+              "tool": 308,
+              "repo": 0,
+              "memory": 0,
+              "experience": 0
+            }
+          },
+          "input_budget_tokens": 226000,
+          "warning_threshold_tokens": 158200,
+          "compression_threshold_tokens": 180800,
+          "token_estimator": "heuristic_v2",
+          "context_status": "healthy",
+          "compression": {
+            "strategy": "none",
+            "applied_strategy": "none",
+            "trigger": "within_budget",
+            "before_tokens": 439,
+            "after_tokens": 439,
+            "checkpoint_tokens": 0,
+            "preserved_recent_message_count": 0,
+            "compacted_history_message_count": 0,
+            "steps": []
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:53625bd9-11e1-4515-8416-1a58df808f5c",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 26,
+        "occurred_at": "2026-10-03T09:18:19.079Z",
+        "type": "model.request_started",
+        "summary": "Requesting a decision from synthetic-first-use with provider-default reasoning",
+        "artifact_refs": [],
+        "turn_id": "turn:4561b000-c8fe-45b6-aee9-f54b812e2717",
+        "context_manifest_ref": "context:c33ae8e4-d798-4716-930f-c431ebd27839",
+        "model_call_id": "model-call:5a17e3fd-f9a9-4d05-b338-f6cdfbf055ed",
+        "data": {
+          "adapter": "configurable-model-provider",
+          "provider": "custom",
+          "model": "synthetic-first-use",
+          "requested_reasoning_effort": "default",
+          "reasoning_configuration": "provider_default",
+          "retry_taxonomy": {
+            "version": "retry-taxonomy.v1",
+            "model_provider": {
+              "max_attempts": 3,
+              "retryable_http_statuses": [
+                408,
+                425,
+                429,
+                500,
+                502,
+                503,
+                504
+              ],
+              "retryable_transport_classes": [
+                "timeout",
+                "selected_network_errors"
+              ],
+              "base_backoff_ms": 250,
+              "max_backoff_ms": 1000,
+              "stop_after_provider_usage": true
+            },
+            "tool": {
+              "max_automatic_dispatch_attempts": 1,
+              "replay_policy": "disabled",
+              "new_model_authored_actions_are_separate": true,
+              "run_turn_limit": 12
+            },
+            "action": {
+              "max_dispatch_attempts_per_operation": 1,
+              "unknown_outcome": "reconcile_only"
+            }
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:dc108d05-f44c-47cf-a63f-cb38fe1c833c",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 27,
+        "occurred_at": "2026-10-03T09:18:19.103Z",
+        "type": "model.decision",
+        "summary": "Run the actual synthetic preview_patch operation.",
+        "artifact_refs": [],
+        "turn_id": "turn:4561b000-c8fe-45b6-aee9-f54b812e2717",
+        "context_manifest_ref": "context:c33ae8e4-d798-4716-930f-c431ebd27839",
+        "model_call_id": "model-call:5a17e3fd-f9a9-4d05-b338-f6cdfbf055ed",
+        "action_id": "action:installed-patch-4",
+        "data": {
+          "decision_kind": "tool_call",
+          "risk": "high",
+          "evidence_ref_count": 0,
+          "public_plan": "Run the actual synthetic preview_patch operation.",
+          "tool_name": "preview_patch",
+          "adapter": "configurable-model-provider",
+          "provider": "custom",
+          "model": "synthetic-first-use",
+          "requested_reasoning_effort": "default",
+          "reasoning_configuration": "provider_default",
+          "provider_attempts": 1,
+          "provider_retry_count": 0,
+          "provider_retry_delays_ms": []
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:2b67e8ea-ea2c-4094-a921-5bc98574e903",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 28,
+        "occurred_at": "2026-10-03T09:18:19.126Z",
+        "type": "policy.evaluated",
+        "summary": "Permission preset workspace-write allows this Tool action",
+        "artifact_refs": [],
+        "action_id": "action:installed-patch-4",
+        "data": {
+          "decision": {
+            "decision_id": "policy-decision:67283af2-d5b3-4b58-9cbd-9f5087639e9b",
+            "preset_key": "workspace-write",
+            "policy_digest": "sha256:8a007dbb9f361639b82a7b17941c3c8f8a3761d4eb805cb9f08bdac7f0e4ae1d",
+            "tool_name": "preview_patch",
+            "side_effect": "read",
+            "kind": "allow",
+            "source": "preset-default",
+            "explanation": "Permission preset workspace-write allows this Tool action",
+            "action_digest": "sha256:95d2e1b585e370bb0fa7e482f2c7dcc0cd0d2cd3075aa5d605eaa4e364510434"
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:5a0888ef-ef7d-4355-9ca1-a5ebd9563e0d",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 29,
+        "occurred_at": "2026-10-03T09:18:19.149Z",
+        "type": "tool.started",
+        "summary": "Preparing a patch preview for src/add.ts",
+        "artifact_refs": [],
+        "operation_id": "action:installed-patch-4",
+        "action_id": "action:installed-patch-4",
+        "data": {
+          "tool_name": "preview_patch",
+          "activity": "preview_patch",
+          "path": "src/add.ts"
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:973ef805-110b-4c48-b620-d13148fa05f0",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 30,
+        "occurred_at": "2026-10-03T09:18:19.172Z",
+        "type": "tool.completed",
+        "summary": "Prepared patch preview for src/add.ts",
+        "artifact_refs": [
+          {
+            "artifact_id": "artifact:858fd488-727f-4a57-9143-16d06f9562ac",
+            "kind": "patch_preview",
+            "content_hash": "sha256:33046b9eedfd1c03a3fd2d7398ac0d460c7a64674670fef9704ec466be0b96be",
+            "mime_type": "text/x-diff",
+            "byte_length": 81,
+            "project_id": "project:local:bbf47aac8992e438",
+            "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+            "created_at": "2026-10-03T09:18:19.171Z"
+          }
+        ],
+        "operation_id": "action:installed-patch-4",
+        "action_id": "action:installed-patch-4",
+        "data": {
+          "receipt": {
+            "receipt_id": "receipt:834c7ce5-e3d8-4657-94e1-7144bc7c5b5b",
+            "action_id": "action:installed-patch-4",
+            "tool_name": "preview_patch",
+            "status": "success",
+            "transport_status": "success",
+            "business_status": "success",
+            "code": "patch_preview_created",
+            "summary": "Prepared patch preview for src/add.ts",
+            "started_at": "2026-10-03T09:18:19.149Z",
+            "completed_at": "2026-10-03T09:18:19.170Z",
+            "duration_ms": 21,
+            "artifact_refs": [
+              {
+                "artifact_id": "artifact:858fd488-727f-4a57-9143-16d06f9562ac",
+                "kind": "patch_preview",
+                "content_hash": "sha256:33046b9eedfd1c03a3fd2d7398ac0d460c7a64674670fef9704ec466be0b96be",
+                "mime_type": "text/x-diff",
+                "byte_length": 81,
+                "project_id": "project:local:bbf47aac8992e438",
+                "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+                "created_at": "2026-10-03T09:18:19.171Z"
+              }
+            ],
+            "metadata": {
+              "output_bytes": 547,
+              "execution_parallel": false
+            }
+          },
+          "observation": {
+            "observation_id": "observation:4ea49262-0b2a-4371-8faa-b59b34b0e18c",
+            "action_id": "action:installed-patch-4",
+            "receipt_id": "receipt:834c7ce5-e3d8-4657-94e1-7144bc7c5b5b",
+            "status": "success",
+            "summary": "Prepared patch preview for src/add.ts",
+            "facts": {
+              "tool_name": "preview_patch",
+              "code": "patch_preview_created",
+              "path": "src/add.ts",
+              "diff_excerpt": "--- a/src/add.ts\n+++ b/src/add.ts\n@@\n-return left - right;\n+return left + right;\n",
+              "base_hash": "sha256:0e6cf789846139c8cc7a8e252486ee3433e1df45557d1cfb6e0c98b94a283b33",
+              "patch_hash": "sha256:e78fb1037ff4324bfede1601d61ddda3db365fe9bc9ef7b900e488ac43223abb",
+              "scope": [
+                "src/add.ts"
+              ]
+            },
+            "artifact_refs": [
+              {
+                "artifact_id": "artifact:858fd488-727f-4a57-9143-16d06f9562ac",
+                "kind": "patch_preview",
+                "content_hash": "sha256:33046b9eedfd1c03a3fd2d7398ac0d460c7a64674670fef9704ec466be0b96be",
+                "mime_type": "text/x-diff",
+                "byte_length": 81,
+                "project_id": "project:local:bbf47aac8992e438",
+                "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+                "created_at": "2026-10-03T09:18:19.171Z"
+              }
+            ],
+            "created_at": "2026-10-03T09:18:19.170Z"
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:17876d2e-b87b-42ca-aa89-ce723fc370fa",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 31,
+        "occurred_at": "2026-10-03T09:18:19.205Z",
+        "type": "policy.evaluated",
+        "summary": "Permission preset workspace-write requires approval for write actions",
+        "artifact_refs": [],
+        "action_id": "action:installed-patch-4",
+        "data": {
+          "decision": {
+            "decision_id": "policy-decision:0759b1e2-9a74-4697-bfbe-c44609df6392",
+            "preset_key": "workspace-write",
+            "policy_digest": "sha256:8a007dbb9f361639b82a7b17941c3c8f8a3761d4eb805cb9f08bdac7f0e4ae1d",
+            "tool_name": "commit_patch",
+            "side_effect": "write",
+            "kind": "ask",
+            "source": "preset-default",
+            "explanation": "Permission preset workspace-write requires approval for write actions",
+            "action_digest": "sha256:51209fcfc5b9e3911022a69a65a34bd9343b67c46df6516ace2c2a17ea33e46c"
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:82ed448b-fec1-40e6-831c-051746811714",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 32,
+        "occurred_at": "2026-10-03T09:18:19.227Z",
+        "type": "patch.preview_created",
+        "summary": "Patch preview created for src/add.ts",
+        "artifact_refs": [
+          {
+            "artifact_id": "artifact:858fd488-727f-4a57-9143-16d06f9562ac",
+            "kind": "patch_preview",
+            "content_hash": "sha256:33046b9eedfd1c03a3fd2d7398ac0d460c7a64674670fef9704ec466be0b96be",
+            "mime_type": "text/x-diff",
+            "byte_length": 81,
+            "project_id": "project:local:bbf47aac8992e438",
+            "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+            "created_at": "2026-10-03T09:18:19.171Z"
+          }
+        ],
+        "caused_by_event_id": "event:973ef805-110b-4c48-b620-d13148fa05f0",
+        "action_id": "action:installed-patch-4",
+        "data": {
+          "preview": {
+            "preview_id": "patch-preview:856e5e9b-782e-4fda-894c-fada361a2d89",
+            "action_id": "action:installed-patch-4",
+            "path": "src/add.ts",
+            "diff": "--- a/src/add.ts\n+++ b/src/add.ts\n@@\n-return left - right;\n+return left + right;",
+            "base_hash": "sha256:0e6cf789846139c8cc7a8e252486ee3433e1df45557d1cfb6e0c98b94a283b33",
+            "patch_hash": "sha256:e78fb1037ff4324bfede1601d61ddda3db365fe9bc9ef7b900e488ac43223abb",
+            "scope": [
+              "src/add.ts"
+            ],
+            "expires_at": "2026-10-03T09:23:19.200Z",
+            "artifact_ref": {
+              "artifact_id": "artifact:858fd488-727f-4a57-9143-16d06f9562ac",
+              "kind": "patch_preview",
+              "content_hash": "sha256:33046b9eedfd1c03a3fd2d7398ac0d460c7a64674670fef9704ec466be0b96be",
+              "mime_type": "text/x-diff",
+              "byte_length": 81,
+              "project_id": "project:local:bbf47aac8992e438",
+              "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+              "created_at": "2026-10-03T09:18:19.171Z"
+            }
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:c5348a8a-1f07-4d5b-a788-d584b45bca44",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 33,
+        "occurred_at": "2026-10-03T09:18:19.250Z",
+        "type": "approval.requested",
+        "summary": "Approval required to modify src/add.ts",
+        "artifact_refs": [
+          {
+            "artifact_id": "artifact:858fd488-727f-4a57-9143-16d06f9562ac",
+            "kind": "patch_preview",
+            "content_hash": "sha256:33046b9eedfd1c03a3fd2d7398ac0d460c7a64674670fef9704ec466be0b96be",
+            "mime_type": "text/x-diff",
+            "byte_length": 81,
+            "project_id": "project:local:bbf47aac8992e438",
+            "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+            "created_at": "2026-10-03T09:18:19.171Z"
+          }
+        ],
+        "action_id": "action:installed-patch-4",
+        "data": {
+          "pending_approval": {
+            "approval_id": "approval:a649f542-d85b-4331-a04e-b09cca442f3f",
+            "action_id": "action:installed-patch-4",
+            "risk": "high",
+            "preview": {
+              "preview_id": "patch-preview:856e5e9b-782e-4fda-894c-fada361a2d89",
+              "action_id": "action:installed-patch-4",
+              "path": "src/add.ts",
+              "diff": "--- a/src/add.ts\n+++ b/src/add.ts\n@@\n-return left - right;\n+return left + right;",
+              "base_hash": "sha256:0e6cf789846139c8cc7a8e252486ee3433e1df45557d1cfb6e0c98b94a283b33",
+              "patch_hash": "sha256:e78fb1037ff4324bfede1601d61ddda3db365fe9bc9ef7b900e488ac43223abb",
+              "scope": [
+                "src/add.ts"
+              ],
+              "expires_at": "2026-10-03T09:23:19.200Z",
+              "artifact_ref": {
+                "artifact_id": "artifact:858fd488-727f-4a57-9143-16d06f9562ac",
+                "kind": "patch_preview",
+                "content_hash": "sha256:33046b9eedfd1c03a3fd2d7398ac0d460c7a64674670fef9704ec466be0b96be",
+                "mime_type": "text/x-diff",
+                "byte_length": 81,
+                "project_id": "project:local:bbf47aac8992e438",
+                "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+                "created_at": "2026-10-03T09:18:19.171Z"
+              }
+            },
+            "tool_name": "commit_patch",
+            "action_digest": "sha256:51209fcfc5b9e3911022a69a65a34bd9343b67c46df6516ace2c2a17ea33e46c",
+            "policy_digest": "sha256:8a007dbb9f361639b82a7b17941c3c8f8a3761d4eb805cb9f08bdac7f0e4ae1d"
+          },
+          "approval_id": "approval:a649f542-d85b-4331-a04e-b09cca442f3f",
+          "action_id": "action:installed-patch-4",
+          "tool_name": "commit_patch",
+          "action_digest": "sha256:51209fcfc5b9e3911022a69a65a34bd9343b67c46df6516ace2c2a17ea33e46c",
+          "policy_digest": "sha256:8a007dbb9f361639b82a7b17941c3c8f8a3761d4eb805cb9f08bdac7f0e4ae1d",
+          "expires_at": "2026-10-03T09:23:19.200Z"
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:6b2ec682-3adc-4d53-ae30-1b2040c4472b",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 34,
+        "occurred_at": "2026-10-03T09:18:19.710Z",
+        "type": "approval.granted",
+        "summary": "One-time approval granted and atomically consumed",
+        "artifact_refs": [],
+        "action_id": "action:installed-patch-4",
+        "data": {
+          "approval": {
+            "approval_id": "approval:a649f542-d85b-4331-a04e-b09cca442f3f",
+            "action_id": "action:installed-patch-4",
+            "token_id": "approval-token=[REDACTED]",
+            "action_digest": "sha256:51209fcfc5b9e3911022a69a65a34bd9343b67c46df6516ace2c2a17ea33e46c",
+            "policy_digest": "sha256:8a007dbb9f361639b82a7b17941c3c8f8a3761d4eb805cb9f08bdac7f0e4ae1d",
+            "base_hash": "sha256:0e6cf789846139c8cc7a8e252486ee3433e1df45557d1cfb6e0c98b94a283b33",
+            "patch_hash": "sha256:e78fb1037ff4324bfede1601d61ddda3db365fe9bc9ef7b900e488ac43223abb",
+            "scope": [
+              "src/add.ts"
+            ],
+            "expires_at": "2026-10-03T09:23:19.200Z",
+            "granted_at": "2026-10-03T09:18:19.706Z",
+            "consumed_at": "2026-10-03T09:18:19.707Z",
+            "outcome": "allowed-once",
+            "single_use": true
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:37046502-6e12-4db4-88f3-126078e967b7",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 35,
+        "occurred_at": "2026-10-03T09:18:19.737Z",
+        "type": "tool.started",
+        "summary": "Applying the approved patch to src/add.ts",
+        "artifact_refs": [],
+        "operation_id": "action:installed-patch-4",
+        "action_id": "action:installed-patch-4",
+        "data": {
+          "tool_name": "commit_patch",
+          "activity": "commit_patch",
+          "path": "src/add.ts"
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:7dd6e2da-c36c-4ef3-840e-d06f3f63a886",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 36,
+        "occurred_at": "2026-10-03T09:18:19.814Z",
+        "type": "tool.completed",
+        "summary": "Applied approved patch to src/add.ts",
+        "artifact_refs": [
+          {
+            "artifact_id": "artifact:9b9d022e-f750-4398-b5a0-9c36c541fd93",
+            "kind": "diff",
+            "content_hash": "sha256:33046b9eedfd1c03a3fd2d7398ac0d460c7a64674670fef9704ec466be0b96be",
+            "mime_type": "text/x-diff",
+            "byte_length": 81,
+            "project_id": "project:local:bbf47aac8992e438",
+            "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+            "created_at": "2026-10-03T09:18:19.813Z"
+          }
+        ],
+        "operation_id": "action:installed-patch-4",
+        "action_id": "action:installed-patch-4",
+        "data": {
+          "receipt": {
+            "receipt_id": "receipt:39533042-5d04-412b-83cd-83c67a91ba93",
+            "action_id": "action:installed-patch-4",
+            "tool_name": "commit_patch",
+            "status": "success",
+            "transport_status": "success",
+            "business_status": "success",
+            "code": "patch_committed",
+            "summary": "Applied approved patch to src/add.ts",
+            "started_at": "2026-10-03T09:18:19.737Z",
+            "completed_at": "2026-10-03T09:18:19.813Z",
+            "duration_ms": 76,
+            "artifact_refs": [
+              {
+                "artifact_id": "artifact:9b9d022e-f750-4398-b5a0-9c36c541fd93",
+                "kind": "diff",
+                "content_hash": "sha256:33046b9eedfd1c03a3fd2d7398ac0d460c7a64674670fef9704ec466be0b96be",
+                "mime_type": "text/x-diff",
+                "byte_length": 81,
+                "project_id": "project:local:bbf47aac8992e438",
+                "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+                "created_at": "2026-10-03T09:18:19.813Z"
+              }
+            ],
+            "metadata": {
+              "output_bytes": 421,
+              "execution_parallel": false
+            }
+          },
+          "observation": {
+            "observation_id": "observation:4a5f3ad0-01ad-463f-b524-21f771180c48",
+            "action_id": "action:installed-patch-4",
+            "receipt_id": "receipt:39533042-5d04-412b-83cd-83c67a91ba93",
+            "status": "success",
+            "summary": "Applied approved patch to src/add.ts",
+            "facts": {
+              "tool_name": "commit_patch",
+              "code": "patch_committed",
+              "path": "src/add.ts",
+              "base_hash": "sha256:0e6cf789846139c8cc7a8e252486ee3433e1df45557d1cfb6e0c98b94a283b33",
+              "patch_hash": "sha256:e78fb1037ff4324bfede1601d61ddda3db365fe9bc9ef7b900e488ac43223abb"
+            },
+            "artifact_refs": [
+              {
+                "artifact_id": "artifact:9b9d022e-f750-4398-b5a0-9c36c541fd93",
+                "kind": "diff",
+                "content_hash": "sha256:33046b9eedfd1c03a3fd2d7398ac0d460c7a64674670fef9704ec466be0b96be",
+                "mime_type": "text/x-diff",
+                "byte_length": 81,
+                "project_id": "project:local:bbf47aac8992e438",
+                "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+                "created_at": "2026-10-03T09:18:19.813Z"
+              }
+            ],
+            "created_at": "2026-10-03T09:18:19.813Z"
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:1ec0cf70-6c2d-4665-a863-9b9c78d0efeb",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 37,
+        "occurred_at": "2026-10-03T09:18:19.852Z",
+        "type": "patch.applied",
+        "summary": "Applied approved patch to src/add.ts",
+        "artifact_refs": [
+          {
+            "artifact_id": "artifact:9b9d022e-f750-4398-b5a0-9c36c541fd93",
+            "kind": "diff",
+            "content_hash": "sha256:33046b9eedfd1c03a3fd2d7398ac0d460c7a64674670fef9704ec466be0b96be",
+            "mime_type": "text/x-diff",
+            "byte_length": 81,
+            "project_id": "project:local:bbf47aac8992e438",
+            "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+            "created_at": "2026-10-03T09:18:19.813Z"
+          }
+        ],
+        "caused_by_event_id": "event:7dd6e2da-c36c-4ef3-840e-d06f3f63a886",
+        "action_id": "action:installed-patch-4",
+        "data": {
+          "receipt_id": "receipt:39533042-5d04-412b-83cd-83c67a91ba93",
+          "preview_id": "patch-preview:856e5e9b-782e-4fda-894c-fada361a2d89",
+          "base_hash": "sha256:0e6cf789846139c8cc7a8e252486ee3433e1df45557d1cfb6e0c98b94a283b33",
+          "patch_hash": "sha256:e78fb1037ff4324bfede1601d61ddda3db365fe9bc9ef7b900e488ac43223abb",
+          "scope": [
+            "src/add.ts"
+          ],
+          "wal_id": "wal:d56f525c-722f-4f95-8477-9a79cf90f29f",
+          "verified": true
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:b529896e-8f50-4a2c-a69b-49f7231dc99a",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 38,
+        "occurred_at": "2026-10-03T09:18:19.882Z",
+        "type": "action.verified",
+        "summary": "Applied patch matches its approved hash and durable ledger fact",
+        "artifact_refs": [],
+        "caused_by_event_id": "event:1ec0cf70-6c2d-4665-a863-9b9c78d0efeb",
+        "action_id": "action:installed-patch-4",
+        "patch_event_id": "event:1ec0cf70-6c2d-4665-a863-9b9c78d0efeb",
+        "data": {
+          "wal_id": "wal:d56f525c-722f-4f95-8477-9a79cf90f29f",
+          "patch_hash": "sha256:e78fb1037ff4324bfede1601d61ddda3db365fe9bc9ef7b900e488ac43223abb",
+          "scope": [
+            "src/add.ts"
+          ],
+          "verified": true
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:3b5d8b49-acb0-4a74-877a-d60dd39e2d64",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 39,
+        "occurred_at": "2026-10-03T09:18:19.942Z",
+        "type": "graph.snapshot_created",
+        "summary": "Result graph snapshot created",
+        "artifact_refs": [
+          {
+            "artifact_id": "artifact:5a134067-0b76-4a26-94e7-37f1cfc9c7a7",
+            "kind": "graph_snapshot",
+            "content_hash": "sha256:4bc38ad4cf9b66551b4ccf00201e187e9fe829dea31f570e2a549587daeac726",
+            "mime_type": "application/json",
+            "byte_length": 3570,
+            "project_id": "project:local:bbf47aac8992e438",
+            "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+            "created_at": "2026-10-03T09:18:19.941Z"
+          }
+        ],
+        "data": {
+          "snapshot_id": "graph_snapshot:sha256:0ffbec389a0b6033b9d333d1a40dc0d4b715367b8b616d71303d82f7cd3e39f2",
+          "workspace_hash": "sha256:0e168d5612b29642af926c9771764221b7dffe453ec741377f57c76ffde4dd92"
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:cb759887-9cbf-4003-828d-fe116160ebad",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 40,
+        "occurred_at": "2026-10-03T09:18:19.966Z",
+        "type": "graph.delta_created",
+        "summary": "Architecture delta created",
+        "artifact_refs": [
+          {
+            "artifact_id": "artifact:9eb0e5f2-4978-4e43-a745-cdb5db14547c",
+            "kind": "graph_delta",
+            "content_hash": "sha256:3dca3e342312a135f8e01815004b09fa7d62dbf40aac5f43f20a19bd38675006",
+            "mime_type": "application/json",
+            "byte_length": 1979,
+            "project_id": "project:local:bbf47aac8992e438",
+            "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+            "created_at": "2026-10-03T09:18:19.964Z"
+          }
+        ],
+        "patch_event_id": "event:1ec0cf70-6c2d-4665-a863-9b9c78d0efeb",
+        "graph_delta_id": "graph_delta:sha256:b429a002c19c9af5b57b79135d754d3c8e1106cfb32c9d7bfe6bc432145e5a5e",
+        "data": {
+          "graph_delta_id": "graph_delta:sha256:b429a002c19c9af5b57b79135d754d3c8e1106cfb32c9d7bfe6bc432145e5a5e",
+          "base_snapshot_id": "graph_snapshot:sha256:d5da8b9b4576e8e2c1ba7c8274b0cae83ffc26a7a1f236d1e23b669ac65b451c",
+          "result_snapshot_id": "graph_snapshot:sha256:0ffbec389a0b6033b9d333d1a40dc0d4b715367b8b616d71303d82f7cd3e39f2"
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:e8b2b602-c8d1-4d79-8757-913000e43e0a",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 41,
+        "occurred_at": "2026-10-03T09:18:20.004Z",
+        "type": "code.intel_updated",
+        "summary": "Semantic CodeGraph updated after patch",
+        "artifact_refs": [],
+        "patch_event_id": "event:1ec0cf70-6c2d-4665-a863-9b9c78d0efeb",
+        "graph_delta_id": "graph_delta:sha256:b429a002c19c9af5b57b79135d754d3c8e1106cfb32c9d7bfe6bc432145e5a5e",
+        "data": {
+          "project_id": "project:local:bbf47aac8992e438",
+          "phase": "post_patch",
+          "git_context": {
+            "status": "unavailable",
+            "captured_at": "2026-10-03T09:18:19.994Z",
+            "reason": "not_git_repository"
+          },
+          "base_snapshot_id": "graph_snapshot:sha256:d5da8b9b4576e8e2c1ba7c8274b0cae83ffc26a7a1f236d1e23b669ac65b451c",
+          "result_snapshot_id": "graph_snapshot:sha256:0ffbec389a0b6033b9d333d1a40dc0d4b715367b8b616d71303d82f7cd3e39f2",
+          "changed_files": [
+            "src/add.ts"
+          ],
+          "changed_files_truncated": false,
+          "changed_symbols": [
+            {
+              "symbol_id": "symbol:sha256:5731dcd00d8d4da1f1a2af66aaea5e4ee5630677b3d9105916ee7c45d4b150f9",
+              "name": "add",
+              "kind": "function",
+              "file_path": "src/add.ts",
+              "line": 1,
+              "end_line": 4,
+              "change": "changed"
+            }
+          ],
+          "changed_symbols_truncated": false
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:08ce11d2-fa27-41a0-b893-6b525e017f09",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 42,
+        "occurred_at": "2026-10-03T09:18:20.033Z",
+        "type": "memory.recalled",
+        "summary": "Recalled 0 memory items within 0 tokens",
+        "artifact_refs": [],
+        "data": {
+          "retrieval_id": "memory-retrieval:1e98eaec-41f1-47ca-b8c5-5f56e5a2d7c6",
+          "query_hash": "sha256:0fb7efdaf5e6c404ab2ca71caf2100765ef69a0b511e2565d67ac186c0a1c668",
+          "status": "completed",
+          "budget": {
+            "max_tokens": 4096,
+            "max_hits": 8
+          },
+          "hits": [],
+          "blocked_hits": [],
+          "injected_tokens": 0
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:d8351d7b-949c-4261-bdb9-4c19f7415ce5",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 43,
+        "occurred_at": "2026-10-03T09:18:20.059Z",
+        "type": "context.built",
+        "summary": "Context built with 783 input tokens",
+        "artifact_refs": [
+          {
+            "artifact_id": "artifact:5117fcbc-a204-44d0-9d06-41e5a4a51ea6",
+            "kind": "context_manifest",
+            "content_hash": "sha256:452c3ed2e547e269afca3880337cbcd30db343c69837f6ebe847795b1228a101",
+            "mime_type": "application/json",
+            "byte_length": 10071,
+            "project_id": "project:local:bbf47aac8992e438",
+            "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+            "created_at": "2026-10-03T09:18:20.057Z"
+          }
+        ],
+        "turn_id": "turn:b8352027-ec4c-4883-b4cc-633c8260b3f7",
+        "context_manifest_ref": "context:7b2f7df8-e4cb-4607-ba58-06e24bcb4e1a",
+        "model_call_id": "model-call:ff9dcdac-89c1-4ef4-a21c-80332bbef060",
+        "data": {
+          "manifest_id": "context:7b2f7df8-e4cb-4607-ba58-06e24bcb4e1a",
+          "input_tokens": 783,
+          "token_limit": 258000,
+          "reserved_output_tokens": 32000,
+          "token_estimate": {
+            "estimator_id": "heuristic_v2",
+            "confidence": "estimated",
+            "input_tokens": 783,
+            "output_tokens": 0,
+            "per_section": {
+              "system": 117,
+              "goal": 14,
+              "history": 0,
+              "tool": 652,
+              "repo": 0,
+              "memory": 0,
+              "experience": 0
+            }
+          },
+          "input_budget_tokens": 226000,
+          "warning_threshold_tokens": 158200,
+          "compression_threshold_tokens": 180800,
+          "token_estimator": "heuristic_v2",
+          "context_status": "healthy",
+          "compression": {
+            "strategy": "none",
+            "applied_strategy": "none",
+            "trigger": "within_budget",
+            "before_tokens": 783,
+            "after_tokens": 783,
+            "checkpoint_tokens": 0,
+            "preserved_recent_message_count": 0,
+            "compacted_history_message_count": 0,
+            "steps": []
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:d6a72861-cfcc-4ebf-8e96-5759b5e6571b",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 44,
+        "occurred_at": "2026-10-03T09:18:20.083Z",
+        "type": "model.request_started",
+        "summary": "Requesting a decision from synthetic-first-use with provider-default reasoning",
+        "artifact_refs": [],
+        "turn_id": "turn:b8352027-ec4c-4883-b4cc-633c8260b3f7",
+        "context_manifest_ref": "context:7b2f7df8-e4cb-4607-ba58-06e24bcb4e1a",
+        "model_call_id": "model-call:ff9dcdac-89c1-4ef4-a21c-80332bbef060",
+        "data": {
+          "adapter": "configurable-model-provider",
+          "provider": "custom",
+          "model": "synthetic-first-use",
+          "requested_reasoning_effort": "default",
+          "reasoning_configuration": "provider_default",
+          "retry_taxonomy": {
+            "version": "retry-taxonomy.v1",
+            "model_provider": {
+              "max_attempts": 3,
+              "retryable_http_statuses": [
+                408,
+                425,
+                429,
+                500,
+                502,
+                503,
+                504
+              ],
+              "retryable_transport_classes": [
+                "timeout",
+                "selected_network_errors"
+              ],
+              "base_backoff_ms": 250,
+              "max_backoff_ms": 1000,
+              "stop_after_provider_usage": true
+            },
+            "tool": {
+              "max_automatic_dispatch_attempts": 1,
+              "replay_policy": "disabled",
+              "new_model_authored_actions_are_separate": true,
+              "run_turn_limit": 12
+            },
+            "action": {
+              "max_dispatch_attempts_per_operation": 1,
+              "unknown_outcome": "reconcile_only"
+            }
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:3a52f909-a4e5-4767-b8b1-ef8d41592ea4",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 45,
+        "occurred_at": "2026-10-03T09:18:20.106Z",
+        "type": "model.decision",
+        "summary": "Run the actual synthetic run_test operation.",
+        "artifact_refs": [],
+        "turn_id": "turn:b8352027-ec4c-4883-b4cc-633c8260b3f7",
+        "context_manifest_ref": "context:7b2f7df8-e4cb-4607-ba58-06e24bcb4e1a",
+        "model_call_id": "model-call:ff9dcdac-89c1-4ef4-a21c-80332bbef060",
+        "action_id": "action:installed-patch-5",
+        "data": {
+          "decision_kind": "tool_call",
+          "risk": "medium",
+          "evidence_ref_count": 0,
+          "public_plan": "Run the actual synthetic run_test operation.",
+          "tool_name": "run_test",
+          "adapter": "configurable-model-provider",
+          "provider": "custom",
+          "model": "synthetic-first-use",
+          "requested_reasoning_effort": "default",
+          "reasoning_configuration": "provider_default",
+          "provider_attempts": 1,
+          "provider_retry_count": 0,
+          "provider_retry_delays_ms": []
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:87084d36-ac8f-4297-8af6-5322690d3428",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 46,
+        "occurred_at": "2026-10-03T09:18:20.132Z",
+        "type": "policy.evaluated",
+        "summary": "Permission preset workspace-write allows this Tool action",
+        "artifact_refs": [],
+        "action_id": "action:installed-patch-5",
+        "data": {
+          "decision": {
+            "decision_id": "policy-decision:6f4edd5f-48ff-432e-a183-b3f9c13f2eed",
+            "preset_key": "workspace-write",
+            "policy_digest": "sha256:8a007dbb9f361639b82a7b17941c3c8f8a3761d4eb805cb9f08bdac7f0e4ae1d",
+            "tool_name": "run_test",
+            "side_effect": "execute",
+            "kind": "allow",
+            "source": "preset-default",
+            "explanation": "Permission preset workspace-write allows this Tool action",
+            "action_digest": "sha256:490582e41e7f4444c2b17f249fe526f2c504acffbd9e84e6d8ded6b3ad6583ee"
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:cbce4ca3-a490-4d9e-be9c-ff624f6fb7e7",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 47,
+        "occurred_at": "2026-10-03T09:18:20.156Z",
+        "type": "tool.started",
+        "summary": "Running test suite fixture",
+        "artifact_refs": [],
+        "operation_id": "action:installed-patch-5",
+        "action_id": "action:installed-patch-5",
+        "data": {
+          "tool_name": "run_test",
+          "activity": "test",
+          "suite": "fixture"
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:ad523c2b-b475-45a1-b7c0-f83de15cf9d2",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 48,
+        "occurred_at": "2026-10-03T09:18:20.237Z",
+        "type": "tool.completed",
+        "summary": "Fixture tests passed",
+        "artifact_refs": [
+          {
+            "artifact_id": "artifact:bd56df3f-7bb6-4f63-9617-334f1891c59c",
+            "kind": "test_log",
+            "content_hash": "sha256:5e831726ee53753f7f9ec7ea415a6ba2412af076c730e9c22960a4f9ab2f2653",
+            "mime_type": "text/plain",
+            "byte_length": 30,
+            "project_id": "project:local:bbf47aac8992e438",
+            "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+            "created_at": "2026-10-03T09:18:20.236Z"
+          }
+        ],
+        "operation_id": "action:installed-patch-5",
+        "action_id": "action:installed-patch-5",
+        "data": {
+          "receipt": {
+            "receipt_id": "receipt:4464499a-3790-4b0e-8d68-d4741607c465",
+            "action_id": "action:installed-patch-5",
+            "tool_name": "run_test",
+            "status": "success",
+            "transport_status": "success",
+            "business_status": "success",
+            "code": "tests_passed",
+            "summary": "Fixture tests passed",
+            "started_at": "2026-10-03T09:18:20.155Z",
+            "completed_at": "2026-10-03T09:18:20.235Z",
+            "duration_ms": 80,
+            "artifact_refs": [
+              {
+                "artifact_id": "artifact:bd56df3f-7bb6-4f63-9617-334f1891c59c",
+                "kind": "test_log",
+                "content_hash": "sha256:5e831726ee53753f7f9ec7ea415a6ba2412af076c730e9c22960a4f9ab2f2653",
+                "mime_type": "text/plain",
+                "byte_length": 30,
+                "project_id": "project:local:bbf47aac8992e438",
+                "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+                "created_at": "2026-10-03T09:18:20.236Z"
+              }
+            ],
+            "metadata": {
+              "output_bytes": 535,
+              "sandbox_report": {
+                "report_version": 1,
+                "mode": "workspace-write",
+                "enforcement": "full",
+                "platform": "darwin",
+                "mechanisms": [
+                  "seatbelt:/usr/bin/sandbox-exec",
+                  "filesystem:workspace-write",
+                  "path-scope:canonical-workspace",
+                  "network:denied",
+                  "process:shell-false"
+                ],
+                "unmet_constraints": []
+              },
+              "execution_parallel": false
+            }
+          },
+          "observation": {
+            "observation_id": "observation:31aedbf3-c133-416b-ae60-8737e47425cd",
+            "action_id": "action:installed-patch-5",
+            "receipt_id": "receipt:4464499a-3790-4b0e-8d68-d4741607c465",
+            "status": "success",
+            "summary": "Fixture tests passed",
+            "facts": {
+              "tool_name": "run_test",
+              "code": "tests_passed",
+              "suite": "fixture",
+              "exit_code": 0,
+              "timed_out": false,
+              "output_truncated": false,
+              "aborted": false,
+              "started": true,
+              "sandbox_report": {
+                "report_version": 1,
+                "mode": "workspace-write",
+                "enforcement": "full",
+                "platform": "darwin",
+                "mechanisms": [
+                  "seatbelt:/usr/bin/sandbox-exec",
+                  "filesystem:workspace-write",
+                  "path-scope:canonical-workspace",
+                  "network:denied",
+                  "process:shell-false"
+                ],
+                "unmet_constraints": []
+              }
+            },
+            "artifact_refs": [
+              {
+                "artifact_id": "artifact:bd56df3f-7bb6-4f63-9617-334f1891c59c",
+                "kind": "test_log",
+                "content_hash": "sha256:5e831726ee53753f7f9ec7ea415a6ba2412af076c730e9c22960a4f9ab2f2653",
+                "mime_type": "text/plain",
+                "byte_length": 30,
+                "project_id": "project:local:bbf47aac8992e438",
+                "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+                "created_at": "2026-10-03T09:18:20.236Z"
+              }
+            ],
+            "created_at": "2026-10-03T09:18:20.235Z"
+          },
+          "sandbox_report": {
+            "report_version": 1,
+            "mode": "workspace-write",
+            "enforcement": "full",
+            "platform": "darwin",
+            "mechanisms": [
+              "seatbelt:/usr/bin/sandbox-exec",
+              "filesystem:workspace-write",
+              "path-scope:canonical-workspace",
+              "network:denied",
+              "process:shell-false"
+            ],
+            "unmet_constraints": []
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:62c65c18-f780-4ca1-8914-267e6183d96a",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 49,
+        "occurred_at": "2026-10-03T09:18:20.265Z",
+        "type": "test.completed",
+        "summary": "Fixture tests passed",
+        "artifact_refs": [
+          {
+            "artifact_id": "artifact:bd56df3f-7bb6-4f63-9617-334f1891c59c",
+            "kind": "test_log",
+            "content_hash": "sha256:5e831726ee53753f7f9ec7ea415a6ba2412af076c730e9c22960a4f9ab2f2653",
+            "mime_type": "text/plain",
+            "byte_length": 30,
+            "project_id": "project:local:bbf47aac8992e438",
+            "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+            "created_at": "2026-10-03T09:18:20.236Z"
+          }
+        ],
+        "action_id": "action:installed-patch-5",
+        "patch_event_id": "event:1ec0cf70-6c2d-4665-a863-9b9c78d0efeb",
+        "test_receipt_id": "receipt:4464499a-3790-4b0e-8d68-d4741607c465",
+        "data": {
+          "receipt": {
+            "receipt_id": "receipt:4464499a-3790-4b0e-8d68-d4741607c465",
+            "action_id": "action:installed-patch-5",
+            "tool_name": "run_test",
+            "status": "success",
+            "transport_status": "success",
+            "business_status": "success",
+            "code": "tests_passed",
+            "summary": "Fixture tests passed",
+            "started_at": "2026-10-03T09:18:20.155Z",
+            "completed_at": "2026-10-03T09:18:20.235Z",
+            "duration_ms": 80,
+            "artifact_refs": [
+              {
+                "artifact_id": "artifact:bd56df3f-7bb6-4f63-9617-334f1891c59c",
+                "kind": "test_log",
+                "content_hash": "sha256:5e831726ee53753f7f9ec7ea415a6ba2412af076c730e9c22960a4f9ab2f2653",
+                "mime_type": "text/plain",
+                "byte_length": 30,
+                "project_id": "project:local:bbf47aac8992e438",
+                "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+                "created_at": "2026-10-03T09:18:20.236Z"
+              }
+            ],
+            "metadata": {
+              "output_bytes": 535,
+              "sandbox_report": {
+                "report_version": 1,
+                "mode": "workspace-write",
+                "enforcement": "full",
+                "platform": "darwin",
+                "mechanisms": [
+                  "seatbelt:/usr/bin/sandbox-exec",
+                  "filesystem:workspace-write",
+                  "path-scope:canonical-workspace",
+                  "network:denied",
+                  "process:shell-false"
+                ],
+                "unmet_constraints": []
+              },
+              "execution_parallel": false
+            }
+          },
+          "sandbox_report": {
+            "report_version": 1,
+            "mode": "workspace-write",
+            "enforcement": "full",
+            "platform": "darwin",
+            "mechanisms": [
+              "seatbelt:/usr/bin/sandbox-exec",
+              "filesystem:workspace-write",
+              "path-scope:canonical-workspace",
+              "network:denied",
+              "process:shell-false"
+            ],
+            "unmet_constraints": []
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:50219734-19ad-43fc-8ea1-966a2a652f4b",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 50,
+        "occurred_at": "2026-10-03T09:18:20.298Z",
+        "type": "memory.recalled",
+        "summary": "Recalled 0 memory items within 0 tokens",
+        "artifact_refs": [],
+        "data": {
+          "retrieval_id": "memory-retrieval:1a67084d-e2fd-4caa-801b-173f72864fa3",
+          "query_hash": "sha256:0fb7efdaf5e6c404ab2ca71caf2100765ef69a0b511e2565d67ac186c0a1c668",
+          "status": "completed",
+          "budget": {
+            "max_tokens": 4096,
+            "max_hits": 8
+          },
+          "hits": [],
+          "blocked_hits": [],
+          "injected_tokens": 0
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:311307b0-d99e-49a0-8414-690184b45f50",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 51,
+        "occurred_at": "2026-10-03T09:18:20.325Z",
+        "type": "context.built",
+        "summary": "Context built with 1003 input tokens",
+        "artifact_refs": [
+          {
+            "artifact_id": "artifact:3378479e-da7f-4d40-b29e-65d99a9e827f",
+            "kind": "context_manifest",
+            "content_hash": "sha256:0d21d4ba93bb2097747c759c5c716679b350c48dd7a966a6a83dd8980c9ed938",
+            "mime_type": "application/json",
+            "byte_length": 11938,
+            "project_id": "project:local:bbf47aac8992e438",
+            "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+            "created_at": "2026-10-03T09:18:20.324Z"
+          }
+        ],
+        "turn_id": "turn:20279d8e-6e44-47c4-97b4-b799748fca41",
+        "context_manifest_ref": "context:1b1ad7fd-48b3-4fc8-96a1-e049152f21a3",
+        "model_call_id": "model-call:000ca84a-124e-44f9-8372-ed404eb3264f",
+        "data": {
+          "manifest_id": "context:1b1ad7fd-48b3-4fc8-96a1-e049152f21a3",
+          "input_tokens": 1003,
+          "token_limit": 258000,
+          "reserved_output_tokens": 32000,
+          "token_estimate": {
+            "estimator_id": "heuristic_v2",
+            "confidence": "estimated",
+            "input_tokens": 1003,
+            "output_tokens": 0,
+            "per_section": {
+              "system": 117,
+              "goal": 14,
+              "history": 0,
+              "tool": 872,
+              "repo": 0,
+              "memory": 0,
+              "experience": 0
+            }
+          },
+          "input_budget_tokens": 226000,
+          "warning_threshold_tokens": 158200,
+          "compression_threshold_tokens": 180800,
+          "token_estimator": "heuristic_v2",
+          "context_status": "healthy",
+          "compression": {
+            "strategy": "none",
+            "applied_strategy": "none",
+            "trigger": "within_budget",
+            "before_tokens": 1003,
+            "after_tokens": 1003,
+            "checkpoint_tokens": 0,
+            "preserved_recent_message_count": 0,
+            "compacted_history_message_count": 0,
+            "steps": []
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:66373f7a-b8db-4630-874f-1f33d7299373",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 52,
+        "occurred_at": "2026-10-03T09:18:20.354Z",
+        "type": "model.request_started",
+        "summary": "Requesting a decision from synthetic-first-use with provider-default reasoning",
+        "artifact_refs": [],
+        "turn_id": "turn:20279d8e-6e44-47c4-97b4-b799748fca41",
+        "context_manifest_ref": "context:1b1ad7fd-48b3-4fc8-96a1-e049152f21a3",
+        "model_call_id": "model-call:000ca84a-124e-44f9-8372-ed404eb3264f",
+        "data": {
+          "adapter": "configurable-model-provider",
+          "provider": "custom",
+          "model": "synthetic-first-use",
+          "requested_reasoning_effort": "default",
+          "reasoning_configuration": "provider_default",
+          "retry_taxonomy": {
+            "version": "retry-taxonomy.v1",
+            "model_provider": {
+              "max_attempts": 3,
+              "retryable_http_statuses": [
+                408,
+                425,
+                429,
+                500,
+                502,
+                503,
+                504
+              ],
+              "retryable_transport_classes": [
+                "timeout",
+                "selected_network_errors"
+              ],
+              "base_backoff_ms": 250,
+              "max_backoff_ms": 1000,
+              "stop_after_provider_usage": true
+            },
+            "tool": {
+              "max_automatic_dispatch_attempts": 1,
+              "replay_policy": "disabled",
+              "new_model_authored_actions_are_separate": true,
+              "run_turn_limit": 12
+            },
+            "action": {
+              "max_dispatch_attempts_per_operation": 1,
+              "unknown_outcome": "reconcile_only"
+            }
+          }
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:0ccd3284-e510-4561-9b5c-44ede0fb4cde",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 53,
+        "occurred_at": "2026-10-03T09:18:20.378Z",
+        "type": "model.decision",
+        "summary": "Report the verified patch and test result.",
+        "artifact_refs": [],
+        "turn_id": "turn:20279d8e-6e44-47c4-97b4-b799748fca41",
+        "context_manifest_ref": "context:1b1ad7fd-48b3-4fc8-96a1-e049152f21a3",
+        "model_call_id": "model-call:000ca84a-124e-44f9-8372-ed404eb3264f",
+        "data": {
+          "decision_kind": "finish",
+          "risk": "none",
+          "evidence_ref_count": 0,
+          "public_plan": "Report the verified patch and test result.",
+          "adapter": "configurable-model-provider",
+          "provider": "custom",
+          "model": "synthetic-first-use",
+          "requested_reasoning_effort": "default",
+          "reasoning_configuration": "provider_default",
+          "provider_attempts": 1,
+          "provider_retry_count": 0,
+          "provider_retry_delays_ms": []
+        }
+      },
+      {
+        "schema_version": "tracegraph.session-event.v1",
+        "event_id": "event:03cecf9c-baa9-4b2f-a563-d1c52d06ecf8",
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "session_id": "session:9a1d8ade-4062-4ac3-b697-98b5748f9d09",
+        "sequence": 54,
+        "occurred_at": "2026-10-03T09:18:20.407Z",
+        "type": "run.completed",
+        "summary": "Run completed",
+        "artifact_refs": [],
+        "data": {
+          "code": "completed",
+          "outcome": "Synthetic installed fixture patch and actual tests completed."
+        }
+      }
+    ],
+    "todos": {
+      "items": [],
+      "last_sequence": 54
+    },
+    "input_queue": {
+      "pending": []
+    },
+    "subagents": {
+      "items": [],
+      "active_count": 0,
+      "last_sequence": 54,
+      "limits": {
+        "max_parallel_subagents": 2,
+        "max_depth": 1
+      }
+    },
+    "attachments": {
+      "items": [],
+      "last_sequence": 0
+    },
+    "sandbox_report": {
+      "report_version": 1,
+      "mode": "workspace-write",
+      "enforcement": "full",
+      "platform": "darwin",
+      "mechanisms": [
+        "seatbelt:/usr/bin/sandbox-exec",
+        "filesystem:workspace-write",
+        "path-scope:canonical-workspace",
+        "network:denied",
+        "process:shell-false"
+      ],
+      "unmet_constraints": []
+    },
+    "permission": {
+      "preset_key": "workspace-write",
+      "label": "Workspace write",
+      "sandbox_mode": "workspace-write",
+      "approval_policy": "on-write",
+      "policy_digest": "sha256:8a007dbb9f361639b82a7b17941c3c8f8a3761d4eb805cb9f08bdac7f0e4ae1d"
+    },
+    "code_intel": {
+      "version": "tracegraph.code-intel.v1",
+      "git_context": {
+        "status": "unavailable",
+        "captured_at": "2026-10-03T09:18:19.994Z",
+        "reason": "not_git_repository"
+      },
+      "base_snapshot_id": "graph_snapshot:sha256:d5da8b9b4576e8e2c1ba7c8274b0cae83ffc26a7a1f236d1e23b669ac65b451c",
+      "result_snapshot_id": "graph_snapshot:sha256:0ffbec389a0b6033b9d333d1a40dc0d4b715367b8b616d71303d82f7cd3e39f2",
+      "changed_files": [
+        "src/add.ts"
+      ],
+      "changed_files_truncated": false,
+      "changed_symbols": [
+        {
+          "symbol_id": "symbol:sha256:5731dcd00d8d4da1f1a2af66aaea5e4ee5630677b3d9105916ee7c45d4b150f9",
+          "name": "add",
+          "kind": "function",
+          "file_path": "src/add.ts",
+          "line": 1,
+          "end_line": 4,
+          "change": "changed"
+        }
+      ],
+      "changed_symbols_truncated": false
+    },
+    "artifact_refs": [
+      {
+        "artifact_id": "artifact:d3c3e1af-1dcb-45b6-8bd0-ea68f5af0d7e",
+        "kind": "graph_snapshot",
+        "content_hash": "sha256:987e71de150f8505db29696fb4c8e470e7edc10e910c3df3740db677b27eac1b",
+        "mime_type": "application/json",
+        "byte_length": 3570,
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "created_at": "2026-10-03T09:18:18.653Z"
+      },
+      {
+        "artifact_id": "artifact:a2d7f3a5-f59e-44ac-ac52-358a1fbc442f",
+        "kind": "context_manifest",
+        "content_hash": "sha256:322bc81134e79ef11838248177ca561706bf55fd52f80e0930a620c4470c89d5",
+        "mime_type": "application/json",
+        "byte_length": 3245,
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "created_at": "2026-10-03T09:18:18.722Z"
+      },
+      {
+        "artifact_id": "artifact:428b5b49-84bc-466f-8d7d-ad1490dd2865",
+        "kind": "tool_output",
+        "content_hash": "sha256:02fa06c01316c94597bd8488aa4b46539df7ca706e4cf46e66d9f0a8ae9fa72b",
+        "mime_type": "application/json",
+        "byte_length": 89,
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "created_at": "2026-10-03T09:18:18.837Z"
+      },
+      {
+        "artifact_id": "artifact:5a37888b-e008-4ea0-8aab-df1365bc4f8c",
+        "kind": "context_manifest",
+        "content_hash": "sha256:ab99b154d4d9c4a39b6f1af569a3fe7079c112cc014fda3665950a9973f058e3",
+        "mime_type": "application/json",
+        "byte_length": 4923,
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "created_at": "2026-10-03T09:18:18.885Z"
+      },
+      {
+        "artifact_id": "artifact:968803a6-fda1-47ba-934e-6d8d4d86dfa4",
+        "kind": "tool_output",
+        "content_hash": "sha256:0e6cf789846139c8cc7a8e252486ee3433e1df45557d1cfb6e0c98b94a283b33",
+        "mime_type": "text/plain",
+        "byte_length": 140,
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "created_at": "2026-10-03T09:18:19.003Z"
+      },
+      {
+        "artifact_id": "artifact:8ce2320b-d59b-4f9e-8e2e-9393c896bfd5",
+        "kind": "context_manifest",
+        "content_hash": "sha256:6f37829c5011cb2b5d53311cbc67da0a4f1d3fbfb5d1300cd2b77171d69631f1",
+        "mime_type": "application/json",
+        "byte_length": 6591,
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "created_at": "2026-10-03T09:18:19.052Z"
+      },
+      {
+        "artifact_id": "artifact:858fd488-727f-4a57-9143-16d06f9562ac",
+        "kind": "patch_preview",
+        "content_hash": "sha256:33046b9eedfd1c03a3fd2d7398ac0d460c7a64674670fef9704ec466be0b96be",
+        "mime_type": "text/x-diff",
+        "byte_length": 81,
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "created_at": "2026-10-03T09:18:19.171Z"
+      },
+      {
+        "artifact_id": "artifact:9b9d022e-f750-4398-b5a0-9c36c541fd93",
+        "kind": "diff",
+        "content_hash": "sha256:33046b9eedfd1c03a3fd2d7398ac0d460c7a64674670fef9704ec466be0b96be",
+        "mime_type": "text/x-diff",
+        "byte_length": 81,
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "created_at": "2026-10-03T09:18:19.813Z"
+      },
+      {
+        "artifact_id": "artifact:5a134067-0b76-4a26-94e7-37f1cfc9c7a7",
+        "kind": "graph_snapshot",
+        "content_hash": "sha256:4bc38ad4cf9b66551b4ccf00201e187e9fe829dea31f570e2a549587daeac726",
+        "mime_type": "application/json",
+        "byte_length": 3570,
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "created_at": "2026-10-03T09:18:19.941Z"
+      },
+      {
+        "artifact_id": "artifact:9eb0e5f2-4978-4e43-a745-cdb5db14547c",
+        "kind": "graph_delta",
+        "content_hash": "sha256:3dca3e342312a135f8e01815004b09fa7d62dbf40aac5f43f20a19bd38675006",
+        "mime_type": "application/json",
+        "byte_length": 1979,
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "created_at": "2026-10-03T09:18:19.964Z"
+      },
+      {
+        "artifact_id": "artifact:5117fcbc-a204-44d0-9d06-41e5a4a51ea6",
+        "kind": "context_manifest",
+        "content_hash": "sha256:452c3ed2e547e269afca3880337cbcd30db343c69837f6ebe847795b1228a101",
+        "mime_type": "application/json",
+        "byte_length": 10071,
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "created_at": "2026-10-03T09:18:20.057Z"
+      },
+      {
+        "artifact_id": "artifact:bd56df3f-7bb6-4f63-9617-334f1891c59c",
+        "kind": "test_log",
+        "content_hash": "sha256:5e831726ee53753f7f9ec7ea415a6ba2412af076c730e9c22960a4f9ab2f2653",
+        "mime_type": "text/plain",
+        "byte_length": 30,
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "created_at": "2026-10-03T09:18:20.236Z"
+      },
+      {
+        "artifact_id": "artifact:3378479e-da7f-4d40-b29e-65d99a9e827f",
+        "kind": "context_manifest",
+        "content_hash": "sha256:0d21d4ba93bb2097747c759c5c716679b350c48dd7a966a6a83dd8980c9ed938",
+        "mime_type": "application/json",
+        "byte_length": 11938,
+        "project_id": "project:local:bbf47aac8992e438",
+        "run_id": "run:58e2afc0-f89d-4d33-a683-c70a7d244bd8",
+        "created_at": "2026-10-03T09:18:20.324Z"
+      }
+    ],
+    "outcome": "Synthetic installed fixture patch and actual tests completed."
+  }
+}

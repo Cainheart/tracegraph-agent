@@ -1,0 +1,23 @@
+[
+  {
+    "name": "configure openai-images",
+    "args": [
+      "image",
+      "configure",
+      "--protocol",
+      "openai-images",
+      "--base-url",
+      "http://127.0.0.1:59706/v1",
+      "--model",
+      "deterministic-image-fixture",
+      "--key-stdin"
+    ],
+    "exit": 1,
+    "result": {
+      "error": {
+        "code": "local_host_upgrade_required",
+        "message": "A different Outlive build owns this profile. Your background work remains running. Stop that Host explicitly after finishing its work, then start the installed application again."
+      }
+    }
+  }
+]

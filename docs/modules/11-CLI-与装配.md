@@ -1,32 +1,97 @@
 # 模块 11：CLI 与装配
 
-> 定位：唯一的"可运行入口"。把 Core / CodeGraph / Retrieval / Telemetry / Host 装配成一个本地服务，并管理数据目录、项目注册表与模型凭据。
-> 代码：`apps/cli/src/index.ts`、`boot/profile.ts`、`profiles/cli.ts`、`extension-config.ts`、`extension-command.ts`、`team-command.ts`、`permission-config.ts`、`sandbox-config.ts`（legacy seam）、`model-config.ts`、`telemetry-config.ts`、`retrieval-config.ts`、`subagent-config.ts`、`project-registry.ts`、`composition.ts`；扩展生命周期、凭据、Permission、Sandbox、Memory、Subagent 与 Session 实现在 `packages/core`，本地检索在 `packages/retrieval`，可选 HTTP 服务/client 在 `apps/retrieval-service`，Telemetry sink 在 `packages/telemetry`
-> 最后核对：2026-09-30
-> 实现状态：**已验证**（包括 CLI resolved profile 的 dump/hash contract tests，以及 `extension-config.test.ts`、`extension-command.test.ts`、`team-command.test.ts`、`retrieval-config.test.ts`、`subagent-config.test.ts` 与 retrieval-service 单元/集成测试）
+> 定位：终端命令与实时进度入口；通过共享本机 Host 使用项目、Session、配置和后台资源。当前 Runtime/configuration 装配 owner 在 `packages/host`，CLI 不另外创建业务状态。
+> 代码：`apps/cli/src/index.ts`、`run-session-command.ts`、`run-session-command.test.ts`、`boot/profile.ts`、`profiles/cli.ts`、`extension-config.ts`、`extension-command.ts`、`team-command.ts`、`permission-config.ts`、`sandbox-config.ts`（legacy seam）、`model-config.ts`、`telemetry-config.ts`、`retrieval-config.ts`、`subagent-config.ts`、`project-registry.ts`、`composition.ts`；扩展生命周期、凭据、Permission、Sandbox、Memory、Subagent 与 Session 实现在 `packages/core`，本地检索在 `packages/retrieval`，可选 HTTP 服务/client 在 `apps/retrieval-service`，Telemetry sink 在 `packages/telemetry`
+> 最后核对：2026-10-03
+> 实现状态：共享 profile/UDS typed client、命令与三条实时流、资源管理和显式迁移已有源码/测试；旧显式 serve/config helper 保留兼容。维护者本机验收与独立外部验收分开。
 
 ---
 
 ## 1. 命令面
 
-```
-tracegraph serve [--readonly /absolute/path] [--data-dir <path>] [--session-dir <path>] [--env-file <path>] [--extension-config <path>] [--permission-preset read-only|workspace-write|full-write] [--sandbox-mode read-only|workspace-write|danger-full-access] [--subagent-profiles readonly,code-explorer] [--max-parallel-subagents 2] [--max-subagent-depth 1] [--subagent-max-steps 6] [--subagent-max-tokens 16000]
-tracegraph extensions list [--host-url http://127.0.0.1:4311]
-tracegraph extensions reload <trusted-extension-name> [--host-url http://127.0.0.1:4311]
-tracegraph extensions run <command> [args...] [--host-url http://127.0.0.1:4311]
-tracegraph team show <coordinator-run-id> [--host-url http://127.0.0.1:4311]
-tracegraph team create <coordinator-run-id> [--command-id <id>] [--host-url http://127.0.0.1:4311]
-tracegraph team mailbox send|claim <actor-run-id> <operation-flags> [--command-id <id>] [--host-url http://127.0.0.1:4311]
-tracegraph team task create|claim|complete|block|cancel|reopen <actor-run-id> <operation-flags> [--command-id <id>] [--host-url http://127.0.0.1:4311]
-tracegraph team heartbeat <member-run-id> [--command-id <id>] [--host-url http://127.0.0.1:4311]
-tracegraph team sweep <coordinator-run-id> [--command-id <id>] [--host-url http://127.0.0.1:4311]
-tracegraph mcp list [--host-url http://127.0.0.1:4311]
-tracegraph mcp restart <server> [--host-url http://127.0.0.1:4311]
+```text
+outlive host start|status|restart|stop [--profile-root <path>]
+outlive doctor | capabilities | resources
+outlive config get|set --input-file <json>
+outlive config permission get|set --preset <preset>
+outlive model get|configure|test|clear-key [--key-stdin]
+outlive models list|save|test|remove [...]
+outlive files list|read|save|reconcile --project-id <id> [...]
+outlive feedback get|set --run-id <id> [...]
+outlive config permission grant-status|grant|revoke [--confirm-full-access]
+outlive projects list|create|register|remove [...]
+outlive chat start --task <text> [--session-id <id>]
+outlive run start --project-id <id> --task <text> [--mode plan|execute]
+outlive run get|events|activity|model <run-id>
+outlive run input|stop|approve|reject|approve-plan|rollback <run-id> [...]
+outlive sessions list|get|options-get|options-set|rename|delete|resume|archive|unarchive [...]
+outlive todo list|create|update|write <run-id> [...]
+outlive artifact get <run-id> <artifact-id>
+outlive attachments upload|content [...]
+outlive replay create|diff [...]
+outlive team|memory|experience|skills|mcp|lsp|extensions [...]
+outlive usage [--project-id <id> --session-id <id> --from <time> --to <time>]
+outlive terminal list|create|attach|input|resize|close [...]
+outlive preview list|start|register|stop [...]
+outlive git status|diff|stage|unstage|discard|commit|branch|worktree-create|worktree-remove [...]
+outlive schedule list|create|update|delete|run|history [...]
+outlive host migration preview|commit --input-file <inventory.json> [--source-id <id>]
+outlive serve [--profile-root <path>]
 ```
 
-缺省命令仍是 `serve`；G-17 的 `extensions list|reload|run` 与 G-08 的 `team` 都是 typed SDK 的薄客户端，只连接已运行 Host。`runTeamCommand()` 覆盖 team snapshot、创建、mailbox、task、heartbeat 与 sweep；Run id 决定 Host 绑定的 coordinator/member authority，命令语法不接受 project、actor、sender、owner、客户端时钟或 timeout 注入。
+### 1.1 当前共享本机命令
 
-除只读 `team show` 外，**每个 Team mutation** 都可选 `--command-id <id>`。收到超时、断连或响应丢失时，operator 应以同一 command id 和完全相同的业务参数重试；Core 返回原 canonical mutation result，而不是追加第二份事实。同 id 改 payload 会冲突。`team show` 只接受可选 `--host-url`，刻意不接受 `--command-id`。Host URL 的优先级是 `--host-url` → `TRACEGRAPH_HOST_URL` → `http://127.0.0.1:4311`；解析成功后 CLI 先 bootstrap capability，再发 typed SDK 请求并把 strict JSON 结果写到 stdout。
+[`workbench-command.ts`](../../apps/cli/src/workbench-command.ts) 的 HELP/parser 是完整 flag 的事实源。上述命令均接受 `--profile-root`；未显式选择时采用 `OUTLIVE_PROFILE_ROOT`，再采用 `~/.outlive/profiles/default`。`outlive` 是当前命令名，`tracegraph` 保留兼容 alias。正常业务命令经共享 connection supervisor/typed SDK facade 连接或安全恢复唯一 owner；status/stop 的恢复预算为零，迁移探测不拉起缺失 owner。显式停止标记阻止普通命令复活 Host，只有 `host start` 是清除停止意图的明确动作。不存在另一个 CLI Runtime。
+
+stdout 输出结构化结果，实时 events/activity/model 是独立 cursor 的 JSONL；日志/usage/error 在 stderr。CLI 的退出码 0 只证明请求或读取完成，Run 最终业务状态/receipt 仍需读取。取消订阅/SIGINT 不自动取消后台 Run；`run stop` 是显式 durable cancel，`host stop` 显式关闭所有后台资源。mutations 用 `--command-id` 保留精确重试，`--wait` 可等待 canonical 终态。当前产品选择是命令与实时进度，不建设完整 TUI。
+
+API Key 仅从 `--key-stdin` 收集，CLI 不接受 argv Key；存储由共享 Host owner 完成，public 输出不回显 secret。模型保存、bounded connection test 与真正完成 Run 分别返回各自结果。
+
+当前 native CLI facade 使用 [`LocalHostConnectionSupervisor`](../../packages/host/src/local-connection-supervisor.ts)；外部 owner 替换后重新绑定同一 profile，重复崩溃有恢复预算与退避。读取跨 generation 返回 `host_read_stale`，写入断连返回 `host_write_outcome_unknown`，不会自动重发领域命令。Replay owner 失效返回 `host_replay_stale` 并保留旧只读 authority，不能自动 bootstrap 成 live。CLI Replay 命令结束即 detach；公共入口没有把 Replay 模式转换成写请求的命令。
+
+`host restart` 只提交 canonical 重启请求：活跃 Run、queued workspace claim、终端或 owned preview 会返回 busy，不能偷偷取消资源。`restart_requested` 是请求回执，需要 `host status` 观察新 owner 或后续读取确认配置应用。显式 `host stop` 保留停止意图，普通 chat/run/config 不能复活；再次使用前须明确 `host start`。终端 shell 退出、CLI 订阅结束与 OS worker 崩溃分别遵循资源/客户端/进程生命周期，不等同显式 Host stop。
+
+### 1.1.1 已保存模型连接与会话选项
+
+| 命令 | 输入与结果 |
+| --- | --- |
+| `outlive models list` | 安全 registry snapshot：connection ID、revision、配置 labels、Key 是否存在、独立测试状态；没有原始 Key |
+| `outlive models save --input-file connection.json [--key-stdin] --command-id <id>` | strict JSON 包含 label/provider/protocol/base_url/model，以及可选 connection_id/expected_revision/models/clear_key；JSON 的 api_key 被拒绝，Key 只能 stdin；返回 registry snapshot |
+| `outlive models test <connection-id> --command-id <id>` | 显式 tiny connection test；保存成功不代表测试通过，测试通过不代表 Run 完成 |
+| `outlive models remove <connection-id> --expected-revision <n> --command-id <id>` | CAS 移除；进行中 Run 已冻结的配置/凭据 lease 不热切换 |
+| `outlive sessions options-get <session-id>` | Session 下一 Run 的选项与 revision |
+| `outlive sessions options-set <session-id> --input-file options.json --command-id <id>` | JSON 含 expected_revision/options；options 可选已保存 connection/model、reasoning_effort、plan/execute 和 bounded permission_preset |
+
+`chat start` / `run start` 支持 `--connection-id`、`--model`、`--preset`、`--mode`、`--reasoning-effort`；Host 在 admission 校验连接/model/权限并冻结本次 Run，选项调整只影响下一次提交。模型列表并不代表 provider 自动发现或所有列出的型号都已测试。[argv parser](../../apps/cli/src/workbench-command.ts)、[连接控制器](../../packages/host/src/conversation-control.ts)、[契约](../../packages/contracts/src/conversation-options.ts)是当前事实源。
+
+### 1.1.2 本地 Full 授权、项目文件与回答反馈
+
+| 命令 | 权限、对账与真实结果 |
+| --- | --- |
+| `outlive config permission grant-status` | enabled/can_grant/ceiling/source/pending_restart；不是一般预设选择 |
+| `outlive config permission grant\|revoke --confirm-full-access --command-id <id>` | 明确本地用户授权选择；管理员来源不允许提高上限；活动资源期间保留 pending，空闲安全重启后应用 |
+| `outlive files list --project-id <id> [--path <relative>]` | 有界目录列表，只读、项目范围 |
+| `outlive files read --project-id <id> --path <relative>` | 有界文本及当前 SHA；越界/symlink/超限拒绝 |
+| `outlive files save --project-id <id> --path <relative> --expected-sha256 <sha> --file <content-file> --command-id <id>` | `--stdin` 可替代 --file；可带 --session-id 绑定同项目会话策略；CAS、policy 和工作区写协调 |
+| 上述 save 加 `--approval-id <id> --approval-decision approve\|deny` | 用户明确处理 pending approval；须保持原 command ID、正文、路径和 expected SHA，不能另造成功回执 |
+| `outlive files reconcile --project-id <id> --command-id <original-id>` | 查询/对账原保存 command；unknown 不自动覆盖当前文件 |
+| `outlive feedback get --run-id <id>` | 当前 Run 的本地回答反馈 |
+| `outlive feedback set --run-id <id> --answer-event-id <id> --feedback-value like\|dislike\|clear --command-id <id>` | 绑定真实已记录回答 Event，保存本地事实，不外发到 provider |
+
+文件 save 的 `awaiting_approval`、`conflict` 和 `unknown` 都不表示保存成功；`receipt_event_id`/原 command 的事实用于后续审阅和对账。当前 CLI failed/conflict/rejected/interrupted 返回 1，unknown/pending/awaiting_approval 返回 3；单纯读取或已接纳的启动返回 0 不能外推最终 Run 业务完成。HTTP 请求不自动 retry。文件与反馈的 [Host controller](../../packages/host/src/project-files-feedback.ts) 使用同一 canonical Ledger 语义，CLI 不自行写项目或事件文件。
+
+这些操作有源码/窄测试，连接 owner 的真实 macOS worker 回归见[连接验证](../validation/current-workbench-recovery/host-connection-verification.md)。本轮新安装包的完整 GUI 模型/文件/反馈/授权与保留草稿恢复仍等待最终独立验证，不能用先前安装版本的成功截图代替。
+
+### 1.2 保留的旧装配入口与 helper
+
+显式带 `--data-dir/--session-dir/--env-file/--readonly/...` 的 `serve` 保留旧独立装配，用于兼容和嵌入测试；启动前同样取得 canonical data/session 根的跨进程租约，禁止和共享 owner 共写。以下旧 flag/environment 表和原生 chooser 说明仅适用于这条显式兼容路径。旧 `run-session-command.ts`、team/memory/MCP/extension helpers 可以由测试注入 HTTP client；当前 public CLI 默认由新 dispatcher 注入同一个 UDS client，不再接受 `--host-url` 去创建另一份状态。
+
+
+缺省命令仍是共享 `serve`。兼容 `run-session-command.ts` helper 的 Run/Session、G-17 extensions、G-08 Team 与 MCP 路径只连接注入/已运行 Host。Run/Session 子命令通过 `TraceGraphClient` 进入 Host 已装配的同一个 `RunSessionController`，不在 CLI 子进程创建第二个 Runtime 或 Controller，也不启用 API-062 framed RPC listener。CLI 先按共享 protocol/contracts schema 校验 argv，再 bootstrap 并调用 SDK；成功输出是 schema 校验后的 protocol JSON Lines，错误和 usage 写 stderr。`run events` 默认输出持久 canonical ledger timeline，`--follow` 从最后一个序号继续订阅 Host SSE；SIGINT 只停止订阅，不取消 Run。显式指定 `--command-id` 可让重试沿用 Host 幂等键。
+
+`runTeamCommand()` 覆盖 team snapshot、创建、mailbox、task、heartbeat 与 sweep；Run id 决定 Host 绑定的 coordinator/member authority，命令语法不接受 project、actor、sender、owner、客户端时钟或 timeout 注入。
+
+除只读 `team show` 外，**每个 Team mutation** 都可选 `--command-id <id>`。收到超时、断连或响应丢失时，operator 应以同一 command id 和完全相同的业务参数重试；Core 返回原 canonical mutation result，而不是追加第二份事实。同 id 改 payload 会冲突。`team show` 只接受可选 `--host-url`，刻意不接受 `--command-id`。只在未注入 client 的旧 helper 中，Host URL 的优先级是 `--host-url` → `TRACEGRAPH_HOST_URL` → `http://127.0.0.1:4311`；解析成功后 CLI 先 bootstrap capability，再发 typed SDK 请求并把 strict JSON 结果写到 stdout。
 
 G-11 的 `mcp list|restart` 同样只连接已运行 Host：`runMcpCommand(...)` 实现命令分派，`mcp list` 读取 `/api/mcp` 的 bounded server/tool status，`mcp restart <server>` 只提交 command id 并可安全重试。
 
@@ -66,7 +131,31 @@ operator 应使用自己稳定且无内部前缀的 id。`team-expire:`、`team-
 
 ---
 
-## 2. 启动顺序
+## 2. 共享 Host 与旧 serve 启动顺序
+
+当前共享路径为 `argv → maybeRunWorkbenchCommand → LocalHostConnectionSupervisor/supervisedLocalHost → private discovery → Node owner → one composition`。源码分别是 [`CLI index`](../../apps/cli/src/index.ts)、[`local-host.ts`](../../packages/host/src/local-host.ts)、[`local-host-worker.ts`](../../packages/host/src/local-host-worker.ts) 与 [`host-composition.ts`](../../packages/host/src/composition/host-composition.ts)。配置 helpers 已移入 Host 公共 `composition/*` 导出，旧 `apps/cli/src/*-config.ts` 为兼容薄指针。
+
+| 当前 profile 内容 | owner/规则 |
+|---|---|
+| `profile.json` | 稳定 ID、schema 与 canonical data/session 根；默认 `data/`、`sessions/` |
+| `owner.json` / 根写入租约 | 启动时先取得，活跃 owner 冲突 fail closed；OS PID 与 nonce 绑定 |
+| `discovery.json` | 私有权限、随机 socket token、boot nonce、PID 与协议；只供 native client |
+| `owner-stop.json` | 显式 stop 的持久意图；普通连接/恢复尊重，明确 start 才清除 |
+| `workbench-settings.json` | version/revision；immediate、新 Run、restart metadata；三端同源 |
+| `config/harness-config.json` | 同一 bounded用户 preset；Host ceiling 和项目收紧仍不能热提升 |
+| `config/harness-config.json.full-grant.json` | 独立本地明确授权意图；管理员来源不允许提高 ceiling；pending 在空闲 replacement owner 后应用 |
+| `data/model-config.json` / `data/model-draft.json` | reference-only active配置；清除 Key 后保留非秘密参数 |
+| `model-connections.json` / `model-connections/` | 已保存连接 registry/revision 与逐连接 reference-only 配置，兼容原默认模型引用 |
+| `session-run-options.json` | 按 Session ID 的选项/revision；Run admission 冻结，不是当前 Run 的可变配置 |
+| `credentials.json` | 非 macOS/显式隔离测试 fallback；默认 macOS platform Keychain refs |
+| `data/local-projects.json`、events/Memory/WAL/attachments | 同一 Runtime/注册表所有者；客户端不打开 JSONL |
+| workbench/resource/schedule/迁移 receipt | owner 持久化，可从当前 API 查询，不由客户端缓存作真源 |
+
+关闭窗口、CLI 命令完成或 Web 标签关闭只 detach；Host 不默认安装开机启动。显式 stop 先拒绝 queued admission，再关闭 PTY/owned preview/scheduler、停止 Run/held model、关闭私有/TCP SSE，最后释放所有者租约。启动失败会清理已初始化 MCP/LSP 和已取得租约。
+
+共享 owner worker 只继承白名单 OS/PATH 环境，并额外保留三个可信启动策略键：`TRACEGRAPH_PERMISSION_PRESET`、`TRACEGRAPH_ROLLBACK_ENABLED`、`TRACEGRAPH_ROLLBACK_ALLOW_FORCE`。不转发 `NODE_OPTIONS` 或模型密钥；模型配置来自 profile。rollback 默认关闭，capability 为 `policy-denied`；linked 工作区 rollback 还需要 force policy 与显式确认。权限选择对新 Run 生效，本进程活动 Run 保持原绑定；共享恢复会重验当前 policy，变化时要求新 Run。
+
+下面保留的是旧显式 serve 的装配顺序；它已由同一 Host composition 实现，不是另一个默认 profile：
 
 ```ts
   const resolvedProfile = resolveCliProfile(/* allowlisted resolved CLI selections */);
@@ -127,13 +216,13 @@ operator 应使用自己稳定且无内部前缀的 id。`team-expire:`、`team-
 11. 打印 Permission preset、对应 sandbox 状态、Retrieval 模式、启用的 Subagent profiles 与 parallel/depth、Model image input enabled/disabled、Host 地址、Web Workbench 地址、模型配置来源与令牌到期时间；full-write 文案明确注明 sandbox disabled。
 12. `SIGINT` / `SIGTERM` 调用 `closeHostAndFlushTelemetry()`：先等待 `host.close()` settle，无论 close 成功或失败都会随后启动 `runtime.flushTelemetry()`；整个 Telemetry flush barrier 共用默认 5,000 ms 总等待预算，超时即继续关停。该预算不同于 `telemetry.json.timeout_ms` 的单次 HTTP 请求 timeout。
 
-**这是全仓唯一的组合根。** 所有可选能力（项目创建、目录选择、目录揭示、模型配置、Permission 设置、代码图、Memory retriever、Telemetry sink）都在这里被接线。Telemetry 缺失配置时明确装配 Noop sink，保持零网络；Retrieval 缺失远端配置时明确装配本地 backend，而不是关闭 recall。
+**当前 shared 与 legacy serve 共用 Host composition。** 项目、模型、Permission、代码图、retrieval、Telemetry 和子 Agent 在服务端接线；apps/cli 只负责 argv/IO 和受信原生输入。Telemetry 缺失配置时明确装配 Noop sink，保持零网络；Retrieval 缺失远端配置时明确装配本地 backend，而不是关闭 recall。
 
 G-20 的 `createCodeGraphProvider().captureGitContext()` Git probe 不是模型 Tool，也不是 shell escape hatch：它只运行 `git -c core.hooksPath=/dev/null -C <canonical workspace>` 的固定只读子命令，`shell:false`、5 秒 deadline、64 KiB stdout 上限、禁用 system config/optional locks；工作树探测使用 `git status --porcelain=v1 -z --untracked-files=normal`，故 status SHA-256 fingerprint **覆盖 untracked 文件**。公开事实只写 full commit、branch、dirty、该 fingerprint 与时间。Git 不可用时返回严格的 `unavailable` context；不会把“无法探测”当作“工作树未变化”，因此不会承诺 stale-base 重新审批保护。
 
-Session 目录有独立 flag/env，但**不是可与任意 `dataDir` 自由组合的独立数据库**：JSONL 只保存 Event ref，没有 ledger locator，Controller 总是到当前 `dataDir/events` 解析它。一个 Session root 必须固定配对创建它的同一个 `dataDir`；多数据目录/多实例应同时指定不同且稳定的 `--session-dir`。误把多个 Ledger 指向同一 Session root 时，启动扫描会因找不到或作用域不匹配而 fail-closed。默认组合为 `<repo>/.tracegraph` + `~/.tracegraph/sessions`，隐含单一 TraceGraph data root 的使用方式。删除会话移动到 Session 根的同级 `sessions-trash`，不会删除 Project、Run Ledger 或真实工作区文件。
+Session 目录有独立 flag/env，但**不是可与任意 `dataDir` 自由组合的独立数据库**：JSONL 只保存 Event ref，没有 ledger locator，Controller 总是到当前 `dataDir/events` 解析它。一个 Session root 必须固定配对创建它的同一个 `dataDir`；多数据目录/多实例应同时指定不同且稳定的 `--session-dir`。误把多个 Ledger 指向同一 Session root 时，启动扫描会因找不到或作用域不匹配而 fail-closed。旧兼容默认组合为 `<repo>/.tracegraph` + `~/.tracegraph/sessions`；当前共享默认在同一个 profile 内固定配对 `data/` + `sessions/`。删除会话移动到 Session 根的同级 `sessions-trash`，不会删除 Project、Run Ledger 或真实工作区文件。
 
-`token-calibration.json` 跟随 `dataDir`，没有单独 CLI flag。它只保存 provider/model 的比例样本、revision 与时间，不保存 Context 正文；目录/文件在 POSIX 上收紧为 `0700`/`0600`，采用临时文件 + fsync + rename，并拒绝 symlink、非普通文件、错误 owner/权限、损坏或超 1 MiB 内容。初始化失败会让 Runtime 本轮退回启发式并保留未校准 usage，而不是让 Host 不可用。它的 Promise queue 只保护单进程：不要让多个 Host 同时写同一 `dataDir`，否则校准状态可能 last-writer-wins。
+`token-calibration.json` 跟随 `dataDir`，没有单独 CLI flag。它只保存 provider/model 的比例样本、revision 与时间，不保存 Context 正文；目录/文件在 POSIX 上收紧为 `0700`/`0600`，采用临时文件 + fsync + rename，并拒绝 symlink、非普通文件、错误 owner/权限、损坏或超 1 MiB 内容。初始化失败会让 Runtime 本轮退回启发式并保留未校准 usage，而不是让 Host 不可用。counter 自身的 Promise queue 只保护单进程；标准 shared/legacy composition 在 Runtime 创建前另取得 canonical data/session 根租约，拒绝多个 Host 同时写入。嵌入方绕过该装配不能外推同一保证。
 
 CLI 当前没有装配 bundled tokenizer 或 Anthropic `count_tokens` client，也没有向 Runtime 注入自定义 `TokenCounter`。因此默认 preflight 只可能是 `estimated` 或已有历史样本后的 `calibrated`；契约中的 `exact` 仍是未来 full-wire counter 的预留值。
 
@@ -146,17 +235,17 @@ CLI 当前没有装配 bundled tokenizer 或 Anthropic `count_tokens` client，�
 | `TRACEGRAPH_ROLLBACK_ENABLED` | `false` | 总开关；关闭时包括 disposable 在内的全部请求都写 `action.rollback_refused` |
 | `TRACEGRAPH_ROLLBACK_ALLOW_FORCE` | `false` | 允许 managed/读写 linked workspace 的 force 分支；不能单独启用 rollback |
 
-当总开关开启后，disposable workspace 不需要请求 force；managed/读写 linked workspace 必须同时满足 `ALLOW_FORCE=true` 与 wire 请求 `force:true`。无论配置如何，readonly 永远拒绝，force 也永远不能绕过 quiescent Run、verified WAL、canonical root binding、单目标和当前 after-hash 匹配。当前 CLI 没有 rollback 子命令，调用入口是 Host API / SDK。
+当总开关开启后，disposable workspace 不需要请求 force；managed/读写 linked workspace 必须同时满足 `ALLOW_FORCE=true` 与 wire 请求 `force:true`。无论配置如何，readonly 永远拒绝，force 也永远不能绕过 quiescent Run、verified WAL、canonical root binding、单目标和当前 after-hash 匹配。当前 CLI `run rollback` / `rollback` 与共享 UI 复用 Host API/SDK；新增入口仍受同一默认关闭的 rollback policy、WAL/hash/root绑定和 quiescence 约束。
 
 ### 2.2 Permission ceiling、用户选择与项目收紧
 
 `PermissionConfigController.open()` 把配置分成三层，而不是让任意请求提交一组散装权限：
 
 1. `--permission-preset` 高于 `TRACEGRAPH_PERMISSION_PRESET`，建立不可由 Web 提升的 Host ceiling；旧 `--sandbox-mode` / `TRACEGRAPH_SANDBOX_MODE` 映射为 `read-only / workspace-write / full-write`，仅用于兼容。若新旧来源同时存在且映射结果不同，启动 fail-closed。
-2. 私有 `~/.tracegraph/harness-config.json` 保存用户选择，只能等于或低于 ceiling。Host/SDK/Web 的 `GET/POST /api/permission-config` 只读写 bounded preset key；更新无需重启 Host，但只影响之后创建的 Run。
+2. 共享 profile 的 `config/harness-config.json` 保存 bounded 用户选择，只能等于或低于 ceiling；旧显式装配保留 `~/.tracegraph/harness-config.json` 的兼容路径。Host/SDK/Web 的 `GET/POST /api/permission-config` 更新只影响之后创建的 Run。Session 的 `run_options.permission_preset` 同样受 Host ceiling 和项目规则限制。
 3. 每个新 Run 再从 canonical `<projectRoot>/.tracegraph/policy.json` 读取 strict、最多 64 KiB 的项目规则。目录/文件 symlink、越界、非普通文件或非法结构均拒绝；项目规则只允许 `ask/deny`，不能增加 allow。
 
-Run 创建时会冻结双层 effective policy 与 digest；活动 Run 不热切换，恢复 Run 也使用 recovery Artifact 中的原 policy/layers。若要改变 CLI/environment ceiling，仍须重启 Host。浏览器 StartRun/StartChat payload 没有 preset/sandbox/rule/token 字段，不能逐 Run 提权。
+Run admission 会冻结模型/凭据引用、Session 选项与 effective policy/digest；活动 Run 不热切换。共享恢复保留旧 recovery Artifact，同时重验当前 ceiling/项目收紧，变化时安全拒绝旧 resume，要求新 Run。客户端可选择 bounded `run_options.permission_preset`，不能提交 sandbox/rules/token 或越过上限。独立本地 Full grant 只在默认/用户授权来源允许；管理员 ceiling 不可提升，持久授权变化在 owner 空闲安全重启后才成为新 ceiling。
 
 三种内置 preset 是固定组合：`read-only = read-only + never`、`workspace-write = workspace-write + on-write`、`full-write = danger-full-access + never`。默认 `workspace-write` 不等于“所有平台都已隔离”：macOS Runtime 会对每个 Run probe `/usr/bin/sandbox-exec`，成功才报告 full；Linux bwrap runner 尚未启用，Windows 无 backend，restricted `run_test` 会 fail-closed。`full-write` 是显式 opt-out，CLI 启动摘要与 durable/Web 证据都会显示 disabled/none。模型 provider networking 始终由 Host 发起，不经过这个 child runner。
 
@@ -261,19 +350,19 @@ Host 侧覆写 chat `project_id` 并强制 `mode: "execute"`（模块 09 §7）�
 
 ### 4.1 平台后端
 
-CLI 在启动时只建立一个 `CredentialStore` seam：
+共享 Host 启动时建立一个平台 `CredentialStore` seam；CLI/Desktop/Web 只经 typed 控制请求使用它。以下 environment 来源只属于旧显式 serve：
 
 | 平台/来源 | 实现 | 读写语义 | 静态存储边界 |
 |---|---|---|---|
 | macOS | `MacOsKeychainCredentialStore` | 可读写 | 系统 Keychain；`security add-generic-password` 的值经 stdin 输入，不进入 argv |
-| 非 macOS | `PrivateFileCredentialStore` | 可读写 | `~/.tracegraph/credentials.json`，目录 `0700`、文件 `0600`；**仍是 plaintext-at-rest** |
+| 非 macOS | `PrivateFileCredentialStore` | 可读写 | 当前 `<profileRoot>/credentials.json`，旧兼容 `~/.tracegraph/credentials.json`；目录 `0700`、文件 `0600`；**仍是 plaintext-at-rest** |
 | 环境变量 / `.env.local` | `EnvironmentCredentialStore` | **只读** | 值留在进程环境，不由 TraceGraph 写回 |
 
 `LayeredCredentialStore` 只在所选持久后端返回“该名字不存在”时查询环境；持久后端读取报错会直接传播，**不会**静默回退到另一份明文。macOS 不会因 Keychain 被锁或命令失败而改用私有文件；私有文件只在非 macOS 由 composition 选中。
 
-### 4.2 环境配置与活动优先级
+### 4.2 共享配置与旧环境优先级
 
-`modelConfigFromEnvironment(process.env)` 不复制 Key，而是生成 `${secret:ENV_NAME}` 引用和 `{ backend: "environment", writable: false }` 元数据。显式 `TRACEGRAPH_MODEL_API_KEY` 模式与 provider-specific 推断顺序保持不变：
+当前共享 Host 读取自己的 persisted model config，不继承 provider 环境或 `.env.local`；三端设置因此指向同一 active配置。旧显式 serve 中，`modelConfigFromEnvironment(process.env)` 不复制 Key，而是生成 `${secret:ENV_NAME}` 引用和 `{ backend: "environment", writable: false }` 元数据。显式 `TRACEGRAPH_MODEL_API_KEY` 模式与 provider-specific 推断顺序保持不变：
 
 `DEEPSEEK_API_KEY` → `OPENAI_API_KEY` → `ANTHROPIC_API_KEY` → `GLM_API_KEY`/`ZHIPU_API_KEY` → `QWEN_API_KEY`/`DASHSCOPE_API_KEY` → `MINIMAX_API_KEY`
 
@@ -285,7 +374,7 @@ CLI 在启动时只建立一个 `CredentialStore` seam：
 
 `model-config.json` 现在只保存 provider/protocol/baseUrl/model 与 `apiKey: "${secret:NAME}"`，不保存值。`persistModelConfig()` 先用 `SecretReferenceSchema` 拒绝明文，再以临时文件 `wx → chmod 0600 → rename` 原子替换；权限在 rename 前已经收紧，避免“引用已提交、随后 chmod 失败”造成悬空凭据。
 
-设置页提交新 Key 时，`saveModelConfig()` 先写入 provider-scoped、带随机后缀的凭据名，读回并用 constant-time compare 验证，再取得安全 metadata、最后提交引用配置；中途失败会删除刚写的凭据。省略 Key 时只能复用**同一 provider**的现有引用，切换 provider 必须提供新 Key。设置写入由 CLI 串行化；成功轮换后给已捕获旧配置的在途请求保留 60 秒宽限，再 best-effort 删除旧可写凭据，失败只记录名字、不记录值。
+设置页提交新 Key 时，`saveModelConfig()` 先写入 provider-scoped、带随机后缀的凭据名，读回并用 constant-time compare 验证，再取得安全 metadata、最后提交引用配置；中途失败会删除刚写的凭据。省略 Key 时只能复用**同一 provider**的现有引用，切换 provider 必须提供新 Key。设置写入由 Host 串行化；[`LeasedModelAdapter`](../../packages/host/src/composition/leased-model.ts) 为每个 Run 捕获模型配置和 credential引用，轮换/clear不改变该 Run 后续轮次。旧凭据仅在相关 Run/请求 lease 全部释放后退休，不使用固定60秒宽限。清除 Key 留下非秘密 model draft，跨重启保留 provider/protocol/base_url/model。
 
 模型适配器内存中长期保留的也是 `credentialRef`。每次 provider 请求前才调用 `resolveSecretReference()` 取值、登记精确值脱敏，然后放入 `Authorization` 或 `x-api-key` 请求头。
 
@@ -301,6 +390,28 @@ CLI 在启动时只建立一个 `CredentialStore` seam：
 安全后端写入或验证失败时，迁移 fail-closed，旧源文件不被重写，Host 启动失败等待人工处理；审计或确认失败时 outbox 保留并在下次启动重试。迁移事件只含安全元数据，不含引用和值。启动摘要会报告 `environment`、实际 backend、`reference missing` 或 `not configured`。
 
 ---
+
+### 4.5 共享 profile 迁移与恢复
+
+`host migration preview|commit --input-file <inventory.json> --source-id <id>` 接收操作者显式选择的 legacy source；在线 owner 使用仅私有socket的native路由，离线迁移使用同一Host公共函数。扫描比较hash/bytes/conflicts，不读出或打印Key。多来源必须明确选单源；原目录不改，原格式备份保留，其他冲突源quarantine，导入路径不自动授予Workspace执行权。
+
+commit拒绝活动Run/queued task/终端/owned preview与legacy writer，要求先显式停止。成功先停止owner、提交备份/目标、再启动新boot nonce；failed/unknown带安全operation ID，需要查询持久receipt后才决定是否重提，不能把响应丢失解释成自动回滚。旧CLI camelCase与Desktop snake_case模型配置会规范解析，credential refs保留并由平台store实际解析。
+
+macOS上的真实UDS、独立Node owner、fakeprovider、lease/迁移/关闭资源与旧CLI端到端已有测试；Windowspipe没有真实Windows系统oracle，Linuxarchive smoke不等于完整新增开发资源与Sandbox验收。签名/公证/自动更新、独立外部用户从零安装仍是另外的发布条件。
+
+从仓库根使用现有构建产物的典型命令：
+
+```bash
+env -u NODE_OPTIONS node apps/cli/dist/index.js host status
+env -u NODE_OPTIONS node apps/cli/dist/index.js host start
+env -u NODE_OPTIONS node apps/cli/dist/index.js projects register /absolute/project/path
+env -u NODE_OPTIONS node apps/cli/dist/index.js run start --project-id <id> --task "Review this project" --mode plan
+env -u NODE_OPTIONS node apps/cli/dist/index.js run events <run-id>
+env -u NODE_OPTIONS node apps/cli/dist/index.js resources
+env -u NODE_OPTIONS node apps/cli/dist/index.js host stop
+```
+
+需要隔离profile时为每条命令添加同一个 `--profile-root <temporary-path>`。终端输入/订阅退出只detach，显式stop才停止工作；完整参数以 `node apps/cli/dist/index.js host --help` 和 [`workbench-command.ts`](../../apps/cli/src/workbench-command.ts)为准。
 
 ## 5. 托管项目
 
@@ -380,9 +491,9 @@ CLI 在启动时只建立一个 `CredentialStore` seam：
 
 ## 8. 已知缺口
 
-1. **命令面仍很窄。** 除 `serve`、G-17 的 `extensions list|reload|run` 与 G-08 的 `team` 运维面外，没有一次性任务（`tracegraph run "..."`），也没有 `logs` / `replay` / `export` 的 CLI 子命令。G-23 已把按 sequence 的时间旅行接入 Runtime、Host、SDK 与 Web，但命令行用户仍不能通过 `tracegraph replay ...` 直接操作它。
+1. **CLI 的形态有明确边界。** 当前命令覆盖 §1 的完整本地工作流和三条实时 JSONL；不提供完整 TUI，也不提供任意 shell/RPC 或通用 ledger重写/外部SDK产品。
 
-2. **环境凭据是只读且启动时定值。** 它仍优先于持久化配置；设置 API 会明确返回 `409`、Web 会禁用保存，但要轮换环境 Key 仍必须修改环境并重启，当前没有运行时 reload。
+2. **旧显式 serve 环境凭据是只读且启动时定值。** 仅该兼容路径仍优先于持久化配置；设置 API 会明确返回 `409`、Web 会禁用保存，但要轮换环境 Key 仍必须修改环境并重启，当前没有运行时 reload。
 
 3. **非 macOS 后端仍是明文静态存储。** `~/.tracegraph/credentials.json` 虽强制 `0600` 并拒绝权限过宽的既有文件，但没有 DPAPI/libsecret 集成，不能宣传为与 macOS Keychain 同等级保护。
 
@@ -408,7 +519,7 @@ CLI 在启动时只建立一个 `CredentialStore` seam：
 
 14. **G-04 启动对账只覆盖仍已注册的 workspace。** `workspaceResolver` 刻意不从 WAL 中恢复绝对路径；已取消注册、加载失败或移动后的项目不会被自动触碰。WAL/Recovery Ledger 没有跨进程 target lock，不能同时运行两个 Host 写同一 workspace。
 
-15. **Rollback 与 Recovery report 没有 CLI 命令。** 环境变量只启用 Runtime policy；用户仍须经 Host API/SDK 请求单目标 rollback，`RecoveryLedger.exportMarkdown()` 也只有 Core 程序接口。
+15. **Recovery export仍有限。** CLI可显式调用单目标 rollback、doctor和资源查询；`RecoveryLedger.exportMarkdown()` 仍只有 Core 程序接口，不能把诊断成功当作已恢复外部副作用。
 
 16. **Permission ceiling 与用户选择的生命周期不同。** CLI/environment ceiling 是启动边界，变更必须重启 Host；Host/SDK/Web 可以在 ceiling 内持久化用户 preset，无需重启，但只影响新 Run。项目 policy 只能按项目收紧；StartRun 没有 override。活动/恢复 Run 使用冻结 policy，不能热提升。Linux 仅探测 bwrap、Windows 无 backend，且没有 Host 网络代理；restricted mode 在这些平台会拒绝 `run_test`，不是透明回退。macOS backend 依赖 Apple 私有 Seatbelt 工具与 `system.sb`。
 
@@ -416,7 +527,7 @@ CLI 在启动时只建立一个 `CredentialStore` seam：
 
 18. **当前 CLI 没有独立 Host rule 配置源。** `PolicyEngine` 的 Host-rule 层供嵌入方注入和 Core 测试使用；标准组合根只从内置 preset 得到 Host 默认，再读取项目 `.tracegraph/policy.json` 的 ask/deny 收紧层。Web 设置页也不是 rule editor。
 
-19. **G-15 不是可靠 Telemetry daemon。** `<dataDir>/telemetry.json` 只在启动时读取，修改后需重启；OTLP queue、错误计数和最后错误时间仅驻留当前进程。当前没有自动 retry/backoff、持久队列、完整 OTel SDK/processor/sampling/propagation，也尚未用真实外部 Collector 做集成验证。只有网络/超时与 HTTP `429/502/503/504` 批次留在内存队首，后续 flush 可能重复；`400` 等 non-retryable 失败及 HTTP 200 `partialSuccess` 拒收会计错并丢弃。200 响应正文最多读 64 KiB，Collector 文本不回显。关停 flush 只等待 5 秒，超时不保证 drain；status 只读且不参与恢复。
+19. **G-15 不是可靠 Telemetry daemon。** 共享 settings.telemetry 声明 restart 生效；旧 `<dataDir>/telemetry.json` 也只在启动读取；OTLP queue、错误计数和最后错误时间仅驻留当前进程。当前没有自动 retry/backoff、持久队列、完整 OTel SDK/processor/sampling/propagation，也尚未用真实外部 Collector 做集成验证。只有网络/超时与 HTTP `429/502/503/504` 批次留在内存队首，后续 flush 可能重复；`400` 等 non-retryable 失败及 HTTP 200 `partialSuccess` 拒收会计错并丢弃。200 响应正文最多读 64 KiB，Collector 文本不回显。关停 flush 只等待 5 秒，超时不保证 drain；status 只读且不参与恢复。
 
 20. **G-21 没有 CLI/Web 的索引管理面。** 标准 `serve` 会装配本地或远端+本地 retrieval，并让 Runtime 每轮 recall，但不会自动爬取仓库、创建 Memory candidate、启动远端服务、展示索引健康或执行重建。远端只对严格的 availability failure 降级；认证/契约错误会让当前操作失败。默认 backend 是 BM25，不是向量 RAG。
 

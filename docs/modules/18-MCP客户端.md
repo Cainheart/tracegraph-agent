@@ -86,10 +86,10 @@ Web Settings 只显示 bounded status/tool count，并对 degraded server 显示
 | stdio JSON-RPC、超时、stderr tail、list_changed | `packages/mcp/src/client.ts`、`packages/mcp/src/mcp.test.ts` |
 | required/optional、刷新、调用结果与事件 | `packages/mcp/src/manager.ts`、`packages/mcp/src/mcp.test.ts` |
 | Core 动态 Tool 注册与 Runtime 端口 | `packages/core/src/seams/mcp/tool-extension.ts`、`ports.ts`、`tool-extension.test.ts` |
-| Host status/restart 与 command-id 幂等 | packages/host/src/index.ts、packages/host/src/index.test.ts |
+| Host status/restart 与 command-id 幂等 | packages/host/src/webserver/index.ts、packages/host/src/index.test.ts |
 | typed SDK | packages/sdk/src/index.ts、packages/sdk/src/index.test.ts |
 | CLI control plane | apps/cli/src/mcp-command.ts、apps/cli/src/mcp-command.test.ts |
-| Web settings projection | apps/web/src/client.ts、apps/web/src/live-client.ts、apps/web/src/components/SettingsPanel.tsx |
+| Web settings projection | packages/workbench/src/client.ts、packages/workbench/src/live-client.ts、packages/workbench/src/components/SettingsPanel.tsx |
 | 文档/标识符/路由/事件一致性 | evals/docs/implementation-consistency.eval.ts |
 
 ## 6. 明确限制

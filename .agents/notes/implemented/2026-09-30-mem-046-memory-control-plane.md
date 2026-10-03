@@ -4,8 +4,8 @@ title: Unified V2 Memory review and governance control plane
 status: implemented
 owners: [memory-api, contracts, evidence, host, cli, web]
 created: 2026-09-30
-last_reviewed: 2026-09-30
-affects: [memory-control, memory-lifecycle, evidence-ledger, host-api, cli, web]
+last_reviewed: 2026-10-02
+affects: [memory-control, memory-lifecycle, evidence-ledger, host-api, cli, web, desktop]
 supersedes: []
 ---
 
@@ -23,7 +23,7 @@ MEM-040–045 provide V2 contracts, lifecycle, Context/MemoryUse provenance, con
 - The Web Memory panel can create candidates; inspect source, status, conflicts, feedback, and MemoryUse request stages; review, correct, revoke, and delete a correction lineage.
 - Create, correction, and delete append content-free `memory.control.commanded` facts to the existing Evidence Ledger. Review and revoke use `memory.lifecycle.transitioned`. MemoryUse, feedback, lifecycle, and control remain separate aggregates/read models.
 - Delete first commits a content-free tombstone containing lineage IDs and scope IDs, then rewrites the local V2 record file with fsync + rename. Repeated deletion replays the same family; a deleted ID cannot be recreated with the same command. Cross-scope access is hidden with 404.
-- This repository currently has CLI, Web, and retrieval-service under `apps/`, but no Desktop client. The stable Host/SDK seam is ready for a future Desktop client; the roadmap's Desktop UI acceptance remains pending until that surface exists.
+- At the time MEM-046 was implemented, this repository had no Desktop client. CLIENT-068 has since connected Desktop to this same control service through the versioned private protocol and shared Workbench; see the paired CLIENT-068 Note.
 
 ## Decision
 
@@ -43,7 +43,7 @@ G-21 `remember()`/`recall()` and V1 `records.jsonl` are unchanged. The V2 recall
 - Seed claim digest must match the create/correction control fact. Reusing an identical command is idempotent; reusing an identity/command with different claim, scope, or governance options is rejected.
 - Delete tombstones contain IDs, scope IDs, digest/hash-chain metadata, and no Memory claim. Payload removal follows durable tombstone commit, and a retry cannot resurrect a deleted ID.
 - Revoke changes eligibility without erasing content. Delete erases only the local V2 payload store. V1 and Run Ledger data are not rewritten.
-- Web and CLI use the same Host/SDK seam. There is no current Desktop app, so future Desktop readiness is not reported as an existing UI delivery.
+- Web, CLI, and Desktop use Host/SDK/API seams over their supported transports. Desktop uses the same Workbench control surface and API controller; it does not add another Memory store or lifecycle state machine.
 - The control queue and V2 payload writes are serialized only within one Runtime/Core service instance; multiple Hosts sharing one dataDir are unsupported.
 
 ## Migration and rollback
@@ -57,13 +57,14 @@ No automatic migration of existing V1 rows occurs; creating a V2 record does not
 - [x] Provenance, conflicts, feedback review gates, and exact-version MemoryUse status are queryable; Adapter hand-off is not described as causal model use.
 - [x] Negative cases cover revoked, deleted, cross-scope, repeated commands, lineage deletion, recreate-after-delete, and content-free tombstones.
 - [x] G-21 V1 store/recall are unchanged; current/target documentation explains the V2-only payload deletion boundary.
-- [ ] Desktop visibility and commands: no Desktop client exists in this repository; integrate when `DESK-065`/`CLIENT-068` provides that surface.
+- [x] Desktop shares Memory inspect/review/correct/revoke/delete with Web through fixed IPC, framed RPC, and the same API controller; scope and command IDs remain Host-derived/validated.
 
 ## Evidence
 
 - Contracts: `packages/contracts/src/memory-control.ts`.
 - Core: `packages/core/src/domains/memory/memory-control.ts`; Runtime entry points are in `packages/core/src/domains/runtime/runtime.ts`.
 - Ledger: `packages/evidence/src/event-ledger.ts`.
-- Host/SDK/CLI/Web: `packages/host/src/index.ts`, `packages/sdk/src/index.ts`, `apps/cli/src/memory-command.ts`, `apps/web/src/components/MemoryControlPanel.tsx`.
+- Host/SDK/CLI/Web/Desktop: `packages/host/src/webserver/index.ts`, `packages/sdk/src/index.ts`, `apps/cli/src/memory-command.ts`, `packages/workbench/src/components/MemoryControlPanel.tsx`, and `apps/desktop/src/main.ts`.
+- Desktop completion: [CLIENT-068 Note](2026-10-02-client-068-memory-experience-control.md); the shared Experience control extension is separately bounded there.
 - Focused verification: 6 Core Memory control tests, 34 Core Memory tests, 55 Host tests, 3 CLI control tests, 12 Contracts Memory tests, and 4 Evidence public API tests passed.
 - Full `pnpm typecheck` passed (build/typecheck for 18 workspace packages plus eval typecheck); `pnpm test:engineering` passed 48 Node checks and 8 Vitest checks; `pnpm verify:invariants` passed across 211 source files; `verify:v2-docs` validated 11 manifest documents and 62 roadmap tasks; the README gate validated all 18 packages; the boundary gate validated 18 packages, 34 dependencies, and 1,532 imports with zero legacy findings; `git diff --check` passed.

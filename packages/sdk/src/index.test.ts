@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { PROJECTOR_VERSION, SCHEMA_VERSION, type ReplayDiff, type ReplaySessionResponse } from "@tracegraph/contracts";
 import { TraceGraphClient, TraceGraphHttpError, parseSseData } from "./index.js";
 
@@ -563,9 +563,11 @@ describe("parseSseData", () => {
     });
 
     await expect(client.listExtensions()).resolves.toEqual([status]);
-    await expect(client.reloadExtension(status.name, {
-      command_id: "command:extension:reload",
-    })).resolves.toEqual(status);
+    const reload={command_id:"command:extension:reload"};
+    await expect(client.reloadExtension(status.name,reload)).rejects.toMatchObject({status:401});
+    expect(calls.filter(({url})=>url.endsWith("/api/extensions/reload"))).toHaveLength(1);
+    await client.bootstrap();
+    await expect(client.reloadExtension(status.name,reload)).resolves.toEqual(status);
     await expect(client.runExtensionCommand("artifacts.list", {
       command_id: "command:extension:run",
       args: ["--limit", "2"],
@@ -1034,7 +1036,7 @@ describe("parseSseData", () => {
     expect(authorizations).toEqual(["Bearer expired-live-token", null, "Bearer still-rejected-token"]);
   });
 
-  it("keeps a command id stable when retrying after capability refresh", async () => {
+  it("submits project creation once and leaves expired authority for explicit recovery", async () => {
     const commandIds: string[] = [];
     const client = new TraceGraphClient({
       token: "expired-token",
@@ -1056,10 +1058,10 @@ describe("parseSseData", () => {
       },
     });
 
-    await expect(client.createProject({ name: "retry" })).resolves.toMatchObject({ project_id: "project:retry" });
-    expect(commandIds).toHaveLength(2);
+    await expect(client.createProject({ name: "retry" })).rejects.toMatchObject({status:401});
+    expect(commandIds).toHaveLength(1);
     expect(commandIds[0]).toBeTruthy();
-    expect(commandIds[1]).toBe(commandIds[0]);
+    expect(client.token).toBe("expired-token");
   });
 
   it("opens and reveals Host-owned project locations without sending a filesystem path", async () => {
@@ -1201,7 +1203,7 @@ describe("parseSseData", () => {
     expect([...request!.bytes]).toEqual([0x89, 0x50, 0x4e, 0x47]);
   });
 
-  it("reuses attachment bytes and command identity after one capability refresh", async () => {
+  it("uploads attachment bytes once and permits only an explicit retry with the original command identity", async () => {
     const attempts: Array<{ commandId: string | null; bytes: number[] }> = [];
     const client = new TraceGraphClient({
       token: "expired-token",
@@ -1229,13 +1231,17 @@ describe("parseSseData", () => {
       },
     });
 
-    await client.uploadAttachment({
+    const request={
       command_id: "command:upload-retry",
-      target: "project",
+      target: "project" as const,
       project_id: "project:retry",
-      declared_media_type: "image/jpeg",
+      declared_media_type: "image/jpeg" as const,
       bytes: new Uint8Array([0xff, 0xd8, 0xff]),
-    });
+    };
+    await expect(client.uploadAttachment(request)).rejects.toMatchObject({status:401});
+    expect(attempts).toHaveLength(1);
+    await client.bootstrap();
+    await client.uploadAttachment(request);
 
     expect(attempts).toEqual([
       { commandId: "command:upload-retry", bytes: [0xff, 0xd8, 0xff] },
@@ -1699,7 +1705,7 @@ describe("G08 team control plane", () => {
     expect(requests).toBe(1);
   });
 
-  it("retries a live mutation once with the exact same command id and body", async () => {
+  it("does not automatically retry a live mutation after its authority expires", async () => {
     const attempts: Array<{ commandId: string | null; body: string }> = [];
     let rejected = false;
     const client = new TraceGraphClient({
@@ -1732,9 +1738,89 @@ describe("G08 team control plane", () => {
         title: "Inspect the race",
         acceptance: ["One owner only"],
       },
-    })).resolves.toMatchObject({ command_id: "command-retry" });
-    expect(attempts).toHaveLength(2);
-    expect(attempts[0]).toEqual(attempts[1]);
+    })).rejects.toMatchObject({status:401});
+    expect(attempts).toHaveLength(1);
+    expect(client.token).toBe("expired-live-token");
     expect(attempts[0]?.commandId).toBe("command-retry");
+  });
+
+  it("uses the shared Memory/Experience query contract and rejects unsupported Experience actions before HTTP", async () => {
+    const memoryList = { items: [], conflicts: [], backgroundJobs: [{ runId: "run:job", projectId: "project:job",
+      status: "waiting", attempts: 0, candidateCount: 0, updatedAt: "2026-10-03T00:00:00.000Z", resultDetailsAvailable: true, consolidationResults: [] }] };
+    const requests: string[] = [];
+    const client = new TraceGraphClient({
+      token: "test-token",
+      fetch: async (input) => {
+        requests.push(String(input));
+        return String(input).endsWith("/api/memory")
+          ? Response.json(memoryList)
+          : Response.json({ items: [] });
+      },
+    });
+
+    await expect(client.listMemoryControl()).resolves.toEqual(memoryList);
+    await expect(client.listExperienceCases()).resolves.toEqual({ items: [] });
+    await expect(client.reviewExperienceCase("experience:one", {
+      expected_sequence: 0,
+      action: "delete",
+    } as never)).rejects.toThrow();
+    expect(requests).toEqual([
+      "http://127.0.0.1:4311/api/memory",
+      "http://127.0.0.1:4311/api/experience",
+    ]);
+  });
+});
+
+describe("bootstrap-managed mutation authority",()=>{
+  const project={project_id:"project:auth",label:"Auth fixture",workspace_kind:"managed_local",capabilities:{index:true,read:true,search:true,run_command:true,preview_patch:true,commit_patch:true,test:true}};
+  it("aborts a hung authority preflight through its fixed deadline signal without dispatching a POST",async()=>{
+    const abort=new AbortController(),deadlines:number[]=[];const timeout=vi.spyOn(AbortSignal,"timeout").mockImplementation(ms=>{deadlines.push(ms);return abort.signal;});
+    let count=0,posts=0,entered!:()=>void;const ready=new Promise<void>(done=>{entered=done;});
+    const client=new TraceGraphClient({fetch:async(input,init)=>{if(String(input).endsWith("/api/bootstrap")){if(++count===1)return Response.json({token:"initial",expiresAt:"2026-10-03T23:00:00Z"});entered();return new Promise<Response>((_done,reject)=>init!.signal!.addEventListener("abort",()=>reject(init!.signal!.reason),{once:true}));}posts++;return Response.json(project);}});
+    try{await client.bootstrap();const saving=client.createProject({name:"Auth fixture"});await ready;abort.abort(new DOMException("Fixture deadline","TimeoutError"));await expect(saving).rejects.toMatchObject({code:"mutation_preflight_failed",commandDispatched:false,admission:"rejected"});expect(deadlines).toEqual([10_000,10_000]);expect(posts).toBe(0);}
+    finally{timeout.mockRestore();}
+  });
+  it("preflights the first explicit save after an owner replacement even when no GET refreshed its token",async()=>{
+    let token="owner-before",posts=0;const calls:string[]=[];const request={command_id:"save:after-restart",path:"answer.ts",expected_sha256:`sha256:${"a".repeat(64)}` as const,content:"preserved editor draft\n"};
+    const client=new TraceGraphClient({fetch:async(input,init)=>{
+      const url=String(input);calls.push(`${init?.method??"GET"} ${url}`);
+      if(url.endsWith("/api/bootstrap"))return Response.json({token,expiresAt:"2026-10-03T23:00:00Z"});
+      posts++;expect(new Headers(init?.headers).get("authorization")).toBe(`Bearer ${token}`);expect(JSON.parse(String(init?.body))).toEqual(request);
+      const digest=Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(request.content))),byte=>byte.toString(16).padStart(2,"0")).join("");
+      const {content:_content,...publicRequest}=request;
+      return Response.json({...publicRequest,project_id:"project:auth",status:"succeeded",code:"file_saved",content_sha256:`sha256:${digest}`,actual_sha256:`sha256:${digest}`,receipt_event_id:"event:saved"});
+    }});
+    await client.bootstrap();token="owner-after";await expect(client.saveProjectFile("project:auth",request)).resolves.toMatchObject({status:"succeeded"});
+    expect(posts).toBe(1);expect(calls.map(value=>value.split(" ")[0])).toEqual(["GET","GET","POST"]);expect(client.token).toBe(token);
+  });
+  it("does not dispatch a command when its read-only authority preflight fails",async()=>{
+    let bootstraps=0,posts=0;const client=new TraceGraphClient({fetch:async(input)=>{if(String(input).endsWith("/api/bootstrap")){if(++bootstraps>1)throw new TypeError("Fixture connection lost");return Response.json({token:"owner-before",expiresAt:"2026-10-03T23:00:00Z"});}posts++;return Response.json(project);}});
+    await client.bootstrap();await expect(client.createProject({name:"Auth fixture"})).rejects.toMatchObject({code:"mutation_preflight_failed",admission:"rejected",commandDispatched:false});expect(posts).toBe(0);
+  });
+  it("submits once after preflight and classifies only the Host's closed auth rejection",async()=>{
+    let posts=0,bootstraps=0;const client=new TraceGraphClient({fetch:async(input)=>{if(String(input).endsWith("/api/bootstrap")){bootstraps++;return Response.json({token:"fresh",expiresAt:"2026-10-03T23:00:00Z"});}posts++;return Response.json({error:"capability_invalid",message:"Capability token is invalid"},{status:401});}});
+    await client.bootstrap();await expect(client.createProject({name:"Auth fixture"})).rejects.toMatchObject({status:401,admission:"rejected"});expect(posts).toBe(1);expect(bootstraps).toBe(2);
+    expect(new TraceGraphHttpError(401,"Provider rejected a request",{error:"provider_auth_failed"}).admission).toBeUndefined();
+    expect(new TraceGraphHttpError(500,"Unknown outcome",{error:"capability_invalid"}).admission).toBeUndefined();
+  });
+  it("shares explicit bootstrap and a pending command preflight without duplicate refreshes",async()=>{
+    let bootstraps=0,posts=0,resolveRefresh!:(response:Response)=>void;let entered!:()=>void;const refreshEntered=new Promise<void>(done=>{entered=done;});
+    const client=new TraceGraphClient({fetch:async(input)=>{if(String(input).endsWith("/api/bootstrap")){if(++bootstraps===1)return Response.json({token:"old",expiresAt:"2026-10-03T23:00:00Z"});entered();return new Promise<Response>(done=>{resolveRefresh=done;});}posts++;return Response.json(project);}});
+    await client.bootstrap();const refreshing=client.bootstrap(),saving=client.createProject({name:"Auth fixture"});await refreshEntered;expect(bootstraps).toBe(2);expect(posts).toBe(0);resolveRefresh(Response.json({token:"new",expiresAt:"2026-10-03T23:00:00Z"}));await refreshing;await saving;expect(posts).toBe(1);expect(client.token).toBe("new");
+  });
+  it("does not let a late live bootstrap overwrite a newly entered replay bearer",async()=>{
+    let resolveBootstrap!:(response:Response)=>void;const client=new TraceGraphClient({token:"injected-live",fetch:async(input)=>String(input).endsWith("/api/bootstrap")?new Promise<Response>(done=>{resolveBootstrap=done;}):Response.json(replaySessionResponse("replay-safe-with-at-least-32-bytes"))});
+    const pending=client.bootstrap();await client.createReplay({session_id:"session-one",run_id:"run-one",until_sequence:1});resolveBootstrap(Response.json({token:"late-live",expiresAt:"2026-10-03T23:00:00Z"}));await expect(pending).rejects.toThrow("authority transition");expect(client.replayActive).toBe(true);expect(client.token).toBe("replay-safe-with-at-least-32-bytes");
+  });
+  it("rejects a pending preflight superseded by an explicit authority transition without sending the command",async()=>{
+    let count=0,posts=0,resolveRefresh!:(response:Response)=>void;let entered!:()=>void;const ready=new Promise<void>(done=>{entered=done;});
+    const client=new TraceGraphClient({fetch:async(input)=>{if(String(input).endsWith("/api/bootstrap")){if(++count===1)return Response.json({token:"initial",expiresAt:"2026-10-03T23:00:00Z"});entered();return new Promise<Response>(done=>{resolveRefresh=done;});}posts++;return Response.json(project);}});
+    await client.bootstrap();const saving=client.createProject({name:"Auth fixture"});await ready;client.exitReplay();resolveRefresh(Response.json({token:"superseded",expiresAt:"2026-10-03T23:00:00Z"}));await expect(saving).rejects.toMatchObject({code:"mutation_preflight_failed",commandDispatched:false});expect(posts).toBe(0);expect(client.token).toBe("initial");
+  });
+  it("never preflights a replay write into new live authority",async()=>{
+    let bootstraps=0;const token="replay-safe-with-at-least-32-bytes";
+    const client=new TraceGraphClient({fetch:async(input,init)=>{const url=String(input);if(url.endsWith("/api/bootstrap")){bootstraps++;return Response.json({token:"live",expiresAt:"2026-10-03T23:00:00Z"});}if(url.endsWith("/api/replay"))return Response.json(replaySessionResponse(token));expect(new Headers(init?.headers).get("authorization")).toBe(`Bearer ${token}`);return Response.json({error:"replay_read_only",message:"Replay is read-only"},{status:403});}});
+    await client.bootstrap();await client.createReplay({session_id:"session-one",run_id:"run-one",until_sequence:1});const before=bootstraps;
+    await expect(client.createProject({name:"Blocked"})).rejects.toMatchObject({status:403});expect(bootstraps).toBe(before);expect(client.token).toBe(token);expect(client.replayActive).toBe(true);
   });
 });

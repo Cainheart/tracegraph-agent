@@ -1,0 +1,18 @@
+{
+  "task_id": "PAR-088",
+  "recorded_at": "2026-10-03T05:08:39.355Z",
+  "status": "failed",
+  "model_boundary": "Synthetic loopback provider; actual packaged Electron Main/preload, HTTP over private local channel, shared Host/Runtime/ledger, real fixture patch and test processes. No provider-quality or external-user claims.",
+  "assertions": [],
+  "errors": [
+    {
+      "boundary": "acceptance",
+      "message": "page.evaluate: Error: Error invoking remote method 'tracegraph:model-config-set': [\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\": [\n      \"capabilities\"\n    ],\n    \"path\": [],\n    \"message\": \"Unrecognized key: \\\"capabilities\\\"\"\n  }\n]",
+      "stack": "page.evaluate: Error: Error invoking remote method 'tracegraph:model-config-set': [\n  {\n    \"code\": \"unrecognized_keys\",\n    \"keys\": [\n      \"capabilities\"\n    ],\n    \"path\": [],\n    \"message\": \"Unrecognized key: \\\"capabilities\\\"\"\n  }\n]\n    at invoke (/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/unified-workbench/desktop-transport.mjs:62:51)\n    at /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/unified-workbench/desktop-transport.mjs:74:9"
+    }
+  ],
+  "cleanup": {
+    "completed": true,
+    "failures": []
+  }
+}

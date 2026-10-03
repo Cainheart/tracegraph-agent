@@ -12,7 +12,7 @@ last_reviewed: 2026-10-01
 
 ## 1. 当前状态与能力边界
 
-**`MEM-048` 已完成首轮本机 Langfuse 合成数据 paired pilot，状态为 `exploratory-inconclusive`。** 两条 lane 均有 48 个冻结任务项、control/treatment run、逐项 trace/score、配对收益/伤害与 95% 区间。本仓库没有新增本地 Eval Runner，也没有把 Langfuse 加入本地 CI；真实任务分布的独立验证仍未完成。
+**`MEM-048` 已完成首轮本机 Langfuse 合成数据 paired pilot，状态为 `exploratory-inconclusive`。** 两条 lane 均有 48 个冻结任务项、control/treatment run、逐项 trace/score、配对收益/伤害与 95% 区间。2026-10-03 又按 `EVAL-074` 完成一次性公开 LongMemEval / LongMemEval-V2 对照，使用本地评估 runner 并保留逐题报告；这没有把 Langfuse 加入本地 CI，也没有完成真实任务分布的独立验证。
 
 ```mermaid
 flowchart LR

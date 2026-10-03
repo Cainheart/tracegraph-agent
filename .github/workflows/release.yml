@@ -1,4 +1,4 @@
-name: TraceGraph Release Artifact
+name: Outlive Release Artifacts
 
 on:
   push:
@@ -17,6 +17,63 @@ env:
   CODEBUDDY_SAFE_DELETE_ENABLED: "0"
 
 jobs:
+  desktop-product:
+    name: Self-contained installer (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    steps:
+      - name: Checkout immutable source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Install build tools (not required by installed users)
+        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+        with:
+          version: 11.19.0
+          runtime: node@24.21.0
+          install: false
+      - run: node scripts/verify-lockfile.mjs --skip-frozen
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm -r --if-present build
+      - run: node --test scripts/build-desktop-product.test.mjs
+      - name: Assemble native installer, bundled Node and CLI
+        if: vars.OUTLIVE_SIGN_RELEASE != 'true'
+        run: node scripts/build-desktop-product.mjs --output _tmp_release/desktop-product
+      - name: Explicitly sign the native release (macOS also notarizes)
+        if: vars.OUTLIVE_SIGN_RELEASE == 'true'
+        shell: bash
+        env:
+          CSC_LINK: ${{ matrix.os == 'macos-latest' && secrets.OUTLIVE_MAC_CSC_LINK || secrets.OUTLIVE_WIN_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ matrix.os == 'macos-latest' && secrets.OUTLIVE_MAC_CSC_KEY_PASSWORD || secrets.OUTLIVE_WIN_CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.OUTLIVE_APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.OUTLIVE_APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.OUTLIVE_APPLE_TEAM_ID }}
+        run: |
+          if [ "$RUNNER_OS" = "macOS" ]; then
+            node scripts/build-desktop-product.mjs --output _tmp_release/desktop-product --sign --notarize
+          else
+            node scripts/build-desktop-product.mjs --output _tmp_release/desktop-product --sign
+          fi
+      - name: Verify installed runtime, gateway, CLI and detach lifetime
+        run: node scripts/smoke-desktop-product.mjs --product _tmp_release/desktop-product --output _tmp_release/desktop-smoke
+      - name: Upload installer and machine receipts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: outlive-desktop-${{ matrix.os }}-${{ github.ref_name }}
+          path: |
+            _tmp_release/desktop-product/artifacts/*.dmg
+            _tmp_release/desktop-product/artifacts/*.exe
+            _tmp_release/desktop-product/artifacts/*.zip
+            _tmp_release/desktop-product/artifacts/SHA256SUMS
+            _tmp_release/desktop-product/product-release.json
+            _tmp_release/desktop-product/stage/stage-inventory.json
+            _tmp_release/desktop-smoke/
+          if-no-files-found: error
+          retention-days: 30
   release-artifact:
     name: Verify and assemble private workspace artifact
     runs-on: ubuntu-latest
@@ -45,6 +102,10 @@ jobs:
         env:
           TRACEGRAPH_RELEASE_TAG: ${{ github.ref_name }}
         run: pnpm build && node scripts/verify-release.mjs --write-manifest --tag "$TRACEGRAPH_RELEASE_TAG"
+      - name: Reproduce recovery, memory, and cancellation proofs
+        run: node demos/proofs.mjs --output _tmp_release/public-proofs
+      - name: Assemble installable CLI and Desktop preview
+        run: node scripts/create-preview-release.mjs --output _tmp_release/preview
       - name: Upload checksummed release artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
@@ -52,6 +113,10 @@ jobs:
           path: |
             _tmp_release/bundle/
             _tmp_release/release-manifest.json
+            _tmp_release/preview/*.tar.gz
+            _tmp_release/preview/SHA256SUMS
+            _tmp_release/preview/release-manifest.json
+            _tmp_release/public-proofs/
           if-no-files-found: error
           retention-days: 30
           include-hidden-files: true

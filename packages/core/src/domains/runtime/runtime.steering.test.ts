@@ -121,9 +121,9 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
     const entered = deferred<void>();
     const model: ModelAdapter = {
       name: "blocked-for-idempotency",
-      async decide() {
+      async decide(input) {
         entered.resolve();
-        return new Promise(() => undefined);
+        return waitForAbort(input.signal);
       },
     };
     const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
@@ -164,9 +164,9 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
     const entered = deferred<void>();
     const model: ModelAdapter = {
       name: "blocked-for-redaction-drift",
-      async decide() {
+      async decide(input) {
         entered.resolve();
-        return new Promise(() => undefined);
+        return waitForAbort(input.signal);
       },
     };
     const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
@@ -224,9 +224,9 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
     const entered = deferred<void>();
     const model: ModelAdapter = {
       name: "blocked-for-restart-idempotency",
-      async decide() {
+      async decide(input) {
         entered.resolve();
-        return new Promise(() => undefined);
+        return waitForAbort(input.signal);
       },
     };
     // This case restarts without a Session store, so the abandoned Runtime owns
@@ -391,9 +391,9 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
     const terminalEntered = deferred<void>();
     const terminalModel: ModelAdapter = {
       name: "idempotency-namespace-terminal",
-      async decide() {
+      async decide(input) {
         terminalEntered.resolve();
-        return new Promise(() => undefined);
+        return waitForAbort(input.signal);
       },
     };
     const terminalRuntime = await createTrackedRuntime({ dataDir: terminalHarness.dataDir, model: terminalModel });
@@ -415,7 +415,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
     let calls = 0;
     const model: ModelAdapter = {
       name: "blocked-for-capacity",
-      async decide() {
+      async decide(input) {
         calls += 1;
         if (calls === 1) {
           entered.resolve();
@@ -424,7 +424,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
             path: "src/value.ts",
           });
         }
-        return new Promise(() => undefined);
+        return waitForAbort(input.signal);
       },
     };
     const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
@@ -462,13 +462,27 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
   it("aborts an in-flight model only after the cancel input is durable", async () => {
     const harness = await createHarness("cancel-model");
     const entered = deferred<void>();
+    const abortObserved = deferred<void>();
+    const releaseAfterAbort = deferred<void>();
     let observedSignal: AbortSignal | undefined;
     const model: ModelAdapter = {
       name: "abortable-model",
       async decide(input) {
         observedSignal = input.signal;
         entered.resolve();
-        return new Promise(() => undefined);
+        return new Promise((resolve) => {
+          input.signal?.addEventListener("abort", () => {
+            abortObserved.resolve();
+            void releaseAfterAbort.promise.then(() => resolve(
+              toolDecision(
+                "decision:cancel-model:late",
+                "action:cancel-model:late",
+                "read_file",
+                { path: "src/value.ts" },
+              ),
+            ));
+          }, { once: true });
+        });
       },
     };
     const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
@@ -480,12 +494,19 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
     );
     expect(submitted.disposition).toBe("queued");
     expect(observedSignal?.aborted).toBe(true);
+    await abortObserved.promise;
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect((await runtime.getProjection(started.run_id)).status).not.toBe("cancelled");
+    releaseAfterAbort.resolve();
 
     const cancelled = await waitForStatus(runtime, started.run_id, "cancelled");
     assertCanonicalCancellation(cancelled);
     const queued = cancelled.timeline.find((event) => event.type === "user.input_queued")!;
     const consumed = cancelled.timeline.find((event) => event.type === "user.input_consumed")!;
     const terminal = cancelled.timeline.find((event) => event.type === "run.cancelled")!;
+    expect(cancelled.timeline.some((event) => (
+      event.type === "tool.started" && event.sequence > queued.sequence
+    ))).toBe(false);
     expect([queued.sequence, consumed.sequence, terminal.sequence]).toEqual(
       [queued.sequence, consumed.sequence, terminal.sequence].toSorted((left, right) => left - right),
     );
@@ -500,7 +521,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
       async decide(input) {
         observedSignal = input.signal;
         entered.resolve();
-        return new Promise(() => undefined);
+        return waitForAbort(input.signal);
       },
     };
     const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
@@ -548,6 +569,61 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
     assertCanonicalCancellation(cancelled);
   });
 
+  it("keeps cancellation pending until an aborted Tool executor actually settles", async () => {
+    const harness = await createHarness("cancel-tool-quiescence");
+    const entered = deferred<void>();
+    const releaseTool = deferred<void>();
+    const registry = createDefaultToolRegistry();
+    const base = registry.get("read_file");
+    if (base === undefined) throw new Error("read_file tool is unavailable");
+    registry.register({
+      ...base,
+      async execute(input, context) {
+        entered.resolve();
+        await releaseTool.promise;
+        return base.execute(input, context);
+      },
+    });
+    let modelCalls = 0;
+    const model: ModelAdapter = {
+      name: "cancel-tool-quiescence",
+      async decide() {
+        modelCalls += 1;
+        return toolDecision("decision:cancel-tool", "action:cancel-tool", "read_file", {
+          path: "src/value.ts",
+        });
+      },
+    };
+    const runtime = await createTrackedRuntime({
+      dataDir: harness.dataDir,
+      model,
+      toolRegistry: registry,
+    });
+    const started = await runtime.startRun(startInput(harness.workspace));
+    await entered.promise;
+
+    await runtime.submitUserInput(cancelCommand(
+      started,
+      "command:cancel-tool-quiescence",
+      "input:cancel-tool-quiescence",
+    ));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect((await runtime.getProjection(started.run_id)).status).not.toBe("cancelled");
+    expect(modelCalls).toBe(1);
+
+    releaseTool.resolve();
+    const cancelled = await waitForStatus(runtime, started.run_id, "cancelled");
+    const toolSettled = cancelled.timeline.find((event) => (
+      event.type === "tool.completed" || event.type === "tool.failed" || event.type === "tool.unknown"
+    ))!;
+    const inputConsumed = cancelled.timeline.find((event) => event.type === "user.input_consumed")!;
+    const terminal = cancelled.timeline.find((event) => event.type === "run.cancelled")!;
+    expect(toolSettled.sequence).toBeLessThan(inputConsumed.sequence);
+    expect(inputConsumed.sequence).toBeLessThan(terminal.sequence);
+    expect(modelCalls).toBe(1);
+    assertCanonicalCancellation(cancelled);
+  });
+
   it("aborts a pending policy answerer without granting or denying after durable cancel", async () => {
     const harness = await createHarness("cancel-policy-answerer");
     const answering = deferred<void>();
@@ -572,9 +648,9 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
           explanation: "Wait for a trusted answer",
         }],
       }),
-      approvalAnswerer: async () => {
+      approvalAnswerer: async (request) => {
         answering.resolve();
-        return new Promise(() => undefined);
+        return waitForAbort(request.signal);
       },
     });
     const started = await runtime.startRun(startInput(harness.workspace));
@@ -746,6 +822,146 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
       body: "too late",
     }))).rejects.toMatchObject({ code: "run_terminal" });
     expect((await runtime.getProjection(started.run_id)).timeline.at(-1)?.type).toBe("run.completed");
+  });
+
+  it("stops repeated successful Tool calls after the no-progress window", async () => {
+    const harness = await createHarness("no-progress-repeat");
+    let calls = 0;
+    const model: ModelAdapter = {
+      name: "repeating-read-model",
+      async decide() {
+        calls += 1;
+        return toolDecision(
+          `decision:no-progress:${calls}`,
+          `action:no-progress:${calls}`,
+          "read_file",
+          { path: "src/value.ts" },
+        );
+      },
+    };
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model, maxTurns: 8 });
+    const started = await runtime.startRun(startInput(harness.workspace));
+
+    const failed = await waitForStatus(runtime, started.run_id, "failed");
+    const terminal = failed.timeline.find((event) => event.type === "run.failed");
+
+    expect(calls).toBe(4);
+    expect(failed.failure_code).toBe("no_progress_detected");
+    expect(terminal?.summary).toContain("3 consecutive Tool turns produced no new evidence");
+    expect(terminal?.data).toMatchObject({
+      code: "no_progress_detected",
+      no_progress_guard: {
+        policy: {
+          window_turns: 4,
+          minimum_no_progress_turns: 3,
+          minimum_repeated_call_ratio: 0.5,
+        },
+        recent_turns: 4,
+        no_progress_turns: 3,
+        repeated_call_count: 3,
+        total_call_count: 4,
+        repeated_call_ratio: 0.75,
+        fingerprint: {
+          new_evidence_count: 0,
+          unresolved_error_codes: [],
+        },
+      },
+    });
+    expect(JSON.stringify(terminal?.data.no_progress_guard)).not.toContain("src/value.ts");
+  });
+
+  it("continues repeated calls when their results change", async () => {
+    const harness = await createHarness("no-progress-changing-result");
+    const registry = createDefaultToolRegistry();
+    const readFile = registry.get("read_file");
+    if (readFile === undefined) throw new Error("read_file tool is unavailable");
+    let resultRevision = 0;
+    registry.register({
+      ...readFile,
+      async execute() {
+        resultRevision += 1;
+        const content = `revision ${resultRevision}`;
+        return {
+          status: "success",
+          code: "file_read",
+          summary: "Read src/value.ts",
+          content,
+          mimeType: "text/plain",
+          facts: { path: "src/value.ts", content },
+        };
+      },
+    });
+    let modelCalls = 0;
+    const model: ModelAdapter = {
+      name: "changing-read-model",
+      async decide() {
+        modelCalls += 1;
+        return modelCalls <= 4
+          ? toolDecision(
+            `decision:changing:${modelCalls}`,
+            `action:changing:${modelCalls}`,
+            "read_file",
+            { path: "src/value.ts" },
+          )
+          : finishDecision(`decision:changing:${modelCalls}`, "The latest result is available.");
+      },
+    };
+    const runtime = await createTrackedRuntime({
+      dataDir: harness.dataDir,
+      model,
+      maxTurns: 8,
+      toolRegistry: registry,
+    });
+    const started = await runtime.startRun(startInput(harness.workspace));
+
+    const completed = await waitForStatus(runtime, started.run_id, "completed");
+
+    expect(modelCalls).toBe(5);
+    expect(resultRevision).toBe(4);
+    expect(completed.failure_code).toBeUndefined();
+    expect(completed.timeline.at(-1)?.type).toBe("run.completed");
+  });
+
+  it("resets no-progress history when it consumes a user message", async () => {
+    const harness = await createHarness("no-progress-steering-reset");
+    const entered = deferred<void>();
+    const release = deferred<void>();
+    let calls = 0;
+    const model: ModelAdapter = {
+      name: "steered-repeating-read-model",
+      async decide() {
+        calls += 1;
+        if (calls === 4) {
+          entered.resolve();
+          await release.promise;
+        }
+        return toolDecision(
+          `decision:steered-repeat:${calls}`,
+          `action:steered-repeat:${calls}`,
+          "read_file",
+          { path: "src/value.ts" },
+        );
+      },
+    };
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model, maxTurns: 8 });
+    const started = await runtime.startRun(startInput(harness.workspace));
+    await entered.promise;
+    await runtime.submitUserInput(inputCommand(started, {
+      commandId: "command:no-progress-reset",
+      inputId: "input:no-progress-reset",
+      body: "Use the latest repository state before continuing.",
+    }));
+    release.resolve();
+
+    const failed = await waitForStatus(runtime, started.run_id, "failed");
+
+    expect(calls).toBe(8);
+    expect(failed.failure_code).toBe("no_progress_detected");
+    expect(failed.timeline.some((event) => (
+      event.type === "user.input_consumed" && event.data.input_id === "input:no-progress-reset"
+    ))).toBe(true);
+    expect(failed.timeline.find((event) => event.type === "run.failed")?.data.no_progress_guard)
+      .toMatchObject({ no_progress_turns: 3, recent_turns: 4 });
   });
 
   it("leaves steering pending when no model turn remains instead of falsely consuming it", async () => {
@@ -1311,6 +1527,19 @@ function deferred<T>(): {
     promise,
     resolve: (value) => resolvePromise(value as T),
   };
+}
+
+function waitForAbort(signal?: AbortSignal): Promise<never> {
+  return new Promise((_, reject) => {
+    const rejectAbort = () => reject(
+      signal?.reason instanceof Error ? signal.reason : new Error("Run cancelled"),
+    );
+    if (signal?.aborted) {
+      rejectAbort();
+      return;
+    }
+    signal?.addEventListener("abort", rejectAbort, { once: true });
+  });
 }
 
 async function waitForStatus(

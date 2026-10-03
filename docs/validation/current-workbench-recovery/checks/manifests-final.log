@@ -1,0 +1,10 @@
+$ node scripts/verify-lockfile.mjs --skip-frozen
+[supply-chain] FAIL: 7 policy violation(s)
+- SC_DEP_NOT_EXACT packages/workbench/package.json: dependencies.@codemirror/commands must be an exact semver, catalog reference, or workspace:*; found "^6.11.1"
+- SC_DEP_NOT_EXACT packages/workbench/package.json: dependencies.@codemirror/lang-javascript must be an exact semver, catalog reference, or workspace:*; found "^6.2.5"
+- SC_DEP_NOT_EXACT packages/workbench/package.json: dependencies.@codemirror/lang-json must be an exact semver, catalog reference, or workspace:*; found "^6.0.2"
+- SC_DEP_NOT_EXACT packages/workbench/package.json: dependencies.@codemirror/lang-markdown must be an exact semver, catalog reference, or workspace:*; found "^6.5.2"
+- SC_DEP_NOT_EXACT packages/workbench/package.json: dependencies.@codemirror/language must be an exact semver, catalog reference, or workspace:*; found "^6.12.4"
+- SC_DEP_NOT_EXACT packages/workbench/package.json: dependencies.@codemirror/state must be an exact semver, catalog reference, or workspace:*; found "^6.7.6"
+- SC_DEP_NOT_EXACT packages/workbench/package.json: dependencies.@codemirror/view must be an exact semver, catalog reference, or workspace:*; found "^6.43.13"
+[ELIFECYCLE] Command failed with exit code 1.

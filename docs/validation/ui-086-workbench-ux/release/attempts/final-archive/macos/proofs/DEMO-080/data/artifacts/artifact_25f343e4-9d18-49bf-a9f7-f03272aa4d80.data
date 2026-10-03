@@ -1,0 +1,43 @@
+{
+  "version": 1,
+  "kind": "pending_patch_recovery_state",
+  "pending_approval": {
+    "approval_id": "approval:defafaea-a7be-40ce-956c-a743492fc2ee",
+    "action_id": "action:proof:preview",
+    "risk": "high",
+    "preview": {
+      "preview_id": "patch-preview:5ea6322e-1cf8-4d1c-a28d-88180459b08e",
+      "action_id": "action:proof:preview",
+      "path": "src/add.ts",
+      "diff": "--- a/src/add.ts\n+++ b/src/add.ts\n@@\n-return left - right;\n+return left + right;",
+      "base_hash": "sha256:8f184f0ee842e5319aba9498225bc548b98b8e274abad07695c2b2b2f971afc5",
+      "patch_hash": "sha256:c3ca7d77c21373a80b1c37a23d5b3fa73c96aa41baaa1e2cbd65f3f65b02f1f6",
+      "scope": [
+        "src/add.ts"
+      ],
+      "expires_at": "2026-10-02T23:54:12.122Z",
+      "artifact_ref": {
+        "artifact_id": "artifact:112e4728-5a84-4e7e-a0ac-0776f27f730e",
+        "kind": "patch_preview",
+        "content_hash": "sha256:33046b9eedfd1c03a3fd2d7398ac0d460c7a64674670fef9704ec466be0b96be",
+        "mime_type": "text/x-diff",
+        "byte_length": 81,
+        "project_id": "project:proof-recovery",
+        "run_id": "run:411ca6b4-348d-4196-9b34-529a69710c43",
+        "created_at": "2026-10-02T23:49:12.100Z"
+      }
+    },
+    "tool_name": "commit_patch",
+    "action_digest": "sha256:1c66a3753a73d418e65b29f6256ab2aecafd23f25509f1775c0a35523b91d691",
+    "policy_digest": "sha256:883f560287947e3aad6d98fb02eeb541cd6a066df405a032a681330b2a0a2c2e"
+  },
+  "preview_call": {
+    "action_id": "action:proof:preview",
+    "tool_name": "preview_patch",
+    "arguments": {
+      "path": "src/add.ts",
+      "expected": "return left - right;",
+      "replacement": "return left + right;"
+    }
+  }
+}

@@ -1,0 +1,315 @@
+{
+  "schema_version": "outlive.ux086.release-closure.v1",
+  "participant_class": "simulated",
+  "participant": "maintainer workspace Agent",
+  "independent_non_maintainer": false,
+  "archive_sha256": "f2de296dd96af6c07a3a884019be850679c409d4b98c46ea0e9778c0764f6c27",
+  "status": "superseded_after_native_live_before_preview_observation",
+  "checks": {
+    "linux_fresh_frozen_install": {
+      "exit_code": 0,
+      "node": "v22.19.0",
+      "pnpm": "11.19.0",
+      "platform": "Linux arm64 official Node container",
+      "container_removed": true
+    },
+    "macos_fresh_frozen_desktop_install": {
+      "exit_code": 0,
+      "schema_version": "outlive.ux086.macos-environment.v1",
+      "platform": "macOS-26.5-arm64-arm-64bit",
+      "machine": "arm64",
+      "node": "v24.21.0",
+      "pnpm": "11.19.0",
+      "new_extract": "/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-ux086-macos-final-bsm_hp0_/outlive-agent-0.1.0-alpha.0-preview",
+      "source_mounted": false,
+      "note": "same maintainer Mac; fresh directory and frozen install; not a clean machine or independent-user evidence"
+    },
+    "linux_installed_smoke": {
+      "schema_version": "tracegraph.preview-smoke.v1",
+      "status": "passed",
+      "recorded_at": "2026-10-02T23:40:29.547Z",
+      "platform": "linux",
+      "arch": "arm64",
+      "node": "v22.19.0",
+      "version": "0.1.0-alpha.0",
+      "evidence_scope": "extracted preview on the current machine; clean-machine and independent-user context must be supplied by the verifier",
+      "cli": {
+        "command": "sessions list",
+        "exit_code": 0,
+        "session_count": 0
+      },
+      "desktop_host": {
+        "identity": {
+          "package_name": "@tracegraph/desktop-host",
+          "package_version": "0.1.0-alpha.0",
+          "protocol_version": "tracegraph.client-protocol.v2"
+        },
+        "exit": {
+          "code": 0,
+          "signal": null
+        },
+        "child_absent": true
+      },
+      "desktop_gui": "not tested by this headless smoke; launch separately",
+      "package_resolution": "within extracted archive",
+      "inventory": {
+        "file_count": 1294,
+        "total_bytes": 21649097
+      },
+      "report_path": "/tmp/outlive-installed-smoke-zxgBec/report.json"
+    },
+    "macos_installed_smoke": {
+      "schema_version": "tracegraph.preview-smoke.v1",
+      "status": "passed",
+      "recorded_at": "2026-10-02T23:40:14.020Z",
+      "platform": "darwin",
+      "arch": "arm64",
+      "node": "v24.21.0",
+      "version": "0.1.0-alpha.0",
+      "evidence_scope": "extracted preview on the current machine; clean-machine and independent-user context must be supplied by the verifier",
+      "cli": {
+        "command": "sessions list",
+        "exit_code": 0,
+        "session_count": 0
+      },
+      "desktop_host": {
+        "identity": {
+          "package_name": "@tracegraph/desktop-host",
+          "package_version": "0.1.0-alpha.0",
+          "protocol_version": "tracegraph.client-protocol.v2"
+        },
+        "exit": {
+          "code": 0,
+          "signal": null
+        },
+        "child_absent": true
+      },
+      "desktop_gui": "not tested by this headless smoke; launch separately",
+      "package_resolution": "within extracted archive",
+      "inventory": {
+        "file_count": 1294,
+        "total_bytes": 21649097
+      },
+      "report_path": "/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-installed-smoke-5BUTxm/report.json"
+    },
+    "proof_integrity": {
+      "linux": {
+        "files_verified": 75,
+        "sha256sums_verified": true,
+        "proof_oracles_passed": [
+          "DEMO-080",
+          "DEMO-081",
+          "DEMO-082"
+        ]
+      },
+      "macos": {
+        "files_verified": 75,
+        "sha256sums_verified": true,
+        "proof_oracles_passed": [
+          "DEMO-080",
+          "DEMO-081",
+          "DEMO-082"
+        ]
+      }
+    },
+    "archive_checksum_unchanged": true,
+    "macos_native_installed_live": {
+      "schema_version": "outlive.installed-desktop-live.v1",
+      "status": "passed",
+      "recorded_at": "2026-10-02T23:47:30.517Z",
+      "participant_class": "simulated",
+      "independent_non_maintainer": false,
+      "archive_sha256": "f2de296dd96af6c07a3a884019be850679c409d4b98c46ea0e9778c0764f6c27",
+      "installed_root": "/private/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-ux086-macos-final-bsm_hp0_/outlive-agent-0.1.0-alpha.0-preview",
+      "executable": "/private/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-ux086-macos-final-bsm_hp0_/outlive-agent-0.1.0-alpha.0-preview/node_modules/.pnpm/electron@44.5.1/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron",
+      "compiled_main": "/private/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-ux086-macos-final-bsm_hp0_/outlive-agent-0.1.0-alpha.0-preview/apps/desktop/dist/main.js",
+      "compiled_main_sha256": "080ba744f10942d92f0445a653ddc6f5a07f6232ac268dc11552eac643bee26a",
+      "compiled_preload": "/private/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-ux086-macos-final-bsm_hp0_/outlive-agent-0.1.0-alpha.0-preview/apps/desktop/dist/preload.cjs",
+      "compiled_preload_sha256": "bb95a4d0d178d266ecdffbe96f1ebfea9d923641e01952be1e3e414f356899d0",
+      "bootstrap": "/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-ux086-installed-live-ONpiui/archive-live-bootstrap.cjs",
+      "user_data": "/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-ux086-installed-live-ONpiui/user-data",
+      "model_boundary": "Synthetic local HTTP provider only; actual installed Main/private Host/Runtime/workspace-write Seatbelt/test process and external file oracle. No remote Provider or user credential is consumed.",
+      "fixture": {
+        "real_root": "/private/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/tracegraph-fixture-5pzbSt",
+        "source_sha256": "9ae0881b999fc64dccb014139c21e875e679f15477cebffb8e6d405b1fa734e3",
+        "test_entry_sha256": "4a5426d411774a275f282e40318158145bab5fd18e0f0b112b9ecb0fea9e7707",
+        "prepared_before_run": true
+      },
+      "app_pid": 78134,
+      "frame_url": "file:///private/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-ux086-macos-final-bsm_hp0_/outlive-agent-0.1.0-alpha.0-preview/apps/desktop/dist/renderer/index.html",
+      "host_status": {
+        "state": "ready",
+        "identity": {
+          "package_name": "@tracegraph/desktop-host",
+          "package_version": "0.1.0-alpha.0",
+          "protocol_version": "tracegraph.client-protocol.v2"
+        },
+        "recovery": {
+          "scanned_sessions": 0,
+          "truncated_session_ids": [],
+          "interrupted_run_ids": [],
+          "reconciled_action_ids": [],
+          "aborted_action_ids": [],
+          "diverged_action_ids": [],
+          "recovered_at": "2026-10-02T23:47:30.916Z"
+        }
+      },
+      "host_worker": {
+        "pid": 78140,
+        "parent_pid": 78134,
+        "command": "/opt/homebrew/Cellar/node@24/24.21.0/bin/node /private/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-ux086-macos-final-bsm_hp0_/outlive-agent-0.1.0-alpha.0-preview/apps/desktop-host/dist/worker.js"
+      },
+      "native": {
+        "main_exec_path": "/private/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-ux086-macos-final-bsm_hp0_/outlive-agent-0.1.0-alpha.0-preview/node_modules/.pnpm/electron@44.5.1/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron",
+        "user_data": "/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-ux086-installed-live-ONpiui/user-data",
+        "windows": [
+          {
+            "visible": true,
+            "preferences": {
+              "allowRunningInsecureContent": false,
+              "contextIsolation": true,
+              "disableDialogs": false,
+              "disablePopups": false,
+              "enableBlinkFeatures": "",
+              "experimentalFeatures": false,
+              "javascript": true,
+              "nodeIntegration": false,
+              "nodeIntegrationInSubFrames": false,
+              "nodeIntegrationInWorker": false,
+              "safeDialogs": false,
+              "safeDialogsMessage": "",
+              "sandbox": true,
+              "webSecurity": true,
+              "webviewTag": false
+            }
+          }
+        ]
+      },
+      "preload_identity_basis": "Integrity-verified archived Main configures this hashed preload; functional isolated fixed bridge binds it. Electron 44 getLastWebPreferences omits preload path.",
+      "renderer_boundary": {
+        "bridge_methods": [
+          "getHostStatus",
+          "listSessions",
+          "getSession",
+          "getRun",
+          "startRun",
+          "startChat",
+          "approve",
+          "reject",
+          "stop",
+          "approvePlan",
+          "getTodos",
+          "writeTodo",
+          "submitUserInput",
+          "getArtifact",
+          "resumeSession",
+          "renameSession",
+          "deleteSession",
+          "listProjects",
+          "openLocalProject",
+          "revealProject",
+          "removeProject",
+          "openProjectFile",
+          "getModelConfig",
+          "configureModel",
+          "listMemoryControl",
+          "createMemoryCandidate",
+          "reviewMemory",
+          "correctMemory",
+          "revokeMemory",
+          "deleteMemory",
+          "listExperienceCases",
+          "reviewExperienceCase"
+        ],
+        "require_type": "undefined",
+        "process_type": "undefined"
+      },
+      "test_node_version": "v24.21.0",
+      "test_oracle": {
+        "execPath": "/opt/homebrew/Cellar/node@24/24.21.0/bin/node",
+        "pid": 78153,
+        "assertions": 2,
+        "value": 5,
+        "marker": "archive-main-seatbelt-test",
+        "sha256": "065f5d9527d289aae316c2c6db86e419f7c345755b15f816c2f5d5ba0610da2a",
+        "sandbox_mode": "workspace-write",
+        "actual_node": "/opt/homebrew/Cellar/node@24/24.21.0/bin/node"
+      },
+      "run": {
+        "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+        "session_id": "session:5f87bb5a-6ca0-4e9a-908e-b2d24a293634",
+        "status": "completed",
+        "last_sequence": 18
+      },
+      "screenshot": "installed-live-sandbox-1440x900.png",
+      "synthetic_credential_deleted": true,
+      "process_cleanup": {
+        "main_absent": true,
+        "worker_absent": true,
+        "test_absent": true
+      },
+      "finished_at": "2026-10-02T23:47:31.951Z"
+    }
+  },
+  "failures": [
+    {
+      "step": "native live fixture preparation attempt 1",
+      "classification": "harness fixture preparation assumption",
+      "error": "Archived source-stripped example contains only package.json; test-support template did not include src/add.ts",
+      "product_native_or_host_launched": false,
+      "cleanup_passed": true,
+      "evidence": "macos/attempts/live-preparation-1/installed-live.json"
+    },
+    {
+      "step": "native live window/preferences probe attempt 2",
+      "classification": "harness Electron native observation API assumption",
+      "error": "getLastWebPreferences omitted preload path; combined assertion assumed the field would be returned. Native sandbox/isolation flags were not disproved.",
+      "product_test_started": false,
+      "main_cleanup_passed": true,
+      "synthetic_credential_deleted": true,
+      "evidence": "macos/attempts/live-window-visible-2/installed-live.json"
+    },
+    {
+      "step": "native live preferences probe attempt 3",
+      "classification": "harness Electron native observation API assumption",
+      "error": "Actual Electron44 getLastWebPreferences has no preload field; security flags sandbox/contextIsolation/webSecurity true, nodeIntegration false and actual supported Node worker captured",
+      "product_test_started": false,
+      "main_and_worker_cleanup_passed": true,
+      "synthetic_credential_deleted": true,
+      "evidence": "macos/attempts/live-preferences-3/installed-live.json"
+    }
+  ],
+  "reruns": [
+    {
+      "step": "native installed LIVE",
+      "reason": "Use fully synthetic owned temporary template, actual archive core factory, Main and Host unchanged",
+      "same_archive_sha256": "f2de296dd96af6c07a3a884019be850679c409d4b98c46ea0e9778c0764f6c27",
+      "status": "subsequent_same_archive_live_passed"
+    },
+    {
+      "step": "native installed LIVE",
+      "reason": "Bounded ready-to-show wait and always preserve actual native preferences before exact assertions; preserve security requirements",
+      "same_archive_sha256": "f2de296dd96af6c07a3a884019be850679c409d4b98c46ea0e9778c0764f6c27",
+      "status": "subsequent_same_archive_live_passed"
+    },
+    {
+      "step": "native installed LIVE",
+      "reason": "Observe supported actual security flags plus isolated bridge behavior and hashed archived Main/preload configuration; no security flag weakened",
+      "same_archive_sha256": "f2de296dd96af6c07a3a884019be850679c409d4b98c46ea0e9778c0764f6c27",
+      "status": "subsequent_same_archive_live_passed"
+    }
+  ],
+  "limitations": [
+    "Maintainer Agent simulation; no independent external user",
+    "No code signing or notarization",
+    "No public npm/deployment",
+    "No remote Provider quality validation",
+    "Linux container is not bare-metal installation",
+    "Native installed Preview not executed; superseded by locale correction before observation"
+  ],
+  "supersession": {
+    "reason": "Root actual Chinese Web observation found untranslated Ask anything\u2026 placeholder. Third immutable archive will contain exactly a locale catalog mapping and rebuilt renderer/SDK; Main/Host business logic unchanged.",
+    "native_archive_preview_executed": false,
+    "requires_new_archive_validation": true
+  }
+}

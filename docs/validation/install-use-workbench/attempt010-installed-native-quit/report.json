@@ -1,0 +1,27 @@
+{
+  "status": "failed",
+  "boundary": "Maintainer Agent isolated native installed-app observation. Synthetic loopback chat provider, actual Main/Host/CLI; no user keys or profiles. Native quit success requires observer marker and actual Electron exit plus retained owner/Run.",
+  "installed_binary": "/Users/cain/Applications/Outlive Agent.app/Contents/MacOS/Outlive Agent",
+  "errors": [
+    {
+      "boundary": "acceptance",
+      "message": "page.reload: net::ERR_ABORTED; maybe frame was detached?\nCall log:\n\u001b[2m  - waiting for navigation until \"load\"\u001b[22m\n",
+      "stack": "page.reload: net::ERR_ABORTED; maybe frame was detached?\nCall log:\n\u001b[2m  - waiting for navigation until \"load\"\u001b[22m\n\n    at /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/install-use-workbench/native-quit.mjs:28:426"
+    }
+  ],
+  "assertions": [],
+  "runtime_manifest": {
+    "schema_version": "outlive.bundled-runtime.v1",
+    "node_version": "24.21.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "executable": "bin/node",
+    "sha256": "e4b5a3af0e05c75de2eae013904145f40fe7fc2a6e6f17510128bf45cca4e79b",
+    "product_build_id": "c72a0a30a897dab039db2275ddcb839ce4dc617fdb16da92968867e619c507f2"
+  },
+  "renderer_url": "file:///Users/cain/Applications/Outlive%20Agent.app/Contents/Resources/app/apps/desktop/dist/renderer/index.html",
+  "cleanup": {
+    "completed": true,
+    "failures": []
+  }
+}

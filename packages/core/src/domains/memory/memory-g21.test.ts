@@ -535,8 +535,17 @@ describe("G-21 memory manager", () => {
       dataDir: join(root, "data"),
       model: {
         name: "g21-pending-model",
-        async decide() {
-          return new Promise<never>(() => undefined);
+        async decide(input) {
+          return new Promise<never>((_resolve, reject) => {
+            const onAbort = () => reject(
+              input.signal?.reason instanceof Error ? input.signal.reason : new Error("Run cancelled"),
+            );
+            if (input.signal?.aborted) {
+              onAbort();
+              return;
+            }
+            input.signal?.addEventListener("abort", onAbort, { once: true });
+          });
         },
       },
       memoryStore: new SingleMemoryRecordStore(record),

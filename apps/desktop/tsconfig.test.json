@@ -1,0 +1,13 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "rootDir": ".",
+    "verbatimModuleSyntax": false,
+    "tsBuildInfoFile": "dist/.test.tsbuildinfo",
+    "types": ["node", "vitest/globals", "vite/client"],
+    "jsx": "react-jsx"
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.cts", "renderer/**/*.ts", "renderer/**/*.tsx"],
+  "exclude": []
+}

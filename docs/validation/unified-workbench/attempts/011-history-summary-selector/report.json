@@ -1,0 +1,447 @@
+{
+  "task_id": "PAR-088",
+  "recorded_at": "2026-10-03T06:13:46.328Z",
+  "status": "failed",
+  "model_boundary": "Synthetic loopback provider; actual packaged Electron Main/preload, HTTP over private local channel, shared Host/Runtime/ledger, real fixture patch and test processes. No provider-quality or external-user claims.",
+  "assertions": [
+    "Desktop Main and private typed client share model configuration and one Runtime owner",
+    "Desktop and loopback Web gateway observe the same settings revision; stale CAS rejected",
+    "Fixed settings/status/skills/extensions/MCP/LSP/usage/telemetry routes reach the shared Host",
+    "Actual Desktop keyboard navigation/palette/settings controls and DOM composition Enter/newline semantics are verified",
+    "Actual packaged CLI shares owner/settings/model and rejects command-line credentials without printing values",
+    "Desktop composer stages the actual fixture image and Enter starts an executable task through fixed transport"
+  ],
+  "errors": [
+    {
+      "boundary": "acceptance",
+      "message": "locator.click: Error: strict mode violation: locator('.inline-activity-details').first().locator('summary') resolved to 9 elements:\n    1) <summary>…</summary> aka getByText('Prepared patch preview for src/add.tsCompleted')\n    2) <summary>…</summary> aka getByText('Policy14:13:57Permission').first()\n    3) <summary>…</summary> aka getByText('Tool14:13:57Found 1 match(es')\n    4) <summary>…</summary> aka getByText('Policy14:13:57Permission').nth(1)\n    5) <summary>…</summary> aka getByText('Tool14:13:57Read src/add.ts')\n    6) <summary>…</summary> aka getByText('Policy14:13:58Permission preset workspace-write allows this Tool action')\n    7) <summary>…</summary> aka getByText('Tool14:13:58Prepared patch')\n    8) <summary>…</summary> aka getByText('Policy14:13:58Permission preset workspace-write requires approval for write')\n    9) <summary>…</summary> aka getByText('Approval14:13:58Approval')\n\nCall log:\n\u001b[2m  - waiting for locator('.inline-activity-details').first().locator('summary')\u001b[22m\n",
+      "stack": "locator.click: Error: strict mode violation: locator('.inline-activity-details').first().locator('summary') resolved to 9 elements:\n    1) <summary>…</summary> aka getByText('Prepared patch preview for src/add.tsCompleted')\n    2) <summary>…</summary> aka getByText('Policy14:13:57Permission').first()\n    3) <summary>…</summary> aka getByText('Tool14:13:57Found 1 match(es')\n    4) <summary>…</summary> aka getByText('Policy14:13:57Permission').nth(1)\n    5) <summary>…</summary> aka getByText('Tool14:13:57Read src/add.ts')\n    6) <summary>…</summary> aka getByText('Policy14:13:58Permission preset workspace-write allows this Tool action')\n    7) <summary>…</summary> aka getByText('Tool14:13:58Prepared patch')\n    8) <summary>…</summary> aka getByText('Policy14:13:58Permission preset workspace-write requires approval for write')\n    9) <summary>…</summary> aka getByText('Approval14:13:58Approval')\n\nCall log:\n\u001b[2m  - waiting for locator('.inline-activity-details').first().locator('summary')\u001b[22m\n\n    at /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/unified-workbench/desktop-transport.mjs:174:39"
+    }
+  ],
+  "product": {
+    "artifact_mode": "source",
+    "repository_root": "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent",
+    "hashes": {
+      "apps/desktop/dist/main.js": "b717460b34830502e84036d923f4698bcf1c76114de7c3ee1fabfb486f3a15a8",
+      "apps/desktop/dist/preload.cjs": "9a270f2c5a6d066309adab0d7ca02acef81770ad72241ff31fc729208ef731de",
+      "apps/desktop/dist/renderer/index.html": "14d0c42590bf081778cd9eb522adcf01be2b720204795163b89e28c047728f79",
+      "apps/cli/dist/index.js": "bfd1bbbed588a2f37fb639d3abf4f182fa14a2fef924b7d8aad50ab079ae4d9d",
+      "apps/cli/dist/workbench-command.js": "e68ee152cecf84a340d07667ac21c89d60dfb2cbeb6d81bb780af7599ee69624",
+      "packages/host/dist/local-host-worker.js": "f3ee9f70ca4c3c5142138a4b2c6fbf34357967ff99e85eae3295382a37e27ddd",
+      "packages/sdk/dist/index.js": "e07a1d6d09391320c775ecb83412ab69150be74073233aad7fd016298d23fc3d",
+      "apps/desktop/dist/renderer/assets/index-BVIeJDON.js": "77f4072bc6a934be08743a09089d91d2d0905206603882c823ef17335bec5a43",
+      "apps/desktop/dist/renderer/assets/chunk-Y2CYZVJY-DsF7k-Jl.js": "a74e3669f356ad0d67cc5232f1e0f62ff4544fdb8e7057cf9a5001a0ea6fc2cc",
+      "apps/desktop/dist/renderer/assets/src-D_iIdUkB.js": "e9388a1b6412ffa2b395fc348df2ed61bb10bdcfdd51ffa2bc7b5d4527e8279c",
+      "apps/desktop/dist/renderer/assets/chunk-O7XYJQB3-CKKWJ5qg.js": "d84493326d919d2cbdc52afc59d9e1bb806d2fabb9a0dde356ae4741101be5f7",
+      "apps/desktop/dist/renderer/assets/dist-Bfr8PhAA.js": "77e45d626ece635e7105ffc9e36c5a177ac803e0f8380d86f6236ff460e18586",
+      "apps/desktop/dist/renderer/assets/chunk-ZIGJFQKS-CEpNxTiJ.js": "2c752abd2c1665fcc3b5aafcc8ec23fd67edfec70ad1d594a2470c795003ce5c",
+      "apps/desktop/dist/renderer/assets/path-fybaL0A-.js": "71b62c60fd6659668995a83955af7c0ffd1bc05496148191841e017441afe36b",
+      "apps/desktop/dist/renderer/assets/array-BifhSqXX.js": "63126646dbf611a0cf9e2293a9f636ac3c93c815a8f7d1e97d783151ab8529b9",
+      "apps/desktop/dist/renderer/assets/line-CnaOAfv0.js": "e7f6a4e731b07c23383808ffc3044da619d3d9b08d4942b1473fe88ae4862961",
+      "apps/desktop/dist/renderer/assets/chunk-7PRAP22T-DyBrMsFS.js": "89d2ee87cd53161f176e735d2b0b2f17d29b75d80cf2b3ee4c2d657ca6ea8e5d",
+      "apps/desktop/dist/renderer/assets/chunk-742MDFTN-C2DSAlGM.js": "8a72cc226bd7da4e2b8b35dea3baa4af6cf282f03119f32b71395c41ce5b0df3",
+      "apps/desktop/dist/renderer/assets/chunk-MBY4JIJT-BLxfLtrC.js": "42c51180ce9a0c2404a601e4060bfacffb50101d3f9b4f2068a63b173555241d",
+      "apps/desktop/dist/renderer/assets/chunk-J5ZVWO5B-oDCd-gWO.js": "9ef2dc3eac1cfcec79acc9e2d21b546b3007482f6f67953492e76710abb2ba71",
+      "apps/desktop/dist/renderer/assets/rough.esm-Dy-Kn_BL.js": "ef405c5eaa3316c75428f63ec698e39993bdcc2da358dbc7ebd355d18901f63f",
+      "apps/desktop/dist/renderer/assets/chunk-7INBJB4K-C1cBX-ES.js": "79a0f7a3f439f7a9327345b75f257a49bcd12c8ced025e7ac119ec2584c48513",
+      "apps/desktop/dist/renderer/assets/chunk-5DYCD2WN-D0pLhIqt.js": "da37fbe83369c2249ca35a42250baa5e764e2923b285e464470a6e1f901d7183",
+      "apps/desktop/dist/renderer/assets/index-Bfi-l9Vv.css": "464008faa47b6b8a7f8ff38053043a5f5a5f5fee85f28a0255bf6d3d7ff85427"
+    }
+  },
+  "screenshots": [
+    {
+      "file": "screenshots/empty-light-1440x900.png",
+      "state": "empty",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "d378afd7b6c1e51a38d2ca04ec565340d62add06ca8f3ae410c12bf2c4a3ba42",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/empty-light-1280x800.png",
+      "state": "empty",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "ca80646353ff3647ee621904322f0c91cf8a29a320bd710fcd1e9c88e6292220",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/empty-light-1024x768.png",
+      "state": "empty",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "40499aa29711f9fbdefaad966962177545c3b696d5939e2cb8ab336d0eb6c4b8",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/empty-dark-1440x900.png",
+      "state": "empty",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "7a38a5a5e01303b6a8296e8dbcab47f75008c396f85d745e1db45308c741c4fc",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/empty-dark-1280x800.png",
+      "state": "empty",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "4836395996f815551f298fea2e6c0aafa8d1d5c5713c1ba1b1f92bf1d620999b",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/empty-dark-1024x768.png",
+      "state": "empty",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "7c91245ff93975b1ec2d57dda59aeda610a496aa0f9d5aabd4dff76d3d47726f",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/project-ready-light-1440x900.png",
+      "state": "project-ready",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "5d4f4fa9626664b46738d6d3cd01c0956d55aa4edf005b18fde882d95a22a38f",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/project-ready-light-1280x800.png",
+      "state": "project-ready",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "b3195d4ae565fbff286c55b283757152162608f2b38e8db0762aa30ae47b99a4",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/project-ready-light-1024x768.png",
+      "state": "project-ready",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "528d61ea08ceb6483341fbd3948d78273d06ce166a9eb3301afa4675935d1e1c",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/project-ready-dark-1440x900.png",
+      "state": "project-ready",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "221a3b747d9831067eb09ac1dbc02cb11f48a1c0b19e4ff44a26b3743cc3454e",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/project-ready-dark-1280x800.png",
+      "state": "project-ready",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "b1ed2fc3e0b87de939aa4592eb91846de24210ad588f458f521d1a722c6b3ff5",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/project-ready-dark-1024x768.png",
+      "state": "project-ready",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "4623ce24438691d97f29e64f81366609157bb9f38f267aace22c654b654f0ec1",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/active-run-light-1440x900.png",
+      "state": "active-run",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "f26e46b0cd2ac3862c9cd1bd140c37c51bb479f854a40462ff7fb69ee2322175",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/active-run-light-1280x800.png",
+      "state": "active-run",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "268a9ecccf55a4416f8f7ff6ef16ada267d49b0ce4558ededf2907ade990c21f",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/active-run-light-1024x768.png",
+      "state": "active-run",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "07232ce66c670838ca9eb0a3be125e25088de0663c285c0d98bef38c68d20629",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/active-run-dark-1440x900.png",
+      "state": "active-run",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "ab67671c92fc1b1a53a95d0cbf7dcd351d6e06f25fbd8ce813ae742619ce497d",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/active-run-dark-1280x800.png",
+      "state": "active-run",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "d3375a91fe882ed778839f51d59695a2d6c4747e761690b275e73945eeed425b",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/active-run-dark-1024x768.png",
+      "state": "active-run",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "dca4d883a59f57fb3c45b52feb8e2267642840a37eeef88d2cf70d29ae4e8079",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/approval-light-1440x900.png",
+      "state": "approval",
+      "theme": "light",
+      "width": 1440,
+      "height": 900,
+      "sha256": "997c00dff69396d2e9f98d85ce81b188ecbaf46eb53973f5607aefadf56c1115",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/approval-light-1280x800.png",
+      "state": "approval",
+      "theme": "light",
+      "width": 1280,
+      "height": 800,
+      "sha256": "a38cf2f71a1a06b1a71e0b2f8b918f7e5309fcb3fa805678f8e8ec27fe6ff843",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/approval-light-1024x768.png",
+      "state": "approval",
+      "theme": "light",
+      "width": 1024,
+      "height": 768,
+      "sha256": "fdc732df7784dd6b14e15751f6f8e87f915102cbc9f5f121b8309b16c6582493",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "light",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/approval-dark-1440x900.png",
+      "state": "approval",
+      "theme": "dark",
+      "width": 1440,
+      "height": 900,
+      "sha256": "3cb9dee2a7741beea29ec0dfeed8c75988b117edd2644846c36d65cb208fab75",
+      "bounds": {
+        "width": 1440,
+        "height": 900,
+        "scrollWidth": 1440,
+        "scrollHeight": 900,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/approval-dark-1280x800.png",
+      "state": "approval",
+      "theme": "dark",
+      "width": 1280,
+      "height": 800,
+      "sha256": "f9041307af56af076db9fac60822975b5864b767ec0212c2b0bcb9f381b01316",
+      "bounds": {
+        "width": 1280,
+        "height": 800,
+        "scrollWidth": 1280,
+        "scrollHeight": 800,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    },
+    {
+      "file": "screenshots/approval-dark-1024x768.png",
+      "state": "approval",
+      "theme": "dark",
+      "width": 1024,
+      "height": 768,
+      "sha256": "f9fbb091c82f740525688697007419f3c74c9956c6ae59f1e12fe9d9fb671253",
+      "bounds": {
+        "width": 1024,
+        "height": 768,
+        "scrollWidth": 1024,
+        "scrollHeight": 768,
+        "theme": "dark",
+        "horizontalOverflow": []
+      }
+    }
+  ],
+  "cleanup": {
+    "completed": true,
+    "failures": []
+  },
+  "owner_processes": [
+    {
+      "pid": 27803,
+      "exited": true
+    }
+  ]
+}

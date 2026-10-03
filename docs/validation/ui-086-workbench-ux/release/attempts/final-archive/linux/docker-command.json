@@ -1,0 +1,15 @@
+[
+  "docker",
+  "run",
+  "--init",
+  "--rm",
+  "--name",
+  "outlive-ux086-third-release-linux-20261003",
+  "--mount",
+  "type=bind,src=/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/2026-10-03-ux086-final-preview/outlive-agent-0.1.0-alpha.0-preview.tar.gz,dst=/artifact/outlive.tar.gz,readonly",
+  "--mount",
+  "type=bind,src=/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/ui-086-workbench-ux/release/attempts/final-archive/linux,dst=/evidence",
+  "node:22.19.0-bookworm-slim",
+  "bash",
+  "/evidence/install.sh"
+]

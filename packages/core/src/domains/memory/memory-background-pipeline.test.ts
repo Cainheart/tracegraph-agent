@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import type { MemoryEpisodeExtractionInput, SessionEvent } from "@tracegraph/contracts";
-import { sha256 } from "../../kernel/crypto.js";
+import { sha256, stableStringify } from "../../kernel/crypto.js";
 import { JsonlEventLedger } from "../evidence/runtime-service.js";
 import {
   JsonlMemoryV2RecordStore,
@@ -24,6 +24,252 @@ afterEach(async () => {
 });
 
 describe("Memory background Episode pipeline", () => {
+  it("never extracts a trusted media Run during live settlement or recovery, while ordinary Runs still extract", async () => {
+    const fixture = await createFixture();
+    const calls:string[]=[];
+    const pipeline=createPipeline(fixture,{id:"extractor:no-media-billing",canExtract:()=>true,
+      async extract(input){calls.push(input.runId);return extractionResult(input,"Ordinary Run evidence.");}});
+    const media=await appendSettledRun(fixture.ledger,"run:local-media","Verified SVG created.",{background_model_derivation:false});
+    pipeline.scheduleSettledRun(media.terminal);
+    const ordinary=await appendSettledRun(fixture.ledger,"run:ordinary-after-media","Ordinary Run evidence.");
+    pipeline.scheduleSettledRun(ordinary.terminal);
+    await waitForIndexedJob(pipeline,ordinary.runId,"complete");
+    expect(calls).toEqual([ordinary.runId]);
+    await pipeline.shutdown();
+    const recovered=createPipeline(fixture,{id:"extractor:no-media-recovery",canExtract:()=>true,
+      async extract(input){calls.push(input.runId);return extractionResult(input,"Unexpected extraction.");}});
+    await recovered.recoverSettledRuns();
+    expect(calls).toEqual([ordinary.runId]);
+    expect((await recovered.listJobs(SCOPE)).some(job=>job.runId===media.runId)).toBe(false);
+  });
+
+  it("uses authenticated user correction ancestry for cross-Run exact and changed-key consolidation", async () => {
+    const fixture = await createFixture();
+    const pipeline = createPipeline(fixture, { id: "extractor:correction-chain", canExtract: () => true,
+      async extract(input) {
+        const claim = input.runId.endsWith("origin") ? "Deployment mode is canary."
+          : input.runId.endsWith("changed") ? "Deployment mode is blue-green." : "Deployment mode is stable.";
+        return extractionResult(input, claim, "deployment mode");
+      } });
+    const originalRun = await appendSettledRun(fixture.ledger, "run:correction:origin", "Deployment mode is canary.");
+    pipeline.scheduleSettledRun(originalRun.terminal);
+    const source = await waitForIndexedJob(pipeline, originalRun.runId, "complete");
+    const sourceId = source.consolidationResults[0]!.memoryId;
+    await fixture.control.review(sourceId, { command_id: "activate:origin", expected_sequence: 0, action: "review_activate" }, SCOPE);
+    const corrected = await fixture.control.correct(sourceId, { command_id: "correct:origin", expected_sequence: 1, claim: "Deployment mode is stable." }, SCOPE);
+    await fixture.control.review(corrected.record.memoryId, { command_id: "activate:correction", expected_sequence: 0, action: "review_activate" }, SCOPE);
+    for (const suffix of ["exact", "changed"]) {
+      const run = await appendSettledRun(fixture.ledger, `run:correction:${suffix}`, "Deployment mode was observed.");
+      pipeline.scheduleSettledRun(run.terminal);
+      const job = await waitForIndexedJob(pipeline, run.runId, "complete");
+      expect(job.consolidationResults[0]).toMatchObject({ action: suffix === "exact" ? "unchanged" : "candidate",
+        comparedMemoryIds: [corrected.record.memoryId], sourceRunIds: [run.runId, originalRun.runId] });
+    }
+    expect((await fixture.control.list(SCOPE)).items.find(({ record }) => record.memoryId === corrected.record.memoryId)?.record.status).toBe("active");
+  });
+
+  it.each(["missing_parent", "forged_user_ref", "deleted_run"])("does not trust corrected model Memory with %s ancestry", async (failure) => {
+    const fixture = await createFixture();
+    const pipeline = createPipeline(fixture, { id: "extractor:correction-negative", canExtract: () => true,
+      async extract(input) { return extractionResult(input, input.runId.endsWith("origin") ? "Deployment mode is old." : "Deployment mode is corrected.", "deployment mode"); } });
+    const run = await appendSettledRun(fixture.ledger, "run:negative:origin", "Deployment mode is old.");
+    pipeline.scheduleSettledRun(run.terminal);
+    const sourceId = (await waitForIndexedJob(pipeline, run.runId, "complete")).consolidationResults[0]!.memoryId;
+    const corrected = await fixture.control.correct(sourceId, { command_id: "correct:negative", expected_sequence: 0, claim: "Deployment mode is corrected." }, SCOPE);
+    await fixture.control.review(corrected.record.memoryId, { command_id: "activate:negative", expected_sequence: 0, action: "review_activate" }, SCOPE);
+    if (failure === "missing_parent") await fixture.records.delete(OWNER_ID, [sourceId]);
+    if (failure === "deleted_run") await rm(join(fixture.root, "events", run.runId.replaceAll(":", "_") + ".jsonl"));
+    if (failure === "forged_user_ref") {
+      const path = join(fixture.root, "memory-v2", sha256(OWNER_ID).slice(7), "records.jsonl");
+      const rows = (await fixture.records.list(OWNER_ID)).map((record) => record.memoryId !== corrected.record.memoryId ? record : {
+        ...record, provenance: { ...record.provenance, evidenceRefs: [...record.provenance.evidenceRefs.slice(0, -1), {
+          source_id: "source:forged", source_type: "user", trust: "trusted", description: "User-authored correction",
+        }] },
+      });
+      await writeFile(path, rows.map((row) => JSON.stringify(row)).join("\n") + "\n");
+    }
+    const next = await appendSettledRun(fixture.ledger, "run:negative:next", "Deployment mode is corrected.");
+    pipeline.scheduleSettledRun(next.terminal);
+    expect((await waitForIndexedJob(pipeline, next.runId, "complete")).consolidationResults[0])
+      .toMatchObject({ action: "candidate", comparedMemoryIds: [], sourceRunIds: [next.runId] });
+  });
+
+  it("serves a bounded scoped index without ledger reads across large project histories", async () => {
+    const fixture = await createFixture();
+    const template = await appendSettledRun(fixture.ledger, "run:template", "Synthetic historical evidence.");
+    const source = await fixture.ledger.list(template.runId);
+    const history = new Map<string, SessionEvent[]>();
+    const states: Promise<void>[] = [];
+    await mkdir(join(fixture.root, "memory-v2", "background", sha256(OWNER_ID).slice(7)), { recursive: true });
+    for (let index = 0; index < 350; index += 1) {
+      const projectId = index < 175 ? PROJECT_ID : "project:other";
+      const runId = `run:history:${index}`;
+      let previous: string | undefined;
+      history.set(runId, source.map(({ event_hash: _hash, previous_event_hash: _previous, ...value }) => {
+        const body = { ...value, run_id: runId, project_id: projectId, ...(previous === undefined ? {} : { previous_event_hash: previous }) };
+        const event = { ...body, event_hash: sha256(stableStringify(body)) };
+        previous = event.event_hash;
+        return event;
+      }));
+      states.push(writeFile(memoryJobStatePath(fixture.root, runId), JSON.stringify({ schemaVersion: "tracegraph.memory-background-job.v1",
+        runId, status: "complete", attempts: 1, candidateCount: 1, updatedAt: new Date(Date.UTC(2026, 9, 3, 0, 0, index)).toISOString() })));
+    }
+    await Promise.all(states);
+    let reads = 0;
+    const pipeline = new MemoryBackgroundPipeline({ root: join(fixture.root, "memory-v2", "background"), ownerId: OWNER_ID,
+      control: fixture.control, ledger: { list: async (id) => { reads += 1; return history.get(id) ?? []; },
+        listRunIds: async () => [...history.keys()], subscribe: () => () => undefined } });
+    pipelines.push(pipeline);
+    expect(pipeline.historyLoaded).toBe(false);
+    expect(await pipeline.listJobs({ allowedScopeIds: [] })).toEqual([]);
+    expect(reads).toBe(0);
+    await pipeline.recoverSettledRuns();
+    expect(pipeline.historyLoaded).toBe(true);
+    expect(reads).toBe(350);
+    reads = 0;
+    for (let repeat = 0; repeat < 4; repeat += 1) {
+      expect(await pipeline.listJobs({ allowedScopeIds: [] })).toEqual([]);
+      const selected = await pipeline.listJobs(SCOPE);
+      expect(selected).toHaveLength(100);
+      expect(selected.every((job) => job.projectId === PROJECT_ID)).toBe(true);
+      expect(selected[0]?.runId).toBe("run:history:174");
+      const all = await pipeline.listJobs({ allowedScopeIds: [PROJECT_ID, "project:other"] });
+      expect(all).toHaveLength(100);
+      expect(all[0]?.runId).toBe("run:history:349");
+    }
+    expect(reads).toBe(0);
+  });
+
+  it("consolidates across settled Runs into inspectable unchanged/diff results without rewriting active Memory", async () => {
+    const fixture = await createFixture();
+    const extractor: MemoryEpisodeExtractor = {
+      id: "extractor:cross-run-v1", canExtract: () => true,
+      async extract(input) {
+        return extractionResult(input, input.runId.endsWith("changed") ? "Deployment mode is stable." : "Deployment mode is canary.", "deployment mode");
+      },
+    };
+    const pipeline = createPipeline(fixture, extractor);
+    const first = await appendSettledRun(fixture.ledger, "run:cross:first", "Deployment mode is canary.");
+    pipeline.scheduleSettledRun(first.terminal);
+    await waitForIndexedJob(pipeline, first.runId, "complete");
+    const original = (await fixture.control.list(SCOPE)).items[0]!;
+    await fixture.control.review(original.record.memoryId, { command_id: "review:cross-first", expected_sequence: 0, action: "review_activate" }, SCOPE);
+    const duplicate = await appendSettledRun(fixture.ledger, "run:cross:duplicate", "Deployment mode is canary.");
+    pipeline.scheduleSettledRun(duplicate.terminal);
+    await waitForIndexedJob(pipeline, duplicate.runId, "complete");
+    const changed = await appendSettledRun(fixture.ledger, "run:cross:changed", "Deployment mode is stable.");
+    pipeline.scheduleSettledRun(changed.terminal);
+    await waitForIndexedJob(pipeline, changed.runId, "complete");
+
+    const jobs = await pipeline.listJobs(SCOPE);
+    expect(jobs.find((job) => job.runId === duplicate.runId)).toMatchObject({
+      candidateCount: 0, consolidationResults: [{ action: "unchanged", memoryId: original.record.memoryId,
+        comparedMemoryIds: [original.record.memoryId], sourceRunIds: [duplicate.runId, first.runId] }],
+    });
+    expect(jobs.find((job) => job.runId === changed.runId)).toMatchObject({
+      candidateCount: 1, consolidationResults: [{ action: "candidate", comparedMemoryIds: [original.record.memoryId],
+        sourceRunIds: [changed.runId, first.runId] }],
+    });
+    const records = (await fixture.control.list(SCOPE)).items;
+    expect(records).toHaveLength(2);
+    expect(records.find(({ record }) => record.memoryId === original.record.memoryId)?.record).toMatchObject({ status: "active", claim: "Deployment mode is canary." });
+    expect(records.find(({ record }) => record.memoryId !== original.record.memoryId)?.record).toMatchObject({
+      status: "candidate", claim: "Deployment mode is stable.", governance: { allowModelUse: false, allowExport: false },
+      lineage: { derivedFrom: [original.record.memoryId], supersedes: [] },
+    });
+    expect(JSON.stringify(jobs)).not.toContain("Deployment mode");
+    expect(await pipeline.listJobs({ allowedScopeIds: [] })).toEqual([]);
+    await pipeline.shutdown();
+    const restarted = createPipeline(fixture, { ...extractor, extract: async () => { throw new Error("completed jobs must not extract again"); } });
+    await restarted.recoverSettledRuns();
+    expect(await restarted.listJobs(SCOPE)).toEqual(jobs);
+  });
+
+  it("does not consolidate from another project, an uncommitted seed, revoked Memory or deleted Run evidence", async () => {
+    const fixture = await createFixture();
+    const claim = "Deployment mode is stable.";
+    const foreign = await fixture.control.createCandidate({ command_id: "foreign:seed", kind: "fact", claim,
+      normalized_key: "deployment mode", project_id: "project:foreign" }, { allowedScopeIds: ["project:foreign"] });
+    await fixture.records.writeCandidate({ ...foreign.record, memoryId: "memory:uncommitted", scope: { ...foreign.record.scope, projectId: PROJECT_ID } });
+    const revoked = await fixture.control.createCandidate({ command_id: "revoked:seed", kind: "fact", claim,
+      normalized_key: "deployment mode", project_id: PROJECT_ID }, SCOPE);
+    await fixture.control.revoke(revoked.record.memoryId, { command_id: "revoke:seed", expected_sequence: 0 }, SCOPE);
+    const extractor: MemoryEpisodeExtractor = { id: "extractor:negative-v1", canExtract: () => true,
+      async extract(input) { return extractionResult(input, claim, "deployment mode"); } };
+    const pipeline = createPipeline(fixture, extractor);
+    const first = await appendSettledRun(fixture.ledger, "run-negative-first", claim);
+    pipeline.scheduleSettledRun(first.terminal);
+    await waitForIndexedJob(pipeline, first.runId, "complete");
+    const firstJob = (await pipeline.listJobs(SCOPE))[0]!;
+    expect(firstJob.consolidationResults).toMatchObject([{ action: "candidate", comparedMemoryIds: [], sourceRunIds: [first.runId] }]);
+    expect(JSON.stringify(firstJob)).not.toContain(foreign.record.memoryId);
+    await rm(join(fixture.root, "events", first.runId + ".jsonl"));
+    const second = await appendSettledRun(fixture.ledger, "run-negative-second", claim);
+    pipeline.scheduleSettledRun(second.terminal);
+    await waitForJob(fixture.root, second.runId, (job) => job.status === "complete");
+    await pipeline.recoverSettledRuns();
+    const jobs = await pipeline.listJobs(SCOPE);
+    expect(jobs).toHaveLength(1);
+    expect(jobs[0]?.consolidationResults).toMatchObject([{ action: "candidate", comparedMemoryIds: [], sourceRunIds: [second.runId] }]);
+  });
+
+  it("rejects changed extractor output after an unchanged cross-Run slot was persisted", async () => {
+    const fixture = await createFixture();
+    const original = await fixture.control.createCandidate({ command_id: "unchanged:seed", kind: "fact",
+      claim: "Deployment mode is stable.", normalized_key: "deployment mode", project_id: PROJECT_ID }, SCOPE);
+    const run = await appendSettledRun(fixture.ledger, "run:changed:slot", "Deployment mode is stable.");
+    let calls = 0;
+    let enabled = true;
+    const extractor: MemoryEpisodeExtractor = { id: "extractor:changed-slot", canExtract: () => enabled,
+      async extract(input) {
+        calls += 1;
+        if (calls === 1) enabled = false;
+        const value = extractionResult(input, calls === 1 ? original.record.claim : "Deployment mode is altered.", "deployment mode");
+        return calls === 1 ? { ...value, candidates: [...value.candidates, { kind: "fact", claim: "Uncited", evidenceSequences: [999] }] } : value;
+      } };
+    const pipeline = createPipeline(fixture, extractor);
+    pipeline.scheduleSettledRun(run.terminal);
+    await waitForJob(fixture.root, run.runId, (job) => job.status === "retry");
+    await pipeline.shutdown();
+    // Restart with no available adapter and explicitly schedule the durable Run,
+    // avoiding a wall-clock backoff dependency while checking preserved results.
+    const restarted = createPipeline(fixture, extractor);
+    restarted.scheduleSettledRun(run.terminal);
+    await waitForIndexedJob(restarted, run.runId, "waiting");
+    expect((await restarted.listJobs(SCOPE))[0]?.consolidationResults).toMatchObject([{ action: "unchanged", memoryId: original.record.memoryId }]);
+    enabled = true;
+    await restarted.resumeWaiting();
+    const job = await waitForIndexedJob(restarted, run.runId, "retry", 2);
+    expect(job).toMatchObject({ status: "retry", attempts: 2, candidateCount: 0,
+      lastErrorCode: "memory_background_result_changed", consolidationResults: [{ action: "unchanged", memoryId: original.record.memoryId }] });
+    expect((await fixture.control.list(SCOPE)).items).toHaveLength(1);
+  });
+
+  it("exposes waiting and legacy retry/exhausted jobs while sanitizing adapter error codes", async () => {
+    const fixture = await createFixture();
+    const run = await appendSettledRun(fixture.ledger, "run-job-state", "Do not store extracted text in job metadata.");
+    const pipeline = createPipeline(fixture, { id: "extractor:waiting", canExtract: () => false, async extract() { throw new Error("disabled"); } });
+    pipeline.scheduleSettledRun(run.terminal);
+    await waitForIndexedJob(pipeline, run.runId, "waiting");
+    expect((await pipeline.listJobs(SCOPE))[0]).toMatchObject({ status: "waiting", attempts: 0, consolidationResults: [] });
+    await pipeline.shutdown();
+    const statePath = memoryJobStatePath(fixture.root, run.runId);
+    await writeFile(statePath, JSON.stringify({ schemaVersion: "tracegraph.memory-background-job.v1", runId: run.runId,
+      status: "retry", attempts: 4, candidateCount: 4, nextAttemptAt: "2099-09-30T00:00:00.000Z", updatedAt: "2026-09-30T00:00:00.000Z" }));
+    const restarted = createPipeline(fixture, { id: "extractor:failure", canExtract: () => true,
+      async extract() { throw Object.assign(new Error("private error text"), { code: "private_token_contents" }); } });
+    expect(restarted.historyLoaded).toBe(false);
+    expect(await restarted.listJobs(SCOPE)).toEqual([]);
+    await restarted.recoverSettledRuns();
+    expect((await restarted.listJobs(SCOPE))[0]).toMatchObject({ status: "retry", nextAttemptAt: "2099-09-30T00:00:00.000Z", candidateCount: 4, resultDetailsAvailable: false, consolidationResults: [] });
+    restarted.scheduleSettledRun(run.terminal);
+    await waitForIndexedJob(restarted, run.runId, "exhausted");
+    const jobs = await restarted.listJobs(SCOPE);
+    expect(jobs[0]).toMatchObject({ status: "exhausted", attempts: 5, candidateCount: 0, resultDetailsAvailable: true, lastErrorCode: "memory_background_extraction_failed" });
+    expect(jobs[0]?.nextAttemptAt).toBeUndefined();
+    expect(JSON.stringify(jobs)).not.toContain("private");
+  });
+
   it("recovers settled Runs, creates review-gated candidates with exact lineage, and replays without duplication", async () => {
     const fixture = await createFixture();
     const existing = await fixture.control.createCandidate({
@@ -111,8 +357,9 @@ describe("Memory background Episode pipeline", () => {
     const pipeline = createPipeline(fixture, extractor);
     pipeline.scheduleSettledRun(run.terminal);
 
-    const retry = await waitForJob(fixture.root, run.runId, (job) => job.status === "retry" && (job.attempts ?? 0) > 0);
-    expect(retry).toMatchObject({ attempts: 1, candidateCount: 0 });
+    const retry = await waitForIndexedJob(pipeline, run.runId, "retry", 1);
+    expect(retry).toMatchObject({ attempts: 1, candidateCount: 1 });
+    expect((await pipeline.listJobs(SCOPE))[0]?.consolidationResults).toHaveLength(1);
     expect((await fixture.control.list(SCOPE)).items).toHaveLength(1);
 
     const complete = await waitForJob(fixture.root, run.runId, (job) => job.status === "complete");
@@ -123,6 +370,32 @@ describe("Memory background Episode pipeline", () => {
     expect((await fixture.ledger.listMemoryControl(OWNER_ID, candidates[0]!.record.memoryId))
       .filter(({ action }) => action === "derived_candidate_created")).toHaveLength(1);
     await pipeline.shutdown();
+  });
+
+  it("refreshes a competing worker's indexed running state after the same Run completes", async () => {
+    const fixture = await createFixture();
+    const run = await appendSettledRun(fixture.ledger, "run-mem043-shared-job", "Shared worker recovery fact.");
+    let entered!: () => void;
+    const extractionEntered = new Promise<void>((resolve) => { entered = resolve; });
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => { release = resolve; });
+    let calls = 0;
+    const extractor: MemoryEpisodeExtractor = { id: "extractor:shared-job", canExtract: () => true,
+      async extract(input) { calls += 1; entered(); await gate; return extractionResult(input, "Shared worker recovery fact."); } };
+    const first = createPipeline(fixture, extractor);
+    const second = createPipeline(fixture, extractor);
+    first.scheduleSettledRun(run.terminal);
+    await extractionEntered;
+    try {
+      await second.recoverSettledRuns();
+      expect(second.historyLoaded).toBe(true);
+      expect((await second.listJobs(SCOPE))[0]).toMatchObject({ status: "running" });
+    } finally { release(); }
+    await waitForIndexedJob(first, run.runId, "complete");
+    const completed = await waitForIndexedJob(second, run.runId, "complete");
+    expect(completed.candidateCount).toBe(1);
+    expect(calls).toBe(1);
+    expect((await fixture.control.list(SCOPE)).items).toHaveLength(1);
   });
 
   it("serializes separate pipeline instances with one owner lease", async () => {
@@ -244,11 +517,81 @@ describe("Memory background Episode pipeline", () => {
     const pipeline = createPipeline(fixture, extractor);
     pipeline.scheduleSettledRun(run.terminal);
     await extractionEntered;
+    expect(await waitForJob(fixture.root, run.runId, (job) => job.status === "running"))
+      .toMatchObject({ status: "running", attempts: 0 });
     await pipeline.shutdown();
 
     const state = await waitForJob(fixture.root, run.runId, (job) => job.status === "retry");
     expect(state).toMatchObject({ status: "retry", attempts: 0, candidateCount: 0 });
     expect((await fixture.control.list(SCOPE)).items).toEqual([]);
+  });
+
+  it("recovers an interrupted background job after restart and completes only after candidate persistence", async () => {
+    const fixture = await createFixture();
+    const run = await appendSettledRun(
+      fixture.ledger,
+      "run-mem043-restart-in-flight",
+      "Recover the extraction without duplicating its candidate.",
+    );
+    let firstExtractionEntered!: () => void;
+    const firstEntered = new Promise<void>((resolve) => { firstExtractionEntered = resolve; });
+    let firstCalls = 0;
+    const interruptedExtractor: MemoryEpisodeExtractor = {
+      id: "extractor:mem043-interrupted-v1",
+      canExtract: () => true,
+      async extract(_input, { signal }) {
+        firstCalls += 1;
+        firstExtractionEntered();
+        return await new Promise<never>((_resolve, reject) => {
+          const abort = () => reject(signal.reason ?? new Error("extraction interrupted"));
+          if (signal.aborted) abort();
+          else signal.addEventListener("abort", abort, { once: true });
+        });
+      },
+    };
+    const first = createPipeline(fixture, interruptedExtractor);
+    first.scheduleSettledRun(run.terminal);
+    await firstEntered;
+    expect(await waitForJob(fixture.root, run.runId, (job) => job.status === "running"))
+      .toMatchObject({ status: "running", attempts: 0 });
+    expect((await fixture.control.list(SCOPE)).items).toEqual([]);
+    await first.shutdown();
+
+    // Simulate process death after the durable in-flight marker but before a
+    // candidate commit. Recovery must enqueue this state, never skip it as
+    // completed.
+    const jobPath = memoryJobStatePath(fixture.root, run.runId);
+    const shutdownState = JSON.parse(await readFile(jobPath, "utf8")) as Record<string, unknown>;
+    await writeFile(jobPath, JSON.stringify({
+      ...shutdownState,
+      status: "running",
+      updatedAt: new Date().toISOString(),
+    }), "utf8");
+
+    let resumedCalls = 0;
+    const resumedExtractor: MemoryEpisodeExtractor = {
+      id: "extractor:mem043-restart-v1",
+      canExtract: () => true,
+      async extract(input) {
+        resumedCalls += 1;
+        return extractionResult(input, "Recovered candidate after restart.");
+      },
+    };
+    const restarted = createPipeline(fixture, resumedExtractor);
+    await restarted.recoverSettledRuns();
+
+    const state = await waitForJob(fixture.root, run.runId, (job) => job.status === "complete");
+    const listed = await fixture.control.list(SCOPE);
+    expect(state).toMatchObject({ status: "complete", attempts: 1, candidateCount: 1 });
+    expect(firstCalls).toBe(1);
+    expect(resumedCalls).toBe(1);
+    expect(listed.items).toHaveLength(1);
+    expect(listed.items[0]?.record).toMatchObject({
+      status: "candidate",
+      claim: "Recovered candidate after restart.",
+      provenance: { origin: "model_inference", evidenceRefs: [{ runId: run.runId }] },
+    });
+    await restarted.shutdown();
   });
 });
 
@@ -293,6 +636,7 @@ async function appendSettledRun(
   ledger: JsonlEventLedger,
   runId: string,
   evidenceSummary: string,
+  creationData:Record<string,unknown> = {},
 ): Promise<{ runId: string; terminal: SessionEvent }> {
   await ledger.append({
     type: "run.created",
@@ -301,7 +645,7 @@ async function appendSettledRun(
     attempt: 0,
     artifact_refs: [],
     summary: "A settled Memory extraction fixture Run.",
-    data: {},
+    data: creationData,
   });
   await ledger.append({
     type: "tool.completed",
@@ -357,8 +701,7 @@ async function waitForJob(
   runId: string,
   predicate: (state: { status: string; attempts?: number; candidateCount?: number; lastErrorCode?: string }) => boolean,
 ): Promise<{ status: string; attempts?: number; candidateCount?: number; lastErrorCode?: string }> {
-  const ownerRoot = join(root, "memory-v2", "background", sha256(OWNER_ID).slice("sha256:".length));
-  const statePath = join(ownerRoot, sha256(runId).slice("sha256:".length) + ".job.json");
+  const statePath = memoryJobStatePath(root, runId);
   const deadline = Date.now() + 6_000;
   while (Date.now() < deadline) {
     try {
@@ -375,4 +718,19 @@ async function waitForJob(
     await new Promise((resolve) => setTimeout(resolve, 10));
   }
   throw new Error("Timed out waiting for Memory job state for " + runId);
+}
+
+function memoryJobStatePath(root: string, runId: string): string {
+  const ownerRoot = join(root, "memory-v2", "background", sha256(OWNER_ID).slice("sha256:".length));
+  return join(ownerRoot, sha256(runId).slice("sha256:".length) + ".job.json");
+}
+
+async function waitForIndexedJob(pipeline: MemoryBackgroundPipeline, runId: string, status: string, attempts?: number) {
+  const deadline = Date.now() + 6_000;
+  while (Date.now() < deadline) {
+    const job = (await pipeline.listJobs(SCOPE)).find((item) => item.runId === runId && item.status === status && (attempts === undefined || item.attempts === attempts));
+    if (job !== undefined) return job;
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+  throw new Error(`Indexed Memory job ${runId} did not reach ${status}`);
 }

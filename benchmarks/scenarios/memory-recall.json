@@ -1,0 +1,13 @@
+{
+  "schema_version": "tracegraph.benchmark-scenario.v1",
+  "id": "memory-recall",
+  "version": "1.0.0",
+  "description": "Govern 128 fixed Memory records, rank only eligible records, and assert the relevant hit",
+  "working_directory": ".",
+  "correctness_command": { "args": ["benchmarks/paths/scenario.mjs", "correctness", "memory-recall"] },
+  "command": { "args": ["benchmarks/paths/scenario.mjs", "measure", "memory-recall"] },
+  "warmup_iterations": 1,
+  "sample_iterations": 5,
+  "timeout_ms": 30000,
+  "budget": { "wall_time_ms_p95_max": 1000 }
+}

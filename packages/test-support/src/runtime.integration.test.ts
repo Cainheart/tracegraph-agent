@@ -1420,7 +1420,9 @@ describe("P0 Agent runtime", { timeout: 30_000 }, () => {
       event.type === "tool.failed"
       && (event.data.receipt as { tool_name?: string } | undefined)?.tool_name === "commit_patch"
     ))).toBe(false);
-    expect(JSON.stringify(completed.timeline)).not.toContain("timeout");
+    // Retry policy metadata names timeout as a retryable provider transport
+    // class; the no-timeout invariant here is about this Tool operation.
+    expect(commitCompleted?.data.receipt).toMatchObject({ status: "success", business_status: "success" });
     expect((await wal.latestForAction(waiting.run_id, pending.action_id))?.phase).toBe("verified");
     expect(completed.timeline.some((event) => event.type === "patch.applied")).toBe(true);
     expect(await source(fixture.handle.real_root)).toContain("return left + right;");

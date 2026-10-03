@@ -1,16 +1,16 @@
 # 模块 09：Host 与 SDK 接口层
 
-> 定位：把 Runtime 暴露成本地 HTTP + SSE 服务，并给 Web/CLI 一个类型安全的客户端。
-> 代码：`packages/host/src/index.ts`、`packages/host/src/dev.ts`、`packages/sdk/src/index.ts`、对应测试
+> 定位：单一本机 Host 拥有 Runtime/profile；Web 经 loopback HTTP/SSE，Desktop Main 与 CLI 经私有 UDS/Windows pipe HTTP adapter 使用同一组类型安全路由。
+> 代码：`packages/api/src/run-session-controller.ts`、`packages/host/src/webserver/index.ts`、`packages/host/src/index.ts`（兼容导出）、`apps/desktop-host/src/`、`apps/desktop/src/`、`packages/workbench/src/`、`packages/sdk/src/index.ts`、`packages/sdk/src/protocol/`、`packages/sdk/src/client/`、`packages/sdk/src/server/`、对应测试
 > 技术栈：Fastify 5 + `@fastify/cors` + Zod
-> 最后核对：2026-09-19
-> 实现状态：**已验证**（`packages/host/src/index.test.ts`、`packages/sdk/src/index.test.ts`）
+> 最后核对：2026-10-03
+> 实现状态：HOST-087/PAR-088/CLI-089/SET-090 的共享 owner/profile、私有连接、完整客户端路由与配置已有源码及窄验收；DESK-064 的 child/framed RPC 保留兼容，当前 Desktop 正式入口使用共享 Host。真实平台边界见第 11.12 节。
 
 ---
 
 ## 1. 进程模型
 
-```75:83:packages/host/src/index.ts
+```75:83:packages/host/src/webserver/index.ts
 export async function createTraceGraphHost(
   options: TraceGraphHostOptions,
 ): Promise<TraceGraphHost> {
@@ -21,18 +21,24 @@ export async function createTraceGraphHost(
 
 | 项 | 默认 |
 |---|---|
-| 监听地址 | `127.0.0.1:4311`（host 类型只允许 `127.0.0.1` \| `::1`） |
+| 监听地址 | 嵌入式 Host 默认 `127.0.0.1:4311`；共享产品 owner 未指定端口时用 `127.0.0.1:0`，实际地址来自私有 discovery（host 类型只允许 `127.0.0.1` \| `::1`） |
 | Web 端 origin | `http://127.0.0.1:4310`、`http://localhost:4310` |
 | 能力令牌 | 32 字节 base64url 随机 |
 | 令牌 TTL | 8 小时 |
 | 全局 `bodyLimit` | 256 KiB；`POST /api/runs` 与 `POST /api/chat/runs` 单独放宽到 8 MiB；G-18 raw upload route 为 6 MiB transport hard cap |
 | `requestTimeout` | 30 s（只限制接收完整请求，不是 handler 执行 deadline） |
 
-`listen()` 的 host 参数被**类型**限制为回环地址——想监听 `0.0.0.0` 必须改代码，不是改配置。Host 是**单进程、单用户、纯本地**的服务。
+`listen()` 的 host 参数被**类型**限制为回环地址——想监听 `0.0.0.0` 必须改代码，不是改配置。Host 是**单进程、单用户、纯本地**的服务。当前正式装配是 [`startLocalHost()`](../../packages/host/src/local-host.ts)：先取得 profile、canonical data root 和 Session root 写入租约，再创建一份 Runtime；同一 Fastify app 同时服务私有 UDS/Windows pipe 和 loopback Web gateway。Desktop/CLI 的 [`ensureLocalHost()`](../../packages/host/src/local-host.ts) 发现已有 owner，缺失时用受支持的独立 Node 启动 detached worker，不随窗口或 CLI 退出而停止。
+
+默认 profile 为 `~/.outlive/profiles/default`，显式 `profileRoot`/`--profile-root` 优先于 `OUTLIVE_PROFILE_ROOT`。旧 `~/.tracegraph` 数据不会被静默合并，需走显式迁移。[`local-profile.ts`](../../packages/host/src/local-profile.ts) 保存稳定 profile ID、data/session 根与版本；[`owner-lease.ts`](../../packages/host/src/owner-lease.ts) 对规范根建立跨 profile 写入所有者限制，拒绝两个 Runtime 共写。`close()` 仅断开客户端；显式 `stop()` / `host.stop` 才停止 owner、Run 和资源，关闭 SSE/模型请求后释放写入租约。不默认安装开机启动。
+
+Desktop Main 与 CLI 使用 [`LocalHostConnectionSupervisor`](../../packages/host/src/local-connection-supervisor.ts) 管理连接。外部 CLI 重启、worker 崩溃或应用再次激活时，监控会验证当前 profile/build/owner nonce，并重新绑定私有连接；旧 generation 的延迟读取失效，三条流重新订阅。恢复只建立 owner，不自动 resume Run。握手和健康检查有独立短超时，恢复采用有界次数与退避，不能把无限启动循环当作修复。
+
+显式停止会先持久化 [`owner-stop.json`](../../packages/host/src/local-owner-intent.ts)；普通启动/重连和新客户端均尊重该停止意图。用户显式 Start/Repair 才等待旧 owner 退出并清除停止标记。OS 终止不写这个标记，因而仍可安全恢复。`host.restart` 只在空闲时请求替换 owner，返回 `restart_requested` 只是请求回执，成功须再观察新 nonce 和配置生效；不会为了重启而自动取消活跃任务。
 
 启用 logger 时还有一条 G-19 最终边界：Pino 每条 JSON line 在写 stream 前先解析成结构，再对动态 key/value 运行统一脱敏，最后重新序列化；解析不了的自定义行退回纯文本 `redactSecrets()`。因此已登记 opaque Key 即使含引号或反斜杠，也不会因 JSON escaping 绕过精确匹配。`authorization`、cookie 与 `api_key` 路径另有 Pino redact 配置。
 
-`dev.ts` 是一个小型开发装配：只读句柄指向 `process.cwd()`，数据目录 `.tracegraph`，默认模型（`DeterministicFakeModel`），开启了 logger。
+`packages/host/src/dev.ts` 仍是小型嵌入式开发装配，不是三端共享产品入口。默认 `tracegraph serve` 使用共享 Host；显式旧 `--data-dir/--session-dir/...` serve 保留独立兼容装配并同样取得根写入租约，不能与共享 owner 争用数据。
 
 若 composition 注入 `HostSessionController`，`createTraceGraphHost()` 会在注册路由/开始监听前先 `await sessions.recover()`。恢复先处理 Session tail，再对 composition 能从当前注册表解析出的 workspace 执行 G-04 Action 对账，最后标记其它无终态 Run；失败直接拒绝创建 Host。成功报告（含 reconciled/aborted/diverged action id）作为安全、结构化数据进入启动日志与 `/api/bootstrap.recovery`。
 
@@ -49,7 +55,9 @@ export async function createTraceGraphHost(
 | 3 | Bearer 令牌：TTL 检查 + `Bearer ` 前缀 + `timingSafeEqual` 常量时间比较 | 全局 preHandler |
 | 4 | CORS：`credentials: false`，仅 `GET/POST/PATCH/DELETE/OPTIONS`，仅 3 个自定义头 | `app.register(cors)` |
 
-```176:185:packages/host/src/index.ts
+私有连接先验证 discovery 文件的私有权限、profile ID/根、socket 路径和 boot nonce；UDS server 每个请求检查随机 `x-outlive-local-token`，成功后才进入同一 Fastify route/auth hooks。`isPrivateLocalRequest` 只绕过不适用于 UDS 的 loopback 地址检查，仍保留 bearer、Origin、command ID 与 replay 限制。原生项目路径、根解析、迁移和 stop 路由只允许已认证私有 socket，TCP 客户端即使持有 live bearer 也不能调用它们。Renderer 不获得两种真实令牌。[私有 fetch](../../packages/host/src/local-fetch.ts)、[鉴权与双端口测试](../../packages/host/src/local-host.test.ts)是当前依据。
+
+```176:185:packages/host/src/webserver/index.ts
   app.addHook("preHandler", async (request) => {
     if (!request.url.startsWith("/api/") || request.url.startsWith("/api/bootstrap")) {
       return;
@@ -115,6 +123,18 @@ export async function createTraceGraphHost(
 | GET | `/api/runs/:runId/events/stream` | canonical 事件流（持久） |
 | GET | `/api/runs/:runId/live/stream` | 展示活动流（瞬时） |
 | GET | `/api/runs/:runId/model-surface/stream` | 模型公开画面（瞬时，独立游标） |
+| GET / POST | `/api/workbench/settings` | strict version/revision、分组 patch、字段来源/范围/生效时机与 pending restart；command ID 幂等 |
+| GET | `/api/workbench/capabilities`、`/api/workbench/resources` | 可用性/缺配置/只读/策略拒绝；后台 Run、终端、预览、定时任务 |
+| POST | `/api/workbench/model-test`、`/api/workbench/commands` | 有界模型连接测试和闭合命令 union；Git/worktree、PTY、预览、schedule、archive、诊断、清除 Key、取消 queued task、stop |
+| GET / POST | `/api/workbench/models` | 已保存连接安全快照 / command ID 与 revision 保护的保存；不返回原始 Key |
+| POST | `/api/workbench/models/:id/remove`、`/test` | CAS 移除 / 显式有界连接测试；测试结果不代表实际任务完成 |
+| GET / POST | `/api/workbench/sessions/:id/options` | Session 的下一 Run 选项 / revision/CAS 更新；Host 验证模型与权限上限 |
+| GET / POST | `/api/workbench/permission-grant` | 当前本地 Full 授权资格 / `confirmed:true` 的显式更改；管理员 ceiling 不可提升 |
+| POST | `/api/workbench/projects/:projectId/files/list`、`/read` | bounded 相对路径目录/文本读取；路径在 strict body，仍受统一 auth/replay 限制 |
+| POST | `/api/workbench/projects/:projectId/files/save`、`/reconcile` | policy/工作区协调/CAS 保存及原 command ID 对账；审批与 unknown 均不是保存成功 |
+| GET / POST | `/api/workbench/runs/:runId/feedback` | 对当前 Run 的实际回答 Event 读取/写入本地点赞反馈；command ID 与 canonical 关系校验 |
+| GET / POST | `/api/local/status`、`/api/local/projects/register`、`/api/local/projects/:projectId/root`、`/api/local/stop` | 仅私有已认证 socket；原生调用方显式授权路径，Renderer 仅持有项目 ID |
+| POST / GET | `/api/local/migration/preview`、`/commit`、`/results/:operationId` | 仅私有已认证 socket；扫描、source 选择、busy 拒绝、备份/提交/重启与持久 receipt |
 
 **501 是一个明确的契约**：相关 seam 未注入时，项目创建/选择/揭示/移除、模型/权限配置、扩展管理或 Session 控制返回 501，而不是静默失败。Telemetry status 不另设 Host seam：Host 直接读取 Runtime 拥有的 process-local 状态；Runtime 默认 Noop sink，因此未显式配置时自然返回 `noop / disabled / error_count:0`。
 
@@ -124,7 +144,7 @@ G-07 child 读取不接受客户端直接提交 child Run/Session/project scope�
 
 G-08 Team 路由同样不信任 path 中的 Run 就是 coordinator/member authority。Host 先读取 canonical Projection 与 G-07 parent-child link，把 actor Run 映射到 root Team 和固定 `user|member` 身份，再调用 Runtime；request body 只保留 command id 与最小业务 input，没有 project/session/team/actor/from/owner/server time。所有 Team 写在 Replay capability 下统一 403。Heartbeat 与 sweep 都是显式请求；sweep 只使用 `team.created` 冻结的 timeout，`team.member_lost` 同一 Event 携带 `reopened_task_ids`，Host 不自动选新 owner。
 
-G-18 上传端点 `POST /api/attachments` 不接受 JSON/base64 body：SDK 把 bytes 作为 `application/octet-stream` 发送，metadata 放在 strict query，并复用同一个 command id 做 401 refresh 后的原 body 重放。Host 从自身的项目注册表或隐藏 chat workspace 绑定 scope；若请求带 Session id，还要确认 Session 与目标 project 一致。公开 staging receipt 不含 project/session id。内容读取端点 `GET /api/runs/:runId/attachments/:attachmentId/content` 只允许当前 live bearer，并先从 `RunProjection.attachments` 证明该 attachment 与 Run 相关，再让 Runtime/Artifact Store 复核 project/run/MIME/bytes/hash；响应使用 `private, no-store`、`nosniff`、same-origin、sandbox CSP 与固定安全文件名。PDF 由 Web 下载，不嵌进 iframe。
+G-18 上传端点 `POST /api/attachments` 不接受 JSON/base64 body：SDK 把 bytes 作为 `application/octet-stream` 发送，metadata 放在 strict query，写请求遇到 401 时直接失败，不自动 refresh 后重放；调用方须先恢复读取/核对回执，再由显式操作使用原 command id 和相同 bytes 重试。Host 从自身的项目注册表或隐藏 chat workspace 绑定 scope；若请求带 Session id，还要确认 Session 与目标 project 一致。公开 staging receipt 不含 project/session id。内容读取端点 `GET /api/runs/:runId/attachments/:attachmentId/content` 只允许当前 live bearer，并先从 `RunProjection.attachments` 证明该 attachment 与 Run 相关，再让 Runtime/Artifact Store 复核 project/run/MIME/bytes/hash；响应使用 `private, no-store`、`nosniff`、same-origin、sandbox CSP 与固定安全文件名。PDF 由 Web 下载，不嵌进 iframe。
 
 Rollback 路由不接受 project id、workspace id 或 filesystem path。Host 先从 canonical Run projection 解析 project，再要求它仍在注册表，最后注入对应的 Host-owned `WorkspaceHandle`；Runtime 才执行默认关闭的 policy、WAL/binding/hash 检查。客户端的 `force:true` 因此既不能选择别的工作区，也不能绕过 after-hash。
 
@@ -134,7 +154,7 @@ G-23 replay bearer 不是客户端自报的 `replayMode`：Host 只保存随机 
 
 ## 4. 命令一致性：两道交叉校验
 
-```722:737:packages/host/src/index.ts
+```722:737:packages/host/src/webserver/index.ts
 function assertCommandId(request: FastifyRequest, commandId: string): void {
   const header = request.headers["x-tracegraph-command-id"];
   if (typeof header !== "string" || header !== commandId) {
@@ -155,7 +175,7 @@ function assertRunId(pathRunId: string, commandRunId: string): void {
 
 ### 4.1 G-06 preset 是有界 wire 选择，sandbox/rules 仍是 Host 权限
 
-`StartRunRequestSchema`、`StartChatRequestSchema` 与 SDK 的 start payload 都没有 permission preset、`sandboxMode`、approval policy、rule、path scope 或 token 字段。CLI flag/environment 在 Host 启动时建立不可热提升的 ceiling；`POST /api/permission-config` 只是让用户从 Host 返回的 `available_presets` 中选一个 key，并由 composition 持久化。选择只影响之后创建的 Run；活动 Run 与恢复 Run 使用已冻结的 `EffectivePermissionPolicy`。由于 schema strict，浏览器不能靠额外字段拆开 preset、提交 custom policy 或把 ceiling 提高到 `full-write`。
+当前 start payload 可带 strict `run_options`，或使用 Session 已保存选项，其中 `permission_preset` 只能选择 Host 当前 ceiling 内的内置预设；客户端仍不能提交 `sandboxMode`、approval policy、rules、path scope 或 token。CLI flag/environment 建立受管理的 ceiling；仅当本机默认/用户授权来源允许时，独立的显式 Full grant 才能请求新 owner 应用更高上限，管理员配置保持只读。选项冻结于 Run admission，活动 Run 不热切换；共享恢复重新校验当前 ceiling/项目规则，不能借旧审批扩大授权。
 
 Run Projection 与 canonical SSE 会带 durable `permission` snapshot、`permission.configured` / `policy.evaluated` / `policy.denied`，以及 `sandbox_report` / `sandbox.*` lifecycle Event，供客户端观察“哪份策略作了什么决定、实际 enforcement 是什么”；这是证据面，不是规则编辑器。模型 provider `fetch` 也在 Host 进程内完成，当前不经过 child SandboxRunner 或网络代理。
 
@@ -173,47 +193,15 @@ Runtime 的 command idempotency key 使用 hash namespace，原始 command/input
 
 ---
 
-## 5. 单活动 Run 闸门
+## 5. Session 串行与 canonical Workspace 排队
 
-```321:329:packages/host/src/index.ts
-    if (activeRunId !== undefined) {
-      const active = await options.runtime.getProjection(activeRunId);
-      if (!isTerminalStatus(active.status)) {
-        throw Object.assign(new Error("P0 allows only one active run"), {
-          statusCode: 409,
-        });
-      }
-      activeRunId = undefined;
-    }
-```
+[`RunSessionController`](../../packages/api/src/run-session-controller.ts) 绑定 Host-owned Workspace、Session scope 与 command fingerprint。当前共享 composition 选择 `admission:"workspace"`：同 Session 串行、同 canonical workspace 写任务排队、独立 workspace 在有界并发额度内执行。排队不取消活动 Run，切换或新建会话也不取消后台工作。默认未注入新 admission 的嵌入/旧兼容 Host 仍保留 API-061 的 `single` 行为。
 
-`activeRunId` 是**进程内单变量**，所有启动路由都经过 `serializeStart` 串行化，避免并发启动竞态。
-
-- 已有一个非终态 Run → 409 `P0 allows only one active run`。
-- Run 转为终态后（approve/reject/stop 返回终态投影时）自动清空，允许下一个 Run。
+- [`WorkspaceCoordinator`](../../packages/host/src/workspace-coordinator.ts) 通过 realpath 合并根目录别名；Run、Git mutation、长期 PTY 和 owned preview 共用写租约。显式只读操作可并行，同 Session 仍串行。
+- 排队状态可通过 Host 资源/诊断面观察；`queue.cancel` 只取消尚未开始的 holder，不撤销 active writer。Run 到终态后释放租约，下一项才开始。
 - `startCommands` 提供真正的启动幂等：
 
-```760:774:packages/host/src/index.ts
-function startRequestFingerprint(input: {
-  session_id?: string | undefined;
-  project_id: string;
-  task: string;
-  mode: string;
-  reasoning_effort?: string | undefined;
-  conversation_history?: readonly unknown[] | undefined;
-}): string {
-  return JSON.stringify([
-    input.session_id ?? "new-session",
-    input.project_id,
-    input.task,
-    input.mode,
-    input.reasoning_effort ?? "default",
-    input.conversation_history ?? [],
-  ]);
-}
-```
-
-同 `command_id` + 同指纹 → 直接返回既有投影（**网络重试不会产生第二个 Run**）；同 `command_id` + 异指纹 → 409。把 `session_id` 纳入指纹可防止相同命令 id 被重放到另一会话。
+  同 `command_id` + 同 request fingerprint → 返回已有 canonical Projection；同 id 不同输入 → 409。指纹包含项目、Session、任务、模式、reasoning effort、conversation history 和已暂存 attachment ids。
 
 ---
 
@@ -228,7 +216,7 @@ Host 维护**两个 Map**：
 
 每个读 Run / 工件 / 建流的路由都会做：
 
-```786:795:packages/host/src/index.ts
+```786:795:packages/host/src/webserver/index.ts
 function assertRegisteredProject(
   projectId: string,
   projects: ReadonlyMap<string, unknown>,
@@ -245,7 +233,7 @@ function assertRegisteredProject(
 
 `/api/artifacts/:artifactId` 不信任客户端给的归属，而是**先从 `run_id` 反推 project**：
 
-```436:443:packages/host/src/index.ts
+```436:443:packages/host/src/webserver/index.ts
     const projection = await options.runtime.getProjection(runId);
     assertRegisteredProject(projection.project_id, projects);
     const projectId = projection.project_id;
@@ -264,7 +252,7 @@ Host 不会仅因项目是只读句柄就拒绝 execute Run 启动。`startRegis
 
 ## 7. 聊天隔离由服务端强制
 
-```369:374:packages/host/src/index.ts
+```369:374:packages/host/src/webserver/index.ts
     const wireInput = StartRunRequestSchema.parse({
       ...chatInput,
       project_id: options.chatProject.workspace.project_id,
@@ -272,11 +260,11 @@ Host 不会仅因项目是只读句柄就拒绝 execute Run 启动。`startRegis
     });
 ```
 
-`/api/chat/runs` **覆写** `project_id` 与 `mode`：客户端无法指定项目，也无法选择 plan。聊天永远落在专用隔离工作区，并以 `execute` 运行；它的只读性来自 Host-owned chat Workspace capability，而不是借用 Plan Mode。这样普通对话可以正常回答并终态，又不能触碰用户代码——**不做客户端校验，直接改写**。
+`/api/chat/runs` 把 strict `StartChatRequest` 交给 API Controller；Controller 从 Host 注入的隐藏 chat Workspace **覆写** `project_id`，并固定 `mode: "execute"`，客户端无法指定项目或选择 plan。聊天永远落在专用隔离工作区；它的只读性来自 Host-owned chat Workspace capability，而不是借用 Plan Mode。这样普通对话可以正常回答并终态，又不能触碰用户代码——**不做客户端校验，直接改写**。
 
 `chatProject` 的 id 与已注册项目冲突时 Host 启动就失败：
 
-```91:96:packages/host/src/index.ts
+```91:96:packages/host/src/webserver/index.ts
   if (options.chatProject) {
     if (projects.has(options.chatProject.workspace.project_id)) {
       throw new Error("Chat workspace project id must be unique");
@@ -298,7 +286,7 @@ POST 的字段约束：`provider` 枚举 7 项、`protocol` 枚举 2 项、`base
 
 响应由 `.strict()` 的 `PublicModelConfigResponseSchema` 再校验，字段只有 `provider/protocol/configured/base_url/model/has_key/credential?`。其中 `credential` 只能包含 `name/backend/writable/last_updated_at?`，且 `has_key` 必须与其是否存在一致。任何意外的 `api_key` 或 secret value 字段都会使 Host 返回前校验失败；SDK 在 GET/POST 两条路径上还会用同一 schema 复验。
 
-因此**响应里永远不含 `api_key`**：密钥只从 POST 进入本机 loopback Host，不会经 HTTP 回流到前端。backend 的实际选择、环境来源的只读 `409` 和旧配置迁移属于 CLI composition 责任，Host 路由只消费 `modelSettings` seam。
+因此**响应里永远不含 `api_key`**：密钥从 write-only POST/固定 IPC 进入 Host，不回流到前端。当前 backend/configure/clear/轮换 owner 位于 [`host-composition.ts`](../../packages/host/src/composition/host-composition.ts)，三端共享同一状态。共享 Host 不把进程环境模型配置当作另一个来源；旧显式 serve 的环境只读优先级仍保留。清除 Key 保留 provider/protocol/base_url/model draft，恢复 Key 不需要重新填写地址；模型配置与 credential reference 按 Run 绑定，轮换不热改进行中的后续轮次。
 
 ### 8.1 权限配置
 
@@ -306,7 +294,7 @@ Host 的 `permissionSettings` seam 只有 `get()` 与 `configure({command_id,pre
 
 POST 与其它 command 一样要求 Bearer、allowed Origin、`x-tracegraph-command-id === body.command_id`。同一 command id + 同一 preset 幂等；同 id 换 preset 返回 409。该绑定表只在当前 Host 进程内，durable 用户选择由 CLI composition 的私有原子配置负责。Host seam 返回不符合 strict schema、泄漏 rule/path 等字段时，路由在出站前 fail-closed。
 
-### 8.2 G-15 Telemetry 状态：只有 GET，没有浏览器配置面
+### 8.2 G-15 Telemetry 状态与共享设置
 
 `GET /api/telemetry-status` 直接调用 `options.runtime.getTelemetryStatus()`，避免 Host composition 维护第二份会漂移的状态。它受与其它 `/api/*` 相同的 loopback + Bearer 防护并设置 `cache-control: no-store`；Runtime 默认 Noop sink 时返回：
 
@@ -321,7 +309,7 @@ POST 与其它 command 一样要求 Bearer、allowed Origin、`x-tracegraph-comm
 
 Runtime 返回值还必须通过 `.strict()` 的 `TelemetryStatusSchema`：sink 仅 `noop|memory|otlp_http|custom`，state 仅 `disabled|active|degraded`，错误计数非负，最后错误时间可选且必须是 ISO datetime。endpoint、header、credential/authorization、配置路径、pending payload 任一意外字段都会使路由 fail-closed；Host 没有 `/api/telemetry-config`，也没有该 status 路径的 POST/PUT。
 
-该响应只是当前进程健康快照：`error_count` 与 `last_error_at` 重启会重置，不进入 Session/Run Projection，不用于恢复。真正的 `<dataDir>/telemetry.json`、endpoint 环境变量和 G-19 authorization reference 由 CLI composition 持有，浏览器不可见。当前 SDK 若连到没有该路由的旧 Host，请求会显式失败；Web 不会把这种“未知/不支持”伪装成 Runtime 已证实的 `noop / disabled`。
+该响应只是当前进程健康快照：`error_count` 与 `last_error_at` 重启会重置，不进入 Session/Run Projection，不用于恢复。共享 `/api/workbench/settings` 的 telemetry group 另提供 enabled、endpoint 与 secret reference 配置，声明为 restart 生效；authorization 值和待发送 payload 仍不返回客户端，关闭 telemetry 时不解析缺失的 credential reference。旧显式 serve 保留 `<dataDir>/telemetry.json`/environment 配置；缺旧路由不会被客户端伪装成 noop 健康。
 
 ### 8.3 G-17 扩展控制面：Host 只接收名字，不接收代码
 
@@ -337,7 +325,7 @@ Runtime 返回值还必须通过 `.strict()` 的 `TelemetryStatusSchema`：sink 
 
 ### 9.1 canonical 事件流（`/events/stream`）
 
-```620:623:packages/host/src/index.ts
+```620:623:packages/host/src/webserver/index.ts
     const unsubscribe = options.runtime.subscribe(request.params.runId, (event) => {
       if (!live || write === undefined) buffered.push(event);
       else write(event);
@@ -350,7 +338,7 @@ Runtime 返回值还必须通过 `.strict()` 的 `TelemetryStatusSchema`：sink 
 
 ### 9.2 展示活动流（`/live/stream`）
 
-```456:462:packages/host/src/index.ts
+```456:462:packages/host/src/webserver/index.ts
     // Subscribe before the projection/access check. The small runtime buffer
     // below then closes the start-run -> attach-stream race without making a
     // second durable event ledger or replaying provider output.
@@ -362,7 +350,7 @@ Runtime 返回值还必须通过 `.strict()` 的 `TelemetryStatusSchema`：sink 
 
 与其他两条的关键差别：**终态活动或当前 `plan.ready` 边界过线后立即 `close()`**，避免浏览器/SDK 永远停在"运行中"等心跳。Plan 判断还会核对 activity 的 Event id 等于 Projection 当前 `pending_plan.plan_event_id`，历史 revision 不会错误关掉新连接：
 
-```500:504:packages/host/src/index.ts
+```500:504:packages/host/src/webserver/index.ts
       // A live feed belongs to one Run. Once its real terminal activity has
       // crossed the wire there will be no later activity for this stream, so
       // close it instead of leaving the browser/SDK in an apparent "running"
@@ -376,7 +364,7 @@ SDK 对终态活动可立即结束；对 `plan.ready` 则不会在 yield 时武�
 
 ### 9.3 模型公开画面（`/model-surface/stream`）
 
-```525:529:packages/host/src/index.ts
+```525:529:packages/host/src/webserver/index.ts
   /**
    * A separate, volatile model surface. It uses a cursor unrelated to the
    * JSONL ledger sequence so a high-frequency public text stream can neither
@@ -388,7 +376,7 @@ SDK 对终态活动可立即结束；对 `plan.ready` 则不会在 yield 时武�
 
 这条流同时订阅两个源：`subscribeModelSurface`（数据）与 `subscribe`（用于感知终态或 `plan.ready` 等待边界）：
 
-```547:552:packages/host/src/index.ts
+```547:552:packages/host/src/webserver/index.ts
     const unsubscribeRun = options.runtime.subscribe(request.params.runId, (event) => {
       if (event.type === "plan.ready" || event.type === "run.completed" || event.type === "run.failed" || event.type === "run.cancelled" || event.type === "run.interrupted" || event.type === "action.diverged") {
         terminalReached = true;
@@ -403,7 +391,7 @@ SDK 对终态活动可立即结束；对 `plan.ready` 则不会在 yield 时武�
 
 ## 10. 错误映射
 
-```132:165:packages/host/src/index.ts
+```132:165:packages/host/src/webserver/index.ts
   app.setErrorHandler((error, _request, reply) => {
     if (error instanceof ZodError) {
       void reply.status(400).send({
@@ -429,19 +417,19 @@ SDK 对终态活动可立即结束；对 `plan.ready` 则不会在 yield 时武�
 | 带 `statusCode` 的错误 | 原样 | 4xx 回消息，≥500 换成固定文案 |
 | 其他 | 500 | `internal_error` + 固定文案 |
 
-**5xx 一律不泄露内部消息**（"TraceGraph Host failed to process the request"）。SSE 中途出错用导出的 `sendSseError()` 发送 `event: error` 帧。
+未知 5xx 不泄露内部消息（固定 Host failure 文案）。受控 Workbench/模型/迁移错误保留稳定 code、status 与安全 message，例如 `credential_storage_failed`、`model_config_readonly`、`migration_busy`；不返回凭据或底层目录。SSE 中途出错用 `sendSseError()` 发送 `event: error` 帧。
 
 ---
 
 ## 11. SDK 客户端
 
-`packages/sdk/src/index.ts` 是唯一的官方客户端；网络层使用平台 `fetch`，响应通过 `@tracegraph/contracts` 的 Zod schema 校验。
+`packages/sdk/src/index.ts` 是本地 Host HTTP/SSE 客户端；网络层使用平台 `fetch`，响应通过 `@tracegraph/contracts` 的 Zod schema 校验。私有 `@tracegraph/sdk/protocol` 子路径提供 API-060 的 transport-neutral 消息契约，不代表对外发布独立 SDK。
 
 | 能力 | 实现 |
 |---|---|
 | 默认地址 | `http://127.0.0.1:4311` |
 | Node 侧 Origin | 默认注入 `origin: http://127.0.0.1:4310`；浏览器不注入（由浏览器自管）；`nodeOrigin: false` 关闭 |
-| 令牌刷新 | 401 → `#refreshCapabilityToken()` → 重试一次 |
+| 令牌刷新 | live GET/HEAD 的 401 →单飞 bootstrap→重试一次；写请求直接失败、不自动重发 |
 | 并发去重 | `#tokenRefresh` Promise 单飞，多个 401 只触发一次 bootstrap |
 | 命令 ID | `crypto.randomUUID()`，回退 `cmd_<ts>_<rand>`；同时写入 body 与 `x-tracegraph-command-id` |
 | 响应校验 | **全部**经 Zod parse（`RunProjectionSchema` 等） |
@@ -453,11 +441,16 @@ SDK 对终态活动可立即结束；对 `plan.ready` 则不会在 yield 时武�
 | G-14 steering | `submitUserInput(runId,{kind,body,input_id?,command_id?})` 自动生成两个 id，并用 `SubmitUserInputRequest/ResultSchema` 双向校验；不开放 project/actor/step |
 | Action rollback | `rollbackAction(runId, actionId, {command_id?, force?})` 调 canonical route；不暴露 project/workspace authority |
 | Permission | `getPermissionConfig()` / `configurePermissionPreset({preset_key,command_id?})` 使用 canonical bounded schema；没有设置 rule/path/sandbox/approval/token 的方法 |
-| Telemetry | `getTelemetryStatus()` 对 `GET /api/telemetry-status` 再做 `TelemetryStatusSchema` strict parse；没有配置/写入方法，不公开 endpoint/header/credential/path/payload；旧 Host 缺路由时保留显式 HTTP 失败，不合成 noop |
-| Extensions | `listExtensions()` / `reloadExtension()` / `runExtensionCommand()` 对 G-17 strict schema 双向校验；401 重放沿用相同 command id，客户端不能提交 module path |
+| Telemetry | `getTelemetryStatus()` strict 只读健康快照；共享配置经 `updateWorkbenchSettings()` 的 telemetry group，restart 生效；不回显授权值或 payload |
+| Extensions | `listExtensions()` / `reloadExtension()` / `runExtensionCommand()` 对 G-17 strict schema 双向校验；写入不自动重试，显式重试保持原 command ID；客户端不能提交 module path |
 | Replay | `createReplay()` 切换到 Host 签发的只读 bearer，`getReplayDiff()` 自动补绑定的 session/run scope，`exitReplay()` 才恢复保留的 live bearer；replay 401 直接失败，禁止 bootstrap 自动升级 authority |
 | Sandbox | 解析 Projection/Event 中的 `sandbox_report`；mode 只能随 Host 广告的 G-06 preset 间接选择，不能逐 Run 覆盖 |
 | bootstrap recovery | 可选 `SessionRecoveryReportSchema`，旧 Host 无该字段仍可兼容 |
+| Workbench | `get/updateWorkbenchSettings()`、`getCapabilities()`、`getWorkbenchResources()`、`testModel()`、`workbenchCommand()` 使用 canonical closed schemas |
+| 保存的模型连接 | `getModelConnections()`、`saveModelConnection()`、`removeModelConnection()`、`testModelConnection()`；保存/移除返回 registry snapshot，revision/CAS，原始 Key 只写 |
+| 会话选项与本地授权 | `get/updateSessionRunOptions()`、`get/setPermissionGrant()`；模型、mode、reasoning、bounded preset 在新 Run 冻结；Full grant 不能覆盖管理员 ceiling |
+| 项目文件 | `listProjectFiles()`、`readProjectFile()`、`saveProjectFile()`、`reconcileProjectFileSave()`；相对路径、有界读取、CAS/policy/工作区协调及持久回执 |
+| 回答反馈 | `getAnswerFeedback()`、`setAnswerFeedback()`；绑定当前 Run 的实际 answer Event，`like/dislike/clear` 只保存本地事实 |
 
 ```467:479:packages/sdk/src/index.ts
 function isBrowserRuntime(): boolean {
@@ -478,6 +471,10 @@ function normalizeOrigin(value: string): string {
 
 `normalizeOrigin` 比 Host 的校验更严：拒绝带凭据、带路径、带查询或片段的 origin。
 
+经 `bootstrap()` 建立 live authority 的客户端，在每个 authenticated POST/PATCH/DELETE **发出前**先执行同一个 single-flight GET bootstrap（10 秒 AbortSignal deadline），再提交一次原命令。这解决 owner 重启保留同 gateway、浏览器没有先读新 owner 而缓存旧 bearer 的首次写入问题；不是失败后的写请求自动重放。显式注入 token 且未 bootstrap 的嵌入式 fixed-authority client 保持兼容。pending bootstrap 受 Replay generation 保护，不会用迟到 live token 覆盖只读 bearer。
+
+`TraceGraphMutationPreflightError` 带 `code:mutation_preflight_failed`、`admission:rejected`、`commandDispatched:false`，证明只读检查失败时领域命令尚未发送。`TraceGraphHttpError.admission:rejected` 仅用于 Host `401 + capability_required/invalid/expired` 的规范认证拒绝；普通网络失败、无标记 401 和其它状态不能据此断言未接纳。Supervisor 不把已知拒绝改成 unknown；Main/preload 仅保留闭合 code/status/admission，原始 body/message/path 不跨 IPC。UI 的恢复动作只更新连接/读取，原 command 的重试仍需用户明确触发。
+
 ### 11.1 SSE 解析
 
 ```488:516:packages/sdk/src/index.ts
@@ -497,22 +494,101 @@ export async function* parseSseData(
 
 ### 11.3 Replay authority 与普通自动刷新分离
 
-普通 live capability 仍可在 401 后 bootstrap 一次；replay capability 明确走 fixed-authority 分支，过期或被步进轮换后直接返回错误。否则共享的自动刷新代码会把只读 token 换成 live token，等价于权限提升。SDK 在内存中保留进入回放前的 live token，但回放期间所有请求头使用 replay token；因此遗漏的 UI 写入口仍会被 Host 403，而不是只依赖按钮 `disabled`。
+普通 live GET/HEAD 读取仍可在 401 后 bootstrap 一次；写请求不自动刷新并重发。replay capability 明确走 fixed-authority 分支，过期或被步进轮换后直接返回错误。否则共享的自动刷新代码会把只读 token 换成 live token，等价于权限提升。SDK 在内存中保留进入回放前的 live token，但回放期间所有请求头使用 replay token；因此遗漏的 UI 写入口仍会被 Host 403，而不是只依赖按钮 `disabled`。
+
+### 11.4 API-060 共享内部协议
+
+`packages/sdk/src/protocol/index.ts` 定义独立于 HTTP/SSE 的 `tracegraph.client-protocol.v2` envelope：Run command、Run/Session query、Memory/Experience control command/query、reply/error、cancel 与事件消息。domain payload 复用 `@tracegraph/contracts` schema。API-061 已把 Run/Session 应用编排提取到 `@tracegraph/api`；CLIENT-068 增加 `MemoryExperienceController`，由 Web REST 与 Desktop framed RPC 共用。旧 DESK-064/CLIENT-068 framed dispatcher 与确定性 fixtures 继续作为兼容 seam；当前 Desktop Main 将具名 IPC 映射为 typed `TraceGraphClient` 方法，经私有 HTTP adapter 到同一 Host routes。CLI 当前同样使用私有 adapter，Web 使用 loopback HTTP/SSE；完整 Workbench DTO 在 `@tracegraph/contracts` 定义，不假定所有新能力都必须塞进旧 framed envelope。
+
+协议事件明确区分 `ledger`、`activity` 与 `model_surface`：第一类沿用持久 Run 序号；后两类仍是独立游标的瞬时投影，不能当作 Ledger event 回放。所有 fixture 位于同一 `packages/sdk/src/protocol/fixtures.ts`；CLI、Web 与 Desktop conformance checks 都从 `@tracegraph/sdk/protocol` 导入。未知消息、query/command discriminator 与非法 lifecycle action 会被拒绝；私有客户端按精确 protocol version 握手，v1 客户端不会与 v2 Desktop Host 混用。
+
+### 11.5 API-061 Run/Session Controller 与本地 Web transport
+
+`packages/api/src/run-session-controller.ts` 拥有 Run start/read、Session list/read/resume 的应用级校验与协调：从 Host 当前注册表解析 Workspace，保证 Session/Project scope，对相同 `command_id` 做幂等 replay/conflict 判断，并处理可注入的 Session/Workspace admission。它可脱离 Fastify 直接调用，API 包只依赖 `@tracegraph/contracts`。
+
+`packages/host/src/webserver/index.ts` 保留 Fastify 路由、loopback/Origin/bearer/replay capability 校验、command-id header 校验、HTTP error/cache 语义和 SSE。Run/Session routes 调用 `RunSessionController`；Memory/Experience routes 调用 `MemoryExperienceController`；Session rename/delete 和其它 Settings、项目、扩展、MCP/LSP、Team、Artifact 与 stream routes 仍走 Host seams。Host 保留 HTTP authority 与 transport 语义，两个 Controller 不依赖 Fastify。`packages/host/src/index.ts` 提供 HTTP Host、共享 local owner/connect、profile/migration 与 composition 的公共导出，保留旧包入口。
+
+### 11.6 API-062 私有 framed RPC transport
+
+`packages/sdk/src/transport/` 定义 4 字节 unsigned big-endian payload length + UTF-8 JSON frame，默认单帧最多 8 MiB；decoder 增量处理 partial/coalesced reads，并在 dispatch 前校验长度、UTF-8、协议 schema 与版本。`@tracegraph/sdk/client` 通过 `request_id` 关联有限数量的请求、接收事件并发送 cancel；`@tracegraph/sdk/server` 将 command/query 交给注入 handler，使用协作式 AbortSignal 和 event writer。两侧串行写入并等待 WHATWG WritableStream 背压，有界队列溢出时返回稳定 transport 错误。
+
+Transport cancel 只终止指定 RPC handler 的协作式等待，不是 Run stop command，也不能撤销已经接纳的领域操作。SDK server 本身不启动子进程、不监听网络端口、不实现身份认证，也不绑定 API Controller。API-062 完成时尚无具体应用 binding；之后 DESK-064 在 `apps/desktop-host` 将该 seam 与 API Controller 相连。CLI-063 继续使用现有 Host HTTP/SSE 客户端。
+
+### 11.7 CLI-063 Run/Session client slice
+
+`apps/cli/src/run-session-command.ts` 增加 `run start|get|events` 与 `sessions list|get`。命令在访问 Host 前校验参数与共享 protocol schema，随后用 `TraceGraphClient` 访问已运行 Host；Host 的 HTTP route 仍调用同一个 `RunSessionController`，因此不额外创建 Runtime/Controller。成功结果写成 schema 校验后的 protocol JSON Lines，诊断只写 stderr。`run events` 首先读 canonical Run projection timeline，可选 `--follow` 从末尾序号订阅 canonical SSE；每条持久 event 都保留原 event id 与 sequence，并放入 `ledger` envelope。
+
+CLI 单测验证 stdout 纯净、无效输入不 bootstrap、事件 envelope 与 follow cursor；Host-backed E2E 从 CLI 发起 Run，并将 CLI 输出逐条与同 Host 的 SDK SSE event 对照。该项只增加 Run/Session CLI 表面，没有把 CLI 迁至 API-062 framed RPC。
+
+### 11.8 DESK-064 child/framed RPC：保留的兼容 seam
+
+[`apps/desktop-host/src/host-process.ts`](../../apps/desktop-host/src/host-process.ts) 与 legacy worker 保留独立 Node child、framed RPC、EOF/版本错配/崩溃恢复的兼容测试。UX-086 已为该 seam 增加 `RunInteractionController`、chat、Session resume/rename/delete、Approval/Plan、Todo、Artifact 和 input 固定操作；旧“仅四种方法”的描述不再适用于当前源码。
+
+独立 Node 解析位于 [`node-executable.ts`](../../packages/host/src/composition/node-executable.ts)：验证 absolute realpath、受支持版本、非 Electron 与可执行身份，再用白名单环境启动。缺支持 Node 时明确失败；不放宽 Sandbox scope，也不转发 `NODE_OPTIONS` 或任意模型环境。真实 Electron binary/Node 在同一 Seatbelt fixture 下的[失败对照](../validation/ui-086-workbench-ux/attempts/desktop-tests-failed/electron-process-oracle.json)保留。
+
+该 child 的 EOF 关停语义只属于兼容 launcher；当前正式 Desktop 不为每个窗口启动和销毁这份 Runtime。
+
+### 11.9 当前 Electron shell 与共享 Workbench
+
+[`main.ts`](../../apps/desktop/src/main.ts) 以共享 connection supervisor 发现、恢复并绑定 owner；本地 Renderer 使用 `loadFile()`，开启 sandbox/contextIsolation，关闭 Node integration，校验主 frame、拒绝任意导航/窗口权限。[`preload.cts`](../../apps/desktop/src/preload.cts) 和 [`bridge-contract.ts`](../../apps/desktop/src/bridge-contract.ts) 只暴露具名且双向 schema 校验的方法。Main/Renderer 不监听 TCP；独立 Host 的 loopback gateway 服务同一 Runtime，Renderer CSP 仍为 `connect-src 'none'`。
+
+[`desktop-sdk.ts`](../../apps/desktop/src/desktop-sdk.ts) 覆盖共享 Workbench port，包括设置/模型测试/权限、项目/Session/Run、Attachment、Approval/Plan/Todo、Artifact、input/cancel、Memory/Experience、Team/subagent、Replay/rollback、usage/telemetry/扩展/MCP/LSP 与闭合 developer/schedule commands。当前能力来自 Host capability snapshot；离线、未配置、只读、policy denied 与真正不支持分开呈现，不能把缺配置伪装成成功。
+
+三条 stream 使用 [`stream-bridge.ts`](../../apps/desktop/src/stream-bridge.ts) 的固定 open/read/close pull bridge，将私有 HTTP 上的 canonical、activity、model-surface SSE 传给 Renderer。每次 read 只推进对应迭代器，不以 500ms Run.get polling 代替流；断开订阅只 detach，不取消 Run。Main 再次过滤 `thinking_snapshot`，三种游标保留各自语义。Preview 仅构造 deterministic demo adapter，不启动 live owner。
+
+连接状态来自 [`host-connection.ts`](../../packages/contracts/src/host-connection.ts)，包含 `state/generation/profile_id/owner_nonce` 及闭合安全 code，不包含 token/socket/绝对路径。`getCapabilities()` 连接失败会抛出 typed error，不能合成“未安装/unsupported”的 capability；真实 backend 缺失仍由已连接 Host 的能力清单解释。Main 在 IPC 边界将连接错误封装成受控结构，preload 解包后保留 code，避免 Electron 丢弃自定义 Error 属性。
+
+| 连接 code | 操作含义 |
+| --- | --- |
+| `host_stopped` | 已显式停止，普通重连、wake 和已有 Main 的窗口重开不清除标记；完全退出后用户新启动应用，或显式 Start/Repair 才能启动 |
+| `host_offline` / `host_reconnecting` / `host_recovering` | 暂时不可达或正在恢复；读取视图可刷新，不重复领域写入 |
+| `host_read_stale` | 读取跨 owner generation 或认证失效，丢弃原数据后重新读取 |
+| `host_write_outcome_unknown` | 命令结果丢失；先按原 command ID 查询/对账，不能声称副作用失败或成功 |
+| `host_replay_stale` | Replay 保留原只读 authority；显式 exitReplay 后才绑定新 live owner |
+| `host_upgrade_required` / `host_profile_invalid` | build/profile 身份无法兼容或验证，fail closed，不自动终止另一 owner |
+| `host_recovery_exhausted` | 自动恢复预算已用尽；需要显式修复，而非无限拉起进程 |
+
+每次 owner 替换建立新 `DesktopStreamManager(generation)`，旧 handles 关闭，晚到 packet/读取不得刷新新视图。CLI 的 [`supervisedLocalHost()`](../../packages/host/src/local-connection-client.ts) 同样保留持久 ledger sequence，新 owner 的 activity/model-surface cursor 从零重建；订阅自身不持久化游标，也不取消任务。
+
+Desktop `app.whenReady` 的新 Main 启动是可信用户启动意图：supervisor 完成普通
+`initialize()` 后，只有 safe snapshot 为 `stopped` 才执行一次显式 `repair()`。
+`activate` 与已运行 Main 的窗口重开仍只 refresh/createWindow，不清除停止标记。
+离线、配置损坏、版本不兼容或 Replay 失败不走此启动例外；原 Replay 只读权限
+不因恢复而升级。该 Main 装配语义由
+[`main-connection.test.ts`](../../apps/desktop/src/main-connection.test.ts)验证，不改变
+共享 supervisor 或普通 CLI 命令的停止边界。
+
+### 11.10 原生项目、文件、凭据与迁移 bridge
+
+Main 的原生 picker 生成路径，再用仅私有 socket 可用的 `native.registerProject()` 提交显式 access；Renderer 只接收安全 `ProjectSummary` 和 ID。当前注册源是共享 composition 的 `LocalProjectRegistry`，不再另建一个 Desktop profile 注册表。项目文件打开由 Main 解析 Host-bound root、验证 realpath/普通文件/containment 后交给系统应用；linked 项目移除只注销 metadata，worktree 删除成功后也会同步注销对应 metadata。
+
+模型 Key 经固定 IPC write-only 到共享 Host `CredentialStore`；配置只保存引用。默认 macOS platform store 可读既有同 service Keychain refs，其他平台私有文件 backend 仍是 plaintext-at-rest，不等同硬件密钥库。隔离验收显式使用临时 private-file fixture，没有读写用户真实 Keychain。
+
+当前已接入 [`conversation-routes.ts`](../../packages/host/src/conversation-routes.ts) 的四个模型连接方法、两个 Session 选项方法和两个本地授权方法，以及 [`project-files-feedback-routes.ts`](../../packages/host/src/project-files-feedback-routes.ts) 的六个文件/反馈方法。文件保存先核对相对路径、symlink/containment、策略和 expected SHA；`awaiting_approval` 要求用户用原 command ID/正文和签发 approval 明确确认，`unknown` 必须经 reconcile，均不能作为写入完成。Main 的 `copyText()` 只供显式复制操作，限制大小并确认自身写入结果，不向 Renderer 开放剪贴板读取。
+
+迁移先 native picker 选择来源，预览只向 Renderer返回 source ID、label、相对路径/hash/bytes/冲突；commit 只能选择已预览 source ID。活动 Run、queued task、终端或 owned preview 存在时返回 `migration_busy`，要求先显式停止资源。成功流程停止 owner、保留原 source、备份目标和原格式、选择单源/quarantine 冲突、提交后重启；Main detach旧连接并重新 bootstrap。failed/unknown 保留 operation ID，查询持久 receipt 后才能决定重试，不能将传输错误算作成功。[迁移源码](../../packages/host/src/profile-migration.ts)、[迁移测试](../../packages/host/src/profile-migration.test.ts)。
+
+### 11.11 Memory/Experience 与配置生效边界
+
+Web、Desktop 和 CLI 现在经同一 Host route/`MemoryExperienceController`，scope 从当前共享注册表派生，不接受 renderer owner/actor。控制面审核不自行开启 Recall；默认 Memory/Experience recall 为 false，启用时还要求明确 project IDs。恢复继续重验 policy、credential、approval 和 Workspace authority。
+
+设置使用 [`local-workbench.ts`](../../packages/contracts/src/local-workbench.ts) 的 version/revision/metadata，保存至 profile `workbench-settings.json`。general/appearance 立即生效；model reasoning 和 developer 并发设置影响新 Run；tools/telemetry/Memory 声明 restart 生效并在新 composition 真正应用，`pending_restart` 只在重启后清空。保存 Key、连接测试通过和 Run 业务完成是三个不同结果。[配置 owner](../../packages/host/src/composition/host-composition.ts)、[Workbench control](../../packages/host/src/workbench-control.ts)。
+
+### 11.12 当前验证与平台边界
+
+[`local-host.test.ts`](../../packages/host/src/local-host.test.ts) 使用真实构建产物、临时 profile 和 fake provider，验证 UDS/TCP 同源、并发 ensure 单 owner、不同 profile 共 data-root 拒绝、同 workspace queued→started/独立 workspace 并行、detach后 Run 继续、TCP 原生路由拒绝、busy迁移/备份/新 nonce，以及 stop 关闭三条 TCP SSE和 held model 后才能再启动 writer。配置重启/禁用工具、clear Key draft、MCP setup rollback、注销不删文件和排队取消也有窄 oracle。
+
+[`terminal-job-control.test.ts`](../../packages/host/src/terminal-job-control.test.ts) 的真实 macOS PTY 验证 Ctrl-Z/jobs/fg/Ctrl-C、工作区写入与越界拒绝、正常关闭后独立 background job PID 消失，以及 Host SIGKILL 后 guardian 生命周期管道清理。这是观察到的 PTY 子任务清理，不承诺双重 fork/setsid 脱离终端后的全部进程隔离。[`recovery-policy.test.ts`](../../packages/host/src/composition/recovery-policy.test.ts) 验证活动 Run 冻结、降低 ceiling 后旧 Run 无法恢复、恢复后项目收紧拒绝审批且文件不变；[`local-policy.test.ts`](../../packages/host/src/local-policy.test.ts) 验证 authenticated UDS 的真实策略投影。
+
+当前真实 OS 验收运行于 macOS；Linux 归档安装 smoke 与旧测试记录不等价于新增 PTY/UDS/完整 GUI 的 Linux 验收。Windows pipe 的实现契约不等价于实际 Windows 运行结果；Linux/Windows 原生 Sandbox backend、签名/公证/自动更新与独立非维护者从零安装仍须各自验证。已完成的源码、模拟测试和维护者环境真实 GUI 旅程不能代替外部发布验收。
+
+当前连接恢复新增验收为 [`local-connection-owner.e2e.test.ts`](../../packages/host/src/local-connection-owner.e2e.test.ts) 的真实 Node worker/私有通道：外部 restart 后同 profile/新 nonce/共享配置可读，显式 stop 后新客户端不复活，SIGKILL 时两个客户端恢复到同一 owner，旧 Run 标为 interrupted 且 provider 不再调用。窄测试另验证 wake、generation、Replay 保持只读与 mutation 单次提交，记录在[本轮连接验证](../validation/current-workbench-recovery/host-connection-verification.md)。这些源码/targeted dist 检查尚不等于新安装包 GUI 已通过；完整 Main/preload/Renderer 恢复旅程由本轮最终验收另行记录。
 
 ---
 
 ## 12. 已知缺口
 
-1. **能力令牌 8 小时后无法续期。** `token` 与 `expiresAt` 在 Host 启动时算定并被闭包固定：
-
-```79:82:packages/host/src/index.ts
-  const token = options.capabilityToken ?? randomBytes(32).toString("base64url");
-  const tokenTtlMs = options.tokenTtlMs ?? 8 * 60 * 60 * 1_000;
-  const expiresAtMs = now().getTime() + tokenTtlMs;
-  const expiresAt = new Date(expiresAtMs).toISOString();
-```
-
-`/api/bootstrap` 永远返回**同一对**值。TTL 过后 `assertBearer` 恒定 401，SDK 的 401 重试会重新 bootstrap 拿到同一个已过期令牌，然后再次失败。**没有任何轮换或续期机制，唯一恢复手段是重启 Host。** 对一个"开着写一整天代码"的本地工具来说，这是必然会遇到的可用性问题。
+1. **live bearer 轮换与 replay authority 分离。** 8 小时 live token 到期后，allowed loopback/bootstrap 会轮换到新 token；SDK 只对 live GET/HEAD 做 401→bootstrap→一次 retry，写请求必须显式检查原命令回执后再决定重试。未到期 token 不轮换，避免另一窗口失效。只读 replay token 不经 bootstrap 升级。UDS discovery token 独立于 HTTP bearer，不能交给 Renderer。
 
 2. **批准请求同步续跑，但没有 application-level handler deadline。** `approve` 在返回前会同步续跑：
 
@@ -543,17 +619,19 @@ export async function* parseSseData(
 
 12. **接收请求的 `requestTimeout: 30_000`、全局 256 KiB `bodyLimit` 与 Run 启动路由的 8 MiB override 都是硬编码常量**，不可通过 `TraceGraphHostOptions` 配置；其中 `requestTimeout` 不是 handler deadline。
 
-13. **Rollback API 已有但产品面有限。** Runtime/CLI 默认关闭，P0 仅单目标；Web 没有调用控件，Recovery Markdown 也没有 Host/SDK 导出路由。Host 的 registered-project check 不是跨进程 workspace lock。
+13. **Rollback 保持受控策略。** SDK/CLI 与 Desktop adapter 调用同一目标 Action；`rollback.write` 按启动策略投影，默认 `policy-denied`。启用后仍为单目标，linked 工作区需 Host force 策略与显式确认，且需要 quiescent 和 WAL/hash/root binding。共享 UI 入口以实际组件与能力状态为准。WorkspaceCoordinator 协调本 Host 写者，但不锁外部编辑器或另一个产品的写入。Recovery Markdown 没有独立导出路由。
 
-14. **Permission 设置不是 per-Run override 或 policy editor。** CLI/env ceiling 是 Host 启动边界，改变它仍需重启；用户 preset 选择可经 Host/SDK/Web 保存，但只影响随后创建的 Run，不能热改活动 Run，恢复也继续使用冻结 policy。客户端不能提交 rule/path/sandbox/approval/token，Host 响应也不公开完整策略。当前没有远程 policy negotiation/RBAC、Linux bwrap/Windows backend 或 Host 模型网络代理；Projection 徽标不能补足这些缺口。
+14. **Permission 设置不是 per-Run override 或 policy editor。** CLI/env ceiling 是 Host 启动边界，改变它仍需重启；用户 preset 选择可经 Host/SDK/Web 保存，但只影响随后创建的 Run，不能热改本进程活动 Run。共享 Host 恢复前按当前 ceiling、选择预设、项目规则和 trusted extension 规则重算 policy；digest 不同返回 `resume_policy_changed`，要求新 Run。恢复后审批再次校验；Core legacy 恢复保留冻结 policy 的兼容语义。客户端不能提交 rule/path/sandbox/approval/token，Host 响应也不公开完整策略。当前没有远程 policy negotiation/RBAC、Linux bwrap/Windows backend 或 Host 模型网络代理；Projection 徽标不能补足这些缺口。
 
 15. **旧 stop 与 G-14 cancel 暂时并存。** `/stop` 是同步兼容命令；`POST /input {kind:"cancel"}` 才具有 durable queued/consumed 与安全边界语义。新客户端应使用后者，但删除旧接口会破坏已有 SDK/调用方，因此当前不能把两者当作完全相同的 receipt 流程。
 
-16. **Telemetry status 不是交付确认或恢复数据。** 它只报告当前 Host 进程里的 sink kind/state/error count/last error；重启会清零进程内错误状态。Host/SDK 没有 exporter 配置 API，也不能证明外部 Collector 已经持久接收；真实配置只在服务端 CLI composition，Telemetry 失败不改变 canonical Run。
+16. **Telemetry status 不是交付确认或恢复数据。** 它只报告当前 Host 进程里的 sink kind/state/error count/last error；重启会清零进程内错误状态。共享 settings 可保存 exporter 配置并在重启生效，但不能证明外部 Collector 已经持久接收；授权值只在服务端解析，Telemetry 失败不改变 canonical Run。
 
 17. **G-08 Team 控制面仍是单 Host、关系绑定且大体只读的产品面。** G-07 child ledger 读取继续依赖父投影和 child `run.created` provenance，普通 Session 列表默认隐藏 child；没有 Session 树编辑、child Resume、浏览器 send/interrupt 或任意 Run-id 查询。Team 路由增加 roster/mailbox/task board read、用户 steer/cancel 与 trusted heartbeat/sweep，但 `spawn_subagent` 仍在父 Tool call 内等待 child 终态，也没有跨 Host consensus、自动 worker 重启/重派或通用非阻塞父循环。
 
 18. **G-17 API 不是插件商店。** Host 只能管理 composition 已安装的 trusted catalog；没有上传、npm/path 安装、签名校验、依赖解析或扩展 UI。命令幂等表也只在当前 Host 进程内，不是跨 Host 共识。
+19. **API-061 只完成首个 Controller 切片。** Run start/read 与 Session list/read/resume 已由 `@tracegraph/api` 承载，Host 仍提供本地 HTTP/SSE transport；其它 route family 仍留在 Host。
+20. **Desktop 的当前实现与发布验收分开。** 共享 owner/typed bridge/三条 SSE 和 Workbench 操作已接入；受 Host capabilities 与 policy 限制。打包归档、维护者 GUI/模拟旅程、签名/更新及独立外部用户验收是不同证据层，不能互相代替；平台边界见 §11.12。
 
 ---
 

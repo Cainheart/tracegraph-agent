@@ -1,0 +1,13 @@
+{
+  "schema_version": "tracegraph.benchmark-scenario.v1",
+  "id": "cold-start",
+  "version": "1.0.0",
+  "description": "Cold Runtime and Host boot through loopback health readiness",
+  "working_directory": ".",
+  "correctness_command": { "args": ["benchmarks/paths/scenario.mjs", "correctness", "cold-start"] },
+  "command": { "args": ["benchmarks/paths/scenario.mjs", "measure", "cold-start"] },
+  "warmup_iterations": 1,
+  "sample_iterations": 5,
+  "timeout_ms": 30000,
+  "budget": { "wall_time_ms_p95_max": 1500 }
+}

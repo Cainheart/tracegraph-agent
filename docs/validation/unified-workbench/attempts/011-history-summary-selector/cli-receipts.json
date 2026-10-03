@@ -1,0 +1,51 @@
+[
+  {
+    "argv": [
+      "host",
+      "status"
+    ],
+    "exit_code": 0,
+    "stdout": "{\n  \"protocol_version\": \"outlive.local-host.v1\",\n  \"profile_id\": \"008e85a7-f81e-418d-85ce-5d0655eb57f7\",\n  \"profile_root\": \"/private/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-par088-YmiMWt/profile\",\n  \"data_root\": \"/private/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-par088-YmiMWt/profile/data\",\n  \"session_root\": \"/private/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-par088-YmiMWt/profile/sessions\",\n  \"pid\": 27803,\n  \"boot_nonce\": \"3489b7f7-9c08-467c-80c6-fb963c1c936a\",\n  \"http_address\": \"http://127.0.0.1:52194\"\n}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "model",
+      "get"
+    ],
+    "exit_code": 0,
+    "stdout": "{\n  \"provider\": \"openai\",\n  \"protocol\": \"openai-chat-completions\",\n  \"configured\": true,\n  \"base_url\": \"http://127.0.0.1:52191/v1\",\n  \"model\": \"synthetic-par088\",\n  \"has_key\": true,\n  \"credential\": {\n    \"name\": \"TRACEGRAPH_OPENAI_KEY_4608C4079DC1\",\n    \"backend\": \"private_file\",\n    \"writable\": true,\n    \"last_updated_at\": \"2026-10-03T06:13:47.044Z\"\n  }\n}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "config",
+      "get"
+    ],
+    "exit_code": 0,
+    "stdout": "{\n  \"config_version\": \"outlive.workbench.v1\",\n  \"revision\": 1,\n  \"profile_id\": \"008e85a7-f81e-418d-85ce-5d0655eb57f7\",\n  \"settings\": {\n    \"general\": {\n      \"language\": \"en\",\n      \"enter_behavior\": \"enter\",\n      \"notify_completed\": true,\n      \"notify_failed\": true,\n      \"notify_approval\": true\n    },\n    \"appearance\": {\n      \"theme\": \"light\",\n      \"ui_font_size\": 14,\n      \"code_font_size\": 14,\n      \"output_density\": \"compact\"\n    },\n    \"model\": {\n      \"reasoning_effort\": \"default\"\n    },\n    \"memory\": {\n      \"memory_recall\": false,\n      \"experience_recall\": false,\n      \"project_ids\": []\n    },\n    \"developer\": {\n      \"editor\": \"\",\n      \"shell\": \"\",\n      \"worktree_directory\": \"\",\n      \"preview_open\": \"panel\",\n      \"review_scope\": \"workspace\",\n      \"max_parallel_runs\": 4\n    },\n    \"tools\": {\n      \"disabled_skills\": [],\n      \"disabled_extensions\": [],\n      \"mcp\": {\n        \"config_version\": \"tracegraph.mcp.v1\",\n        \"servers\": []\n      },\n      \"lsp\": {\n        \"config_version\": \"tracegraph.lsp.v1\",\n        \"servers\": []\n      }\n    },\n    \"telemetry\": {\n      \"enabled\": false,\n      \"endpoint\": \"\",\n      \"authorization_ref\": \"\"\n    }\n  },\n  \"fields\": [\n    {\n      \"path\": \"general.language\",\n      \"source\": \"profile\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"immediate\"\n    },\n    {\n      \"path\": \"general.enter_behavior\",\n      \"source\": \"profile\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"immediate\"\n    },\n    {\n      \"path\": \"general.notify_completed\",\n      \"source\": \"profile\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"immediate\"\n    },\n    {\n      \"path\": \"general.notify_failed\",\n      \"source\": \"profile\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"immediate\"\n    },\n    {\n      \"path\": \"general.notify_approval\",\n      \"source\": \"profile\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"immediate\"\n    },\n    {\n      \"path\": \"appearance.theme\",\n      \"source\": \"profile\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"immediate\"\n    },\n    {\n      \"path\": \"appearance.ui_font_size\",\n      \"source\": \"profile\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"immediate\"\n    },\n    {\n      \"path\": \"appearance.code_font_size\",\n      \"source\": \"profile\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"immediate\"\n    },\n    {\n      \"path\": \"appearance.output_density\",\n      \"source\": \"profile\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"immediate\"\n    },\n    {\n      \"path\": \"model.reasoning_effort\",\n      \"source\": \"default\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"new-run\"\n    },\n    {\n      \"path\": \"memory.memory_recall\",\n      \"source\": \"default\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"restart\"\n    },\n    {\n      \"path\": \"memory.experience_recall\",\n      \"source\": \"default\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"restart\"\n    },\n    {\n      \"path\": \"memory.project_ids\",\n      \"source\": \"default\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"restart\"\n    },\n    {\n      \"path\": \"developer.editor\",\n      \"source\": \"default\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"immediate\"\n    },\n    {\n      \"path\": \"developer.shell\",\n      \"source\": \"default\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"new-run\",\n      \"reason\": \"Applies to newly created terminals or worktrees; existing resources retain their configuration\"\n    },\n    {\n      \"path\": \"developer.worktree_directory\",\n      \"source\": \"default\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"new-run\",\n      \"reason\": \"Applies to newly created terminals or worktrees; existing resources retain their configuration\"\n    },\n    {\n      \"path\": \"developer.preview_open\",\n      \"source\": \"default\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"immediate\"\n    },\n    {\n      \"path\": \"developer.review_scope\",\n      \"source\": \"default\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"immediate\"\n    },\n    {\n      \"path\": \"developer.max_parallel_runs\",\n      \"source\": \"default\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"new-run\"\n    },\n    {\n      \"path\": \"tools.disabled_skills\",\n      \"source\": \"default\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"restart\"\n    },\n    {\n      \"path\": \"tools.disabled_extensions\",\n      \"source\": \"default\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"restart\"\n    },\n    {\n      \"path\": \"tools.mcp\",\n      \"source\": \"default\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"restart\"\n    },\n    {\n      \"path\": \"tools.lsp\",\n      \"source\": \"default\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"restart\"\n    },\n    {\n      \"path\": \"telemetry.enabled\",\n      \"source\": \"default\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"restart\"\n    },\n    {\n      \"path\": \"telemetry.endpoint\",\n      \"source\": \"default\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"restart\"\n    },\n    {\n      \"path\": \"telemetry.authorization_ref\",\n      \"source\": \"default\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"restart\"\n    },\n    {\n      \"path\": \"model.connection\",\n      \"source\": \"profile\",\n      \"scope\": \"profile\",\n      \"writable\": true,\n      \"effective\": \"new-run\"\n    }\n  ],\n  \"pending_restart\": []\n}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "model",
+      "test",
+      "--command-id",
+      "command:par088-cli-model-test"
+    ],
+    "exit_code": 0,
+    "stdout": "{\n  \"status\": \"passed\",\n  \"code\": \"connection_ok\",\n  \"message\": \"The configured model returned a valid response\",\n  \"checked_at\": \"2026-10-03T06:13:47.940Z\",\n  \"model\": \"synthetic-par088\",\n  \"duration_ms\": 9\n}\n",
+    "stderr": ""
+  },
+  {
+    "argv": [
+      "model",
+      "configure",
+      "--api-key",
+      "synthetic-par088-rejected-argv-key"
+    ],
+    "exit_code": 2,
+    "stdout": "",
+    "stderr": "{\"error\":{\"code\":\"invalid_arguments\",\"message\":\"Credentials are accepted through model --key-stdin only\"}}\n"
+  }
+]

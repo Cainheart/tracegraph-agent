@@ -15,7 +15,7 @@ const host = await createTraceGraphHost({
 });
 const address = await host.listen();
 
-process.stdout.write(`TraceGraph Host listening at ${address}\n`);
+process.stdout.write(`Outlive Agent gateway listening at ${address}\n`);
 process.stdout.write(`Capability token expires at ${host.expiresAt}\n`);
 
 const shutdown = async (): Promise<void> => {

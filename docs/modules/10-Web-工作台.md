@@ -1,12 +1,22 @@
-# 模块 10：Web 工作台（`apps/web`）
+# 模块 10：Web 工作台（`apps/web` + `packages/workbench`）
 
-> **定位**：浏览器侧的**审查与显式命令工作台**。它不执行工具、不充当事实源，也不把业务状态持久化到浏览器；durable Session/Run 事实来自本地 Host，实时过程来自三条流。Web 负责浏览、呈现并发送受约束的用户命令。
-> **代码**：`apps/web/src`（精确文件/行数以当前工作树命令输出为准）
+> **定位**：浏览器侧的**审查与显式命令工作台**。它不执行工具、不充当事实源，也不把业务状态持久化到浏览器；durable Session/Run 事实来自本地 Host，实时过程来自三条流。Web 负责装配 HTTP/SSE client，`@tracegraph/workbench` 提供 Web/Desktop 共用的浏览、呈现和显式命令 UI。
+> **代码**：`packages/workbench/src`（共享 UI/client/model/styles）；`apps/web/src/main.tsx`（Web composition root）
 > **技术栈**：React + TypeScript + Vite + 原生 CSS（无 UI 组件库）+ vitest/jsdom
-> **最后核对**：2026-09-19
+> **最后核对**：2026-10-03
 > **上游依赖**：模块 09（Host 与 SDK 接口层）；**交叉引用**：模块 03（Context 与预算）、模块 05（证据链）、模块 06（模型适配与推理强度）
 
 ---
+
+## 2026-10-03 新聊天工作台范围
+
+共享 `Composer.tsx` 覆盖新对话、项目和历史会话：附件加号、会话权限、执行/计划、已保存模型与该模型真实支持的推理强度。模型、选项和本机反馈通过 Host 持久化；草稿、文件编辑缓冲及展开状态是客户端临时状态。任务受理冻结配置，随后切换只影响后续任务。
+
+`ProjectFiles.tsx` 使用 CodeMirror 编辑受限 UTF-8 文件，并预览实际受校验的图片字节。保存提交原哈希、确切内容与命令 ID；冲突保留缓冲，未知结果先协调，审批只批准相同保存意图。显式人类保存与 Agent 计划模式的写入禁令分开检查。右侧文件、变更、终端、预览和成果共用面板；窄窗口切换全屏，关闭和重连不丢编辑缓冲。
+
+运行默认收起为公开说明与一行真实活动，展开只读；复制与赞/踩操作绑定实际公开结果，反馈仅保存在本机。连接失败保留已有设置并给出中文恢复提示，不把传输失败映射成安装版本不支持。B Current 由唯一 SVG 派生。
+
+本轮来源、回执和新增安装验收见[当前工作台验收](../validation/current-workbench-recovery/README.md)，旧截图只证明当时的界面。
 
 ## 1. 职责边界
 
@@ -14,9 +24,9 @@ Web 是整条链路的**末端消费者**，三条硬边界：
 
 | 边界 | 具体表现 | 代码位置 |
 | --- | --- | --- |
-| **不装配能力** | Web 侧不存在 `CodeGraphProvider`、模型 provider、工具执行器等任何 provider 的装配代码；具体 CodeGraph/Git adapter 只在 CLI composition 注入 Runtime | Web 只消费 `RunProjection.code_intel` 与 canonical Run/SSE 事件 |
-| **不执行副作用** | 打开 durable Session 只加载最后一个 Run 的投影；显式 Resume 也不会自动重跑工具，待审批恢复后仍需用户使用新 approval | `apps/web/src/live-client.ts`、`App.tsx` |
-| **不持有真相** | 唯一状态是 `WorkbenchSnapshot`；组件通过 `useSyncExternalStore` 订阅，没有本地业务状态机 | `apps/web/src/App.tsx:37:43` |
+| **不装配能力** | Web 侧不存在 `CodeGraphProvider`、模型 provider、工具执行器等任何 provider 的装配代码；具体 CodeGraph/Git adapter 只在共享 Host composition 注入 Runtime | Web 只消费 `RunProjection.code_intel` 与 canonical Run/SSE 事件 |
+| **不执行副作用** | 打开 durable Session 只加载最后一个 Run 的投影；显式 Resume 也不会自动重跑工具，待审批恢复后仍需用户使用新 approval | `packages/workbench/src/live-client.ts`、`packages/workbench/src/App.tsx` |
+| **不持有真相** | 唯一状态是 `WorkbenchSnapshot`；组件通过 `useSyncExternalStore` 订阅，没有本地业务状态机 | `packages/workbench/src/App.tsx` |
 
 凭据边界同理：设置页用 password input 临时收集用户输入，并只在一次 loopback POST 中把它作为 write-only 字段发送；前端不写 localStorage、不保留保存后的值，Host/SDK 响应也绝不回显。浏览器只显示安全状态元数据。
 
@@ -37,7 +47,7 @@ Web 是整条链路的**末端消费者**，三条硬边界：
 ```
 
 - `build` **先类型检查再打包**，类型不过则不出产物。
-- 运行时依赖只有三项：`@tracegraph/contracts`（schema）、`@tracegraph/sdk`（Host 客户端）、`react`/`react-dom`；`mermaid` 为图渲染依赖。**没有 UI 组件库、没有状态管理库、没有路由库**——页面切换靠 `MainView` 枚举。
+- Web composition root 依赖 `@tracegraph/workbench`、`@tracegraph/sdk`、`@tracegraph/contracts` 与 React/React DOM；Mermaid 由共享 Workbench package 管理。**没有 UI 组件库、没有状态管理库、没有路由库**——页面切换靠 `MainView` 枚举。
 
 ### 2.2 端口与同源约束
 
@@ -79,31 +89,32 @@ build: {
 
 ### 2.3 入口
 
-`index.html` 只声明 `color-scheme: dark light` 与 `theme-color`，样式与逻辑全在 `main.tsx` 之后的 React 树里；`main.tsx` 在 `StrictMode` 下挂载 `<App />`，根节点缺失时**直接抛错**而不是静默失败。
+`apps/web/src/main.tsx` 是 Web composition root：它显式创建 HTTP/SSE `LiveTraceGraphClient` 并注入共享 `<App client={client} />`。根节点缺失时直接抛错，不静默失败。Desktop Renderer 也从 `@tracegraph/workbench` 导入同一个 App，但注入固定 preload/Main bridge adapter；Main 的 typed SDK 经私有 UDS/Windows pipe HTTP 连接同一 Host；两端没有 app-to-app 源码依赖。
 
 ```6:16:apps/web/src/main.tsx
+const client = new LiveTraceGraphClient({ baseUrl: import.meta.env.VITE_TRACEGRAPH_API_URL ?? "" });
 const root = document.getElementById("root");
 if (!root) {
   throw new Error("TraceGraph Web root element was not found");
 }
 createRoot(root).render(
   <StrictMode>
-    <App />
+    <App client={client} />
   </StrictMode>,
 );
 ```
 
 ### 2.4 后端地址
 
-`VITE_TRACEGRAPH_API_URL` 为空即同源（生产/一体部署），显式设置则直连指定 Host（`App.tsx` 中装配 `LiveTraceGraphClient`）。**浏览器不接收 Host 保存的项目真实路径或凭据值**；用户新输入的 Key 只存在于设置组件状态和当次保存请求。
+`VITE_TRACEGRAPH_API_URL` 为空即同源（生产/一体部署），显式设置则直连指定 Host（`apps/web/src/main.tsx` 装配 client）。**浏览器不接收 Host 保存的项目真实路径或凭据值**；用户新输入的 Key 只存在于设置组件状态和当次保存请求。
 
 ## 3. 数据契约：`model.ts` 是前后端唯一接缝
 
-`apps/web/src/model.ts` 只有类型与纯函数——**没有 I/O、没有副作用、没有默认值**，因此它可以被 Host 侧的实现直接对齐引用。这是 Web 与 Host 之间真正的"薄指针"。
+`packages/workbench/src/model.ts` 只有 Workbench 类型与纯呈现函数——**没有 I/O、没有副作用**。Host 不依赖这个 React UI package；协议边界由 `@tracegraph/contracts` 承担。
 
 ### 3.1 枚举即协议
 
-```1:29:apps/web/src/model.ts
+```1:29:packages/workbench/src/model.ts
 export type WorkspaceKind = "disposable_fixture" | "readonly_local" | "managed_local";
 export type RunMode = "plan" | "execute";
 export type ReasoningEffort = "default" | "low" | "medium" | "high" | "xhigh" | "max";
@@ -124,7 +135,7 @@ export type EventState = "waiting" | "running" | "succeeded" | "failed" | "denie
 
 `model.ts` 用注释明确了"可重放"与"易失"的边界：
 
-```63:92:apps/web/src/model.ts
+```63:92:packages/workbench/src/model.ts
 /**
  * A volatile public-process item received over the Host live SSE channel.
  * It is intentionally separate from TraceEvent: TraceEvent is replayable
@@ -146,7 +157,7 @@ export interface ModelSurfaceSnapshot { ... }
 
 ### 3.3 证据必须"逐事件"解析
 
-```276:281:apps/web/src/model.ts
+```276:281:packages/workbench/src/model.ts
 /**
  * Evidence resolved from the canonical relations on each event. This is
  * deliberately separate from the run-level latest projection above: a
@@ -157,7 +168,7 @@ readonly eventEvidence: Readonly<Record<string, EventEvidenceSnapshot>>;
 
 `evidenceForSelection()` 是这条规则唯一的执行点：选中事件时**只**读 `eventEvidence[event.id]`，取不到就返回"该事件没有链接证据"的空投影，**绝不回退到 run 级最新证据**；只有未选中任何事件（跟随尾部）时才用 run 级投影。
 
-```384:397:apps/web/src/model.ts
+```384:397:packages/workbench/src/model.ts
 export function evidenceForSelection(snapshot, event): EventEvidenceSnapshot {
   if (event) {
     return snapshot.eventEvidence[event.id] ?? emptyEventEvidence(
@@ -173,12 +184,12 @@ export function evidenceForSelection(snapshot, event): EventEvidenceSnapshot {
 
 | 函数 | 作用 | 位置 |
 | --- | --- | --- |
-| `canUseExecuteMode()` | 判定工作区是否可写（只有 `disposable_fixture` / `managed_local` 可进入 execute） | `apps/web/src/model.ts` |
-| `getInspectorTabs()` | 由事件字段**推导** Inspector 标签页（有 `contextManifestRef` 才有 context 页，有 `duration` 才有 timing 页） | `apps/web/src/model.ts:300` |
-| `getStatusLabel/getStatusTone` | 状态 → i18n key / 色调 | `apps/web/src/model.ts:314` |
-| `getEventIcon()` | 事件类型 → 图标名 | `apps/web/src/model.ts:339` |
-| `totalDiff()` | 变更文件汇总 | `apps/web/src/model.ts:354` |
-| `graphForVersion()` | 架构增量按 `before`/`after` 拆平 | `apps/web/src/model.ts:364` |
+| `canUseExecuteMode()` | 判定工作区是否可写（只有 `disposable_fixture` / `managed_local` 可进入 execute） | `packages/workbench/src/model.ts` |
+| `getInspectorTabs()` | 由事件字段**推导** Inspector 标签页（有 `contextManifestRef` 才有 context 页，有 `duration` 才有 timing 页） | `packages/workbench/src/model.ts:300` |
+| `getStatusLabel/getStatusTone` | 状态 → i18n key / 色调 | `packages/workbench/src/model.ts:314` |
+| `getEventIcon()` | 事件类型 → 图标名 | `packages/workbench/src/model.ts:339` |
+| `totalDiff()` | 变更文件汇总 | `packages/workbench/src/model.ts:354` |
+| `graphForVersion()` | 架构增量按 `before`/`after` 拆平 | `packages/workbench/src/model.ts:364` |
 
 Inspector 标签页由数据推导而非硬编码，意味着**Host 少发字段时界面自动收窄**，不会出现点开就空的面板。
 
@@ -186,7 +197,7 @@ Inspector 标签页由数据推导而非硬编码，意味着**Host 少发字段
 
 `client.ts` 用**一个接口 + 两个实现**切断了"界面"与"传输"的耦合：
 
-```4:21:apps/web/src/client.ts
+```4:21:packages/workbench/src/client.ts
 export interface WorkbenchClient {
   getSnapshot(): WorkbenchSnapshot;
   subscribe(listener: (snapshot: WorkbenchSnapshot) => void): () => void;
@@ -218,15 +229,15 @@ export interface WorkbenchClient {
 }
 ```
 
-- **生产实现** = `LiveTraceGraphClient`（`apps/web/src/live-client.ts`，见 §5）。
-- **Demo 实现** = `DemoTraceGraphClient`（`apps/web/src/client.ts:40`），纯浏览器内定时器 + `demo.ts` 固定快照，无需 Host 即可演示全部界面分支。
+- **生产实现** = `LiveTraceGraphClient`（`packages/workbench/src/live-client.ts`，见 §5）。
+- **Demo 实现** = `DemoTraceGraphClient`（`packages/workbench/src/client.ts:40`），纯浏览器内定时器 + `demo.ts` 固定快照，无需 Host 即可演示全部界面分支。
 - 装配点在 `App.tsx:17`：baseUrl 来自 `import.meta.env.VITE_TRACEGRAPH_API_URL`，为空即同源。
 
 两种实现都满足 G-15 的只读状态接口：Live 经 SDK `GET /api/telemetry-status` 并再次 strict parse；Demo 返回固定 `noop / disabled / 0`。该接口没有 configure 对偶，也不允许浏览器接触 endpoint、header、credential、配置 path 或 pending payload。
 
 Demo 适配器同时也充当**能力边界的可执行声明**：它明确对两项操作抛错，而不是假装成功——
 
-```113:115:apps/web/src/client.ts
+```113:115:packages/workbench/src/client.ts
 async createProject(_name: string): Promise<void> { throw new Error("Project creation is unavailable in browser demo mode"); }
 async getModelConfig(): Promise<ModelConfigSnapshot> { return { provider: "openai", protocol: "openai-chat-completions", configured: false, base_url: "https://api.openai.com/v1", model: "gpt-4.1-mini" }; }
 async configureModel(_input: ConfigureModelInput): Promise<ModelConfigSnapshot> { throw new Error("Model configuration is unavailable in browser demo mode"); }
@@ -246,7 +257,7 @@ G-08 的三个 UI mutation 也刻意收窄：浏览器只能为当前 root Run �
 
 ### 5.1 依赖的是一个窄接口，不是 SDK 本体
 
-```43:52:apps/web/src/live-client.ts
+```43:52:packages/workbench/src/live-client.ts
 export interface TraceGraphSdkPort {
   bootstrap(): Promise<{ token: string; expiresAt: string }>;
   listProjects(): Promise<readonly ProjectSummary[]>;
@@ -258,7 +269,7 @@ canonical `streamEvents` 是必需接口；`streamLiveActivities?` / `streamMode
 
 状态全部住在类实例里，**不经 React state**：
 
-```140:155:apps/web/src/live-client.ts
+```140:155:packages/workbench/src/live-client.ts
   private snapshot: WorkbenchSnapshot = emptyLiveSnapshot({
     state: "connecting",
     message: "Connecting to the local TraceGraph Host…",
@@ -280,7 +291,7 @@ canonical `streamEvents` 是必需接口；`streamLiveActivities?` / `streamMode
 
 ### 5.2 三条流的分工与失败归属
 
-```424:432:apps/web/src/live-client.ts
+```424:432:packages/workbench/src/live-client.ts
 private startStream(runId: string): void {
   this.stopStream();
   const controller = new AbortController();
@@ -300,7 +311,7 @@ private startStream(runId: string): void {
 
 快速流与公开面流的注释把这条纪律写死了：
 
-```435:439:apps/web/src/live-client.ts
+```435:439:packages/workbench/src/live-client.ts
 /**
  * Fast UI-only feed: it is intentionally independent of projection reloads
  * so a user can see an in-flight request/tool immediately. The durable SSE
@@ -308,7 +319,7 @@ private startStream(runId: string): void {
  */
 ```
 
-```451:454:apps/web/src/live-client.ts
+```451:454:packages/workbench/src/live-client.ts
 } catch {
   // The durable projection stream owns connection state and retry UI. A
   // transient presentation stream failure must never mark a Run failed.
@@ -317,7 +328,7 @@ private startStream(runId: string): void {
 
 ### 5.3 持久流的重试循环
 
-```479:519:apps/web/src/live-client.ts
+```479:519:packages/workbench/src/live-client.ts
 private async consumeStream(runId, controller, generation): Promise<void> {
   let retryMs = this.minRetryMs;                       // 默认 300ms
   let afterSequence = this.projection?.last_sequence ?? 0;
@@ -361,7 +372,7 @@ private async consumeStream(runId, controller, generation): Promise<void> {
 
 ### 5.4 代号取消（generation）
 
-```521:525:apps/web/src/live-client.ts
+```521:525:packages/workbench/src/live-client.ts
 private stopStream(): void {
   this.streamController?.abort();
   this.streamController = null;
@@ -373,7 +384,7 @@ private stopStream(): void {
 
 ### 5.5 与投影的合并：先给临时态，再用水合结果替换
 
-```403:421:apps/web/src/live-client.ts
+```403:421:packages/workbench/src/live-client.ts
 const publicActivities = this.liveActivities.get(projection.run_id) ?? [];
 const modelSurface = this.modelSurface.get(projection.run_id) ?? [];
 const base = { ...mapped, run: { ...mapped.run, ...(publicActivities.length === 0 ? {} : { publicActivities }), ...(modelSurface.length === 0 ? {} : { modelSurface }) }, ... };
@@ -390,7 +401,7 @@ if (this.projection?.run_id === projection.run_id && this.projection.last_sequen
 
 ### 5.6 两条易失流的去重与幂等
 
-```527:537:apps/web/src/live-client.ts
+```527:537:packages/workbench/src/live-client.ts
 private recordLiveActivity(runId: string, activity: LivePublicActivity): void {
   const current = this.liveActivities.get(runId) ?? [];
   if (current.some((item) => item.sourceEventId === activity.source_event_id)) return;   // 按来源事件去重
@@ -401,7 +412,7 @@ private recordLiveActivity(runId: string, activity: LivePublicActivity): void {
 
 模型公开面流额外做两件事（`recordModelSurface`）：
 
-```542:556:apps/web/src/live-client.ts
+```542:556:packages/workbench/src/live-client.ts
 // Provider-native reasoning is a private scratchpad. Older Hosts may still emit
 // the legacy wire type, so reject it at the client boundary as well as in Runtime and the React renderer.
 if (nextSnapshot.type === "thinking_snapshot") return;
@@ -420,7 +431,7 @@ const next = existing && existing.cursor >= nextSnapshot.cursor ? current : [...
 
 写操作全部携带 `command_id`（`crypto.randomUUID`，无 crypto 时回退时间戳+随机数），Host 侧可据此去重：
 
-```319:334:apps/web/src/live-client.ts
+```319:334:packages/workbench/src/live-client.ts
 async approve(approvalId: string): Promise<void> {
   const projection = this.requireProjection();
   const pending = projection.pending_approval;
@@ -449,7 +460,7 @@ G-01 增加了两层不同含义的“连续性”，不能混为一谈：
 
 ### 5.9 契约校验一律 fail-soft
 
-```1529:1536:apps/web/src/live-client.ts
+```1529:1536:packages/workbench/src/live-client.ts
 function parseJson<T>(content: string, schema: { safeParse(value: unknown): { success: true; data: T } | { success: false } }): T | null {
   try {
     const parsed = schema.safeParse(JSON.parse(content));
@@ -507,7 +518,7 @@ steer 输入框遵循“确认成功后才消费草稿”：只有 Host 操作�
 
 `App.tsx` 只做三件事：装 `LanguageProvider`、用 `useSyncExternalStore` 订阅快照、把快照分发给组件。
 
-```37:43:apps/web/src/App.tsx
+```37:43:packages/workbench/src/App.tsx
 function useSnapshot(client: WorkbenchClient) {
   return useSyncExternalStore(
     (listener) => client.subscribe(listener),
@@ -517,36 +528,18 @@ function useSnapshot(client: WorkbenchClient) {
 }
 ```
 
-### 6.1 三视图与装配点
+### 6.1 UX-086：对话主区与按需审阅
 
-根节点 `<div className={`app theme-${theme} ${view === "changes" ? "changes-mode" : ""}`}>`（`App.tsx:222`）内部依次是：`compact-gate`（<1024px 只读栅栏，223:230）→ `desktop-app`（231）→ `workspace`（233:291）→ 两个抽屉（293:298）→ `SettingsPanel`（300）。工作台内的互斥分支：
+共享 `App` 默认打开 `chat`。侧栏提供新对话、项目与历史会话、搜索和开发资源入口；底部账户菜单进入设置、Memory 和连接信息。侧栏开关属于本机呈现偏好，不改变 canonical Session；Run 的对话、轨迹和变更可按需切换。
 
-```233:237:apps/web/src/App.tsx
-        <div className={`workspace ${view === "changes" ? "workspace-changes" : ""}`}>
-          <Sidebar onChooseProject={chooseProject} onPreviewState={previewState} onReturnHome={() => void clie…} />
+- 无项目无 Run → `NoProject` 的普通对话输入；有项目无 Run → `ProjectReady` 的 Plan/Execute 任务输入；有 Run → 对话、轨迹或变更视图。
+- `MainView = "chat" | "trajectory" | "changes"`。对话保留公开活动、工具事实、审批和固定输入区；轨迹保留逐事件查看和 replay，不将私有推理转成进度。
+- Inspector 按需打开，沿用 `selectedEvidence`；测试日志为独立抽屉。未选择事件时消费 Run head，选择事件时消费该事件链接的证据，不倒灌后续事实。
+- `ChangesView` 在窄视口提供 Files 入口，文件列表仍可操作。测试通过标记来自 Artifact 证据槽位，缺失或截断的 PatchPreview 不视为已审阅。
+- 没有旧版 compact 只读替代页。侧栏可显式收起；1024×768 仍可输入、导航与审阅。键盘提供导航/搜索/设置/视图入口；Enter 提交、Shift+Enter 换行，IME 组合期间不提交。
+- Preview 与 Local 来源持续可见；空态、初始化/离线、失败与 unsupported 操作由真实 client 状态呈现。
 
-          {!snapshot.project && !run && <NoProject availableProjects={snapshot.availableProjects} connection={…} />}
-          {snapshot.project && !run && <ProjectReady key={snapshot.project.id} onReasoningEffortChange={setRea…} />}
-```
-
-```281:289:apps/web/src/App.tsx
-          {run && view !== "changes" && (
-            <Inspector event={displayedEvent} scope={selectedEvidence} />
-          )}
-
-          {run && view === "changes" && (
-            <main className="changes-workbench">
-              <ChangesView codeIntel={selectedEvent ? selectedEvidence.codeIntel : run?.codeIntel} diffs={selectedEvidence.diffs} edges={selectedEvidence.graphEdges} evidence={selectedEvidence.evidence} files={selectedEvidence.changedFiles} nodes={selectedEvidence.graphNodes} onJumpToPatch={jumpToPatch} onOpenDetails={() => setDetailsOpen(true)} patchId={selectedEvidence.patchEventId} verified={["available", "demo"].includes(selectedEvidence.evidence.test.status)} />
-            </main>
-          )}
-```
-
-- `MainView = "chat" | "trajectory" | "changes"`（`model.ts:294`），导航在 `RunHeader` 内渲染。
-- 状态页与工作台页互斥：无项目无 Run → `NoProject`（236）；有项目无 Run → `ProjectReady`（237）；有 Run → 工作台（239）。
-- **Inspector 有两种挂载方式**：常驻右栏（281:283，`view !== "changes"` 时）与抽屉（293:295，窄屏 / Changes 视图下复用同一份 `scope`）；测试日志用独立的底部抽屉（296:298）。同一份 `selectedEvidence` 既喂 Inspector 也喂 ChangesView，**证据投影只有一份**。
-- **ChangesView 的 `verified` prop 直接来自测试证据槽位状态**（`["available","demo"].includes(...)`），验证标记不是本地布尔量。
-- **G-20 CodeIntel 也走同一份选择证据**：实时/未选事件时展示 Run head；选择历史事件时 `live-client` 只找该 `code.intel_updated` 或与该 Patch 相连的 semantic event，绝不把后续 Run head 倒灌到过去。它显示有界 changed files/顶层 declarations、LSP 摘要、Git stale-base 重新审批提示，而不显示原始 Git/LSP 内容。
-- Chat / Trajectory 二选一在同一 `<main className="main-workbench">` 内切换（242:259），其中 `Trajectory` 的"回到尾部"由 `setTailFollowing(true); setSelectedId(null)` 两个动作共同表达（259）。
+源码入口：[App](../../packages/workbench/src/App.tsx)、[Sidebar](../../packages/workbench/src/components/Sidebar.tsx)、[状态页](../../packages/workbench/src/components/WorkbenchStates.tsx)、[共享样式](../../packages/workbench/src/workbench.css)。[UX-086 参考与旅程](../validation/ui-086-workbench-ux/reference-and-journeys.md)区分官方参考、Outlive 实现与范围外能力；[DOM 旅程测试](../../packages/workbench/src/ux-086-journey.test.tsx)验证命令、键盘、Session 与失败状态。
 
 ### 6.2 输入区：G-14 排队模式与审批控制面并存
 
@@ -554,7 +547,7 @@ function useSnapshot(client: WorkbenchClient) {
 
 composer 明示“将在下一步发送”，展示 canonical pending 队列和最近一次 `at_step`；普通提交、Plan/Patch/Todo mutation 各有 busy 门，但紧急 cancel 使用独立 busy 状态，不会因另一条普通命令在途而被误禁用。队列满或已有 cancel 时相应控件仍 fail-closed。`interrupted` / `needs_manual_review` 保留已恢复的 pending 队列展示，但 textarea 与 cancel 禁用；终态不再向旧 Run steering，而恢复为“新任务”输入。`reconnecting` 时 composer 与 Header Stop 都禁用，避免把网络未知状态误当成功。Stop 按钮与 composer 的“安全取消”均排队 `kind:"cancel"`，在 canonical `run.cancelled` 到达前不终止 SSE 或伪造终态。
 
-```apps/web/src/App.tsx
+```packages/workbench/src/App.tsx
 <SteeringComposer
   disabledReason={run.status === "interrupted" ? "Resume the Run first." : null}
   pending={run.inputQueue.pending}
@@ -623,11 +616,11 @@ StartRun/StartChat 的 Web/SDK 输入没有 permission/sandbox 字段。设置�
 
 取消也走同一路径，但不会从 pending 列表“删除一条消息”：`cancel` 的含义是取消整个 Run，也是普通 FIFO 的 control-lane 例外。它可越过更早普通输入；这些输入仍留在 cancelled Projection 中，明确表示未交给模型。模型流可尽快中断，工具/WAL 则必须到安全边界；Web 保持 SSE，直到 canonical `run.cancelled`。已提交 patch 不由这里自动回滚，回滚仍是 G-04 的独立控制面。
 
-#### 6.3.6 G-15 Telemetry 只读状态
+#### 6.3.6 G-15 Telemetry 健康与共享设置
 
 `App.tsx` 只把 `client.getTelemetryStatus()` 作为 `onGetTelemetryStatus` 交给 `SettingsPanel`。面板打开时读取一次 strict `TelemetryStatusSnapshot`，`TelemetrySettingsSection` 展示当前 `disabled|active|degraded`、sink label、export error count 与可选 last error；加载/失败也只影响该诊断区，不影响模型/权限设置。旧 Host 返回 404 或旧 SDK port 缺失方法时，面板呈现 unavailable/错误文案，不显示伪造的 noop 健康快照。
 
-这里没有 endpoint 输入框、header/authorization 控件、启停按钮或保存请求。浏览器不能看到 `<dataDir>/telemetry.json` 路径、环境变量值、G-19 secret reference 或 OTLP queue payload。该状态也是进程内快照：刷新可重新读取，但 Host 重启后的 error count/last error 会重置；Web 不把它存进 Run、Session 或本地恢复数据。
+当前 [`UnifiedSettings`](../../packages/workbench/src/components/UnifiedSettings.tsx) 可通过共享 telemetry group 保存 enabled、endpoint 与授权 secret reference，明确提示 restart生效；该reference不是授权值。浏览器不读取服务端配置路径、环境值或OTLP queue payload。该状态也是进程内快照：刷新可重新读取，但 Host 重启后的 error count/last error 会重置；Web 不把它存进 Run、Session 或本地恢复数据。
 
 #### 6.3.7 G-17 扩展状态与 idle-only reload
 
@@ -639,11 +632,39 @@ Replay 模式下设置入口和面板本身都关闭，`LiveTraceGraphClient.rel
 
 `App.tsx` 把 `run.team`、每项 busy key、错误和不可写原因交给 `TeamPanel`。create/steer/cancel 都由 App 统一捕获错误并保持失败可见；组件不会先乐观改 owner/message/task state。`TeamPanel` 还会在 steer 失败/异常/响应不确定时保留 draft，仅在确认成功且 draft 未被用户继续编辑时清空。Replay 一进入 loading 就用与 Todo/审批相同的全局只读原因禁用 Team，Host replay bearer 再提供最终 403 防线。
 
+#### 6.3.9 Desktop 原生能力的共享 UI 边界
+
+`packages/workbench` 通过可选 `openProjectFile(projectId)` client 能力显示项目文件入口；Desktop adapter 提供该能力，Web adapter 不实现，因此 Web 不会获得任意本机路径/原生文件打开权限；Host-owned PTY 是另外明确授权的 developer能力。Desktop Main 使用 OS 文件选择器并在 Host 注册根目录下验证 canonical path，Renderer 只传 Project ID。两端仍共用 Workbench 组件和状态语义，平台权限留在各自 composition adapter。
+
+模型设置 UI 与配置 owner 都是共享的。Web 用 loopback HTTP、Desktop 用固定 preload/Main IPC→私有 HTTP adapter，最终都写同一 Host `CredentialStore` 和 profile；配置只保存 secret reference，读取不返回 key。平台 backend由共享 Host选择，Workbench仅呈现安全metadata。
+
+#### 6.3.10 Memory 与 Experience 共享控制面
+
+`MemoryControlPanel` 在 Web 和 Desktop 展示同一组 Memory 与 Experience 控制。Web client 将经过 `@tracegraph/sdk/protocol` 校验的 command/query 映射到 Host REST；Desktop client 经具名 preload/Main IPC 与私有 HTTP typed SDK；旧 framed RPC dispatcher 保留兼容测试。两个入口最终调用 `@tracegraph/api` 的 `MemoryExperienceController`，由 Host 当前项目注册派生 scope，Renderer 不提交 owner/actor。
+
+Experience 面板显示来源证据、status 和 lifecycle sequence，仅呈现 Core 已支持的状态转换：candidate validate/reject、validated dispute/retire、disputed resolve/retire。seed 不提供编辑/删除，审核 UI 不会自行开启 Recall。Memory 控制保留 MEM-046 已实现的 inspect/review/correct/revoke/delete 及其本机 V2 删除边界。
+
+#### 6.3.11 SET-090/DEV-091/RUN-092 共享设置与本地工作台
+
+当前设置入口使用 [`UnifiedSettings`](../../packages/workbench/src/components/UnifiedSettings.tsx)，读取 Host 的 settings/capabilities，而不是凭 adapter 方法存在就猜测支持。分类包括 general、appearance、models、permissions、Memory/privacy、developer、skills/extensions、MCP/LSP、usage/diagnostics 和 about；每项声明 source、scope、writable与 effective。配置APIKey成功不等于连接测试通过，也不等于Run已完成；模型测试结果来自有界provider调用。清除Key保留地址、协议和模型参数，仍显示未配置/has_key=false。
+
+语言、主题等profile偏好立即应用；reasoning/concurrency影响新Run；tools、telemetry、Memory/Experience opt-in及project范围在Host重启生效。两端读取同一profile，不把Desktop APIKey存进另一个 Electron userData目录。保存失败、只读、未配置和策略拒绝用实际code/message呈现；预览adapter与live共享owner隔离。
+
+[`WorkspaceResources`](../../packages/workbench/src/components/WorkspaceResources.tsx) 通过Host闭合commands呈现Git status/diff/stage/unstage/discard/commit/branch/worktree、Host-owned终端和预览、定时任务与后台Run；命令保持command ID、explicit request和canonical receipt。Git mutations、长期终端、owned preview与Run共享canonical workspace写租约，冲突时排队且可取消尚未开始的holder。运行中仍能切换/新建会话，退出窗口不取消后台任务；显式停止Host才结束资源。
+
+会话归档保留历史，搜索/通知中心/命令面板消费Host事实与本机呈现状态。[`App`](../../packages/workbench/src/App.tsx) 和 [`CommandPalette`](../../packages/workbench/src/components/CommandPalette.tsx)是入口。Desktop native migration由 [`MigrationSettings`](../../packages/workbench/src/components/MigrationSettings.tsx) 展示source预览/冲突/选择，只向Renderer提供安全ID；Web不通过字符串路径获得原生迁移权限。
+
+### 6.3.12 三端连接与验收边界
+
+Web `LiveTraceGraphClient` 直连loopbackgateway；Desktop `LiveTraceGraphClient` 的port经具名bridge到Main typed SDK，三条SSE用pull open/read/close推进。[`desktop-sdk.ts`](../../apps/desktop/src/desktop-sdk.ts)、[`stream-bridge.ts`](../../apps/desktop/src/stream-bridge.ts)保留canonical/activity/model-surface游标，过滤私有thinking字段；不使用500ms projection polling冒充实时流。Client generation/abort只停止旧订阅，Host任务继续。
+
+macOS临时profile、fakeprovider、UDS/TCP、真实Electron窗口与Seatbelt的实际证据和跨平台安装smoke属于不同范围；当前Windows pipe/native资源并未在真实Windows环境验收，Linux安装smoke不等价于新增完整GUI/PTY/Sandbox验收。未签名归档和维护者/Agent旅程也不等于独立非维护者外部验收。共享Host oracle见 [`local-host.test.ts`](../../packages/host/src/local-host.test.ts)，当前最终GUI证据应以本轮验证报告的实际结果为准。
+
 ### 6.4 审批条：把"能不能点"做成数据
 
 审批按钮的可用性不是 CSS 层面的置灰，而是由 Host 给出的 `reviewReady` 决定：
 
-```31:31:apps/web/src/components/ApprovalStrip.tsx
+```31:31:packages/workbench/src/components/ApprovalStrip.tsx
 <button className="button primary" disabled={busy || !approval.reviewReady} onClick={onApprove} type="button">{t(busy ? "Applying…" : approval.reviewReady ? "Allow once" : "Verify full diff")}</button>
 ```
 
@@ -653,7 +674,7 @@ Replay 模式下设置入口和面板本身都关闭，`LiveTraceGraphClient.rel
 
 `StateNotice` 为每个非正常态给出固定措辞，其中 G-04 增加了独立人工复核提示：
 
-```94:99:apps/web/src/App.tsx
+```94:99:packages/workbench/src/App.tsx
   if (status === "indexing") return <Notice icon="search" title={t("Building the baseline graph")} tone="info">{scanScope ? … : currentStep}{indexedFiles === undefined ? ` · ${t("progress is event-based")}` : …} · {t("no percentage estimated")}</Notice>;
   if (status === "reconnecting") return <Notice action={<button className="button subtle" onClick={onRefresh} type="button"><Icon name="refresh" size={13} />{t("Retry now")}</button>} icon="refresh" title={t("Reconnecting to the local host")} tone="warning">{language === "zh-CN" ? `已保留最后一个持久化事件 #${lastSequence}。` : `Last durable event #${lastSequence} is preserved.`} {connectionMessage}</Notice>;
   if (status === "needs_manual_review") return <Notice icon="alert" title={t("Needs manual review")} tone="warning">{t("The workspace no longer matches the Action WAL. TraceGraph did not change files automatically.")}</Notice>;
@@ -670,9 +691,9 @@ Replay 模式下设置入口和面板本身都关闭，`LiveTraceGraphClient.rel
 - `ready_for_review`：提示"补丁、图增量、测试回执已链接且可检查"，并给一个直达 Changes 视图的按钮——把"三件证据齐了"当作一个可点击的事实。
 - `historical`：打开历史投影**永不执行工具**，这条承诺写在界面上。
 
-### 6.6 窄屏只读门槛
+### 6.6 可操作的窄视口
 
-小于 1024px 时工作台整体降级为只读提示（`.compact-gate`，`App.tsx:223:230`），不提供隐藏功能的移动端布局——这是刻意的能力声明，避免"在手机上看起来能用但看不到 diff"的误导。
+UX-086 移除了 compact 只读替代页。侧栏可收起，Inspector 按需打开，变更视图保留 Files 切换入口；1024×768 的核心导航、输入与审阅纳入验收。更小手机视口不是本轮完整验收范围，不能据此声称移动端全功能对等。
 
 ## 7. 会话呈现：公开面规则
 
@@ -680,7 +701,7 @@ Chat 视图的难点不是排版，而是**"哪些内容有资格出现在用户
 
 ### 7.1 三层内容来源
 
-```209:228:apps/web/src/components/WorkbenchStates.tsx
+```209:228:packages/workbench/src/components/WorkbenchStates.tsx
 const persistedPlans = process
   .filter((event) => event.kind === "decision" && event.state === "succeeded" && Boolean(event.rationale ?? event.summary))
   .map((event) => ({ ... type: "public_plan_snapshot", text: event.rationale ?? event.summary }));
@@ -695,7 +716,7 @@ const visibleSurface = safeModelSurface.length > 0 ? safeModelSurface : persiste
 
 ### 7.2 快速流与持久流在同一序列号上合并
 
-```277:291:apps/web/src/components/WorkbenchStates.tsx
+```277:291:packages/workbench/src/components/WorkbenchStates.tsx
 function publicProcess(events, liveActivities = []): TraceEvent[] {
   const visibleKinds = ["run","context","decision","tool","approval","patch","graph","test"] as const;
   // The rapid feed arrives before the durable event projection. As soon as
@@ -737,7 +758,7 @@ G-03 在同一面板明确分成两块：
 
 `Language = "zh-CN" | "en"`（`i18n.tsx:3`），但仓库里**只有 zh-CN 词典**（`zhCN`，`i18n.tsx:7:342`）。`t(text)` 以英文原文为 key 查表，查不到就原样返回：
 
-```344:354:apps/web/src/i18n.tsx
+```344:354:packages/workbench/src/i18n.tsx
 interface I18nValue {
   language: Language;
   setLanguage: (language: Language) => void;
@@ -757,7 +778,7 @@ const I18nContext = createContext<I18nValue>({
 
 ### 8.2 语言持久化
 
-```356:368:apps/web/src/i18n.tsx
+```356:368:packages/workbench/src/i18n.tsx
 function initialLanguage(): Language {
   if (typeof window === "undefined") return "en";
   const saved = window.localStorage.getItem(STORAGE_KEY);
@@ -780,7 +801,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
 主题与推理强度分别存在 `tracegraph.theme` / `tracegraph.reasoning-effort`（`App.tsx:19:20`，读取见 24 / 33，写回见 127 / 133）。主题变更不只是写存档：
 
-```127:130:apps/web/src/App.tsx
+```127:130:packages/workbench/src/App.tsx
     window.localStorage.setItem(THEME_STORAGE_KEY, theme);
     document.documentElement.style.colorScheme = theme;
     window.dispatchEvent(new CustomEvent("tracegraph:themechange", { detail: theme }));
@@ -802,7 +823,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
 测试环境是 **node，不是 jsdom**；组件测试用 `renderToStaticMarkup` 出静态标记再断言字符串：
 
-```1:6:apps/web/src/components/WorkbenchStates.test.tsx
+```1:6:packages/workbench/src/components/WorkbenchStates.test.tsx
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { LanguageProvider } from "../i18n";
@@ -833,7 +854,7 @@ import { ChatView } from "./WorkbenchStates";
 
 用例名直接写意图，例如 `renders actual durable tool facts without inventing a model thought narration`（`WorkbenchStates.test.tsx:17`），与 §7.1 的规则一一对应。
 
-**测试缺口**：有 SSR 结构与 live-client 行为测试，但没有 jsdom/testing-library 的真实 DOM 键盘与连续点击测试；回车组合态和按钮事件处理仍主要靠代码审查。
+**交互测试**：UX-086 新增 `ux-086-journey.test.tsx` 的 jsdom 连续操作，覆盖键盘、IME/Shift 换行、任务提交、steer/cancel、Session/固定会话、变更文件选择、离线禁用及失败后保留输入。真实浏览器/Electron 与 Host 的旅程、尺寸和截图另见 [UX-086 验收目录](../validation/ui-086-workbench-ux/)。这些合成模型测试不代表外部 Provider 质量。
 
 ## 10. 已知缺口
 
@@ -843,15 +864,15 @@ import { ChatView } from "./WorkbenchStates";
 4. **`previewState` 语义双关**：demo 下是"切换原型状态"（并**硬编码选中 `evt_012`**，`App.tsx:156:160`），live 下只等价于"立即重试 SSE"（`live-client.ts:366:372`）。同名方法承载两套语义，对读代码的人是负担。
 5. **`thinking_snapshot` 仍在线上协议里**：旧 Host 仍可能发，Web 侧靠三处防线拒绝（Runtime / 渲染器 / 客户端边界，`live-client.ts:542:545`）。属于应收敛的历史字段。
 6. **ContextBudget 不伪造来源**：它只展示真实存在的 Context source；Runtime 注入 `memory` / `retrieved` 项时按普通来源显示，未命中时不会伪造占位项。
-7. **窄屏只读**：<1024px 只给一张提示卡（`App.tsx:223:230`）。这是能力声明而非缺陷，但它是"Web 不是 vscode/IDE 替代品"的边界说明。
-8. **没有浏览器 DOM 级交互测试**：见 §9。SSR 已覆盖状态分支，live-client 已覆盖行为，但输入法组合、焦点与快速连续点击仍没有 jsdom/testing-library 或真实浏览器回归。
+7. **移动端范围有限**：UX-086 已验证至 1024×768，移除了只读替代页并保留核心输入/导航/文件审阅；更小手机尺寸仍需单独验收。
+8. **交互验收有明确范围**：共享port/固定Desktopbridge已覆盖当前工作台方法和三条SSE；可用性仍由Host capability和policy决定。核心旅程、逐项合同测试、真实平台资源oracle与外部安装验收分开，不能因某条旅程通过推断所有平台/分发功能完成。
 9. **快速流在旧 Host 下静默缺失**：`streamLiveActivities` / `streamModelSurface` 在 `TraceGraphSdkPort` 上是可选方法，缺失时 Chat 视图回落到 `persistedPlans`（§7.1）——用户看到的是"滞后的计划公开面"而不是"在飞的活动"，且降级不提示，只写在代码注释里。
 
 10. **Web 没有 provider-exact 逐 section 数据。** 它忠实展示 Manifest 的 preflight allocation 与 provider 回报总量，不能把后者反推到 system/history/tool 等 section；provider 已返回但 usage Event 尚未持久化的崩溃窗口也只能显示 estimate。
 
-11. **Web 尚无 rollback 操作控件或 Recovery report 导出。** 客户端已能映射 `action.verified/reconciled/diverged/rollback_refused`、`patch.rolled_back` 与 `needs_manual_review`，SDK 也有 rollback 方法，但页面只负责展示这些 durable 事实；显式回滚当前必须直接调用 Host API/SDK，且 Runtime 策略默认关闭。
+11. **Rollback不扩大默认策略。** SDK/CLI/固定Desktop adapter 的显式 Action 请求仍需 Host 已广告能力；`rollback.write` 默认 `policy-denied`，启用后仍受 quiescent、WAL 和 hash/root 绑定保护，共享 UI 入口以实际组件为准；Recovery Markdown没有独立导出路由。
 
-12. **Sandbox 徽标不是控制面或平台保证。** 它只呈现 Host 已记录的 report；Linux/Windows `none` 不会因红色徽标变成可执行 backend，模型网络/`commit_patch` 也不在 child sandbox。<1024px 的既有 compact gate 会隐藏 header metrics，因此顶栏徽标可能不可见，但相关 Trajectory 行仍显示 report。
+12. **Sandbox 徽标不是控制面或平台保证。** 它只呈现 Host 已记录的 report；Linux/Windows `none` 不会因红色徽标变成可执行 backend，模型网络/`commit_patch` 也不在 child sandbox。顶栏空间不足时可从相关 Trajectory 行检查完整 report；不因窗口尺寸将 requested mode 当作隔离保证。
 
 13. **Permission UI 不是 policy editor。** 浏览器只能选择 Host 广告且不高于 ceiling 的 built-in preset；不能查看/修改完整 rules/path scope，也不能逐 Run 热覆盖。选择保存后只影响新 Run，恢复继续使用冻结 policy。`full-write` 警告不能替代 OS 隔离；该 preset 本身就是显式 opt-out。
 
@@ -859,7 +880,7 @@ import { ChatView } from "./WorkbenchStates";
 
 15. **Steering UI 没有 dequeue/reorder。** G-14 普通输入按 durable FIFO 消费；`cancel` 是可越过普通输入的控制通道，用来取消整个 Run，不是删除 pending item。页面支持 `message`、`approve_hint` 与安全 cancel，但不会改写已经排队的输入；legacy stop 仅留在 SDK/Host 兼容面。
 
-16. **Telemetry UI 只有当前进程的只读快照。** 它不能修改 sink、endpoint 或 authorization，也不能证明 Collector 已收到/持久化数据；Host 重启会丢失 error count/last error 与内存 queue。旧 Host/SDK 不支持 status 时 Web 显式报错，不伪造 noop。Web 不从 status 恢复 Run，更不会把它与 durable Ledger 混为一谈。
+16. **Telemetry配置和交付确认分开。** 共享设置可保存 enabled/endpoint/secret reference并在重启应用，但健康快照不能证明Collector已收到/持久化数据；Host 重启会丢失 error count/last error 与内存 queue。旧 Host/SDK 不支持 status 时 Web 显式报错，不伪造 noop。Web 不从 status 恢复 Run，更不会把它与 durable Ledger 混为一谈。
 
 17. **G-08 Team 面板不是完整 worker scheduler。** G-07 子任务卡仍只能展开父投影已记录的 direct child，不能 spawn、send、interrupt、resume、重排或编辑 Session 树；进入 replay 时也不加载 child。Team 面板新增 durable roster/task board/mailbox 的证据视图与用户 steer/cancel，但没有 worker join/claim/heartbeat/sweep、自动重启/重派或跨 Host 调度控件，单个 spawn 仍由 Runtime 同步阻塞。
 

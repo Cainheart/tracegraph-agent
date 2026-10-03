@@ -8,6 +8,7 @@ import {
   Sha256Schema,
 } from "./common.js";
 import { MemoryUseEventDataSchema } from "./memory-use.js";
+import { ModelRetryScheduledDataSchema } from "./retry.js";
 
 export const terminalEventTypes = ["run.completed", "run.failed", "run.cancelled"] as const;
 
@@ -115,6 +116,11 @@ export const EventTypeSchema = z.enum([
   "lsp.server_unavailable",
   "code.intel_updated",
   "code.stale_base_detected",
+  "model.retry_scheduled",
+  "workbench.command_requested",
+  "workbench.command_completed",
+  "workbench.command_failed",
+  "schedule.trigger_recorded",
 ]);
 export type EventType = z.infer<typeof EventTypeSchema>;
 
@@ -159,8 +165,12 @@ export const SessionEventSchema = z.discriminatedUnion("type", eventVariants as 
   (typeof eventVariants)[number],
   ...(typeof eventVariants)[number][],
 ]).superRefine((event, context) => {
-  if (event.type !== "memory.use_status") return;
-  const parsed = MemoryUseEventDataSchema.safeParse(event.data);
+  const parsed = event.type === "memory.use_status"
+    ? MemoryUseEventDataSchema.safeParse(event.data)
+    : event.type === "model.retry_scheduled"
+      ? ModelRetryScheduledDataSchema.safeParse(event.data)
+      : undefined;
+  if (parsed === undefined) return;
   if (!parsed.success) {
     for (const issue of parsed.error.issues) {
       context.addIssue({ ...issue, path: ["data", ...issue.path] });
@@ -215,8 +225,12 @@ export const WireSessionEventSchema = z.object({
   test_receipt_id: IdentifierSchema.optional(),
   data: z.record(z.string(), z.unknown()),
 }).superRefine((event, context) => {
-  if (event.type !== "memory.use_status") return;
-  const parsed = MemoryUseEventDataSchema.safeParse(event.data);
+  const parsed = event.type === "memory.use_status"
+    ? MemoryUseEventDataSchema.safeParse(event.data)
+    : event.type === "model.retry_scheduled"
+      ? ModelRetryScheduledDataSchema.safeParse(event.data)
+      : undefined;
+  if (parsed === undefined) return;
   if (!parsed.success) {
     for (const issue of parsed.error.issues) {
       context.addIssue({ ...issue, path: ["data", ...issue.path] });

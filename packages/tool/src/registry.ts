@@ -88,6 +88,7 @@ function toolDescriptor<TInput, TOutput>(definition: ToolDefinition<TInput, TOut
     throw new RangeError(`maxResultBytes must be at least ${MIN_TOOL_RESULT_ENVELOPE_BYTES}`);
   }
   return ToolDescriptorSchema.parse({
+    ...(definition.workspaceIndependent===undefined?{}:{workspace_independent:definition.workspaceIndependent}),
     name: definition.name,
     description: definition.description,
     input_schema: definition.modelInputSchema === undefined
@@ -177,6 +178,7 @@ export function validateToolCall(input: ValidateToolCallInput): {
       && call.tool_name !== "list_artifacts"
       && call.tool_name !== "todo_read"
       && call.tool_name !== "todo_write"
+      && definition.workspaceIndependent !== true
       && !input.workspace.capabilities[definition.capability]
     ) {
       throw new ActionRejectedError("capability_denied", `${definition.capability} is disabled by WorkspaceHandle`);

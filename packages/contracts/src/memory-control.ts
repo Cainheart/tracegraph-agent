@@ -17,6 +17,8 @@ export const MemoryCandidateCreateRequestSchema = z.object({
   project_id: IdentifierSchema.optional(),
   sensitivity: z.enum(["public", "internal", "personal", "secret"]).optional(),
   allow_model_use: z.boolean().optional(),
+  /** Explicit consent for exporting this exact authored version; omitted means denied. */
+  allow_export: z.boolean().optional(),
   source_description: z.string().max(500).optional(),
   retention_policy: NonEmptyStringSchema.max(200).optional(),
   valid_until: IsoDateTimeSchema.optional(),
@@ -68,6 +70,8 @@ export const MemoryCorrectionRequestSchema = z.object({
   expected_sequence: z.number().int().nonnegative(),
   claim: NonEmptyStringSchema.max(8_000),
   normalized_key: NonEmptyStringSchema.max(500).optional(),
+  /** Fresh consent for the corrected exact version; never inherits prior consent. */
+  allow_export: z.boolean().optional(),
 }).strict();
 export type MemoryCorrectionRequest = z.infer<typeof MemoryCorrectionRequestSchema>;
 
@@ -208,8 +212,38 @@ export const MemoryControlItemSchema = z.object({
 }).strict();
 export type MemoryControlItem = z.infer<typeof MemoryControlItemSchema>;
 
+/** Content-free, inspectable result of deterministic scope-local consolidation. */
+export const MemoryConsolidationResultSchema = z.object({
+  action: z.enum(["candidate", "unchanged"]),
+  requestDigest: Sha256Schema,
+  memoryId: IdentifierSchema,
+  comparedMemoryIds: z.array(IdentifierSchema).max(32),
+  sourceRunIds: z.array(IdentifierSchema).min(1).max(128),
+}).strict();
+export type MemoryConsolidationResult = z.infer<typeof MemoryConsolidationResultSchema>;
+
+/** Operational projection only; canonical Run and candidate facts remain in the Ledger. */
+export const MemoryBackgroundJobSchema = z.object({
+  runId: IdentifierSchema,
+  projectId: IdentifierSchema,
+  sourceDigest: Sha256Schema.optional(),
+  status: z.enum(["waiting", "running", "retry", "complete", "exhausted"]),
+  attempts: z.number().int().nonnegative().max(5),
+  nextAttemptAt: IsoDateTimeSchema.optional(),
+  candidateCount: z.number().int().nonnegative().max(8),
+  lastErrorCode: z.string().regex(/^[a-z][a-z0-9_]{0,99}$/u).optional(),
+  updatedAt: IsoDateTimeSchema,
+  consolidationResults: z.array(MemoryConsolidationResultSchema).max(8),
+  /** Legacy v1 counts covered attempted proposals and had no result references. */
+  resultDetailsAvailable: z.boolean(),
+}).strict();
+export type MemoryBackgroundJob = z.infer<typeof MemoryBackgroundJobSchema>;
+
 export const MemoryControlListResponseSchema = z.object({
   items: z.array(MemoryControlItemSchema).max(2_000),
   conflicts: z.array(MemoryConflictGroupSchema).max(500),
+  backgroundJobs: z.array(MemoryBackgroundJobSchema).max(100).optional(),
+  /** True while the disposable historical job index is incomplete. */
+  backgroundJobsLoading: z.boolean().optional(),
 }).strict();
 export type MemoryControlListResponse = z.infer<typeof MemoryControlListResponseSchema>;

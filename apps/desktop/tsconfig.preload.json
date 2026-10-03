@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "verbatimModuleSyntax": false,
+    "outDir": "dist",
+    "rootDir": "src",
+    "tsBuildInfoFile": "dist/.preload.tsbuildinfo"
+  },
+  "include": ["src/preload.cts", "src/bridge-contract.ts"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+}

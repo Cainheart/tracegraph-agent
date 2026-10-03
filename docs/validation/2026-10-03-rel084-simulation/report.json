@@ -1,0 +1,39 @@
+{
+  "schema_version": "tracegraph.rel084.simulation.v1",
+  "task": "REL-084",
+  "status": "simulated_pass",
+  "recorded_date": "2026-10-03",
+  "participant": "Codex-assisted maintainer simulation on the same workstation",
+  "participant_confirms_not_maintainer": false,
+  "independent_nonmaintainer_attempt": false,
+  "archive_sha256": "79a06960f699339c0c5136497f535bf0e0e515d17fc6b5415d18595ed7534827",
+  "release_manifest_sha256": "337c9331a9002af4fcb3e388234dba1c86b8eb6905ef35f744698b43eba96b75",
+  "sbom_sha256": "914832f9e02f26f7547785aea5c1d232f583fa2160cb44ae9e590cc1536b12dc",
+  "checksum_manifest_sha256": "3bae971960cb246256715c2be1d40be0c1b48e16ead9217fbf6d02d3830f4bb8",
+  "install_instructions_sha256": "1d72053c3bf48ddef6dfadf7b296b6fc229c42926be28c3b79dbb4037d658bf4",
+  "installed_smoke_sha256": "d9e77d615ad5969f39fed7adc9c120cd4604044ef4546fffc56cf55b59934691",
+  "public_proofs_sha256": "ace214d82d25df63eae9d8847e01cc01d809db6f4513911044d2923c7b6f4988",
+  "desktop_preview_receipt_sha256": "c571093165aeaabb6c570937e83c5353c651c0b731b607385a11122b45ec6a7f",
+  "desktop_preview_receipt_event_id": "evt:run:48af35a3438c:000008",
+  "platform": "macOS arm64, Node v24.21.0, package 0.1.0-alpha.0",
+  "install_command": "node scripts/preview-install.mjs --desktop",
+  "install_exit_code": 0,
+  "installed_smoke_command": "node scripts/preview-smoke.mjs",
+  "installed_smoke_status": "passed",
+  "proof_command": "node demos/proofs.mjs --output <temporary-directory>",
+  "proof_statuses": {
+    "DEMO-080": "passed",
+    "DEMO-081": "passed",
+    "DEMO-082": "passed"
+  },
+  "limits": [
+    "Fresh archive extraction had no node_modules, but pnpm reused the host content-addressable cache; this is not a clean-machine test.",
+    "The same-archive GUI receipt is a previously recorded CUA observation, not a fresh capture; the current recapture attempt timed out with CUA error -10005.",
+    "DEMO-082 proves cancellation quiescence; its fixture also records a sandbox-verification tool failure before the cancellation terminal event.",
+    "No independent non-maintainer participated. This is simulation evidence only."
+  ],
+  "failed_attempt_and_recovery": "An earlier --desktop install retry on the already-smoked extraction was rejected because pnpm exec had added unlisted apps/cli/node_modules. Re-extracting the unchanged archive into an empty directory and running --desktop first passed. A current GUI recapture attempt timed out with CUA error -10005, so the report relies on the prior CUA receipt bound to the exact archive SHA-256.",
+  "canonical_trace_update_event_id": "evt:run:ccb861a365e6:000952",
+  "temporary_artifacts_cleanup_status": "completed_and_verified",
+  "removed_task_downloaded_model": "qwen3:4b-instruct"
+}

@@ -1,0 +1,95 @@
+{
+  "schema_version": "outlive.product-smoke.v1",
+  "status": "failed",
+  "platform": "darwin",
+  "arch": "arm64",
+  "product_build_id": "326e9ba6940ab12284593f1c03de9eb337a5496a929d0938021261da898420d9",
+  "provider": "isolated deterministic loopback fixture",
+  "external_node_on_child_path": false,
+  "external_pnpm_on_child_path": false,
+  "assertions": [
+    {
+      "id": "bundled-main-owner",
+      "pid": 58170,
+      "boot_nonce": "3f6fa618-dc2f-4856-bfab-94224f644ee0",
+      "gateway": "http://127.0.0.1:57470",
+      "status": "passed"
+    },
+    {
+      "id": "actual-packaged-window",
+      "screenshot": "first-window.png",
+      "status": "passed"
+    },
+    {
+      "id": "same-owner-packaged-web",
+      "gateway": "http://127.0.0.1:57470",
+      "status": "passed"
+    },
+    {
+      "id": "model-save",
+      "configured": true,
+      "status": "passed"
+    },
+    {
+      "id": "explicit-model-test",
+      "status": "passed"
+    },
+    {
+      "id": "bundled-cli-shared-model",
+      "model": "installed-fixture",
+      "has_key": true,
+      "status": "passed"
+    },
+    {
+      "id": "managed-project-create",
+      "project_id": "project:installed-smoke-project:12b6a1b5",
+      "status": "passed"
+    },
+    {
+      "id": "bundled-node-child-pty",
+      "version": "24.21.0",
+      "closed": true,
+      "status": "passed"
+    },
+    {
+      "id": "window-close-keeps-owner",
+      "boot_nonce": "3f6fa618-dc2f-4856-bfab-94224f644ee0",
+      "status": "passed"
+    },
+    {
+      "id": "background-run-completes",
+      "run_id": "run:af59d462-f644-4e7d-a974-77645ef4b5d0",
+      "run_status": "completed",
+      "status": "passed"
+    },
+    {
+      "id": "reopen-reuses-owner",
+      "boot_nonce": "3f6fa618-dc2f-4856-bfab-94224f644ee0",
+      "status": "passed"
+    },
+    {
+      "id": "idle-settings-restart-rebind",
+      "boot_nonce": "a6dceac0-2bff-4b86-be5a-b2f7c5f3b6a6",
+      "pending_restart": [],
+      "status": "passed"
+    }
+  ],
+  "cleanup": {
+    "owner_stopped": true,
+    "apps_exited": true,
+    "isolated_profile_removed": true,
+    "app_processes": [
+      {
+        "pid": 58165,
+        "exit_code": 0,
+        "signal": null
+      },
+      {
+        "pid": 58205,
+        "exit_code": 0,
+        "signal": null
+      }
+    ]
+  },
+  "error": "Timed out waiting for product state: false"
+}

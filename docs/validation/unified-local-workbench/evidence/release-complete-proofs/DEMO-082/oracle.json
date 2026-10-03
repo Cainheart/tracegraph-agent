@@ -1,0 +1,98 @@
+{
+  "status": "passed",
+  "leader": 32666,
+  "descendant": 32667,
+  "leader_absent": true,
+  "descendant_absent": true,
+  "process_group_absent": true,
+  "model_dispatches": 1,
+  "pending_inputs": 0,
+  "active_subagents": 0,
+  "events": [
+    {
+      "sequence": 1,
+      "type": "run.created",
+      "summary": "Run created"
+    },
+    {
+      "sequence": 2,
+      "type": "session.opened",
+      "summary": "Durable session opened"
+    },
+    {
+      "sequence": 3,
+      "type": "permission.configured",
+      "summary": "Permission preset configured as custom"
+    },
+    {
+      "sequence": 4,
+      "type": "skill.registry_loaded",
+      "summary": "Loaded 0 local Skill catalog entries"
+    },
+    {
+      "sequence": 5,
+      "type": "sandbox.configured",
+      "summary": "Sandbox mode configured as danger-full-access"
+    },
+    {
+      "sequence": 6,
+      "type": "sandbox.disabled",
+      "summary": "OS sandbox explicitly disabled by Host configuration"
+    },
+    {
+      "sequence": 7,
+      "type": "run.started",
+      "summary": "Workspace preflight and indexing started"
+    },
+    {
+      "sequence": 8,
+      "type": "context.built",
+      "summary": "Context built with 133 input tokens"
+    },
+    {
+      "sequence": 9,
+      "type": "model.request_started",
+      "summary": "Requesting a decision from public-proof-cancel with provider-default reasoning"
+    },
+    {
+      "sequence": 10,
+      "type": "model.decision",
+      "summary": "Execute the controlled public proof action."
+    },
+    {
+      "sequence": 11,
+      "type": "policy.evaluated",
+      "summary": "Permission preset custom allows this Tool action"
+    },
+    {
+      "sequence": 12,
+      "type": "tool.started",
+      "summary": "Running test suite fixture"
+    },
+    {
+      "sequence": 13,
+      "type": "user.input_queued",
+      "summary": "User requested Run cancellation"
+    },
+    {
+      "sequence": 14,
+      "type": "tool.failed",
+      "summary": "Test execution was blocked because the sandbox result could not be verified"
+    },
+    {
+      "sequence": 15,
+      "type": "test.completed",
+      "summary": "Test execution was blocked because the sandbox result could not be verified"
+    },
+    {
+      "sequence": 16,
+      "type": "user.input_consumed",
+      "summary": "User cancellation consumed at a safe boundary"
+    },
+    {
+      "sequence": 17,
+      "type": "run.cancelled",
+      "summary": "Run cancelled by user"
+    }
+  ]
+}

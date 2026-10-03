@@ -1,0 +1,54 @@
+{
+  "schema_version": "outlive.installed-desktop-live.v1",
+  "status": "failed",
+  "recorded_at": "2026-10-02T23:44:32.296Z",
+  "participant_class": "simulated",
+  "independent_non_maintainer": false,
+  "archive_sha256": "f2de296dd96af6c07a3a884019be850679c409d4b98c46ea0e9778c0764f6c27",
+  "installed_root": "/private/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-ux086-macos-final-bsm_hp0_/outlive-agent-0.1.0-alpha.0-preview",
+  "executable": "/private/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-ux086-macos-final-bsm_hp0_/outlive-agent-0.1.0-alpha.0-preview/node_modules/.pnpm/electron@44.5.1/node_modules/electron/dist/Electron.app/Contents/MacOS/Electron",
+  "compiled_main": "/private/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-ux086-macos-final-bsm_hp0_/outlive-agent-0.1.0-alpha.0-preview/apps/desktop/dist/main.js",
+  "compiled_main_sha256": "080ba744f10942d92f0445a653ddc6f5a07f6232ac268dc11552eac643bee26a",
+  "compiled_preload": "/private/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-ux086-macos-final-bsm_hp0_/outlive-agent-0.1.0-alpha.0-preview/apps/desktop/dist/preload.cjs",
+  "compiled_preload_sha256": "bb95a4d0d178d266ecdffbe96f1ebfea9d923641e01952be1e3e414f356899d0",
+  "bootstrap": "/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-ux086-installed-live-56go19/archive-live-bootstrap.cjs",
+  "user_data": "/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-ux086-installed-live-56go19/user-data",
+  "model_boundary": "Synthetic local HTTP provider only; actual installed Main/private Host/Runtime/workspace-write Seatbelt/test process and external file oracle. No remote Provider or user credential is consumed.",
+  "fixture": {
+    "real_root": "/private/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/tracegraph-fixture-T4RKxq",
+    "source_sha256": "9ae0881b999fc64dccb014139c21e875e679f15477cebffb8e6d405b1fa734e3",
+    "test_entry_sha256": "4a5426d411774a275f282e40318158145bab5fd18e0f0b112b9ecb0fea9e7707",
+    "prepared_before_run": true
+  },
+  "app_pid": 77712,
+  "frame_url": "file:///private/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-ux086-macos-final-bsm_hp0_/outlive-agent-0.1.0-alpha.0-preview/apps/desktop/dist/renderer/index.html",
+  "host_status": {
+    "state": "ready",
+    "identity": {
+      "package_name": "@tracegraph/desktop-host",
+      "package_version": "0.1.0-alpha.0",
+      "protocol_version": "tracegraph.client-protocol.v2"
+    },
+    "recovery": {
+      "scanned_sessions": 0,
+      "truncated_session_ids": [],
+      "interrupted_run_ids": [],
+      "reconciled_action_ids": [],
+      "aborted_action_ids": [],
+      "diverged_action_ids": [],
+      "recovered_at": "2026-10-02T23:44:33.936Z"
+    }
+  },
+  "failure": {
+    "name": "AssertionError",
+    "message": "The expression evaluated to a falsy value:\n\n  assert.ok(native.windows.some((window) => window.visible && window.preferences.preload === preload && window.preferences.sandbox === true && window.preferences.contextIsolation === true && window.preferences.nodeIntegration === false))\n",
+    "stack": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert.ok(native.windows.some((window) => window.visible && window.preferences.preload === preload && window.preferences.sandbox === true && window.preferences.contextIsolation === true && window.preferences.nodeIntegration === false))\n\n    at file:///Users/cain/Downloads/ai-job-search-master/tracegraph-agent/docs/validation/ui-086-workbench-ux/release/harness/installed-live.mjs:119:10"
+  },
+  "synthetic_credential_deleted": true,
+  "process_cleanup": {
+    "main_absent": true,
+    "worker_absent": "not observed",
+    "test_absent": "not started"
+  },
+  "finished_at": "2026-10-02T23:44:34.482Z"
+}

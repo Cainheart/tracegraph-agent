@@ -65,6 +65,9 @@ export class RuntimeTelemetryProjector {
       case "model.request_started":
         this.#recordModelStarted(event);
         return;
+      case "model.retry_scheduled":
+        this.#recordModelRetryScheduled(event);
+        return;
       case "model.decision":
       case "model.request_failed":
       case "model.output_invalid":
@@ -180,6 +183,26 @@ export class RuntimeTelemetryProjector {
     });
   }
 
+  #recordModelRetryScheduled(event: SessionEvent): void {
+    const attributes = baseAttributes(event);
+    copyIdentifier(attributes, "model_call_id", event.model_call_id);
+    copyString(attributes, "retry_scope", event.data.retry_scope, 40);
+    copyString(attributes, "reason_code", event.data.reason_code, 40);
+    copyNumber(attributes, "attempt", event.data.attempt);
+    copyNumber(attributes, "next_attempt", event.data.next_attempt);
+    copyNumber(attributes, "max_attempts", event.data.max_attempts);
+    copyNumber(attributes, "delay_ms", event.data.delay_ms);
+    this.#emit({
+      kind: "metric",
+      name: "model.retry_scheduled",
+      at: event.occurred_at,
+      run_id: event.run_id,
+      attributes,
+      value: 1,
+      unit: "retry",
+    });
+  }
+
   #recordModelFinished(event: SessionEvent): void {
     const key = correlationKey(event.run_id, event.model_call_id);
     const started = key === undefined ? undefined : this.#modelRequests.get(key);
@@ -194,6 +217,8 @@ export class RuntimeTelemetryProjector {
     copyString(attributes, "adapter", event.data.adapter, 100);
     copyString(attributes, "provider", event.data.provider, 100);
     copyString(attributes, "model", event.data.model, 200);
+    copyNumber(attributes, "provider_attempts", event.data.provider_attempts);
+    copyNumber(attributes, "provider_retry_count", event.data.provider_retry_count);
     if (fallbackRetry !== undefined) attributes.fallback_retry = fallbackRetry;
     if (event.type === "model.decision") {
       copyString(attributes, "decision_kind", event.data.decision_kind, 32);

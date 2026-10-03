@@ -1,0 +1,268 @@
+Scope: 22 of 23 workspace projects
+packages/contracts test:unit$ vitest run src
+packages/telemetry test:unit$ vitest run tests
+packages/retrieval test:unit$ vitest run tests
+packages/contracts test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/contracts
+packages/telemetry test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/telemetry
+packages/retrieval test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/retrieval
+packages/telemetry test:unit:  Test Files  2 passed (2)
+packages/telemetry test:unit:       Tests  26 passed (26)
+packages/telemetry test:unit:    Start at  16:43:31
+packages/telemetry test:unit:    Duration  381ms (transform 66%, tests 24%, import 9%, worker 1%)
+packages/telemetry test:unit: Done
+packages/contracts test:unit:  Test Files  30 passed (30)
+packages/contracts test:unit:       Tests  182 passed (182)
+packages/contracts test:unit:    Start at  16:43:31
+packages/contracts test:unit:    Duration  1.02s (transform 64%, import 31%, tests 4%, worker 1%)
+packages/contracts test:unit:   Transform  transforming modules took 7.19s · 64% of tracked time, re-done on every run
+packages/contracts test:unit:              persist transforms across runs with fsModuleCache: true
+packages/contracts test:unit:              learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+packages/contracts test:unit: Done
+packages/retrieval test:unit:  Test Files  3 passed (3)
+packages/retrieval test:unit:       Tests  22 passed (22)
+packages/retrieval test:unit:    Start at  16:43:32
+packages/retrieval test:unit:    Duration  480ms (transform 57%, tests 37%, import 6%, worker 1%)
+packages/retrieval test:unit: Done
+apps/retrieval-service test:unit$ vitest run tests
+packages/evidence test:unit$ vitest run src
+packages/codegraph test:unit$ vitest run tests
+packages/api test:unit$ vitest run src
+packages/codegraph test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/codegraph
+apps/retrieval-service test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/retrieval-service
+apps/retrieval-service test:unit:  Test Files  2 passed (2)
+apps/retrieval-service test:unit:       Tests  14 passed (14)
+apps/retrieval-service test:unit:    Start at  16:43:33
+apps/retrieval-service test:unit:    Duration  324ms (tests 41%, import 30%, transform 29%, worker 1%)
+apps/retrieval-service test:unit: Done
+packages/lsp test:unit$ vitest run src
+packages/evidence test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/evidence
+packages/codegraph test:unit:  Test Files  1 passed (1)
+packages/codegraph test:unit:       Tests  12 passed (12)
+packages/codegraph test:unit:    Start at  16:43:33
+packages/codegraph test:unit:    Duration  866ms (tests 58%, transform 30%, import 12%)
+packages/codegraph test:unit: Done
+packages/mcp test:unit$ vitest run src
+packages/api test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/api
+packages/evidence test:unit:  Test Files  1 passed (1)
+packages/evidence test:unit:       Tests  5 passed (5)
+packages/evidence test:unit:    Start at  16:43:34
+packages/evidence test:unit:    Duration  414ms (transform 52%, tests 26%, import 22%, worker 1%)
+packages/evidence test:unit: Done
+packages/sdk test:unit$ vitest run src
+packages/sdk test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/sdk
+packages/lsp test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/lsp
+packages/api test:unit:  Test Files  3 passed (3)
+packages/api test:unit:       Tests  16 passed (16)
+packages/api test:unit:    Start at  16:43:34
+packages/api test:unit:    Duration  354ms (transform 69%, import 27%, tests 3%, worker 1%)
+packages/api test:unit: Done
+packages/session test:unit$ vitest run src
+packages/mcp test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/mcp
+packages/lsp test:unit:  Test Files  1 passed (1)
+packages/lsp test:unit:       Tests  2 passed (2)
+packages/lsp test:unit:    Start at  16:43:34
+packages/lsp test:unit:    Duration  488ms (transform 47%, tests 32%, import 21%, worker 1%)
+packages/lsp test:unit: Done
+packages/tool test:unit$ vitest run src
+packages/session test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/session
+packages/mcp test:unit:  Test Files  1 passed (1)
+packages/mcp test:unit:       Tests  6 passed (6)
+packages/mcp test:unit:    Start at  16:43:35
+packages/mcp test:unit:    Duration  443ms (transform 46%, tests 34%, import 19%)
+packages/mcp test:unit: Done
+packages/session test:unit:  Test Files  1 passed (1)
+packages/session test:unit:       Tests  2 passed (2)
+packages/session test:unit:    Start at  16:43:35
+packages/session test:unit:    Duration  321ms (transform 59%, import 28%, tests 12%, worker 1%)
+packages/session test:unit: Done
+packages/tool test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/tool
+packages/tool test:unit:  Test Files  3 passed (3)
+packages/tool test:unit:       Tests  24 passed (24)
+packages/tool test:unit:    Start at  16:43:35
+packages/tool test:unit:    Duration  331ms (transform 65%, import 30%, tests 4%, worker 1%)
+packages/tool test:unit: Done
+packages/sdk test:unit:  Test Files  7 passed (7)
+packages/sdk test:unit:       Tests  66 passed (66)
+packages/sdk test:unit:    Start at  16:43:34
+packages/sdk test:unit:    Duration  2.38s (tests 56%, transform 31%, import 13%)
+packages/sdk test:unit: Done
+packages/workbench test:unit$ vitest run src
+packages/context test:unit$ vitest run src
+packages/workbench test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench
+packages/context test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/context
+packages/context test:unit:  Test Files  2 passed (2)
+packages/context test:unit:       Tests  28 passed (28)
+packages/context test:unit:    Start at  16:43:38
+packages/context test:unit:    Duration  556ms (transform 54%, tests 25%, import 21%)
+packages/context test:unit: Done
+packages/workbench test:unit:  Test Files  28 passed (28)
+packages/workbench test:unit:       Tests  207 passed (207)
+packages/workbench test:unit:    Start at  16:43:37
+packages/workbench test:unit:    Duration  2.41s (transform 55%, import 27%, tests 14%, environment 4%)
+packages/workbench test:unit:   Transform  transforming modules took 8.31s · 55% of tracked time, re-done on every run
+packages/workbench test:unit:              persist transforms across runs with fsModuleCache: true
+packages/workbench test:unit:              learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+packages/workbench test:unit: Done
+packages/core test:unit$ vitest run src
+apps/web test:unit$ vitest run src
+packages/core test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/core
+apps/web test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/web
+apps/web test:unit:  Test Files  1 passed (1)
+apps/web test:unit:       Tests  1 passed (1)
+apps/web test:unit:    Start at  16:43:40
+apps/web test:unit:    Duration  387ms (transform 73%, import 24%, tests 3%)
+apps/web test:unit: Done
+packages/core test:unit:  Test Files  58 passed (58)
+packages/core test:unit:       Tests  507 passed (507)
+packages/core test:unit:    Start at  16:43:40
+packages/core test:unit:    Duration  48.49s (tests 96%, transform 3%, import 2%)
+packages/core test:unit: Done
+packages/host test:unit$ vitest run src
+packages/test-support test:unit$ vitest run src
+packages/host test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+packages/test-support test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/test-support
+packages/host test:unit: Permission preset: workspace-write (sandbox: workspace-write)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: LSP: pyright=stopped, typescript=stopped (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit: Permission preset: workspace-write (sandbox: workspace-write)
+packages/host test:unit: Permission preset: read-only (sandbox: read-only)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: LSP: no configured servers (lazy)
+packages/host test:unit: LSP: no configured servers (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit: Permission preset: workspace-write (sandbox: workspace-write)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: LSP: no configured servers (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit: Permission preset: workspace-write (sandbox: workspace-write)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: LSP: no configured servers (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit: Permission preset: workspace-write (sandbox: workspace-write)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: LSP: no configured servers (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit: Permission preset: read-only (sandbox: read-only)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: LSP: no configured servers (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit: Permission preset: workspace-write (sandbox: workspace-write)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: LSP: no configured servers (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit: Permission preset: workspace-write (sandbox: workspace-write)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: LSP: no configured servers (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit: Permission preset: workspace-write (sandbox: workspace-write)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: LSP: no configured servers (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit: Permission preset: workspace-write (sandbox: workspace-write)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: LSP: pyright=stopped, typescript=stopped (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit: Permission preset: workspace-write (sandbox: workspace-write)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: LSP: no configured servers (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit: Permission preset: workspace-write (sandbox: workspace-write)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: LSP: no configured servers (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit: Permission preset: workspace-write (sandbox: workspace-write)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: LSP: no configured servers (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit: Permission preset: workspace-write (sandbox: workspace-write)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: LSP: no configured servers (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit: Permission preset: workspace-write (sandbox: workspace-write)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: LSP: no configured servers (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit: Permission preset: read-only (sandbox: read-only)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: LSP: pyright=stopped, typescript=stopped (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit: Permission preset: workspace-write (sandbox: workspace-write)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: LSP: pyright=stopped, typescript=stopped (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit: Permission preset: workspace-write (sandbox: workspace-write)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: LSP: no configured servers (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit: Permission preset: workspace-write (sandbox: workspace-write)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: LSP: no configured servers (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit:  ❯ src/workbench-control.test.ts (21 tests | 1 failed) 9793ms
+packages/host test:unit:    ❯ shared workbench settings and business receipts (12)
+packages/host test:unit:      × bounds notifications to the 128 latest real event timestamps and does not synthesize missing receipts 5202ms
+packages/host test:unit: Permission preset: workspace-write (sandbox: workspace-write)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: LSP: no configured servers (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit: Permission preset: workspace-write (sandbox: workspace-write)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: fixture=ready(0)
+packages/host test:unit: LSP: no configured servers (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit: Permission preset: workspace-write (sandbox: workspace-write)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: LSP: no configured servers (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit: Permission preset: workspace-write (sandbox: workspace-write)
+packages/host test:unit: Retrieval: local JSONL/BM25
+packages/host test:unit: MCP: no configured servers
+packages/host test:unit: LSP: pyright=stopped, typescript=stopped (lazy)
+packages/host test:unit: Subagents: readonly (parallel 2, depth 1)
+packages/host test:unit:  ❯ src/composition/recovery-policy.test.ts (3 tests | 1 failed) 12222ms
+packages/host test:unit:    ❯ shared Host recovered authority (3)
+packages/host test:unit:      × binds active Run policy while a new selected preset changes, and reports rollback startup policy truthfully 5003ms
+packages/host test:unit: ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+packages/host test:unit:  FAIL  src/workbench-control.test.ts > shared workbench settings and business receipts > bounds notifications to the 128 latest real event timestamps and does not synthesize missing receipts
+packages/host test:unit: Error: Test timed out in 5000ms.
+packages/host test:unit: If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+packages/host test:unit:  ❯ src/workbench-control.test.ts:53:3
+packages/host test:unit: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+packages/host test:unit:  FAIL  src/composition/recovery-policy.test.ts > shared Host recovered authority > binds active Run policy while a new selected preset changes, and reports rollback startup policy truthfully
+packages/host test:unit: Error: Test timed out in 5000ms.
+packages/host test:unit: If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+packages/host test:unit:  ❯ src/composition/recovery-policy.test.ts:17:2
+packages/host test:unit: ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+packages/host test:unit:  Test Files  2 failed | 12 passed (14)
+packages/host test:unit:       Tests  2 failed | 111 passed (113)
+packages/host test:unit:    Start at  16:44:28
+packages/host test:unit:    Duration  13.44s (tests 81%, transform 14%, import 5%)
+packages/host test:unit: Failed
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @tracegraph/host@0.1.0-alpha.0 test:unit: `vitest run src`
+Exit status 1

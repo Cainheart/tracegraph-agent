@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { IdentifierSchema, IsoDateTimeSchema, Sha256Schema } from "./common.js";
-import { ExperienceCaseStatusSchema } from "./experience-case.js";
+import { ExperienceCaseSchema, ExperienceCaseStatusSchema } from "./experience-case.js";
 import { MemoryRunEvidenceRefSchema } from "./memory.js";
 
 export const ExperienceLifecycleActionSchema = z.enum([
@@ -11,6 +11,29 @@ export const ExperienceLifecycleActionSchema = z.enum([
   "retire",
 ]);
 export type ExperienceLifecycleAction = z.infer<typeof ExperienceLifecycleActionSchema>;
+
+/** Client request; owner and actor are always supplied by the local Host. */
+export const ExperienceLifecycleReviewRequestSchema = z.object({
+  command_id: IdentifierSchema,
+  expected_sequence: z.number().int().nonnegative(),
+  action: ExperienceLifecycleActionSchema,
+}).strict();
+export type ExperienceLifecycleReviewRequest = z.infer<typeof ExperienceLifecycleReviewRequestSchema>;
+
+export const ExperienceControlListResponseSchema = z.object({
+  items: z.array(z.object({
+    case: ExperienceCaseSchema,
+    lifecycleSequence: z.number().int().nonnegative(),
+  }).strict()).max(2_000),
+}).strict();
+export type ExperienceControlListResponse = z.infer<typeof ExperienceControlListResponseSchema>;
+
+export const ExperienceLifecycleReviewResponseSchema = z.object({
+  case: ExperienceCaseSchema,
+  lifecycleSequence: z.number().int().nonnegative(),
+  replayed: z.boolean(),
+}).strict();
+export type ExperienceLifecycleReviewResponse = z.infer<typeof ExperienceLifecycleReviewResponseSchema>;
 
 export const EXPERIENCE_LIFECYCLE_TRANSITIONS: Readonly<Record<
   ExperienceLifecycleAction,

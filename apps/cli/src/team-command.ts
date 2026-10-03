@@ -67,16 +67,16 @@ const TASK_OPERATIONS = new Set(["create", "claim", "complete", "block", "cancel
 
 const USAGE = [
   "Usage:",
-  "  tracegraph team show <coordinator-run-id> [--host-url <url>]",
-  "  tracegraph team create <coordinator-run-id> [--command-id <id>] [--host-url <url>]",
-  "  tracegraph team mailbox send <actor-run-id> --to <address> --kind <steer|handoff|question|answer> --payload <text> [--command-id <id>] [--host-url <url>]",
-  "  tracegraph team mailbox claim <actor-run-id> --message-id <id> [--command-id <id>] [--host-url <url>]",
-  "  tracegraph team task create <actor-run-id> --task-id <id> --title <text> --acceptance <text> [--acceptance <text> ...] [--detail <text>] [--command-id <id>] [--host-url <url>]",
-  "  tracegraph team task claim <actor-run-id> --task-id <id> --expected-version <n> [--command-id <id>] [--host-url <url>]",
-  "  tracegraph team task complete <actor-run-id> --task-id <id> --expected-version <n> --evidence-event-id <id> [--evidence-event-id <id> ...] [--command-id <id>] [--host-url <url>]",
-  "  tracegraph team task block|cancel|reopen <actor-run-id> --task-id <id> --expected-version <n> --reason <text> [--command-id <id>] [--host-url <url>]",
-  "  tracegraph team heartbeat <member-run-id> [--command-id <id>] [--host-url <url>]",
-  "  tracegraph team sweep <coordinator-run-id> [--command-id <id>] [--host-url <url>]",
+  "  outlive team show <coordinator-run-id> [--host-url <url>]",
+  "  outlive team create <coordinator-run-id> [--command-id <id>] [--host-url <url>]",
+  "  outlive team mailbox send <actor-run-id> --to <address> --kind <steer|handoff|question|answer> --payload <text> [--command-id <id>] [--host-url <url>]",
+  "  outlive team mailbox claim <actor-run-id> --message-id <id> [--command-id <id>] [--host-url <url>]",
+  "  outlive team task create <actor-run-id> --task-id <id> --title <text> --acceptance <text> [--acceptance <text> ...] [--detail <text>] [--command-id <id>] [--host-url <url>]",
+  "  outlive team task claim <actor-run-id> --task-id <id> --expected-version <n> [--command-id <id>] [--host-url <url>]",
+  "  outlive team task complete <actor-run-id> --task-id <id> --expected-version <n> --evidence-event-id <id> [--evidence-event-id <id> ...] [--command-id <id>] [--host-url <url>]",
+  "  outlive team task block|cancel|reopen <actor-run-id> --task-id <id> --expected-version <n> --reason <text> [--command-id <id>] [--host-url <url>]",
+  "  outlive team heartbeat <member-run-id> [--command-id <id>] [--host-url <url>]",
+  "  outlive team sweep <coordinator-run-id> [--command-id <id>] [--host-url <url>]",
 ].join("\n");
 
 /**

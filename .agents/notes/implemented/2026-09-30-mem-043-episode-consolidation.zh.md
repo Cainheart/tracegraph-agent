@@ -11,6 +11,8 @@ supersedes: []
 
 # Agent Note：从已结束 Run 的 Episode 派生待审核 Memory Candidate
 
+> 后续闭环（2026-10-03）：确定性跨 Run candidate/diff 和持久任务状态 UI 已由 [MEM-043 闭环 Note](2026-10-03-mem-043-cross-run-job-control.zh.md) 交付。以下 deferred 描述保留 2026-09-30 首个切片的历史范围。
+
 ## 问题
 
 MEM-040–046 已提供 V2 契约、来源、生命周期、冲突/反馈治理和可见候选控制面。MEM-043 增加了首个纵向切片，从已结束 Run 证据生成有界 Episode 投影与待审核候选。提取不能延长 Run settlement、改写 active Memory，也不能建立第二个权威 Ledger。

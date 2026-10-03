@@ -11,6 +11,8 @@ supersedes: []
 
 # Agent Note: Derive review-gated Memory candidates from settled Run episodes
 
+> Follow-up (2026-10-03): deterministic cross-Run candidate/diff consolidation and the durable task-status UI are implemented in [MEM-043 closure](2026-10-03-mem-043-cross-run-job-control.md). Deferred statements below describe the initial 2026-09-30 slice.
+
 ## Problem
 
 MEM-040–046 provide V2 contracts, provenance, lifecycle, conflict/feedback governance, and a visible candidate control plane. MEM-043 adds a first vertical slice for deriving a bounded Episode projection and reviewable candidate proposals from settled Run evidence. Extraction must not extend Run settlement, rewrite active Memory, or create a second authoritative Ledger.

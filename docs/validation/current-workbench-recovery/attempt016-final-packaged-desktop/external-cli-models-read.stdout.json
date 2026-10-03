@@ -1,0 +1,78 @@
+{
+  "connections": [
+    {
+      "connection_id": "be41c506-3126-46e5-9275-f4af80da5f89",
+      "label": "Alpha provider",
+      "revision": 1,
+      "provider": "openai",
+      "protocol": "openai-chat-completions",
+      "base_url": "http://127.0.0.1:50157/v1",
+      "model": "gpt-4.1-mini",
+      "models": [
+        "gpt-4.1-mini",
+        "o3-mini"
+      ],
+      "image_input_models": [
+        "gpt-4.1-mini"
+      ],
+      "reasoning_by_model": {
+        "gpt-4.1-mini": [
+          "default"
+        ],
+        "o3-mini": [
+          "default",
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max"
+        ]
+      },
+      "has_key": true,
+      "credential": {
+        "name": "TRACEGRAPH_OPENAI_KEY_C5EFAC7AF3EB",
+        "backend": "private_file",
+        "writable": true,
+        "last_updated_at": "2026-10-03T13:41:57.240Z"
+      },
+      "source": "profile",
+      "writable": true
+    },
+    {
+      "connection_id": "4ac7b80e-d88a-4819-aa2d-b55fba83fcc9",
+      "label": "Beta provider",
+      "revision": 0,
+      "provider": "custom",
+      "protocol": "openai-chat-completions",
+      "base_url": "http://127.0.0.1:50157/v1",
+      "model": "synthetic-beta",
+      "models": [
+        "synthetic-beta"
+      ],
+      "image_input_models": [],
+      "reasoning_by_model": {
+        "synthetic-beta": [
+          "default"
+        ]
+      },
+      "has_key": true,
+      "credential": {
+        "name": "TRACEGRAPH_CUSTOM_KEY_ED1C2CA2D560",
+        "backend": "private_file",
+        "writable": true,
+        "last_updated_at": "2026-10-03T13:41:58.818Z"
+      },
+      "source": "profile",
+      "writable": true,
+      "test": {
+        "status": "passed",
+        "code": "connection_ok",
+        "message": "模型连接成功",
+        "checked_at": "2026-10-03T13:41:59.678Z",
+        "model": "synthetic-beta",
+        "duration_ms": 12
+      }
+    }
+  ],
+  "default_connection_id": "be41c506-3126-46e5-9275-f4af80da5f89"
+}

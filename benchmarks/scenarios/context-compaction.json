@@ -1,0 +1,13 @@
+{
+  "schema_version": "tracegraph.benchmark-scenario.v1",
+  "id": "context-compaction",
+  "version": "1.0.0",
+  "description": "Build a long-history Run Context and prove compaction preserves completion",
+  "working_directory": ".",
+  "correctness_command": { "args": ["benchmarks/paths/scenario.mjs", "correctness", "context-compaction"] },
+  "command": { "args": ["benchmarks/paths/scenario.mjs", "measure", "context-compaction"] },
+  "warmup_iterations": 1,
+  "sample_iterations": 5,
+  "timeout_ms": 30000,
+  "budget": { "wall_time_ms_p95_max": 2500 }
+}

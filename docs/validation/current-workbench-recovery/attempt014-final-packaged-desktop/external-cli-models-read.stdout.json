@@ -1,0 +1,78 @@
+{
+  "connections": [
+    {
+      "connection_id": "63d795bf-52ed-4254-931d-5771396f7527",
+      "label": "Alpha provider",
+      "revision": 1,
+      "provider": "openai",
+      "protocol": "openai-chat-completions",
+      "base_url": "http://127.0.0.1:49421/v1",
+      "model": "gpt-4.1-mini",
+      "models": [
+        "gpt-4.1-mini",
+        "o3-mini"
+      ],
+      "image_input_models": [
+        "gpt-4.1-mini"
+      ],
+      "reasoning_by_model": {
+        "gpt-4.1-mini": [
+          "default"
+        ],
+        "o3-mini": [
+          "default",
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max"
+        ]
+      },
+      "has_key": true,
+      "credential": {
+        "name": "TRACEGRAPH_OPENAI_KEY_50322F090540",
+        "backend": "private_file",
+        "writable": true,
+        "last_updated_at": "2026-10-03T13:37:03.619Z"
+      },
+      "source": "profile",
+      "writable": true
+    },
+    {
+      "connection_id": "7f5db84a-a1d7-408a-b02a-b9b876b332a3",
+      "label": "Beta provider",
+      "revision": 0,
+      "provider": "custom",
+      "protocol": "openai-chat-completions",
+      "base_url": "http://127.0.0.1:49421/v1",
+      "model": "synthetic-beta",
+      "models": [
+        "synthetic-beta"
+      ],
+      "image_input_models": [],
+      "reasoning_by_model": {
+        "synthetic-beta": [
+          "default"
+        ]
+      },
+      "has_key": true,
+      "credential": {
+        "name": "TRACEGRAPH_CUSTOM_KEY_75F9692C7800",
+        "backend": "private_file",
+        "writable": true,
+        "last_updated_at": "2026-10-03T13:37:05.881Z"
+      },
+      "source": "profile",
+      "writable": true,
+      "test": {
+        "status": "passed",
+        "code": "connection_ok",
+        "message": "模型连接成功",
+        "checked_at": "2026-10-03T13:37:06.737Z",
+        "model": "synthetic-beta",
+        "duration_ms": 10
+      }
+    }
+  ],
+  "default_connection_id": "63d795bf-52ed-4254-931d-5771396f7527"
+}

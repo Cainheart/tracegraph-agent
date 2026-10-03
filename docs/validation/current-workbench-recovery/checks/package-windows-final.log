@@ -1,0 +1,946 @@
+  • electron-builder  version=26.17.0 os=25.5.0
+  • detected workspace root for project using packageManager field  pm=pnpm config=pnpm@11.19.0 resolved=/Users/cain/Downloads/ai-job-search-master/tracegraph-agent projectDir=/Users/cain/Downloads/ai-job-search-master/tracegraph-agent
+  • skipped dependencies rebuild  reason=npmRebuild is set to false
+  • packaging       platform=win32 arch=x64 electron=44.5.1 appOutDir=_tmp_release/current-workbench-recovery-win-final/artifacts/win-unpacked
+  • downloaded      label=electron progress=100%
+  • downloaded electron zip extracted successfully  output=/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/current-workbench-recovery-win-final/artifacts/win-unpacked
+  • asar usage is disabled — this is strongly not recommended  solution=enable asar and use asarUnpack to unpack files that must be externally available
+  • searching for node modules  pm=pnpm searchDir=/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/current-workbench-recovery-win-final/stage/app
+  • no node modules found in collection, trying next search directory  pm=pnpm searchDir=/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/current-workbench-recovery-win-final/stage/app
+  • searching for node modules  pm=pnpm searchDir=/Users/cain/Downloads/ai-job-search-master/tracegraph-agent
+  • no node modules found in collection, trying next search directory  pm=pnpm searchDir=/Users/cain/Downloads/ai-job-search-master/tracegraph-agent
+  • searching for node modules  pm=traversal searchDir=/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/current-workbench-recovery-win-final/stage/app
+  • using manual traversal of node_modules to build dependency tree
+  • asar usage is disabled — this is strongly not recommended  solution=enable asar and use asarUnpack to unpack files that must be externally available
+  • file signing skipped via signExecutable configuration  file=_tmp_release/current-workbench-recovery-win-final/artifacts/win-unpacked/Outlive Agent.exe
+  • building        target=zip arch=x64 file=_tmp_release/current-workbench-recovery-win-final/artifacts/Outlive-Agent-0.1.0-alpha.0-win-x64.zip
+  • building        target=nsis file=_tmp_release/current-workbench-recovery-win-final/artifacts/Outlive-Agent-0.1.0-alpha.0-win-x64.exe archs=x64 oneClick=false perMachine=false
+  • file signing skipped via signExecutable configuration  file=_tmp_release/current-workbench-recovery-win-final/artifacts/Outlive-Agent-0.1.0-alpha.0-win-x64.__uninstaller.exe
+  • file signing skipped via signExecutable configuration  file=_tmp_release/current-workbench-recovery-win-final/artifacts/Outlive-Agent-0.1.0-alpha.0-win-x64.exe
+  • building block map  blockMapFile=_tmp_release/current-workbench-recovery-win-final/artifacts/Outlive-Agent-0.1.0-alpha.0-win-x64.exe.blockmap
+{
+  "output": "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/current-workbench-recovery-win-final",
+  "artifacts": [
+    {
+      "file": "Outlive-Agent-0.1.0-alpha.0-win-x64.zip",
+      "byte_length": 259793679,
+      "sha256": "2814c0913af66687f62a13e65d9e1774ca47685a5caecfbc1070148854e52e0a"
+    },
+    {
+      "file": "Outlive-Agent-0.1.0-alpha.0-win-x64.exe.blockmap",
+      "byte_length": 214116,
+      "sha256": "ae6a69f50cb9568e7247abd1e8c3e10ea58746ced5d6714fd0df1ff7988502e2"
+    },
+    {
+      "file": "Outlive-Agent-0.1.0-alpha.0-win-x64.exe",
+      "byte_length": 206479957,
+      "sha256": "c0c983164270edda30c344f5c253d20b57a2cf45e38caf11f13b0bf5cbda6acf"
+    }
+  ],
+  "schema_version": "outlive.product-stage.v1",
+  "version": "0.1.0-alpha.0",
+  "platform": "win32",
+  "arch": "x64",
+  "product_build_id": "e61a62f524865b1fce453f8d9dbd1920af899980a6bbcacec25017e2d17ff6b8",
+  "runtime": {
+    "node_version": "24.21.0",
+    "archive": "node-v24.21.0-win-x64.zip",
+    "archive_sha256": "158f7685b44de51f6c0df1d153526cbcd3e1bc739a8dfc607721cef75de9e541",
+    "executable_sha256": "ba4e6d110e8c1592a1ecd390f6b05f3da124b13871a5be62b341a07a853c6c32"
+  },
+  "packages": [
+    {
+      "name": "@antfu/install-pkg",
+      "version": "2.1.0"
+    },
+    {
+      "name": "@braintree/sanitize-url",
+      "version": "7.1.2"
+    },
+    {
+      "name": "@chevrotain/cst-dts-gen",
+      "version": "11.1.2"
+    },
+    {
+      "name": "@chevrotain/gast",
+      "version": "11.1.2"
+    },
+    {
+      "name": "@chevrotain/regexp-to-ast",
+      "version": "11.1.2"
+    },
+    {
+      "name": "@chevrotain/types",
+      "version": "11.1.2"
+    },
+    {
+      "name": "@chevrotain/utils",
+      "version": "11.1.2"
+    },
+    {
+      "name": "@codemirror/autocomplete",
+      "version": "6.20.3"
+    },
+    {
+      "name": "@codemirror/commands",
+      "version": "6.11.1"
+    },
+    {
+      "name": "@codemirror/lang-css",
+      "version": "6.3.1"
+    },
+    {
+      "name": "@codemirror/lang-html",
+      "version": "6.4.12"
+    },
+    {
+      "name": "@codemirror/lang-javascript",
+      "version": "6.2.5"
+    },
+    {
+      "name": "@codemirror/lang-json",
+      "version": "6.0.2"
+    },
+    {
+      "name": "@codemirror/lang-markdown",
+      "version": "6.5.2"
+    },
+    {
+      "name": "@codemirror/language",
+      "version": "6.12.4"
+    },
+    {
+      "name": "@codemirror/lint",
+      "version": "6.9.7"
+    },
+    {
+      "name": "@codemirror/state",
+      "version": "6.7.6"
+    },
+    {
+      "name": "@codemirror/view",
+      "version": "6.43.13"
+    },
+    {
+      "name": "@fastify/ajv-compiler",
+      "version": "4.0.6"
+    },
+    {
+      "name": "@fastify/cors",
+      "version": "11.3.0"
+    },
+    {
+      "name": "@fastify/error",
+      "version": "4.2.0"
+    },
+    {
+      "name": "@fastify/fast-json-stringify-compiler",
+      "version": "5.1.0"
+    },
+    {
+      "name": "@fastify/forwarded",
+      "version": "3.0.2"
+    },
+    {
+      "name": "@fastify/merge-json-schemas",
+      "version": "0.2.1"
+    },
+    {
+      "name": "@fastify/proxy-addr",
+      "version": "5.1.0"
+    },
+    {
+      "name": "@iconify/types",
+      "version": "2.0.0"
+    },
+    {
+      "name": "@iconify/utils",
+      "version": "3.1.7"
+    },
+    {
+      "name": "@lezer/common",
+      "version": "1.5.3"
+    },
+    {
+      "name": "@lezer/css",
+      "version": "1.3.8"
+    },
+    {
+      "name": "@lezer/highlight",
+      "version": "1.2.5"
+    },
+    {
+      "name": "@lezer/html",
+      "version": "1.3.13"
+    },
+    {
+      "name": "@lezer/javascript",
+      "version": "1.5.5"
+    },
+    {
+      "name": "@lezer/json",
+      "version": "1.0.3"
+    },
+    {
+      "name": "@lezer/lr",
+      "version": "1.4.10"
+    },
+    {
+      "name": "@lezer/markdown",
+      "version": "1.7.2"
+    },
+    {
+      "name": "@marijn/find-cluster-break",
+      "version": "1.0.4"
+    },
+    {
+      "name": "@mermaid-js/parser",
+      "version": "2.0.0"
+    },
+    {
+      "name": "@pinojs/redact",
+      "version": "0.4.0"
+    },
+    {
+      "name": "@tracegraph/api",
+      "version": "0.1.0-alpha.0"
+    },
+    {
+      "name": "@tracegraph/cli",
+      "version": "0.1.0-alpha.0"
+    },
+    {
+      "name": "@tracegraph/codegraph",
+      "version": "0.1.0-alpha.0"
+    },
+    {
+      "name": "@tracegraph/context",
+      "version": "0.1.0-alpha.0"
+    },
+    {
+      "name": "@tracegraph/contracts",
+      "version": "0.1.0-alpha.0"
+    },
+    {
+      "name": "@tracegraph/core",
+      "version": "0.1.0-alpha.0"
+    },
+    {
+      "name": "@tracegraph/desktop",
+      "version": "0.1.0-alpha.0"
+    },
+    {
+      "name": "@tracegraph/desktop-host",
+      "version": "0.1.0-alpha.0"
+    },
+    {
+      "name": "@tracegraph/evidence",
+      "version": "0.1.0-alpha.0"
+    },
+    {
+      "name": "@tracegraph/host",
+      "version": "0.1.0-alpha.0"
+    },
+    {
+      "name": "@tracegraph/lsp",
+      "version": "0.1.0-alpha.0"
+    },
+    {
+      "name": "@tracegraph/mcp",
+      "version": "0.1.0-alpha.0"
+    },
+    {
+      "name": "@tracegraph/retrieval",
+      "version": "0.1.0-alpha.0"
+    },
+    {
+      "name": "@tracegraph/retrieval-service",
+      "version": "0.1.0-alpha.0"
+    },
+    {
+      "name": "@tracegraph/sdk",
+      "version": "0.1.0-alpha.0"
+    },
+    {
+      "name": "@tracegraph/session",
+      "version": "0.1.0-alpha.0"
+    },
+    {
+      "name": "@tracegraph/telemetry",
+      "version": "0.1.0-alpha.0"
+    },
+    {
+      "name": "@tracegraph/test-support",
+      "version": "0.1.0-alpha.0"
+    },
+    {
+      "name": "@tracegraph/tool",
+      "version": "0.1.0-alpha.0"
+    },
+    {
+      "name": "@tracegraph/workbench",
+      "version": "0.1.0-alpha.0"
+    },
+    {
+      "name": "@types/d3",
+      "version": "7.4.3"
+    },
+    {
+      "name": "@types/d3-array",
+      "version": "3.2.2"
+    },
+    {
+      "name": "@types/d3-axis",
+      "version": "3.0.6"
+    },
+    {
+      "name": "@types/d3-brush",
+      "version": "3.0.6"
+    },
+    {
+      "name": "@types/d3-chord",
+      "version": "3.0.6"
+    },
+    {
+      "name": "@types/d3-color",
+      "version": "3.1.3"
+    },
+    {
+      "name": "@types/d3-contour",
+      "version": "3.0.6"
+    },
+    {
+      "name": "@types/d3-delaunay",
+      "version": "6.0.4"
+    },
+    {
+      "name": "@types/d3-dispatch",
+      "version": "3.0.7"
+    },
+    {
+      "name": "@types/d3-drag",
+      "version": "3.0.7"
+    },
+    {
+      "name": "@types/d3-dsv",
+      "version": "3.0.7"
+    },
+    {
+      "name": "@types/d3-ease",
+      "version": "3.0.2"
+    },
+    {
+      "name": "@types/d3-fetch",
+      "version": "3.0.7"
+    },
+    {
+      "name": "@types/d3-force",
+      "version": "3.0.10"
+    },
+    {
+      "name": "@types/d3-format",
+      "version": "3.0.4"
+    },
+    {
+      "name": "@types/d3-geo",
+      "version": "3.1.1"
+    },
+    {
+      "name": "@types/d3-hierarchy",
+      "version": "3.1.7"
+    },
+    {
+      "name": "@types/d3-interpolate",
+      "version": "3.0.4"
+    },
+    {
+      "name": "@types/d3-path",
+      "version": "3.1.1"
+    },
+    {
+      "name": "@types/d3-polygon",
+      "version": "3.0.2"
+    },
+    {
+      "name": "@types/d3-quadtree",
+      "version": "3.0.6"
+    },
+    {
+      "name": "@types/d3-random",
+      "version": "3.0.4"
+    },
+    {
+      "name": "@types/d3-scale",
+      "version": "4.0.9"
+    },
+    {
+      "name": "@types/d3-scale-chromatic",
+      "version": "3.1.0"
+    },
+    {
+      "name": "@types/d3-selection",
+      "version": "3.0.12"
+    },
+    {
+      "name": "@types/d3-shape",
+      "version": "3.2.0"
+    },
+    {
+      "name": "@types/d3-time",
+      "version": "3.0.4"
+    },
+    {
+      "name": "@types/d3-time-format",
+      "version": "4.0.3"
+    },
+    {
+      "name": "@types/d3-timer",
+      "version": "3.0.2"
+    },
+    {
+      "name": "@types/d3-transition",
+      "version": "3.0.9"
+    },
+    {
+      "name": "@types/d3-zoom",
+      "version": "3.0.8"
+    },
+    {
+      "name": "@types/geojson",
+      "version": "7946.0.16"
+    },
+    {
+      "name": "@types/trusted-types",
+      "version": "2.0.7"
+    },
+    {
+      "name": "@typescript/typescript-win32-x64",
+      "version": "7.0.2"
+    },
+    {
+      "name": "@upsetjs/venn.js",
+      "version": "2.0.0"
+    },
+    {
+      "name": "@xterm/addon-fit",
+      "version": "0.11.0"
+    },
+    {
+      "name": "@xterm/xterm",
+      "version": "6.0.0"
+    },
+    {
+      "name": "abstract-logging",
+      "version": "2.0.1"
+    },
+    {
+      "name": "ajv",
+      "version": "8.20.0"
+    },
+    {
+      "name": "ajv-formats",
+      "version": "3.0.1"
+    },
+    {
+      "name": "atomic-sleep",
+      "version": "1.0.0"
+    },
+    {
+      "name": "avvio",
+      "version": "9.3.0"
+    },
+    {
+      "name": "chevrotain",
+      "version": "11.1.2"
+    },
+    {
+      "name": "commander",
+      "version": "7.0.0"
+    },
+    {
+      "name": "commander",
+      "version": "8.3.0"
+    },
+    {
+      "name": "cookie",
+      "version": "1.0.1"
+    },
+    {
+      "name": "cose-base",
+      "version": "1.0.3"
+    },
+    {
+      "name": "cose-base",
+      "version": "2.2.0"
+    },
+    {
+      "name": "crelt",
+      "version": "1.0.7"
+    },
+    {
+      "name": "cytoscape",
+      "version": "3.34.3"
+    },
+    {
+      "name": "cytoscape-cose-bilkent",
+      "version": "4.1.0"
+    },
+    {
+      "name": "cytoscape-fcose",
+      "version": "2.2.0"
+    },
+    {
+      "name": "d3",
+      "version": "7.9.0"
+    },
+    {
+      "name": "d3-array",
+      "version": "3.2.4"
+    },
+    {
+      "name": "d3-array",
+      "version": "2.12.1"
+    },
+    {
+      "name": "d3-axis",
+      "version": "3.0.0"
+    },
+    {
+      "name": "d3-brush",
+      "version": "3.0.0"
+    },
+    {
+      "name": "d3-chord",
+      "version": "3.0.1"
+    },
+    {
+      "name": "d3-color",
+      "version": "3.1.0"
+    },
+    {
+      "name": "d3-contour",
+      "version": "4.0.2"
+    },
+    {
+      "name": "d3-delaunay",
+      "version": "6.0.4"
+    },
+    {
+      "name": "d3-dispatch",
+      "version": "3.0.1"
+    },
+    {
+      "name": "d3-drag",
+      "version": "3.0.0"
+    },
+    {
+      "name": "d3-dsv",
+      "version": "3.0.1"
+    },
+    {
+      "name": "d3-ease",
+      "version": "3.0.1"
+    },
+    {
+      "name": "d3-fetch",
+      "version": "3.0.1"
+    },
+    {
+      "name": "d3-force",
+      "version": "3.0.0"
+    },
+    {
+      "name": "d3-format",
+      "version": "3.1.2"
+    },
+    {
+      "name": "d3-geo",
+      "version": "3.1.1"
+    },
+    {
+      "name": "d3-hierarchy",
+      "version": "3.1.2"
+    },
+    {
+      "name": "d3-interpolate",
+      "version": "3.0.1"
+    },
+    {
+      "name": "d3-path",
+      "version": "3.1.0"
+    },
+    {
+      "name": "d3-path",
+      "version": "1.0.9"
+    },
+    {
+      "name": "d3-polygon",
+      "version": "3.0.1"
+    },
+    {
+      "name": "d3-quadtree",
+      "version": "3.0.1"
+    },
+    {
+      "name": "d3-random",
+      "version": "3.0.1"
+    },
+    {
+      "name": "d3-sankey",
+      "version": "0.12.3"
+    },
+    {
+      "name": "d3-scale",
+      "version": "4.0.2"
+    },
+    {
+      "name": "d3-scale-chromatic",
+      "version": "3.1.0"
+    },
+    {
+      "name": "d3-selection",
+      "version": "3.0.0"
+    },
+    {
+      "name": "d3-shape",
+      "version": "3.2.0"
+    },
+    {
+      "name": "d3-shape",
+      "version": "1.3.7"
+    },
+    {
+      "name": "d3-time",
+      "version": "3.1.0"
+    },
+    {
+      "name": "d3-time-format",
+      "version": "4.1.0"
+    },
+    {
+      "name": "d3-timer",
+      "version": "3.0.1"
+    },
+    {
+      "name": "d3-transition",
+      "version": "3.0.1"
+    },
+    {
+      "name": "d3-zoom",
+      "version": "3.0.0"
+    },
+    {
+      "name": "dagre-d3-es",
+      "version": "7.0.14"
+    },
+    {
+      "name": "dayjs",
+      "version": "1.11.23"
+    },
+    {
+      "name": "delaunator",
+      "version": "5.1.0"
+    },
+    {
+      "name": "dequal",
+      "version": "2.0.3"
+    },
+    {
+      "name": "dompurify",
+      "version": "3.4.15"
+    },
+    {
+      "name": "elkjs",
+      "version": "0.9.3"
+    },
+    {
+      "name": "es-toolkit",
+      "version": "1.52.0"
+    },
+    {
+      "name": "fast-decode-uri-component",
+      "version": "1.0.1"
+    },
+    {
+      "name": "fast-deep-equal",
+      "version": "3.1.3"
+    },
+    {
+      "name": "fast-json-stringify",
+      "version": "7.0.1"
+    },
+    {
+      "name": "fast-querystring",
+      "version": "1.1.2"
+    },
+    {
+      "name": "fast-uri",
+      "version": "3.1.8"
+    },
+    {
+      "name": "fast-uri",
+      "version": "4.1.5"
+    },
+    {
+      "name": "fastify",
+      "version": "5.12.5"
+    },
+    {
+      "name": "fastify-plugin",
+      "version": "6.0.0"
+    },
+    {
+      "name": "fastq",
+      "version": "1.20.3"
+    },
+    {
+      "name": "find-my-way",
+      "version": "9.9.0"
+    },
+    {
+      "name": "hachure-fill",
+      "version": "0.5.2"
+    },
+    {
+      "name": "iconv-lite",
+      "version": "0.6.0"
+    },
+    {
+      "name": "import-meta-resolve",
+      "version": "4.2.0"
+    },
+    {
+      "name": "internmap",
+      "version": "2.0.3"
+    },
+    {
+      "name": "internmap",
+      "version": "1.0.1"
+    },
+    {
+      "name": "ipaddr.js",
+      "version": "2.5.0"
+    },
+    {
+      "name": "json-schema-ref-resolver",
+      "version": "3.0.0"
+    },
+    {
+      "name": "json-schema-traverse",
+      "version": "1.0.0"
+    },
+    {
+      "name": "katex",
+      "version": "0.16.47"
+    },
+    {
+      "name": "khroma",
+      "version": "2.1.0"
+    },
+    {
+      "name": "layout-base",
+      "version": "1.0.2"
+    },
+    {
+      "name": "layout-base",
+      "version": "2.0.1"
+    },
+    {
+      "name": "light-my-request",
+      "version": "6.6.0"
+    },
+    {
+      "name": "lodash-es",
+      "version": "4.18.1"
+    },
+    {
+      "name": "marked",
+      "version": "16.3.0"
+    },
+    {
+      "name": "mermaid",
+      "version": "12.0.0"
+    },
+    {
+      "name": "node-addon-api",
+      "version": "7.1.1"
+    },
+    {
+      "name": "node-pty",
+      "version": "1.1.0"
+    },
+    {
+      "name": "on-exit-leak-free",
+      "version": "2.1.2"
+    },
+    {
+      "name": "package-manager-detector",
+      "version": "1.8.0"
+    },
+    {
+      "name": "path-data-parser",
+      "version": "0.1.0"
+    },
+    {
+      "name": "pino",
+      "version": "10.3.1"
+    },
+    {
+      "name": "pino-abstract-transport",
+      "version": "3.0.0"
+    },
+    {
+      "name": "pino-std-serializers",
+      "version": "7.1.0"
+    },
+    {
+      "name": "points-on-curve",
+      "version": "0.2.0"
+    },
+    {
+      "name": "points-on-path",
+      "version": "0.2.1"
+    },
+    {
+      "name": "process-warning",
+      "version": "4.0.0"
+    },
+    {
+      "name": "process-warning",
+      "version": "5.1.0"
+    },
+    {
+      "name": "quick-format-unescaped",
+      "version": "4.0.4"
+    },
+    {
+      "name": "react",
+      "version": "19.3.0"
+    },
+    {
+      "name": "react-dom",
+      "version": "19.3.0"
+    },
+    {
+      "name": "real-require",
+      "version": "0.2.0"
+    },
+    {
+      "name": "real-require",
+      "version": "1.0.0"
+    },
+    {
+      "name": "require-from-string",
+      "version": "2.0.2"
+    },
+    {
+      "name": "ret",
+      "version": "0.5.0"
+    },
+    {
+      "name": "reusify",
+      "version": "1.1.0"
+    },
+    {
+      "name": "rfdc",
+      "version": "1.4.1"
+    },
+    {
+      "name": "robust-predicates",
+      "version": "3.0.3"
+    },
+    {
+      "name": "roughjs",
+      "version": "4.6.6"
+    },
+    {
+      "name": "rw",
+      "version": "1.3.3"
+    },
+    {
+      "name": "safe-regex2",
+      "version": "5.1.1"
+    },
+    {
+      "name": "safe-stable-stringify",
+      "version": "2.5.0"
+    },
+    {
+      "name": "safer-buffer",
+      "version": "2.1.2"
+    },
+    {
+      "name": "scheduler",
+      "version": "0.28.0"
+    },
+    {
+      "name": "secure-json-parse",
+      "version": "4.1.0"
+    },
+    {
+      "name": "semver",
+      "version": "7.8.5"
+    },
+    {
+      "name": "set-cookie-parser",
+      "version": "2.6.0"
+    },
+    {
+      "name": "sonic-boom",
+      "version": "4.2.1"
+    },
+    {
+      "name": "split2",
+      "version": "4.2.0"
+    },
+    {
+      "name": "style-mod",
+      "version": "4.1.4"
+    },
+    {
+      "name": "stylis",
+      "version": "4.4.0"
+    },
+    {
+      "name": "thread-stream",
+      "version": "4.2.0"
+    },
+    {
+      "name": "tinyexec",
+      "version": "1.3.1"
+    },
+    {
+      "name": "toad-cache",
+      "version": "3.7.4"
+    },
+    {
+      "name": "ts-dedent",
+      "version": "2.3.0"
+    },
+    {
+      "name": "typescript",
+      "version": "7.0.2"
+    },
+    {
+      "name": "uuid",
+      "version": "14.0.2"
+    },
+    {
+      "name": "w3c-keyname",
+      "version": "2.2.8"
+    },
+    {
+      "name": "yaml",
+      "version": "2.9.1"
+    },
+    {
+      "name": "zod",
+      "version": "4.6.5"
+    }
+  ],
+  "external_node_required": false,
+  "external_pnpm_required": false,
+  "signed": false,
+  "signature_status": "not-requested",
+  "notarization_requested": false
+}

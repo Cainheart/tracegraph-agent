@@ -11,7 +11,7 @@ replaces:
   - verification-map.md
   - known-limitations-map.json
   - KNOWN_LIMITATIONS.md
-last_reviewed: 2026-09-30
+last_reviewed: 2026-10-03
 ---
 
 # 10 · TraceGraph → Outlive Agent 迁移基线
@@ -103,21 +103,21 @@ flowchart LR
 | Boundary ID | 当前边界 | V2 决定 |
 |---|---|---|
 | `LIM-LOCAL-FIRST` | 当前 Workspace、Host、Ledger、Artifact 与 canonical Memory 由单机 Host 管理；模型请求按配置发往 provider，检索可选走单独的 retrieval endpoint | Keep boundary：V2 仍为 local-first；provider/retrieval 网络访问不等于远程 Runtime 或多人共享 Workspace |
-| `LIM-DESKTOP` | 当前仓库只有 Web 与 CLI Host，没有 Desktop client | Target（未实现）：Desktop 是 V2 客户端目标，不能列为当前入口或已交付能力 |
-| `LIM-MEMORY-V2` | G-21 Memory 继续使用 V1 store；MEM-040～045 已落地；MEM-046 增加本地 V2 candidate store、统一 Core/Host/SDK seam、CLI 和 Web 管理面。仓库没有 Desktop client；删除只清除 V2 canonical payload，不清理备份/快照或 V1/Run 审计数据 | Target（未实现）：Desktop 复用同一命令查询 seam；V2 Runtime recall 与加密/备份删除治理仍待后续任务/ADR。MemoryUse 仅证明 Runtime Adapter hand-off；feedback 仅证明针对 response-backed use 的用户评价，不证明 Provider 接受或模型因果使用 |
+| `LIM-DESKTOP` | Web 与 CLI 使用本地 Host；Desktop 已提供隔离 Electron shell、私有 Host 与 framed RPC，并共享 Workbench。REL-083 已交付可安装的私有预构建 preview tar；签名、公证、平台安装器和自动更新尚未实现 | Keep boundary：Desktop 是本地客户端，不构成独立远程 API、对外 SDK 或已签名分发承诺 |
+| `LIM-MEMORY-V2` | G-21 Memory 继续使用 V1 store；MEM-040～046 已落地 V2 candidate/control service、CLI/Web surface；CLIENT-068 将 Memory/Experience 控制接入 Web/Desktop 共用协议与 UI。删除只清除 V2 canonical payload，不清理备份/快照或 V1/Run 审计数据 | MEM-049/050 已交付默认关闭、显式开启的 V2 Memory/Experience Runtime Recall；加密/备份删除治理仍待后续 ADR。MemoryUse 仅证明 Runtime Adapter hand-off；feedback 仅证明针对 response-backed use 的用户评价，不证明 Provider 接受或模型因果使用 |
 | `LIM-REMOTE-RETRIEVAL-SCOPE` | 可选 retrieval-service 只处理索引/搜索请求；`project_id` 是逻辑分区而非租户授权，bearer token 是服务级凭据 | Keep boundary：外部 endpoint 只承担显式配置的检索请求；需要逐租户隔离时另行设计授权/部署边界 |
 | `LIM-SANDBOX-SCOPE` | G-13 仅对内置 `run_test` child 生效；provider HTTP、Host、Ledger/Artifact 与 `commit_patch` 不在 child sandbox 内 | Keep boundary：不能把请求 preset/report 宣称为 Host/机器隔离；平台限制见 `LIM-SANDBOX-PORTABILITY` |
 | `LIM-SANDBOX-PORTABILITY` | Linux/Windows 受限 native sandbox backend 未实现 | Deferred：等平台 provider 和 conformance 设计成熟；继续 fail closed |
 | `LIM-PROVIDER-NETWORK` | provider 出站无 allowlist proxy | Deferred：单独 Security Note，不夹在 Memory MVP 中 |
 | `LIM-MULTIHOST-COORDINATION` | 无跨 Host consensus、锁和命令协调 | Rejected for V2 MVP：保持 local-first |
 | `LIM-TELEMETRY-STACK` | 无完整 OTel SDK、持久队列和真实 Collector 验证 | Deferred：Telemetry 继续是非权威旁路 |
-| `LIM-CREDENTIAL-PORTABILITY` | 非 macOS 缺少 DPAPI/libsecret | Target：由 platform/desktop credential provider 解决，见 `DESK-066` |
-| `LIM-GENERAL-ACTION-RECOVERY` | 自动对账主要覆盖单目标 Patch | Target：通用 action reconciliation，见 `RUN-052` |
+| `LIM-CREDENTIAL-PORTABILITY` | macOS 使用 Keychain；非 macOS 使用私有权限文件，缺少 DPAPI/libsecret | DESK-066 已交付平台 bridge；非 macOS 不声称硬件加密 |
+| `LIM-GENERAL-ACTION-RECOVERY` | Patch WAL 自动对账已实现；RUN-052 为显式配置的外部 Tool 增加有界、只读的 reconciler seam，输出 confirmed/failed/unknown/diverged | 外部 Provider 适配、凭据与通用重试仍延后；unknown 不授权重放副作用 |
 | `LIM-TOKENIZER` | 无覆盖完整 provider wire request 的 canonical tokenizer | Deferred：通过 Model/Token provider seam 接入，不写死单一 tokenizer |
-| `LIM-RETRIEVAL-ADVANCED` | 默认本地 BM25；无 Memory 管理面和自动全仓摄入 | Partial target：先做治理/管理面；vector 不是“事实”前置条件 |
+| `LIM-RETRIEVAL-ADVANCED` | 默认本地 BM25；Memory/Experience 管理面已接入 Web/Desktop，仍无自动全仓摄入 | Deferred：语义检索另行评审；vector 不是“事实”前置条件 |
 | `LIM-SEMANTIC-CODEGRAPH` | 无动态调用、DI、路由、方法级和跨语言完整语义 | CodeGraph 不纳入 V2 内建能力；如未来重议，需独立 Note 与用户价值依据 |
 | `LIM-LSP-PLATFORM` | 无完整 indexing、自动 post-patch 诊断和跨 Host session | Target：先稳定 DSH 式只读代码导航 seam 与 Context provenance；post-patch diagnostics 不纳入当前目标 |
-| `LIM-SUBAGENTS` | spawn 同步、无 worker 自动重启/重派、无跨 Host | Partial target：补 durable capacity/status；跨 Host 延后 |
+| `LIM-SUBAGENTS` | ORCH-054 已交付有界 permit、父子状态与预算回执；无 worker 自动重启/重派、无跨 Host | Keep boundary：恢复不会盲目重派；跨 Host 延后 |
 | `LIM-MCP` | 仅 Host-owned stdio/native bridge | Partial target：先抽 contract；PTC/HTTP/resources 逐项 Note 裁决 |
 | `LIM-EXTENSION-LOADING` | 不加载任意本地/npm 模块，也无 hostile-code isolation | Keep boundary：受信声明式扩展；不把插件加载等同沙箱 |
 | `LIM-SKILL-DISTRIBUTION` | Skill 只读本地数据，无网络安装、签名或脚本执行 | Keep boundary for V2：先保证可审计和权限收窄 |

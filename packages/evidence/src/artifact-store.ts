@@ -2,6 +2,7 @@ import { chmod, lstat, mkdir, readFile, unlink, writeFile } from "node:fs/promis
 import { join } from "node:path";
 import {
   AttachmentMediaTypeSchema,
+  MediaMimeTypeSchema,
   ArtifactRefSchema,
   ArtifactWireResponseSchema,
   type ArtifactKind,
@@ -99,12 +100,12 @@ export class ArtifactStore {
   async putBytes(input: {
     projectId: string;
     runId: string;
-    kind: "image/png" | "image/jpeg" | "application/pdf";
-    mimeType: "image/png" | "image/jpeg" | "application/pdf";
+    kind: "image/png" | "image/jpeg" | "image/webp" | "image/svg+xml" | "application/pdf";
+    mimeType: "image/png" | "image/jpeg" | "image/webp" | "image/svg+xml" | "application/pdf";
     content: Uint8Array;
   }): Promise<ArtifactRef> {
     await this.initialize();
-    const mediaType = AttachmentMediaTypeSchema.parse(input.mimeType);
+    const mediaType = input.mimeType === "application/pdf" ? input.mimeType : MediaMimeTypeSchema.parse(input.mimeType);
     if (input.kind !== mediaType) throw new TypeError("Attachment Artifact kind must match its MIME type");
     const bytes = Buffer.from(input.content);
     const artifactId = this.#idFactory("attachment");
@@ -164,7 +165,7 @@ export class ArtifactStore {
       if (ref.project_id !== input.projectId || ref.run_id !== input.runId) {
         return { status: "unavailable", artifactId: input.artifactId, reason: "out_of_scope" };
       }
-      const media = AttachmentMediaTypeSchema.safeParse(ref.mime_type);
+      const media = ref.mime_type === "application/pdf" ? AttachmentMediaTypeSchema.safeParse(ref.mime_type) : MediaMimeTypeSchema.safeParse(ref.mime_type);
       if (!media.success || ref.kind !== media.data) {
         return { status: "unavailable", artifactId: input.artifactId, reason: "unsupported_mime" };
       }

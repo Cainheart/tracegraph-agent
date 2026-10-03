@@ -1,12 +1,12 @@
 # 模块 08：Memory 记忆子系统
 
 > 定位：把有来源、可审计的候选事实准入为 canonical Memory，并通过有界检索把相关内容作为不可信 Context 注入模型。  
-> 代码：`packages/core/src/domains/memory/memory.ts`、`memory-lifecycle.ts`、`memory-migration.ts`、`memory-governance.ts`、`memory-control.ts`、`legacy-capsule.ts`、`packages/retrieval/src/`、`apps/retrieval-service/src/`、`apps/cli/src/memory-command.ts`、`apps/cli/src/retrieval-config.ts`、`packages/core/src/domains/runtime/runtime.ts`<br>
+> 代码：`packages/core/src/domains/memory/memory.ts`、`memory-lifecycle.ts`、`memory-migration.ts`、`memory-governance.ts`、`memory-control.ts`、`memory-background-pipeline.ts`、`legacy-capsule.ts`、`packages/retrieval/src/`、`apps/retrieval-service/src/`、`apps/cli/src/memory-command.ts`、`apps/cli/src/retrieval-config.ts`、`packages/core/src/domains/runtime/runtime.ts`<br>
 > 契约：`packages/contracts/src/memory.ts`、`memory-use.ts`、`memory-governance.ts`、`memory-control.ts`、`legacy-capsule.ts`、`event.ts`、`context.ts`<br>
-> 最后核对：2026-10-01
+> 最后核对：2026-10-03
 > 实现状态：**G-21 已实现**；默认生产路径是本地 JSONL 索引 + BM25，不是向量 RAG
 
-> **V2 边界：**这里同时记录 G-21 Memory 当前行为和已交付的 V2 lifecycle / Context provenance / governance / control-plane API。MEM-041～045 未切换 G-21 Runtime 的 V1 JSONL 真源；MEM-046 增加独立 V2 candidate seed store、统一控制服务、Host/SDK、CLI 与 Web 面板。仓库目前没有 Desktop client；V2 recall 也未接入 G-21。MemoryUse 只记录 Runtime Adapter hand-off 与可观察阶段，不能据此声称模型实际使用了记忆。
+> **V2 边界：**这里同时记录 G-21 Memory 当前行为和已交付的 V2 lifecycle / Context provenance / governance / control-plane API。MEM-041～045 未切换 G-21 Runtime 的 V1 JSONL 真源；MEM-046 增加独立 V2 candidate seed store、统一控制服务、Host/SDK、CLI 与 Web 面板；CLIENT-068 将 Memory 控制接入 Desktop，并在共享面板增加 Experience 生命周期检查。MEM-049/MEM-050 已提供独立 Runtime V2 Memory/Experience consumer，默认关闭，仅显式 opt-in 后按 scope/policy gate 召回；这不把 G-21 V1 store 隐式迁为 V2。MemoryUse 只记录 Runtime Adapter hand-off 与可观察阶段，不能据此声称模型实际使用了记忆。
 
 > **MEM-040 已交付：**Contracts 同时公开兼容的 `MemoryRecordV1Schema` 与 strict `MemoryRecordV2Schema`；Core 提供显式 `migrateMemoryJsonlAdjacent()`，把 V1 rows 写到同目录的 `records.v2.jsonl` review sidecar。G-21 Runtime 仍只读写 `records.jsonl` V1；sidecar 不会自动成为 canonical store、不会参与 recall，也不会改写现有数据。
 
@@ -57,7 +57,7 @@ Core 导出 `MemoryLifecycleService` 和 `replayMemoryLifecycle()`；`JsonlEvent
 
 Evidence Ledger 在现有 Ledger root 下按 owner+memory 建立独立的 append-only aggregate stream，使用 owner/memory hash 路径；它与 Run 的 `SessionEvent` sequence、hash chain、Projection 分开保存，但复用同一个 Ledger writer、durable replace 与校验边界。服务通过 sequence CAS、idempotency key、hash chain、strict schema 和 status-chain replay 拒绝脏写/损坏。writer 锁覆盖一个 `JsonlEventLedger` 实例；多个 Ledger 实例/Host/进程共享目录仍不支持。Supersede Event 会关联另一 Memory ID，但不会跨两个 aggregate 做原子提交。
 
-该 API 当前不接入 `AgentRuntime.remember()` / `recall()`、V1 JSONL store 或 retrieval index。MEM-042 与 MEM-045 在此基础上分别增加 Run-scoped MemoryUse 和 V2 召回资格/反馈 API；MEM-046 增加 V2 record canonical storage 与 CLI/Web 控制面，但尚无 Desktop client。实现决策见 [MEM-041 Note](../../.agents/notes/implemented/2026-09-30-mem-041-memory-lifecycle.md)。
+该 API 当前不接入 `AgentRuntime.remember()` / `recall()`、V1 JSONL store 或 retrieval index。MEM-042 与 MEM-045 在此基础上分别增加 Run-scoped MemoryUse 和 V2 召回资格/反馈 API；MEM-046 增加 V2 record canonical storage 与 CLI/Web 控制面；CLIENT-068 随后为 Desktop 提供同一 Memory 控制入口，并将 Experience 生命周期审核接入共享 UI。实现决策见 [MEM-041 Note](../../.agents/notes/implemented/2026-09-30-mem-041-memory-lifecycle.md)。
 
 ### 1.3 V2 conflict、expiry 与 use feedback（MEM-045）
 
@@ -72,25 +72,45 @@ Core 导出 `detectMemoryConflicts()`、`evaluateMemoryRecallEligibility()`、`M
 
 ### 1.4 V2 Memory 控制面（MEM-046）
 
-`MemoryControlService` 是 CLI、Host/SDK 与 Web 共用的唯一领域 command/query seam。`AgentRuntime` 持有该服务；Host 的 `/api/memory` 路由负责认证、strict request parse，并把当前可见 project IDs 转成 `allowedScopeIds`，owner 与 user actor 不由浏览器/CLI 请求体指定。CLI 通过 SDK 调用 Host；Web 面板也只经 SDK 进入同一 Host 路由。仓库当前没有 Desktop client，未来 Desktop 可复用同一 SDK/Host 契约。
+`MemoryControlService` 是 CLI、Host/SDK、Web 与 Desktop 共用的唯一领域 command/query seam。`AgentRuntime` 持有该服务；`@tracegraph/api` 的 `MemoryExperienceController` 处理共享控制命令，并在每次调用时从 Host 当前项目注册派生 `allowedScopeIds`。Web `/api/memory` routes 和 Desktop framed dispatcher 调用同一 API controller；SDK 与私有协议复用 Contracts 定义的 Memory/Experience command/query schemas。owner 与 user actor 不由 Renderer 请求体指定。
 
 - **Inspect：**列表从 V2 immutable candidate seeds + lifecycle replay 得出当前状态，并聚合 provenance、冲突参与者、反馈计数/待复核项和精确版本的 Run-scoped MemoryUse 请求阶段。冲突只展示 record IDs/status 与 normalized-key digest；MemoryUse 阶段不代表 Provider 接受或模型因果使用。
-- **Candidate / review：**用户录入先写 `memory-v2/<owner-hash>/records.jsonl`，随后追加内容无关的 `memory.control.commanded` 创建事实；审核状态只追加 `memory.lifecycle.transitioned`。模型使用默认关闭，只有审核前用户明确选择 `allow_model_use` 后且成功审核才保留开启。
-- **Correct：**创建新的不可变 candidate、记录 lineage 与用户来源，再通过旧/新 Memory ID 的 lifecycle 事件连接修订。对两个 aggregate 的写入不是跨流原子事务；控制服务按命令协调，重试可识别已提交 correction。并发仅在单个 Runtime/Core 服务实例内串行；多 Host 共享一个 dataDir 不受支持。
+- **Candidate / review：**用户录入先写 `memory-v2/<owner-hash>/records.jsonl`，随后追加内容无关的 `memory.control.commanded` 创建事实；审核状态只追加 `memory.lifecycle.transitioned`。模型使用默认关闭，只有审核前用户明确选择 `allow_model_use` 后且成功审核才保留开启。`allow_export` 默认 false；CLI `candidate --allow-export` 与 Workbench 明确同意复选框只授权本次精确 authored version。
+- **Correct：**创建新的不可变 candidate、记录 lineage 与用户来源，再通过旧/新 Memory ID 的 lifecycle 事件连接修订。对两个 aggregate 的写入不是跨流原子事务；控制服务按命令协调，重试可识别已提交 correction。更正不继承旧版本导出许可：`allow_export` 默认 false，CLI `correct --allow-export` 或 Workbench 更正区复选框需为新版本单独 opt-in。并发仅在单个 Runtime/Core 服务实例内串行；多 Host 共享一个 dataDir 不受支持。
 - **Revoke：**只追加 lifecycle transition，不擦除正文；V1 与 V2 的召回链路仍相互独立。
 - **Delete：**先对更正 lineage 全家族追加内容无关 tombstone（包括 family IDs 与 scope IDs），再用 fsync + rename 原子重写 V2 owner record file 移除正文。授权在每次操作重新验证；不可见/跨 scope 的记录以 404 隐藏。已删身份不能由重试创建复活，删除重试返回原 family。此能力只覆盖本机 V2 canonical payload 文件：不清除 G-21 V1 `records.jsonl`、Run/feedback/lifecycle/control 审计事件、备份、快照、外部 Artifact 或文件系统取证残留；因此不能称为 crypto-erase 或全域遗忘。
 
-所有写命令都经过 Host command ID 校验，再追加到现有 Evidence Ledger；控制事件不包含 claim/正文。实现与限制见 [MEM-046 Note](../../.agents/notes/implemented/2026-09-30-mem-046-memory-control-plane.md)。
+所有写命令都经过 Host command ID 校验，再追加到现有 Evidence Ledger；控制事件不包含 claim/正文。Desktop 只通过 Main 固定 IPC 和 exact-version Host framed RPC 提交相同的领域 payload，不在 Renderer 或 Main 保存 Memory 真源。Memory inspect/review/correct/revoke/delete 与 UI 限制见 [MEM-046 Note](../../.agents/notes/implemented/2026-09-30-mem-046-memory-control-plane.md) 和 [CLIENT-068 Note](../../.agents/notes/implemented/2026-10-02-client-068-memory-experience-control.zh.md)。
+
+CLIENT-068 还为 Experience 提供 `list` 与生命周期 `review`。共享 Workbench 显示候选/已验证/有争议/已退役状态、生命周期序号、适用条件、行动、验证、反例和证据引用；按钮只提供当前状态允许的 validate/reject/dispute/resolve/retire 转换，Host/Core 执行 CAS 与幂等。Experience seed 不可变，本控制面不提供编辑或删除，也不自动开启 Runtime Recall。
 
 ### 1.5 Legacy Capsule v1（MEM-047）
 
 `@tracegraph/contracts` 定义 strict Capsule manifest、Memory/Experience entry、quarantine 和 accept request schemas；`@tracegraph/core` 以 plain relative-path → UTF-8 file map 提供离线 bundle build/verify/preview/accept，不在领域层读任意文件系统路径。
 
-- **Export：**Memory 必须是 active、`allowExport`、explicit consent、非 secret/unknown sensitivity、非 untrusted/unknown source，并且不能是 `legacy_unclassified`；Experience 必须 validated。Known secret 会脱敏，导出后若仍检测到敏感内容则 fail closed。仅输出来源引用，不输出原始 Event/Artifact。
+- **Export：**Memory 必须是 active、`allowExport`、explicit consent、允许的 scope、非 secret/unknown sensitivity、非 untrusted/unknown source，并且不能是 `legacy_unclassified`；Experience 必须 validated。Candidate 和 Correction 都可显式传 `allow_export: true`，仅授权本次精确 authored version；更正默认清除此许可。Known secret 会脱敏，导出后若仍检测到敏感内容则 fail closed。仅输出来源引用，不输出原始 Event/Artifact。
 - **Verify：**固定路径清单、6-file/4 MiB-per-file/8 MiB-total/500-row bounds、strict YAML/JSONL schemas、canonical JSONL 编码、manifest payload digests 和 `SHA256SUMS` 均须通过。SHA-256 只能校验字节一致性，不验证签名/作者/事实。
 - **Quarantine：**生成 redacted manifest/entry preview 以及按 target project 的 new/duplicate/conflict/experience-candidate 分类和 review digest，不写任何 Memory 或 Ledger。
 - **Accept：**必须重验 bundle bytes、本地 diff 和明确选择 IDs；变化后的本地状态导致 stale-review 拒绝。MemoryControl 为导入 Memory 分配本地身份/owner/scope，在 Evidence Ledger 写内容无关的 `imported_candidate_created`，来源标为 external/untrusted，status 为 candidate，consent/model use/export 全关闭；重复重试幂等。Experience 只返回外部证据标记的 candidate 结果，目前没有可写的 Experience store。
-- **平台边界：**当前 API 不实现 filesystem/ZIP transport、Web/CLI/Desktop UI、加密、签名信任根、raw evidence/artifact opt-in、撤销传播、Experience 持久化或自动激活。完整决策与限制见 [MEM-047 Note](../../.agents/notes/implemented/2026-10-01-mem-047-legacy-capsule-v1.md)。
+- **平台边界：**导出通过 Core public `buildLegacyCapsule()` 与 `demos/proofs` 可复现；CLI/Workbench 可设置候选和更正的许可，但没有 Capsule 下载按钮。当前 API 不实现 filesystem/ZIP transport、Capsule Web/CLI/Desktop 导入导出 UI、加密、签名信任根、raw evidence/artifact opt-in、撤销传播、Experience 持久化或自动激活；撤销不回收已经导出的外部副本。完整决策与限制见 [MEM-047 Note](../../.agents/notes/implemented/2026-10-01-mem-047-legacy-capsule-v1.md)。
+
+### 1.6 ORCH-055 后台 Job continuation
+
+`MemoryBackgroundPipeline` 在 Run 的 canonical terminal Event 后异步抽取 Episode，并只通过 `MemoryControlService` 创建待审核 candidate；它不延长 Run，也不把 candidate 激活为 Memory。Job 状态文件是可重建的、无内容的 operational projection，真正的来源与候选事实仍分别由 Run Event Ledger 和 Memory control Ledger 持有。
+
+状态严格区分 `waiting`（等待 extractor）、`running`（已取得 owner lease、正在处理）、`retry`（失败或关停后可重试）、`complete`（所有 candidate 命令均已返回）与 `exhausted`。进程启动时扫描终态 Run：没有 Job 状态或遗留 `running` 都会重新入队；未来的 `retry.nextAttemptAt` 继续等待；只有 `complete/exhausted` 会跳过。Source digest、稳定 candidate command id 和 owner lease 分别保护来源一致性、部分提交重放幂等与单 owner 串行。关停先中止提取并写回 `retry`，不会伪造完成。
+
+`complete` 只表示抽取和 candidate 写入操作完成，candidate 仍是 `status=candidate`，需要用户审核后才能激活。Run 启动 API 返回当前 `RunProjection` 状态（CLI E2E 验证为 `indexing|running`），而不是把 HTTP 成功或 `accepted` 文案作为 Run 终态。当前仍以单个 Run terminal 作为 Episode 边界；通用 Workflow DAG、独立 operation 查询资源与客户端游标续传仍未实现。
+
+### 1.7 MEM-043 跨 Run consolidation 与独立任务状态
+
+`consolidateDerivedCandidate()` 在同 owner/project 内对比当前候选与历史 Memory。只允许有创建提交事实、有效期限内、可信来源且当前为 candidate/active 的记录；不跨 workspace/session/run 较窄 scope 扩权。对模型派生记录重新校验来源 Run 的完整 hash chain、Episode/source digest 及确切 evidence refs；用户纠正版本沿最多 64 层 canonical correction 链验证用户 actor、claim digest、精确 scope、版本、supersession、旧记录 lifecycle 与追加用户证据，再回查最初 Run。未提交、已撤销、过期、坏纠正链、删除来源或越界记录不能参与。
+
+同 kind/key/claim 的精确重复输出 `unchanged`；有证据支持的同 key 不同 claim 只创建 `candidate`，用 `derivedFrom` 保留对照记录。不会改写、替代或激活原 active Memory；不声称语义等价或模型综合结论。归并不额外调用模型。每个结果在继续下一 slot 前持久化其 request digest、Memory IDs 和来源 Run IDs；同 slot 重试改变/省略已提交内容时失败，不重复创建。部分成功后的 retry 展示实际已提交结果。
+
+`memory.list` / `GET /api/memory` 在既有响应中增加可选 `backgroundJobs` 和 `backgroundJobsLoading`；Web 与 Desktop 通过相同 controller/SDK schema 查看最多最近 100 个 scope 内任务。Workbench Memory 面板的独立任务区显示 `waiting/running/retry/complete/exhausted`、已结束尝试次数、实际 retry time、内容无关错误码、来源 Run 与可见记录的候选/前后对照。查询读取可丢弃的后台任务投影，不扫描 Run 历史；每项目最多保留最近 100 条，再合并可见项目并截取 100 条，更早记录不展示。后台启动/恢复从 canonical Run 与持久 job 重建，成功持久化状态后更新投影；恢复未完成时明确显示历史可能不完整，不将空列表称为无任务。投影反映最近后台恢复及当前 worker 成功写入，来源删除由下次后台恢复或重启同步；GET 刷新本身不触发全历史恢复。完成不等于审核通过。旧 v1 job 可读取但标明没有差异明细，不能将旧 proposal count 当作新增 Memory 数。
+
+库存文件名可能把 `run:UUID` 写成 `run_UUID.jsonl`；后台恢复从 canonical 首事件还原 Run identity，而非用文件别名查 job。新写入 v2 operational job 不含 claim、模型摘要或异常正文；v1 兼容读取。独立 canonical Episode store、语义跨 Run 综合和人工调度控制仍属于后续能力。验证见 [MEM-043 闭环 Note](../../.agents/notes/implemented/2026-10-03-mem-043-cross-run-job-control.zh.md) 与 [纠正链及有界任务查询 Note](../../.agents/notes/implemented/2026-10-03-mem-043-bounded-job-index.zh.md)。
 
 ---
 
@@ -196,7 +216,7 @@ G-21 使用四种相关事件，其中后三种是本阶段新增 Event type：
 | `memory.recalled` | completed/degraded、query hash、预算、visible/blocked attribution 与 token 总量 |
 | `retrieval.index_updated` | 可重建索引已完成一次 ingest；缺少该事件意味着不能声称索引已同步 |
 
-G-21 当时把 Event 总数增至 68；它只追加事件枚举和 strict payload，没有改变 canonical Event 信封或当时的 Projection 字段语义，所以 projector 当时仍是 v5。后续 G-07 追加 5 种 `subagent.*` Event 并增加 `RunProjection.subagents`，G-18 再追加 3 种 `attachment.*` Event 与 `RunProjection.attachments`，G-17 再追加 `extension.error`，G-08 最后追加 13 种 `team.*` Event 与可选 `RunProjection.team`，G-10/G-11/G-12 又追加 Skill/MCP/LSP 事件，G-20 再追加两个 `code.*` Event 与可选 `RunProjection.code_intel`，MEM-042 追加 `memory.use_status`，因此当前总数为 103，`SCHEMA_VERSION` 仍是 `tracegraph.session-event.v1`，`PROJECTOR_VERSION` 已是 `tracegraph.projector.v9`。Memory 当前没有独立 Projection 列表；事实主要从 Ledger timeline、canonical JSONL 与 Context Manifest 检查。
+G-21 当时把 Event 总数增至 68；它只追加事件枚举和 strict payload，没有改变 canonical Event 信封或当时的 Projection 字段语义，所以 projector 当时仍是 v5。后续 G-07 追加 5 种 `subagent.*` Event 并增加 `RunProjection.subagents`，G-18 再追加 3 种 `attachment.*` Event 与 `RunProjection.attachments`，G-17 再追加 `extension.error`，G-08 最后追加 13 种 `team.*` Event 与可选 `RunProjection.team`，G-10/G-11/G-12 又追加 Skill/MCP/LSP 事件，G-20 再追加两个 `code.*` Event 与可选 `RunProjection.code_intel`，MEM-042 追加 `memory.use_status`，因此当前总数为 104，`SCHEMA_VERSION` 仍是 `tracegraph.session-event.v1`，`PROJECTOR_VERSION` 已是 `tracegraph.projector.v9`。Memory 当前没有独立 Projection 列表；事实主要从 Ledger timeline、canonical JSONL 与 Context Manifest 检查。
 
 ---
 
@@ -204,6 +224,7 @@ G-21 当时把 Event 总数增至 68；它只追加事件枚举和 strict payloa
 
 - `packages/contracts/src/memory-g21.test.ts`：strict candidate、事件 payload、query hash、预算与 provenance 交叉约束。
 - `packages/core/src/domains/memory/memory-g21.test.ts`：remember 幂等/崩溃窗、store/index 边界、scope/global 合并、degraded recall、Runtime 每轮注入与 Manifest 一致性。
+- `packages/core/src/domains/memory/memory-background-pipeline.test.ts`：终态 Run 扫描恢复、in-flight restart、部分提交重试幂等、跨实例 owner lease、来源变更/删除与关停中断。
 - `packages/retrieval/tests/`：分块、JSONL store、BM25、项目隔离、路径与损坏边界。
 - `apps/retrieval-service/tests/`：HTTP route、认证、大小/超时、错误映射、client unavailable 分类。
 - `apps/cli/src/retrieval-config.test.ts`：本地默认、远端 write-through、availability fallback 与 4xx fail-closed。
@@ -226,7 +247,7 @@ G-21 当时把 Event 总数增至 68；它只追加事件枚举和 strict payloa
 
 ## 10. 相关文档
 
-- 模块 01：Memory/Retrieval strict contracts、G-21 当时的 68 种事件与当前 103 种全集
+- 模块 01：Memory/Retrieval strict contracts、G-21 当时的 68 种事件与当前 104 种全集
 - 模块 02：Runtime `remember/recall` 与每轮自动检索时序
 - 模块 03：`memory/retrieved` Context surface、预算与 provenance
 - 模块 11：CLI 本地 backend、远端 client 与安全降级

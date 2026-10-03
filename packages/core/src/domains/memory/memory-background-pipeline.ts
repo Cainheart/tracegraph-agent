@@ -4,9 +4,13 @@ import { lstat, mkdir, open, readFile, rename, unlink, utimes } from "node:fs/pr
 import { dirname, join } from "node:path";
 import { z } from "zod";
 import {
+  MemoryBackgroundJobSchema,
+  MemoryConsolidationResultSchema,
   MemoryEpisodeExtractionResultSchema,
   MemoryDerivedCandidateRequestSchema,
   isTerminalEventType,
+  type MemoryBackgroundJob,
+  type MemoryConsolidationResult,
   type MemoryEpisodeExtractionInput,
   type SessionEvent,
 } from "@tracegraph/contracts";
@@ -26,14 +30,15 @@ const LEASE_DURATION_MS = 2 * 60_000;
 const RECOVERY_BATCH_SIZE = 32;
 
 const BackgroundJobStateSchema = z.object({
-  schemaVersion: z.literal("tracegraph.memory-background-job.v1"),
+  schemaVersion: z.enum(["tracegraph.memory-background-job.v1", "tracegraph.memory-background-job.v2"]),
   runId: z.string().min(1).max(160),
   sourceDigest: z.string().regex(/^sha256:[a-f0-9]{64}$/u).optional(),
-  status: z.enum(["waiting", "retry", "complete", "exhausted"]),
+  status: z.enum(["waiting", "running", "retry", "complete", "exhausted"]),
   attempts: z.number().int().nonnegative().max(MAX_EXTRACTION_ATTEMPTS),
   nextAttemptAt: z.string().datetime({ offset: true }).optional(),
   candidateCount: z.number().int().nonnegative().max(8).default(0),
   lastErrorCode: z.string().min(1).max(100).optional(),
+  consolidationResults: z.array(MemoryConsolidationResultSchema).max(8).optional(),
   updatedAt: z.string().datetime({ offset: true }),
 }).strict();
 type BackgroundJobState = z.infer<typeof BackgroundJobStateSchema>;
@@ -71,6 +76,9 @@ export class MemoryBackgroundPipeline {
   readonly #queue: string[] = [];
   readonly #timers = new Map<string, ReturnType<typeof setTimeout>>();
   readonly #active = new Map<string, { task: Promise<void>; controller: AbortController }>();
+  readonly #jobIndex = new Map<string, MemoryBackgroundJob[]>();
+  #historyLoaded = false;
+  #recoveryTask: Promise<void> | undefined;
   #closed = false;
 
   constructor(options: MemoryBackgroundPipelineOptions) {
@@ -87,13 +95,24 @@ export class MemoryBackgroundPipeline {
     this.#enqueue(event.run_id);
   }
 
-  /** Repairs the terminal-commit-before-enqueue crash window in bounded batches. */
-  async recoverSettledRuns(): Promise<void> {
-    if (this.#closed) return;
-    for await (const runIds of this.#runIdBatches()) {
+  get historyLoaded(): boolean { return this.#historyLoaded; }
+
+  /** Repairs the terminal-commit-before-enqueue crash window and rebuilds the disposable read index. */
+  recoverSettledRuns(): Promise<void> {
+    if (this.#closed) return Promise.resolve();
+    if (this.#recoveryTask !== undefined) return this.#recoveryTask;
+    this.#recoveryTask = this.#recoverSettledRuns().finally(() => { this.#recoveryTask = undefined; });
+    return this.#recoveryTask;
+  }
+
+  async #recoverSettledRuns(): Promise<void> {
+    this.#historyLoaded = false;
+    this.#jobIndex.clear();
+    for await (const runs of this.#runIdBatches()) {
       if (this.#closed) return;
-      for (const runId of runIds) {
+      for (const { runId, projectId } of runs) {
         const state = await this.#readState(runId);
+        if (state !== undefined) this.#indexJob(projectId, state);
         if (state?.status === "complete" || state?.status === "exhausted") continue;
         if (state?.status === "retry" && state.nextAttemptAt !== undefined
           && Date.parse(state.nextAttemptAt) > this.#now().getTime()) {
@@ -105,29 +124,80 @@ export class MemoryBackgroundPipeline {
       }
       await this.#drainQueued();
     }
+    if (!this.#closed) this.#historyLoaded = true;
+  }
+
+  /** Bounded read-only projection: request cost is independent of historical Run/ledger size. */
+  async listJobs(scope: { allowedScopeIds: readonly string[] }): Promise<MemoryBackgroundJob[]> {
+    if (scope.allowedScopeIds.length === 0) return [];
+    const jobs: MemoryBackgroundJob[] = [];
+    for (const projectId of new Set(scope.allowedScopeIds)) {
+      jobs.push(...this.#jobIndex.get(projectId) ?? []);
+      jobs.sort(compareJobs);
+      jobs.splice(100);
+    }
+    // Return copies so callers cannot alter the worker's operational projection.
+    return jobs.map((job) => MemoryBackgroundJobSchema.parse(job));
+  }
+
+  #indexJob(projectId: string, state: BackgroundJobState): void {
+    const job = MemoryBackgroundJobSchema.parse({
+      runId: state.runId, projectId,
+      ...(state.sourceDigest === undefined ? {} : { sourceDigest: state.sourceDigest }),
+      status: state.status, attempts: state.attempts, candidateCount: state.candidateCount,
+      ...(state.nextAttemptAt === undefined ? {} : { nextAttemptAt: state.nextAttemptAt }),
+      ...(state.lastErrorCode === undefined ? {} : { lastErrorCode: safeErrorCode({ code: state.lastErrorCode }) }),
+      updatedAt: state.updatedAt,
+      consolidationResults: state.consolidationResults ?? [],
+      resultDetailsAvailable: state.consolidationResults !== undefined,
+    });
+    const jobs = (this.#jobIndex.get(projectId) ?? []).filter((value) => value.runId !== job.runId);
+    jobs.push(job);
+    jobs.sort(compareJobs);
+    this.#jobIndex.set(projectId, jobs.slice(0, 100));
   }
 
   /** Requeues waiting runs after Host model settings are configured. */
   async resumeWaiting(): Promise<void> {
     if (this.#closed || !this.#extractor?.canExtract()) return;
-    for await (const runIds of this.#runIdBatches()) {
-      for (const runId of runIds) {
+    for await (const runs of this.#runIdBatches()) {
+      for (const { runId, projectId } of runs) {
         const state = await this.#readState(runId);
-        if (state === undefined || state.status === "waiting") this.#enqueue(runId);
+        if (state !== undefined) this.#indexJob(projectId, state);
+        if (state === undefined || state.status === "waiting") {
+          // The durable waiting marker can be observed before the old worker's
+          // lease release/finally completes. Do not lose a configuration-change
+          // wakeup to active-task deduplication in that window.
+          await this.#active.get(runId)?.task;
+          this.#enqueue(runId);
+        }
       }
       await this.#drainQueued();
     }
   }
 
-  async *#runIdBatches(): AsyncGenerator<string[]> {
+  async *#runIdBatches(): AsyncGenerator<Array<{ runId: string; projectId: string }>> {
     if (this.#ledger.iterateRunIdBatches !== undefined) {
-      yield* this.#ledger.iterateRunIdBatches(RECOVERY_BATCH_SIZE);
+      for await (const runIds of this.#ledger.iterateRunIdBatches(RECOVERY_BATCH_SIZE)) {
+        yield await this.#canonicalRunIds(runIds);
+      }
       return;
     }
     const runIds = await this.#ledger.listRunIds();
     for (let offset = 0; offset < runIds.length; offset += RECOVERY_BATCH_SIZE) {
-      yield runIds.slice(offset, offset + RECOVERY_BATCH_SIZE);
+      yield await this.#canonicalRunIds(runIds.slice(offset, offset + RECOVERY_BATCH_SIZE));
     }
+  }
+
+  async #canonicalRunIds(inventoryIds: readonly string[]): Promise<Array<{ runId: string; projectId: string }>> {
+    const ids = new Map<string, string>();
+    for (const inventoryId of inventoryIds) {
+      // File inventories may contain sanitized names (run:UUID -> run_UUID).
+      // Job identity always follows the durable event, never a filename alias.
+      const first = (await this.#ledger.list(inventoryId))[0];
+      if (first !== undefined) ids.set(first.run_id, first.project_id);
+    }
+    return [...ids].map(([runId, projectId]) => ({ runId, projectId }));
   }
 
   async #drainQueued(): Promise<void> {
@@ -173,6 +243,7 @@ export class MemoryBackgroundPipeline {
   }
 
   async #process(runId: string, signal: AbortSignal): Promise<void> {
+    let projectId: string | undefined;
     const release = await this.#claimLease();
     if (release === undefined) {
       // Another Runtime may own the same owner-scoped queue. Keep this process
@@ -182,8 +253,17 @@ export class MemoryBackgroundPipeline {
     }
     try {
       const prior = await this.#readState(runId);
-      if (prior?.status === "complete" || prior?.status === "exhausted") return;
       const events = await this.#ledger.list(runId);
+      projectId = events[0]?.project_id;
+      // Only a trusted Runtime admission can write this durable creation fact.
+      // Explicit one-shot media work must not incur a later chat-model request,
+      // including when this worker recovers settled history after a restart.
+      if (events.find((event) => event.type === "run.created")?.data.background_model_derivation === false) return;
+      // A competing worker may have completed the durable job while this
+      // instance waited for the owner lease. Refresh its disposable projection
+      // before skipping extraction so a historical running marker cannot stick.
+      if (prior !== undefined && projectId !== undefined) this.#indexJob(projectId, prior);
+      if (prior?.status === "complete" || prior?.status === "exhausted") return;
       if (events.length === 0 || !isTerminalEventType(events.at(-1)!.type)) return;
       const episode = projectMemoryEpisode(events);
       if (prior?.sourceDigest !== undefined && prior.sourceDigest !== episode.sourceDigest) {
@@ -191,40 +271,45 @@ export class MemoryBackgroundPipeline {
       }
       if (this.#extractor === undefined || !this.#extractor.canExtract()) {
         await this.#writeState(runId, {
-          schemaVersion: "tracegraph.memory-background-job.v1",
+          schemaVersion: "tracegraph.memory-background-job.v2",
           runId,
           sourceDigest: episode.sourceDigest,
           status: "waiting",
           attempts: prior?.attempts ?? 0,
-          candidateCount: 0,
+          candidateCount: prior?.consolidationResults?.filter((result) => result.action === "candidate").length ?? 0,
+          consolidationResults: prior?.consolidationResults ?? [],
           updatedAt: this.#now().toISOString(),
-        });
+        }, projectId);
         return;
       }
 
       const attempts = (prior?.attempts ?? 0) + 1;
       const running: BackgroundJobState = {
-        schemaVersion: "tracegraph.memory-background-job.v1",
+        schemaVersion: "tracegraph.memory-background-job.v2",
         runId,
         sourceDigest: episode.sourceDigest,
-        status: "retry",
+        status: "running",
         attempts: prior?.attempts ?? 0,
-        nextAttemptAt: this.#now().toISOString(),
-        candidateCount: 0,
+        candidateCount: prior?.consolidationResults?.filter((result) => result.action === "candidate").length ?? 0,
+        consolidationResults: prior?.consolidationResults ?? [],
         updatedAt: this.#now().toISOString(),
       };
-      await this.#writeState(runId, running);
+      await this.#writeState(runId, running, projectId);
       const extractionInput = buildMemoryEpisodeExtractionInput(episode, events);
       const extractionController = AbortSignal.any([signal, AbortSignal.timeout(90_000)]);
       const extracted = MemoryEpisodeExtractionResultSchema.parse(
         await this.#extractor.extract(extractionInput, { signal: extractionController }),
       );
       extractionController.throwIfAborted();
+      if (extracted.candidates.length < (prior?.consolidationResults?.length ?? 0)) {
+        throw new MemoryBackgroundPipelineError("memory_background_result_changed", "Extractor omitted a previously committed candidate slot");
+      }
       let candidateCount = 0;
+      const consolidationResults: MemoryConsolidationResult[] = [];
       for (const [index, candidate] of extracted.candidates.entries()) {
         extractionController.throwIfAborted();
         const claim = redactSensitiveText(candidate.claim).trim();
-        if (claim.length === 0) continue;
+        if (claim.length === 0) throw new MemoryBackgroundPipelineError("memory_background_extraction_failed", "Candidate is empty after redaction");
         if (candidate.evidenceSequences.some((sequence) => !extractionInput.evidenceSequences.includes(sequence))) {
           throw new MemoryBackgroundPipelineError(
             "memory_background_evidence_not_presented",
@@ -257,8 +342,17 @@ export class MemoryBackgroundPipeline {
           ...(candidate.confidence === undefined ? {} : { inference_confidence: candidate.confidence }),
           evidence_refs: evidenceRefs,
         });
-        await this.#control.createDerivedCandidate(request);
-        candidateCount += 1;
+        const previousResult = prior?.consolidationResults?.[index];
+        if (previousResult !== undefined && previousResult.requestDigest !== sha256(stableStringify(request))) {
+          throw new MemoryBackgroundPipelineError("memory_background_result_changed", "Extractor changed a previously committed candidate slot");
+        }
+        const result = previousResult ?? await this.#control.consolidateDerivedCandidate(request);
+        consolidationResults.push(result);
+        if (result.action === "candidate") candidateCount += 1;
+        // Persist every committed result before moving to another candidate slot.
+        if (previousResult === undefined) {
+          await this.#writeState(runId, { ...running, candidateCount, consolidationResults, updatedAt: this.#now().toISOString() }, projectId);
+        }
       }
       // The Episode summary remains a projection. Candidate summaries/claims are stored only as reviewable seeds.
       void extracted.summary;
@@ -269,46 +363,49 @@ export class MemoryBackgroundPipeline {
         attempts,
         nextAttemptAt: undefined,
         candidateCount,
+        consolidationResults,
         lastErrorCode: undefined,
         updatedAt: this.#now().toISOString(),
-      });
+      }, projectId);
     } catch (error) {
       if (signal.aborted || this.#closed) {
         const prior = await this.#readState(runId);
         await this.#writeState(runId, {
-          schemaVersion: "tracegraph.memory-background-job.v1",
+          schemaVersion: "tracegraph.memory-background-job.v2",
           runId,
           ...(prior?.sourceDigest === undefined ? {} : { sourceDigest: prior.sourceDigest }),
           status: "retry",
           attempts: prior?.attempts ?? 0,
-          candidateCount: prior?.candidateCount ?? 0,
+          candidateCount: prior?.consolidationResults?.filter((result) => result.action === "candidate").length ?? 0,
+          consolidationResults: prior?.consolidationResults ?? [],
           updatedAt: this.#now().toISOString(),
-        }).catch(() => undefined);
+        }, projectId).catch(() => undefined);
         return;
       }
-      await this.#recordFailure(runId, error);
+      await this.#recordFailure(runId, error, projectId);
     } finally {
       await release();
     }
   }
 
-  async #recordFailure(runId: string, error: unknown): Promise<void> {
+  async #recordFailure(runId: string, error: unknown, projectId: string | undefined): Promise<void> {
     const previous = await this.#readState(runId);
     const attempts = Math.min((previous?.attempts ?? 0) + 1, MAX_EXTRACTION_ATTEMPTS);
     const exhausted = attempts >= MAX_EXTRACTION_ATTEMPTS;
     const delay = Math.min(BASE_RETRY_DELAY_MS * 2 ** Math.max(0, attempts - 1), MAX_RETRY_DELAY_MS);
     const nextAttemptAt = exhausted ? undefined : new Date(this.#now().getTime() + delay).toISOString();
     await this.#writeState(runId, {
-      schemaVersion: "tracegraph.memory-background-job.v1",
+      schemaVersion: "tracegraph.memory-background-job.v2",
       runId,
       ...(previous?.sourceDigest === undefined ? {} : { sourceDigest: previous.sourceDigest }),
       status: exhausted ? "exhausted" : "retry",
       attempts,
       ...(nextAttemptAt === undefined ? {} : { nextAttemptAt }),
-      candidateCount: previous?.candidateCount ?? 0,
+      candidateCount: previous?.consolidationResults?.filter((result) => result.action === "candidate").length ?? 0,
+      consolidationResults: previous?.consolidationResults ?? [],
       lastErrorCode: safeErrorCode(error),
       updatedAt: this.#now().toISOString(),
-    });
+    }, projectId);
     if (nextAttemptAt !== undefined) this.#scheduleRetry(runId, delay);
   }
 
@@ -379,7 +476,7 @@ export class MemoryBackgroundPipeline {
     }
   }
 
-  async #writeState(runId: string, stateValue: BackgroundJobState): Promise<void> {
+  async #writeState(runId: string, stateValue: BackgroundJobState, projectId: string | undefined): Promise<void> {
     const state = BackgroundJobStateSchema.parse(stateValue);
     if (state.runId !== runId) throw new MemoryBackgroundPipelineError("memory_background_state_corrupt", "Memory job identity changed");
     const path = this.#statePath(runId);
@@ -395,6 +492,7 @@ export class MemoryBackgroundPipeline {
       await rename(temporary, path);
       const directory = await open(dirname(path), fsConstants.O_RDONLY);
       try { await directory.sync(); } finally { await directory.close(); }
+      if (projectId !== undefined) this.#indexJob(projectId, state);
     } catch (error) {
       await handle?.close().catch(() => undefined);
       await unlink(temporary).catch(() => undefined);
@@ -432,14 +530,24 @@ export function createModelMemoryEpisodeExtractor(model: ModelAdapter): MemoryEp
   };
 }
 
+const SAFE_JOB_ERROR_CODES = new Set([
+  "memory_background_source_changed", "memory_background_result_changed", "memory_background_evidence_not_presented",
+  "memory_background_lease_invalid", "memory_background_state_corrupt", "memory_background_extraction_failed",
+  "memory_control_not_found", "memory_control_scope_denied", "memory_control_deleted", "memory_control_conflict",
+  "memory_control_invalid_command", "memory_control_corrupt", "memory_episode_invalid_source",
+  "memory_episode_unbounded_source", "memory_episode_evidence_mismatch",
+]);
+
 function safeErrorCode(error: unknown): string {
-  if (error instanceof MemoryBackgroundPipelineError) return error.code;
-  if (typeof error === "object" && error !== null && "code" in error && typeof error.code === "string") {
-    return error.code.slice(0, 100);
-  }
+  if (typeof error === "object" && error !== null && "code" in error && typeof error.code === "string"
+    && SAFE_JOB_ERROR_CODES.has(error.code)) return error.code;
   return "memory_background_extraction_failed";
 }
 
 function hasCode(error: unknown, code: string): boolean {
   return typeof error === "object" && error !== null && "code" in error && error.code === code;
+}
+
+function compareJobs(left: MemoryBackgroundJob, right: MemoryBackgroundJob): number {
+  return right.updatedAt.localeCompare(left.updatedAt) || left.runId.localeCompare(right.runId);
 }

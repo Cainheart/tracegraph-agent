@@ -287,7 +287,7 @@ Context package 只暴露消费方 `TokenMeter` port；当前 `CalibratedTokenMe
 | `packages/core/src/domains/model/model-provider.test.ts` | OpenAI/Anthropic summary 请求、strict 输出边界、summary usage、错误/取消 |
 | `packages/core/src/domains/tools/registry.test.ts` | run-scoped locator 分页回读、offset/limit 上界、Plain Chat 零文件能力下仍只能读本 Run archive，以及 `lists only stable paged metadata from the current Run` |
 | `packages/test-support/src/runtime.integration.test.ts` | summary/Event/usage 整链、invalid/timeout fallback、spill→`read_artifact`→hash、原文不进 Ledger、300K 级连续减量账 |
-| `apps/web/src/components/ContextBudget.test.tsx` | 被压缩原文在明确 disclosure 后展开 |
+| `packages/workbench/src/components/ContextBudget.test.tsx` | 被压缩原文在明确 disclosure 后展开 |
 
 精确 `it()` 名以对应测试源码和当次测试输出为准。
 

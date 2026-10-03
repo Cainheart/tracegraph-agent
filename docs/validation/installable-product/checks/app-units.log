@@ -1,0 +1,28 @@
+Scope: 3 of 23 workspace projects
+apps/desktop-host test:unit$ vitest run src --exclude src/desktop-host.e2e.test.ts
+apps/cli test:unit$ vitest run src --exclude src/e2e.test.ts
+apps/cli test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/cli
+apps/desktop-host test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/desktop-host
+apps/cli test:unit:  Test Files  19 passed (19)
+apps/cli test:unit:       Tests  88 passed (88)
+apps/cli test:unit:    Start at  16:45:21
+apps/cli test:unit:    Duration  2.55s (transform 71%, import 21%, tests 8%)
+apps/cli test:unit:   Transform  transforming modules took 12.77s · 71% of tracked time, re-done on every run
+apps/cli test:unit:              persist transforms across runs with fsModuleCache: true
+apps/cli test:unit:              learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+apps/cli test:unit: Done
+apps/desktop-host test:unit:  Test Files  6 passed (6)
+apps/desktop-host test:unit:       Tests  18 passed (18)
+apps/desktop-host test:unit:    Start at  16:45:21
+apps/desktop-host test:unit:    Duration  11.43s (tests 64%, transform 29%, import 7%)
+apps/desktop-host test:unit:   Transform  transforming modules took 4.60s · 29% of tracked time, re-done on every run
+apps/desktop-host test:unit:              persist transforms across runs with fsModuleCache: true
+apps/desktop-host test:unit:              learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+apps/desktop-host test:unit: Done
+apps/desktop test:unit$ vitest run --config vitest.config.ts
+apps/desktop test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/desktop
+apps/desktop test:unit:  Test Files  8 passed (8)
+apps/desktop test:unit:       Tests  35 passed (35)
+apps/desktop test:unit:    Start at  16:45:33
+apps/desktop test:unit:    Duration  480ms (tests 43%, transform 38%, import 18%, worker 1%)
+apps/desktop test:unit: Done

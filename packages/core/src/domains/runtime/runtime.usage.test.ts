@@ -245,6 +245,139 @@ describe("runtime provider usage accounting", () => {
     expect(types.indexOf("model.usage_reported")).toBeLessThan(types.indexOf("model.request_failed"));
     expect(types.indexOf("model.request_failed")).toBeLessThan(types.indexOf("run.failed"));
   });
+
+  it("retries transient model provider failures with a bounded, durable schedule", async () => {
+    const harness = await createHarness();
+    let calls = 0;
+    const model: ModelAdapter = {
+      name: "transient-retry-adapter",
+      async decide() {
+        calls += 1;
+        if (calls < 3) throw new ModelRequestError("model_http_503", "Provider unavailable");
+        return finishDecision("transient-retry-success");
+      },
+    };
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
+
+    const started = await runtime.startRun(startInput(harness.workspace, "command:transient-retry"));
+    const completed = await waitForTerminal(runtime, started.run_id);
+    const retries = completed.timeline.filter((event) => event.type === "model.retry_scheduled");
+    const requestStart = completed.timeline.find((event) => event.type === "model.request_started");
+    const decision = completed.timeline.find((event) => event.type === "model.decision");
+
+    expect(completed.status).toBe("completed");
+    expect(calls).toBe(3);
+    expect(retries.map(({ data }) => data)).toEqual([
+      {
+        retry_scope: "model_provider",
+        attempt: 1,
+        next_attempt: 2,
+        max_attempts: 3,
+        delay_ms: 250,
+        reason_code: "http_503",
+      },
+      {
+        retry_scope: "model_provider",
+        attempt: 2,
+        next_attempt: 3,
+        max_attempts: 3,
+        delay_ms: 500,
+        reason_code: "http_503",
+      },
+    ]);
+    expect(requestStart?.data.retry_taxonomy).toMatchObject({
+      model_provider: { max_attempts: 3, base_backoff_ms: 250, max_backoff_ms: 1_000 },
+      tool: { max_automatic_dispatch_attempts: 1, replay_policy: "disabled" },
+      action: { max_dispatch_attempts_per_operation: 1, unknown_outcome: "reconcile_only" },
+    });
+    expect(decision?.data).toMatchObject({
+      provider_attempts: 3,
+      provider_retry_count: 2,
+      provider_retry_delays_ms: [250, 500],
+    });
+  });
+
+  it.each(["model_http_401", "model_http_400"])("does not retry permanent provider error %s", async (code) => {
+    const harness = await createHarness();
+    let calls = 0;
+    const model: ModelAdapter = {
+      name: "permanent-error-adapter",
+      async decide() {
+        calls += 1;
+        throw new ModelRequestError(code, "Provider rejected the request");
+      },
+    };
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
+
+    const started = await runtime.startRun(startInput(harness.workspace, `command:${code}`));
+    const failed = await waitForTerminal(runtime, started.run_id);
+
+    expect(failed.status).toBe("failed");
+    expect(calls).toBe(1);
+    expect(failed.timeline.some((event) => event.type === "model.retry_scheduled")).toBe(false);
+  });
+
+  it("does not retry after provider usage has been reported", async () => {
+    const harness = await createHarness();
+    let calls = 0;
+    const model: ModelAdapter = {
+      name: "usage-reported-transient-error-adapter",
+      async decide(input) {
+        calls += 1;
+        input.onUsage?.({
+          provider: "custom",
+          model: "reported-before-error",
+          input_tokens: 1,
+          output_tokens: 1,
+          total_tokens: 2,
+          request_kind: "initial",
+          request_sequence: 1,
+        });
+        throw new ModelRequestError("model_http_503", "Provider unavailable after response");
+      },
+    };
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
+
+    const started = await runtime.startRun(startInput(harness.workspace, "command:usage-retry-boundary"));
+    const failed = await waitForTerminal(runtime, started.run_id);
+
+    expect(failed.status).toBe("failed");
+    expect(calls).toBe(1);
+    expect(failed.timeline.some((event) => event.type === "model.retry_scheduled")).toBe(false);
+    expect(failed.timeline.filter((event) => event.type === "model.usage_reported")).toHaveLength(1);
+  });
+
+  it("cancels during provider backoff without dispatching another attempt", async () => {
+    const harness = await createHarness();
+    let calls = 0;
+    const model: ModelAdapter = {
+      name: "cancel-provider-backoff-adapter",
+      async decide() {
+        calls += 1;
+        throw new ModelRequestError("model_http_503", "Provider unavailable");
+      },
+    };
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
+
+    const started = await runtime.startRun(startInput(harness.workspace, "command:cancel-provider-backoff"));
+    await waitForEventType(runtime, started.run_id, "model.retry_scheduled");
+    await runtime.submitUserInput({
+      type: "submit_user_input",
+      command_id: "command:cancel-provider-backoff:cancel",
+      input_id: "input:cancel-provider-backoff",
+      project_id: started.project_id,
+      run_id: started.run_id,
+      kind: "cancel",
+      body: "Cancel this run",
+      actor: "user",
+    });
+    const cancelled = await waitForTerminal(runtime, started.run_id);
+
+    expect(cancelled.status).toBe("cancelled");
+    expect(calls).toBe(1);
+    expect(cancelled.timeline.filter((event) => event.type === "model.retry_scheduled")).toHaveLength(1);
+    expect(cancelled.timeline.some((event) => event.type === "model.request_failed")).toBe(false);
+  });
 });
 
 async function createHarness(): Promise<{ dataDir: string; workspace: WorkspaceHandle }> {
@@ -306,4 +439,14 @@ async function waitForTerminal(runtime: AgentRuntime, runId: string) {
     status: projection.status,
     timeline: projection.timeline.map((event) => event.type),
   })}`);
+}
+
+async function waitForEventType(runtime: AgentRuntime, runId: string, type: "model.retry_scheduled"): Promise<void> {
+  const deadline = Date.now() + 5_000;
+  while (Date.now() < deadline) {
+    const projection = await runtime.getProjection(runId);
+    if (projection.timeline.some((event) => event.type === type)) return;
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  }
+  throw new Error(`Timed out waiting for ${type}`);
 }

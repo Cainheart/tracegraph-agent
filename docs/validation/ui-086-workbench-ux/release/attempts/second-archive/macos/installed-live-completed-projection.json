@@ -1,0 +1,794 @@
+{
+  "schema_version": "tracegraph.session-event.v1",
+  "projector_version": "tracegraph.projector.v9",
+  "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+  "session_id": "session:5f87bb5a-6ca0-4e9a-908e-b2d24a293634",
+  "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+  "task": "Run the prepared installed sandbox fixture",
+  "mode": "execute",
+  "reasoning_effort": "default",
+  "workspace_kind": "managed_local",
+  "status": "completed",
+  "last_sequence": 18,
+  "timeline": [
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:296c1984-da40-456b-8b7a-8ee1ac270a1b",
+      "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+      "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+      "session_id": "session:5f87bb5a-6ca0-4e9a-908e-b2d24a293634",
+      "sequence": 1,
+      "occurred_at": "2026-10-02T23:47:31.157Z",
+      "type": "run.created",
+      "summary": "Run created",
+      "artifact_refs": [],
+      "data": {
+        "task": "Run the prepared installed sandbox fixture",
+        "mode": "execute",
+        "reasoning_effort": "default",
+        "workspace_kind": "managed_local",
+        "conversation_message_count": 0,
+        "max_turns": 12,
+        "subagent_limits": {
+          "max_parallel_subagents": 2,
+          "max_depth": 1
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:24a4cf46-7b79-42f4-9875-535dadf6033e",
+      "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+      "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+      "session_id": "session:5f87bb5a-6ca0-4e9a-908e-b2d24a293634",
+      "sequence": 2,
+      "occurred_at": "2026-10-02T23:47:31.185Z",
+      "type": "session.opened",
+      "summary": "Durable session opened",
+      "artifact_refs": [],
+      "data": {
+        "session_version": 1
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:d430d585-3bb3-4c77-bfc7-3834522af669",
+      "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+      "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+      "session_id": "session:5f87bb5a-6ca0-4e9a-908e-b2d24a293634",
+      "sequence": 3,
+      "occurred_at": "2026-10-02T23:47:31.206Z",
+      "type": "permission.configured",
+      "summary": "Permission preset configured as workspace-write",
+      "artifact_refs": [],
+      "data": {
+        "permission": {
+          "preset_key": "workspace-write",
+          "label": "Workspace write",
+          "sandbox_mode": "workspace-write",
+          "approval_policy": "on-write",
+          "policy_digest": "sha256:3c190574054ebec08888d5e9e51740f6f716391b028d9e0886c151a624113d1c"
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:69d2dd4e-21d5-4062-b248-393b8dee63da",
+      "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+      "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+      "session_id": "session:5f87bb5a-6ca0-4e9a-908e-b2d24a293634",
+      "sequence": 4,
+      "occurred_at": "2026-10-02T23:47:31.225Z",
+      "type": "skill.registry_loaded",
+      "summary": "Loaded 0 local Skill catalog entries",
+      "artifact_refs": [],
+      "data": {
+        "registry_digest": "sha256:5989480b657835d0bb128def01535daf86488acba961e63dec82d5b75ed91e59",
+        "skill_names": [],
+        "loaded_count": 0,
+        "conflict_count": 0,
+        "diagnostic_count": 0
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:a7f0cb22-c337-474f-949e-8adf285e1499",
+      "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+      "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+      "session_id": "session:5f87bb5a-6ca0-4e9a-908e-b2d24a293634",
+      "sequence": 5,
+      "occurred_at": "2026-10-02T23:47:31.259Z",
+      "type": "sandbox.configured",
+      "summary": "Sandbox mode configured as workspace-write",
+      "artifact_refs": [],
+      "data": {
+        "mode": "workspace-write",
+        "platform": "darwin"
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:3e8e79fb-2d68-4097-b46f-fffc92128f91",
+      "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+      "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+      "session_id": "session:5f87bb5a-6ca0-4e9a-908e-b2d24a293634",
+      "sequence": 6,
+      "occurred_at": "2026-10-02T23:47:31.279Z",
+      "type": "sandbox.enforced",
+      "summary": "OS sandbox enforcement is active",
+      "artifact_refs": [],
+      "data": {
+        "sandbox_report": {
+          "report_version": 1,
+          "mode": "workspace-write",
+          "enforcement": "full",
+          "platform": "darwin",
+          "mechanisms": [
+            "seatbelt:/usr/bin/sandbox-exec",
+            "filesystem:workspace-write",
+            "path-scope:canonical-workspace",
+            "network:denied",
+            "process:shell-false"
+          ],
+          "unmet_constraints": []
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:f1754c26-fcb0-46f7-8ce9-d671cd3dcac5",
+      "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+      "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+      "session_id": "session:5f87bb5a-6ca0-4e9a-908e-b2d24a293634",
+      "sequence": 7,
+      "occurred_at": "2026-10-02T23:47:31.299Z",
+      "type": "run.started",
+      "summary": "Workspace preflight and indexing started",
+      "artifact_refs": [],
+      "data": {
+        "phase": "indexing"
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:194c5ef7-74d1-4ede-aa3f-4ef49f85b7c5",
+      "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+      "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+      "session_id": "session:5f87bb5a-6ca0-4e9a-908e-b2d24a293634",
+      "sequence": 8,
+      "occurred_at": "2026-10-02T23:47:31.335Z",
+      "type": "context.built",
+      "summary": "Context built with 130 input tokens",
+      "artifact_refs": [
+        {
+          "artifact_id": "artifact:88ea6105-5c3e-4e76-a8f7-c467e6a091cb",
+          "kind": "context_manifest",
+          "content_hash": "sha256:6ddeb343252db68e02a8a09e2f3c2f4b6bc8c6e51f9fc5322f8424930f78741b",
+          "mime_type": "application/json",
+          "byte_length": 3255,
+          "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+          "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+          "created_at": "2026-10-02T23:47:31.333Z"
+        }
+      ],
+      "turn_id": "turn:a051fbe8-e283-437f-abd3-671fb0ca2441",
+      "context_manifest_ref": "context:3602680a-03a5-4a7e-a466-37c606342079",
+      "model_call_id": "model-call:f49881cd-c389-4126-9501-f6c815ffc22a",
+      "data": {
+        "manifest_id": "context:3602680a-03a5-4a7e-a466-37c606342079",
+        "input_tokens": 130,
+        "token_limit": 258000,
+        "reserved_output_tokens": 32000,
+        "token_estimate": {
+          "estimator_id": "heuristic_v2",
+          "confidence": "estimated",
+          "input_tokens": 130,
+          "output_tokens": 0,
+          "per_section": {
+            "system": 117,
+            "goal": 13,
+            "history": 0,
+            "tool": 0,
+            "repo": 0,
+            "memory": 0,
+            "experience": 0
+          }
+        },
+        "input_budget_tokens": 226000,
+        "warning_threshold_tokens": 158200,
+        "compression_threshold_tokens": 180800,
+        "token_estimator": "heuristic_v2",
+        "context_status": "healthy",
+        "compression": {
+          "strategy": "none",
+          "applied_strategy": "none",
+          "trigger": "within_budget",
+          "before_tokens": 130,
+          "after_tokens": 130,
+          "checkpoint_tokens": 0,
+          "preserved_recent_message_count": 0,
+          "compacted_history_message_count": 0,
+          "steps": []
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:2f55db9a-d2d8-4175-a579-6578814ee620",
+      "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+      "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+      "session_id": "session:5f87bb5a-6ca0-4e9a-908e-b2d24a293634",
+      "sequence": 9,
+      "occurred_at": "2026-10-02T23:47:31.355Z",
+      "type": "model.request_started",
+      "summary": "Requesting a decision from synthetic-installed-sandbox with provider-default reasoning",
+      "artifact_refs": [],
+      "turn_id": "turn:a051fbe8-e283-437f-abd3-671fb0ca2441",
+      "context_manifest_ref": "context:3602680a-03a5-4a7e-a466-37c606342079",
+      "model_call_id": "model-call:f49881cd-c389-4126-9501-f6c815ffc22a",
+      "data": {
+        "adapter": "configurable-model-provider",
+        "provider": "custom",
+        "model": "synthetic-installed-sandbox",
+        "requested_reasoning_effort": "default",
+        "reasoning_configuration": "provider_default",
+        "retry_taxonomy": {
+          "version": "retry-taxonomy.v1",
+          "model_provider": {
+            "max_attempts": 3,
+            "retryable_http_statuses": [
+              408,
+              425,
+              429,
+              500,
+              502,
+              503,
+              504
+            ],
+            "retryable_transport_classes": [
+              "timeout",
+              "selected_network_errors"
+            ],
+            "base_backoff_ms": 250,
+            "max_backoff_ms": 1000,
+            "stop_after_provider_usage": true
+          },
+          "tool": {
+            "max_automatic_dispatch_attempts": 1,
+            "replay_policy": "disabled",
+            "new_model_authored_actions_are_separate": true,
+            "run_turn_limit": 12
+          },
+          "action": {
+            "max_dispatch_attempts_per_operation": 1,
+            "unknown_outcome": "reconcile_only"
+          }
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:aa48286f-19df-4f2b-a733-970e1323080c",
+      "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+      "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+      "session_id": "session:5f87bb5a-6ca0-4e9a-908e-b2d24a293634",
+      "sequence": 10,
+      "occurred_at": "2026-10-02T23:47:31.411Z",
+      "type": "model.decision",
+      "summary": "Run the prepared synthetic sandbox fixture.",
+      "artifact_refs": [],
+      "turn_id": "turn:a051fbe8-e283-437f-abd3-671fb0ca2441",
+      "context_manifest_ref": "context:3602680a-03a5-4a7e-a466-37c606342079",
+      "model_call_id": "model-call:f49881cd-c389-4126-9501-f6c815ffc22a",
+      "action_id": "action:installed-test",
+      "data": {
+        "decision_kind": "tool_call",
+        "risk": "medium",
+        "evidence_ref_count": 0,
+        "public_plan": "Run the prepared synthetic sandbox fixture.",
+        "tool_name": "run_test",
+        "adapter": "configurable-model-provider",
+        "provider": "custom",
+        "model": "synthetic-installed-sandbox",
+        "requested_reasoning_effort": "default",
+        "reasoning_configuration": "provider_default",
+        "provider_attempts": 1,
+        "provider_retry_count": 0,
+        "provider_retry_delays_ms": []
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:7ba05225-866f-42a7-8300-3996b288839f",
+      "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+      "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+      "session_id": "session:5f87bb5a-6ca0-4e9a-908e-b2d24a293634",
+      "sequence": 11,
+      "occurred_at": "2026-10-02T23:47:31.433Z",
+      "type": "policy.evaluated",
+      "summary": "Permission preset workspace-write allows this Tool action",
+      "artifact_refs": [],
+      "action_id": "action:installed-test",
+      "data": {
+        "decision": {
+          "decision_id": "policy-decision:252b5d61-5622-493a-a49c-69d881643ce6",
+          "preset_key": "workspace-write",
+          "policy_digest": "sha256:3c190574054ebec08888d5e9e51740f6f716391b028d9e0886c151a624113d1c",
+          "tool_name": "run_test",
+          "side_effect": "execute",
+          "kind": "allow",
+          "source": "preset-default",
+          "explanation": "Permission preset workspace-write allows this Tool action",
+          "action_digest": "sha256:3000a0b2f2244e46dcefabe93640f39734ee00670d9ff8fb42d811e2638b5ad1"
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:1c1fdb16-b450-45d8-ace7-3d6a48418423",
+      "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+      "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+      "session_id": "session:5f87bb5a-6ca0-4e9a-908e-b2d24a293634",
+      "sequence": 12,
+      "occurred_at": "2026-10-02T23:47:31.456Z",
+      "type": "tool.started",
+      "summary": "Running test suite fixture",
+      "artifact_refs": [],
+      "operation_id": "action:installed-test",
+      "action_id": "action:installed-test",
+      "data": {
+        "tool_name": "run_test",
+        "activity": "test",
+        "suite": "fixture"
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:ac2e6983-a907-4e2f-81a6-d5821547c866",
+      "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+      "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+      "session_id": "session:5f87bb5a-6ca0-4e9a-908e-b2d24a293634",
+      "sequence": 13,
+      "occurred_at": "2026-10-02T23:47:31.544Z",
+      "type": "tool.completed",
+      "summary": "Fixture tests passed",
+      "artifact_refs": [
+        {
+          "artifact_id": "artifact:f3701036-f1ec-45ed-a1e0-f505507a30a7",
+          "kind": "test_log",
+          "content_hash": "sha256:5e831726ee53753f7f9ec7ea415a6ba2412af076c730e9c22960a4f9ab2f2653",
+          "mime_type": "text/plain",
+          "byte_length": 30,
+          "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+          "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+          "created_at": "2026-10-02T23:47:31.542Z"
+        }
+      ],
+      "operation_id": "action:installed-test",
+      "action_id": "action:installed-test",
+      "data": {
+        "receipt": {
+          "receipt_id": "receipt:1c94869d-86d6-4fab-9306-adbffa1058b7",
+          "action_id": "action:installed-test",
+          "tool_name": "run_test",
+          "status": "success",
+          "transport_status": "success",
+          "business_status": "success",
+          "code": "tests_passed",
+          "summary": "Fixture tests passed",
+          "started_at": "2026-10-02T23:47:31.456Z",
+          "completed_at": "2026-10-02T23:47:31.542Z",
+          "duration_ms": 86,
+          "artifact_refs": [
+            {
+              "artifact_id": "artifact:f3701036-f1ec-45ed-a1e0-f505507a30a7",
+              "kind": "test_log",
+              "content_hash": "sha256:5e831726ee53753f7f9ec7ea415a6ba2412af076c730e9c22960a4f9ab2f2653",
+              "mime_type": "text/plain",
+              "byte_length": 30,
+              "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+              "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+              "created_at": "2026-10-02T23:47:31.542Z"
+            }
+          ],
+          "metadata": {
+            "output_bytes": 535,
+            "sandbox_report": {
+              "report_version": 1,
+              "mode": "workspace-write",
+              "enforcement": "full",
+              "platform": "darwin",
+              "mechanisms": [
+                "seatbelt:/usr/bin/sandbox-exec",
+                "filesystem:workspace-write",
+                "path-scope:canonical-workspace",
+                "network:denied",
+                "process:shell-false"
+              ],
+              "unmet_constraints": []
+            },
+            "execution_parallel": false
+          }
+        },
+        "observation": {
+          "observation_id": "observation:5595b73e-6a47-4ba9-a75e-faa43e67161e",
+          "action_id": "action:installed-test",
+          "receipt_id": "receipt:1c94869d-86d6-4fab-9306-adbffa1058b7",
+          "status": "success",
+          "summary": "Fixture tests passed",
+          "facts": {
+            "tool_name": "run_test",
+            "code": "tests_passed",
+            "suite": "fixture",
+            "exit_code": 0,
+            "timed_out": false,
+            "output_truncated": false,
+            "aborted": false,
+            "started": true,
+            "sandbox_report": {
+              "report_version": 1,
+              "mode": "workspace-write",
+              "enforcement": "full",
+              "platform": "darwin",
+              "mechanisms": [
+                "seatbelt:/usr/bin/sandbox-exec",
+                "filesystem:workspace-write",
+                "path-scope:canonical-workspace",
+                "network:denied",
+                "process:shell-false"
+              ],
+              "unmet_constraints": []
+            }
+          },
+          "artifact_refs": [
+            {
+              "artifact_id": "artifact:f3701036-f1ec-45ed-a1e0-f505507a30a7",
+              "kind": "test_log",
+              "content_hash": "sha256:5e831726ee53753f7f9ec7ea415a6ba2412af076c730e9c22960a4f9ab2f2653",
+              "mime_type": "text/plain",
+              "byte_length": 30,
+              "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+              "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+              "created_at": "2026-10-02T23:47:31.542Z"
+            }
+          ],
+          "created_at": "2026-10-02T23:47:31.542Z"
+        },
+        "sandbox_report": {
+          "report_version": 1,
+          "mode": "workspace-write",
+          "enforcement": "full",
+          "platform": "darwin",
+          "mechanisms": [
+            "seatbelt:/usr/bin/sandbox-exec",
+            "filesystem:workspace-write",
+            "path-scope:canonical-workspace",
+            "network:denied",
+            "process:shell-false"
+          ],
+          "unmet_constraints": []
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:1e303852-b7e2-4fbb-a360-c65ddf969199",
+      "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+      "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+      "session_id": "session:5f87bb5a-6ca0-4e9a-908e-b2d24a293634",
+      "sequence": 14,
+      "occurred_at": "2026-10-02T23:47:31.564Z",
+      "type": "test.completed",
+      "summary": "Fixture tests passed",
+      "artifact_refs": [
+        {
+          "artifact_id": "artifact:f3701036-f1ec-45ed-a1e0-f505507a30a7",
+          "kind": "test_log",
+          "content_hash": "sha256:5e831726ee53753f7f9ec7ea415a6ba2412af076c730e9c22960a4f9ab2f2653",
+          "mime_type": "text/plain",
+          "byte_length": 30,
+          "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+          "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+          "created_at": "2026-10-02T23:47:31.542Z"
+        }
+      ],
+      "action_id": "action:installed-test",
+      "test_receipt_id": "receipt:1c94869d-86d6-4fab-9306-adbffa1058b7",
+      "data": {
+        "receipt": {
+          "receipt_id": "receipt:1c94869d-86d6-4fab-9306-adbffa1058b7",
+          "action_id": "action:installed-test",
+          "tool_name": "run_test",
+          "status": "success",
+          "transport_status": "success",
+          "business_status": "success",
+          "code": "tests_passed",
+          "summary": "Fixture tests passed",
+          "started_at": "2026-10-02T23:47:31.456Z",
+          "completed_at": "2026-10-02T23:47:31.542Z",
+          "duration_ms": 86,
+          "artifact_refs": [
+            {
+              "artifact_id": "artifact:f3701036-f1ec-45ed-a1e0-f505507a30a7",
+              "kind": "test_log",
+              "content_hash": "sha256:5e831726ee53753f7f9ec7ea415a6ba2412af076c730e9c22960a4f9ab2f2653",
+              "mime_type": "text/plain",
+              "byte_length": 30,
+              "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+              "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+              "created_at": "2026-10-02T23:47:31.542Z"
+            }
+          ],
+          "metadata": {
+            "output_bytes": 535,
+            "sandbox_report": {
+              "report_version": 1,
+              "mode": "workspace-write",
+              "enforcement": "full",
+              "platform": "darwin",
+              "mechanisms": [
+                "seatbelt:/usr/bin/sandbox-exec",
+                "filesystem:workspace-write",
+                "path-scope:canonical-workspace",
+                "network:denied",
+                "process:shell-false"
+              ],
+              "unmet_constraints": []
+            },
+            "execution_parallel": false
+          }
+        },
+        "sandbox_report": {
+          "report_version": 1,
+          "mode": "workspace-write",
+          "enforcement": "full",
+          "platform": "darwin",
+          "mechanisms": [
+            "seatbelt:/usr/bin/sandbox-exec",
+            "filesystem:workspace-write",
+            "path-scope:canonical-workspace",
+            "network:denied",
+            "process:shell-false"
+          ],
+          "unmet_constraints": []
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:ba1109b0-a1bf-44a6-949d-088df648385e",
+      "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+      "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+      "session_id": "session:5f87bb5a-6ca0-4e9a-908e-b2d24a293634",
+      "sequence": 15,
+      "occurred_at": "2026-10-02T23:47:31.588Z",
+      "type": "context.built",
+      "summary": "Context built with 350 input tokens",
+      "artifact_refs": [
+        {
+          "artifact_id": "artifact:74dfa86c-faf7-469d-82a0-dbfb2c443a3a",
+          "kind": "context_manifest",
+          "content_hash": "sha256:46e31ef4c9223b735d38cff2332b1a437dce67f566787577817b1b5b7ac40175",
+          "mime_type": "application/json",
+          "byte_length": 5128,
+          "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+          "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+          "created_at": "2026-10-02T23:47:31.587Z"
+        }
+      ],
+      "turn_id": "turn:9ca3f9d7-95c2-43fe-8b95-69d64ccdff4b",
+      "context_manifest_ref": "context:65440b68-c61d-444d-8d9d-adceabae3551",
+      "model_call_id": "model-call:699627ff-8c0d-42d9-b280-2724c825cd03",
+      "data": {
+        "manifest_id": "context:65440b68-c61d-444d-8d9d-adceabae3551",
+        "input_tokens": 350,
+        "token_limit": 258000,
+        "reserved_output_tokens": 32000,
+        "token_estimate": {
+          "estimator_id": "heuristic_v2",
+          "confidence": "estimated",
+          "input_tokens": 350,
+          "output_tokens": 0,
+          "per_section": {
+            "system": 117,
+            "goal": 13,
+            "history": 0,
+            "tool": 220,
+            "repo": 0,
+            "memory": 0,
+            "experience": 0
+          }
+        },
+        "input_budget_tokens": 226000,
+        "warning_threshold_tokens": 158200,
+        "compression_threshold_tokens": 180800,
+        "token_estimator": "heuristic_v2",
+        "context_status": "healthy",
+        "compression": {
+          "strategy": "none",
+          "applied_strategy": "none",
+          "trigger": "within_budget",
+          "before_tokens": 350,
+          "after_tokens": 350,
+          "checkpoint_tokens": 0,
+          "preserved_recent_message_count": 0,
+          "compacted_history_message_count": 0,
+          "steps": []
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:2fc52b9f-0972-4b60-8343-dd7a95353b01",
+      "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+      "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+      "session_id": "session:5f87bb5a-6ca0-4e9a-908e-b2d24a293634",
+      "sequence": 16,
+      "occurred_at": "2026-10-02T23:47:31.610Z",
+      "type": "model.request_started",
+      "summary": "Requesting a decision from synthetic-installed-sandbox with provider-default reasoning",
+      "artifact_refs": [],
+      "turn_id": "turn:9ca3f9d7-95c2-43fe-8b95-69d64ccdff4b",
+      "context_manifest_ref": "context:65440b68-c61d-444d-8d9d-adceabae3551",
+      "model_call_id": "model-call:699627ff-8c0d-42d9-b280-2724c825cd03",
+      "data": {
+        "adapter": "configurable-model-provider",
+        "provider": "custom",
+        "model": "synthetic-installed-sandbox",
+        "requested_reasoning_effort": "default",
+        "reasoning_configuration": "provider_default",
+        "retry_taxonomy": {
+          "version": "retry-taxonomy.v1",
+          "model_provider": {
+            "max_attempts": 3,
+            "retryable_http_statuses": [
+              408,
+              425,
+              429,
+              500,
+              502,
+              503,
+              504
+            ],
+            "retryable_transport_classes": [
+              "timeout",
+              "selected_network_errors"
+            ],
+            "base_backoff_ms": 250,
+            "max_backoff_ms": 1000,
+            "stop_after_provider_usage": true
+          },
+          "tool": {
+            "max_automatic_dispatch_attempts": 1,
+            "replay_policy": "disabled",
+            "new_model_authored_actions_are_separate": true,
+            "run_turn_limit": 12
+          },
+          "action": {
+            "max_dispatch_attempts_per_operation": 1,
+            "unknown_outcome": "reconcile_only"
+          }
+        }
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:af3bd956-7df6-44b5-8095-026a179f8782",
+      "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+      "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+      "session_id": "session:5f87bb5a-6ca0-4e9a-908e-b2d24a293634",
+      "sequence": 17,
+      "occurred_at": "2026-10-02T23:47:31.647Z",
+      "type": "model.decision",
+      "summary": "The sandboxed test was verified.",
+      "artifact_refs": [],
+      "turn_id": "turn:9ca3f9d7-95c2-43fe-8b95-69d64ccdff4b",
+      "context_manifest_ref": "context:65440b68-c61d-444d-8d9d-adceabae3551",
+      "model_call_id": "model-call:699627ff-8c0d-42d9-b280-2724c825cd03",
+      "data": {
+        "decision_kind": "finish",
+        "risk": "none",
+        "evidence_ref_count": 0,
+        "public_plan": "The sandboxed test was verified.",
+        "adapter": "configurable-model-provider",
+        "provider": "custom",
+        "model": "synthetic-installed-sandbox",
+        "requested_reasoning_effort": "default",
+        "reasoning_configuration": "provider_default",
+        "provider_attempts": 1,
+        "provider_retry_count": 0,
+        "provider_retry_delays_ms": []
+      }
+    },
+    {
+      "schema_version": "tracegraph.session-event.v1",
+      "event_id": "event:35ce2c59-e430-41cc-bf37-efb0765b85c2",
+      "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+      "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+      "session_id": "session:5f87bb5a-6ca0-4e9a-908e-b2d24a293634",
+      "sequence": 18,
+      "occurred_at": "2026-10-02T23:47:31.668Z",
+      "type": "run.completed",
+      "summary": "Run completed",
+      "artifact_refs": [],
+      "data": {
+        "code": "completed",
+        "outcome": "Installed synthetic sandbox test completed."
+      }
+    }
+  ],
+  "todos": {
+    "items": [],
+    "last_sequence": 18
+  },
+  "input_queue": {
+    "pending": []
+  },
+  "subagents": {
+    "items": [],
+    "active_count": 0,
+    "last_sequence": 18,
+    "limits": {
+      "max_parallel_subagents": 2,
+      "max_depth": 1
+    }
+  },
+  "attachments": {
+    "items": [],
+    "last_sequence": 0
+  },
+  "sandbox_report": {
+    "report_version": 1,
+    "mode": "workspace-write",
+    "enforcement": "full",
+    "platform": "darwin",
+    "mechanisms": [
+      "seatbelt:/usr/bin/sandbox-exec",
+      "filesystem:workspace-write",
+      "path-scope:canonical-workspace",
+      "network:denied",
+      "process:shell-false"
+    ],
+    "unmet_constraints": []
+  },
+  "permission": {
+    "preset_key": "workspace-write",
+    "label": "Workspace write",
+    "sandbox_mode": "workspace-write",
+    "approval_policy": "on-write",
+    "policy_digest": "sha256:3c190574054ebec08888d5e9e51740f6f716391b028d9e0886c151a624113d1c"
+  },
+  "artifact_refs": [
+    {
+      "artifact_id": "artifact:88ea6105-5c3e-4e76-a8f7-c467e6a091cb",
+      "kind": "context_manifest",
+      "content_hash": "sha256:6ddeb343252db68e02a8a09e2f3c2f4b6bc8c6e51f9fc5322f8424930f78741b",
+      "mime_type": "application/json",
+      "byte_length": 3255,
+      "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+      "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+      "created_at": "2026-10-02T23:47:31.333Z"
+    },
+    {
+      "artifact_id": "artifact:f3701036-f1ec-45ed-a1e0-f505507a30a7",
+      "kind": "test_log",
+      "content_hash": "sha256:5e831726ee53753f7f9ec7ea415a6ba2412af076c730e9c22960a4f9ab2f2653",
+      "mime_type": "text/plain",
+      "byte_length": 30,
+      "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+      "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+      "created_at": "2026-10-02T23:47:31.542Z"
+    },
+    {
+      "artifact_id": "artifact:74dfa86c-faf7-469d-82a0-dbfb2c443a3a",
+      "kind": "context_manifest",
+      "content_hash": "sha256:46e31ef4c9223b735d38cff2332b1a437dce67f566787577817b1b5b7ac40175",
+      "mime_type": "application/json",
+      "byte_length": 5128,
+      "project_id": "project:desktop:1587a9a57e9a18fd990d99f8",
+      "run_id": "run:f318db13-4615-4fc4-9584-c803ceff973f",
+      "created_at": "2026-10-02T23:47:31.587Z"
+    }
+  ],
+  "outcome": "Installed synthetic sandbox test completed."
+}

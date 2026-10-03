@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "outDir": "dist",
+    "rootDir": "src",
+    "tsBuildInfoFile": "dist/.main.tsbuildinfo"
+  },
+  "include": ["src/main.ts", "src/bridge-contract.ts", "src/ipc-channels.ts"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx", "src/preload.cts", "src/desktop-sdk.ts", "src/renderer/**"]
+}

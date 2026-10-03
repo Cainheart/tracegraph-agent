@@ -1,0 +1,127 @@
+{
+  "schema_version": "outlive.ux086.release-closure.v1",
+  "participant_class": "simulated",
+  "participant": "maintainer workspace Agent",
+  "independent_non_maintainer": false,
+  "archive_sha256": "584cabba81055cd973b1fabc0e70bb517477f69c50c93184cabcce8002dcc53a",
+  "status": "superseded_before_native_archive_gui_validation",
+  "checks": {
+    "linux_fresh_frozen_install": {
+      "exit_code": 0,
+      "node": "v22.19.0",
+      "pnpm": "11.19.0",
+      "platform": "Linux arm64 official Node container",
+      "container_removed": true
+    },
+    "macos_fresh_frozen_desktop_install": {
+      "exit_code": 0,
+      "node": "v24.21.0",
+      "pnpm": "11.19.0",
+      "platform": "Darwin arm64 existing maintainer machine"
+    },
+    "linux_installed_smoke": {
+      "schema_version": "tracegraph.preview-smoke.v1",
+      "status": "passed",
+      "recorded_at": "2026-10-02T23:20:05.693Z",
+      "platform": "linux",
+      "arch": "arm64",
+      "node": "v22.19.0",
+      "version": "0.1.0-alpha.0",
+      "evidence_scope": "extracted preview on the current machine; clean-machine and independent-user context must be supplied by the verifier",
+      "cli": {
+        "command": "sessions list",
+        "exit_code": 0,
+        "session_count": 0
+      },
+      "desktop_host": {
+        "identity": {
+          "package_name": "@tracegraph/desktop-host",
+          "package_version": "0.1.0-alpha.0",
+          "protocol_version": "tracegraph.client-protocol.v2"
+        },
+        "exit": {
+          "code": 0,
+          "signal": null
+        },
+        "child_absent": true
+      },
+      "desktop_gui": "not tested by this headless smoke; launch separately",
+      "package_resolution": "within extracted archive",
+      "inventory": {
+        "file_count": 1290,
+        "total_bytes": 21639866
+      },
+      "report_path": "/tmp/outlive-installed-smoke-WpI0tl/report.json"
+    },
+    "macos_installed_smoke": {
+      "schema_version": "tracegraph.preview-smoke.v1",
+      "status": "passed",
+      "recorded_at": "2026-10-02T23:21:00.484Z",
+      "platform": "darwin",
+      "arch": "arm64",
+      "node": "v24.21.0",
+      "version": "0.1.0-alpha.0",
+      "evidence_scope": "extracted preview on the current machine; clean-machine and independent-user context must be supplied by the verifier",
+      "cli": {
+        "command": "sessions list",
+        "exit_code": 0,
+        "session_count": 0
+      },
+      "desktop_host": {
+        "identity": {
+          "package_name": "@tracegraph/desktop-host",
+          "package_version": "0.1.0-alpha.0",
+          "protocol_version": "tracegraph.client-protocol.v2"
+        },
+        "exit": {
+          "code": 0,
+          "signal": null
+        },
+        "child_absent": true
+      },
+      "desktop_gui": "not tested by this headless smoke; launch separately",
+      "package_resolution": "within extracted archive",
+      "inventory": {
+        "file_count": 1290,
+        "total_bytes": 21639866
+      },
+      "report_path": "/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-installed-smoke-1r7G6f/report.json"
+    },
+    "proof_integrity": {
+      "linux": {
+        "files_verified": 75,
+        "sha256sums_verified": true,
+        "proof_oracles_passed": [
+          "DEMO-080",
+          "DEMO-081",
+          "DEMO-082"
+        ]
+      },
+      "macos": {
+        "files_verified": 75,
+        "sha256sums_verified": true,
+        "proof_oracles_passed": [
+          "DEMO-080",
+          "DEMO-081",
+          "DEMO-082"
+        ]
+      }
+    }
+  },
+  "failures": [],
+  "reruns": [],
+  "limitations": [
+    "No independent external user",
+    "No code signing or notarization",
+    "No npm/public deployment",
+    "No remote Provider quality validation",
+    "Linux container is not bare metal install",
+    "Native installed GUI not executed; first artifact superseded before observation"
+  ],
+  "supersession": {
+    "reason": "Parent source Desktop live journey verified Electron process.execPath launched an Electron executable for Node test commands and was blocked by the configured Seatbelt; real supported Node executable passed the same fixture and sandbox. Desktop Main forkHost fix will require a second immutable archive.",
+    "native_archive_gui_executed": false,
+    "source_fix_validation_owner": "root/desktop_routes + root/journey_qa",
+    "requires_new_archive_validation": true
+  }
+}

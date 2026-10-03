@@ -1,0 +1,13 @@
+{
+  "schema_version": "tracegraph.benchmark-scenario.v1",
+  "id": "tool-execution",
+  "version": "1.0.0",
+  "description": "Execute the public bounded read_file Tool against a fixed read-only workspace",
+  "working_directory": ".",
+  "correctness_command": { "args": ["benchmarks/paths/scenario.mjs", "correctness", "tool-execution"] },
+  "command": { "args": ["benchmarks/paths/scenario.mjs", "measure", "tool-execution"] },
+  "warmup_iterations": 1,
+  "sample_iterations": 5,
+  "timeout_ms": 30000,
+  "budget": { "wall_time_ms_p95_max": 1000 }
+}

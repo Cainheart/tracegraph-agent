@@ -25,7 +25,7 @@ export { getImpactNeighborhood } from "./impact.js";
 | `diffGraphSnapshots` | 比较两个快照 | 两个 `GraphSnapshot` → `GraphDelta` |
 | `getImpactNeighborhood` | 邻域影响面 | `GraphSnapshot` + 节点 id → `ImpactNeighborhood` |
 
-注意：**本包不实现 core 的 `CodeGraphProvider` 接口**。具体适配在 CLI composition 侧完成（见 §2）；`packages/host` 保持传入式、provider-neutral。
+注意：**本包不实现 core 的 `CodeGraphProvider` 接口**。具体适配由共享 Host composition 完成（见 §2）；低层 `createTraceGraphHost` 与 SDK 保持传入式，CLI composition 保留兼容 re-export。
 
 ---
 
@@ -59,9 +59,9 @@ export function createCodeGraphProvider(): CodeGraphProvider {
 }
 ```
 
-`packages/host` 与 `packages/sdk` **不自行构造** CodeGraph，这是刻意的依赖倒置：它们只传输 `RunProjection` 与 SSE 中的 canonical 事件，不能从浏览器参数推导本机扫描器或 Git 命令。标准 `tracegraph serve` 走的正是 CLI composition，因此 Web 获得的是已经注入 Runtime、再经 Host/SDK 传出的图快照、delta 与 `code_intel` 投影；并不存在“Web 另造一个 provider”的路径。
+低层 `createTraceGraphHost` 与 `packages/sdk` **不自行构造** CodeGraph；本机装配入口 `packages/host/src/composition/composition.ts` 构造并注入 adapter，CLI 原路径薄转发到该公共 seam。这保持依赖倒置：它们只传输 `RunProjection` 与 SSE 中的 canonical 事件，不能从浏览器参数推导本机扫描器或 Git 命令。标准三端共享 Host 使用这一装配，因此 Web 获得的是已经注入 Runtime、再经 Host/SDK 传出的图快照、delta 与 `code_intel` 投影；并不存在“Web 另造一个 provider”的路径。
 
-嵌入式 Host 若绕过 CLI composition 创建 Runtime，仍须显式注入 `codeGraph` 才会得到图/CodeIntel。未注入时 Runtime 把 Git 上下文记为 `unavailable`，但不会伪造图、符号或 Git 基线保证。
+嵌入式 Host 若绕过标准 Host composition 创建 Runtime，仍须显式注入 `codeGraph` 才会得到图/CodeIntel。未注入时 Runtime 把 Git 上下文记为 `unavailable`，但不会伪造图、符号或 Git 基线保证。
 
 ---
 
@@ -320,7 +320,7 @@ export function sha256(value: string): string {
 
 ## 10. 已知缺口
 
-1. **嵌入式 composition 仍须显式注入。** `packages/host` 不会偷偷创建 scanner/Git adapter；标准 CLI/Web 路径已经注入，但自定义 Host composition 忘记传 `codeGraph` 时没有图、符号或 Git stale-base 保证。
+1. **嵌入式 composition 仍须显式注入。** 低层 `createTraceGraphHost` 不会偷偷创建 scanner/Git adapter；标准共享 Host 路径已经注入，但自定义 Host composition 忘记传 `codeGraph` 时没有图、符号或 Git stale-base 保证。
 
 2. **没有增量分析。** 每次 `createSnapshot` 都是全量目录扫描 + 全量 TypeScript program 加载 + 全量 AST 遍历。而 Runtime 在每次补丁后都会抓一次结果快照，于是"改一行"要付全仓分析的代价（上限 30 s / 64 MiB）。没有缓存、没有脏文件集、没有 mtime 复用。
 

@@ -27,13 +27,13 @@ export async function runExtensionsCommand(
   ));
   const name = positional[0];
   if (subcommand !== "list" && subcommand !== "reload" && subcommand !== "run") {
-    throw new Error("Usage: tracegraph extensions list|reload <name>|run <command> [args...]");
+    throw new Error("Usage: outlive extensions list|reload <name>|run <command> [args...]");
   }
   if (subcommand === "reload" && !name) {
-    throw new Error("Usage: tracegraph extensions reload <trusted-extension-name>");
+    throw new Error("Usage: outlive extensions reload <trusted-extension-name>");
   }
   if (subcommand === "run" && !name) {
-    throw new Error("Usage: tracegraph extensions run <command> [args...]");
+    throw new Error("Usage: outlive extensions run <command> [args...]");
   }
 
   const environment = dependencies.environment ?? process.env;

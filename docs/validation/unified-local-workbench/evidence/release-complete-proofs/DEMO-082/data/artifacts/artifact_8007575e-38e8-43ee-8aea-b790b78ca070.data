@@ -1,0 +1,88 @@
+{
+  "version": 5,
+  "kind": "run_recovery_state",
+  "task": "Execute the controlled cancel public proof.",
+  "conversation_history": [],
+  "mode": "execute",
+  "reasoning_effort": "default",
+  "effective_policy": {
+    "policy_version": 1,
+    "preset": {
+      "preset_version": 1,
+      "key": "custom",
+      "label": "Legacy danger full access",
+      "sandbox_mode": "danger-full-access",
+      "approval_policy": "on-write",
+      "allowed_tools": [
+        "read_file",
+        "list_dir",
+        "search",
+        "read_artifact",
+        "list_artifacts",
+        "preview_patch",
+        "commit_patch",
+        "run_test",
+        "todo_read",
+        "todo_write",
+        "spawn_subagent",
+        "send_subagent_message",
+        "list_subagents",
+        "interrupt_subagent",
+        "team_read",
+        "team_task_write",
+        "team_mailbox_send",
+        "team_mailbox_claim",
+        "team_heartbeat",
+        "load_skill"
+      ],
+      "path_scope": [
+        "**"
+      ]
+    },
+    "host_rules": [],
+    "project_rules": [],
+    "policy_digest": "sha256:883f560287947e3aad6d98fb02eeb541cd6a066df405a032a681330b2a0a2c2e"
+  },
+  "orchestration": {
+    "depth": 0,
+    "limits": {
+      "max_parallel_subagents": 2,
+      "max_depth": 1
+    }
+  },
+  "extensions": {
+    "api_version": "tracegraph.extension.v1",
+    "config_digest": "sha256:93637d44bd8602f8b8ad726033d552379fe29685df3b5d92515f46cfbc4d96c6",
+    "generation": 2,
+    "active_extensions": [
+      "@tracegraph/builtin-artifact-tools",
+      "@tracegraph/builtin-run-state-tools"
+    ],
+    "active_tool_names": [
+      "commit_patch",
+      "interrupt_subagent",
+      "list_artifacts",
+      "list_dir",
+      "list_subagents",
+      "load_skill",
+      "preview_patch",
+      "read_artifact",
+      "read_file",
+      "run_test",
+      "search",
+      "send_subagent_message",
+      "spawn_subagent",
+      "team_heartbeat",
+      "team_mailbox_claim",
+      "team_mailbox_send",
+      "team_read",
+      "team_task_write",
+      "todo_read",
+      "todo_write"
+    ]
+  },
+  "skills": {
+    "registry_digest": "sha256:5989480b657835d0bb128def01535daf86488acba961e63dec82d5b75ed91e59",
+    "active_tool_names": []
+  }
+}

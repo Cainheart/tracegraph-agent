@@ -1,0 +1,82 @@
+{
+  "schema_version": "outlive.product-smoke.v1",
+  "status": "failed",
+  "platform": "darwin",
+  "arch": "arm64",
+  "product_build_id": "1e6093ee061cbeb41370ace21394906ae581b1a07f0699ec47f48f4cdd9b6cae",
+  "provider": "isolated deterministic loopback fixture",
+  "external_node_on_child_path": false,
+  "external_pnpm_on_child_path": false,
+  "assertions": [
+    {
+      "id": "bundled-main-owner",
+      "status": "passed",
+      "pid": 51370,
+      "boot_nonce": "1b30286e-e722-42a3-a264-15e894b75e1f",
+      "gateway": "http://127.0.0.1:55528"
+    },
+    {
+      "id": "actual-packaged-window",
+      "status": "passed",
+      "screenshot": "first-window.png"
+    },
+    {
+      "id": "same-owner-packaged-web",
+      "status": "passed",
+      "gateway": "http://127.0.0.1:55528"
+    },
+    {
+      "id": "model-save",
+      "status": "passed",
+      "configured": true
+    },
+    {
+      "id": "explicit-model-test",
+      "status": "passed"
+    },
+    {
+      "id": "bundled-cli-shared-model",
+      "status": "passed",
+      "model": "installed-fixture",
+      "has_key": true
+    },
+    {
+      "id": "managed-project-create",
+      "status": "passed",
+      "project_id": "project:installed-smoke-project:c9ca3def"
+    },
+    {
+      "id": "bundled-node-child-pty",
+      "status": "passed",
+      "version": "24.21.0",
+      "closed": true
+    },
+    {
+      "id": "window-close-keeps-owner",
+      "status": "passed",
+      "boot_nonce": "1b30286e-e722-42a3-a264-15e894b75e1f"
+    },
+    {
+      "id": "background-run-completes",
+      "status": "completed",
+      "run_id": "run:851add46-656b-4447-8b07-70d52282aa9e"
+    },
+    {
+      "id": "reopen-reuses-owner",
+      "status": "passed",
+      "boot_nonce": "1b30286e-e722-42a3-a264-15e894b75e1f"
+    },
+    {
+      "id": "idle-settings-restart-rebind",
+      "status": "passed",
+      "boot_nonce": "c6de32d9-4d00-4950-ba8f-1c4435b8ecf8",
+      "pending_restart": []
+    }
+  ],
+  "cleanup": {
+    "owner_stopped": true,
+    "apps_exited": false,
+    "isolated_profile_removed": false
+  },
+  "provider_calls": 2
+}

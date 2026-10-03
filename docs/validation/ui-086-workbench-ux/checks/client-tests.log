@@ -1,0 +1,32 @@
+Scope: 4 of 23 workspace projects
+packages/sdk test:unit$ vitest run src
+packages/host test:unit$ vitest run src
+packages/sdk test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/sdk
+packages/host test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+packages/host test:unit:  Test Files  1 passed (1)
+packages/host test:unit:       Tests  56 passed (56)
+packages/host test:unit:    Start at  07:09:46
+packages/host test:unit:    Duration  1.10s (transform 62%, tests 20%, import 17%)
+packages/host test:unit: Done
+packages/sdk test:unit:  Test Files  6 passed (6)
+packages/sdk test:unit:       Tests  64 passed (64)
+packages/sdk test:unit:    Start at  07:09:46
+packages/sdk test:unit:    Duration  2.44s (tests 56%, transform 33%, import 11%)
+packages/sdk test:unit: Done
+apps/cli test:unit$ vitest run src --exclude src/e2e.test.ts
+apps/web test:unit$ vitest run src
+apps/cli test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/cli
+apps/web test:unit:  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/web
+apps/web test:unit:  Test Files  1 passed (1)
+apps/web test:unit:       Tests  1 passed (1)
+apps/web test:unit:    Start at  07:09:49
+apps/web test:unit:    Duration  422ms (transform 73%, import 24%, tests 2%, worker 1%)
+apps/web test:unit: Done
+apps/cli test:unit:  Test Files  17 passed (17)
+apps/cli test:unit:       Tests  70 passed (70)
+apps/cli test:unit:    Start at  07:09:48
+apps/cli test:unit:    Duration  1.10s (transform 69%, import 25%, tests 5%)
+apps/cli test:unit:   Transform  transforming modules took 6.25s · 69% of tracked time, re-done on every run
+apps/cli test:unit:              persist transforms across runs with fsModuleCache: true
+apps/cli test:unit:              learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+apps/cli test:unit: Done
