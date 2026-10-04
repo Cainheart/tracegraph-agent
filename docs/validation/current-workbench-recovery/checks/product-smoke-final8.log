@@ -1,0 +1,101 @@
+{
+  "schema_version": "outlive.product-smoke.v1",
+  "status": "passed",
+  "platform": "darwin",
+  "arch": "arm64",
+  "product_build_id": "871f507b0b4cc01f59950715d542b2a40294cf38022a9aed49e2bcbf5832ed8f",
+  "provider": "isolated deterministic loopback fixture",
+  "external_node_on_child_path": false,
+  "external_pnpm_on_child_path": false,
+  "assertions": [
+    {
+      "id": "bundled-typescript-codegraph",
+      "indexed_file_count": 3,
+      "nodes": 8,
+      "status": "passed"
+    },
+    {
+      "id": "bundled-main-owner",
+      "pid": 50576,
+      "boot_nonce": "caef92d0-5df7-434b-8bdf-c00ac15e4a55",
+      "gateway": "http://127.0.0.1:63043",
+      "status": "passed"
+    },
+    {
+      "id": "actual-packaged-window",
+      "screenshot": "first-window.png",
+      "status": "passed"
+    },
+    {
+      "id": "same-owner-packaged-web",
+      "gateway": "http://127.0.0.1:63043",
+      "status": "passed"
+    },
+    {
+      "id": "model-save",
+      "configured": true,
+      "status": "passed"
+    },
+    {
+      "id": "explicit-model-test",
+      "status": "passed"
+    },
+    {
+      "id": "bundled-cli-shared-model",
+      "model": "installed-fixture",
+      "has_key": true,
+      "status": "passed"
+    },
+    {
+      "id": "managed-project-create",
+      "project_id": "project:installed-smoke-project:aa0dfb64",
+      "status": "passed"
+    },
+    {
+      "id": "bundled-node-child-pty",
+      "version": "24.21.0",
+      "closed": true,
+      "status": "passed"
+    },
+    {
+      "id": "window-close-keeps-owner",
+      "boot_nonce": "caef92d0-5df7-434b-8bdf-c00ac15e4a55",
+      "status": "passed"
+    },
+    {
+      "id": "background-run-completes",
+      "run_id": "run:04498d85-b6ad-4a10-a4a8-3e6498b8c35f",
+      "run_status": "completed",
+      "status": "passed"
+    },
+    {
+      "id": "reopen-reuses-owner",
+      "boot_nonce": "caef92d0-5df7-434b-8bdf-c00ac15e4a55",
+      "status": "passed"
+    },
+    {
+      "id": "idle-settings-restart-rebind",
+      "boot_nonce": "fee96c98-1e20-448b-8c78-f0246aeb4099",
+      "pending_restart": [],
+      "status": "passed"
+    }
+  ],
+  "cleanup": {
+    "owner_stopped": true,
+    "apps_exited": true,
+    "isolated_profile_removed": true,
+    "app_processes": [
+      {
+        "pid": 50570,
+        "exit_code": null,
+        "signal": "SIGKILL"
+      },
+      {
+        "pid": 50620,
+        "exit_code": null,
+        "signal": "SIGKILL"
+      }
+    ]
+  },
+  "provider_calls": 2
+}

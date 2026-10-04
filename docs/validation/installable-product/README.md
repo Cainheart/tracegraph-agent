@@ -1,5 +1,7 @@
 # 安装即用本地产品交付与验收
 
+> 本页保留 Mac-v2 安装即用阶段的历史验收，以下“本轮”“当前”“最终”均指该阶段，SHA、计数及回执不代表现交付字节。当时 A 仅作预览、标志尚未选择；用户随后已确认 B Current。当前 final8 安装、工作台和图标证据见[当前工作台闭环报告](../current-workbench-recovery/README.md)，安装包与平台边界见[当前发布记录](../../releases/README.md)。
+
 本轮交付可本机试用的 **Outlive Agent 0.1.0-alpha.0**。应用随包携带独立 Node、Electron、编译后的 Host/Web/Desktop/CLI 与原生依赖；用户打开应用后配置并测试模型、添加项目或直接聊天，正常流程无需外部 Node/pnpm 或手动启动 Host。
 
 已安装位置：`/Users/cain/Applications/Outlive Agent.app`。新默认 profile 为 `~/.outlive/profiles/default`；旧 `.tracegraph` 数据须显式迁移，启动不会合并旧目录。升级替换应用而保留 profile，不自动重放任务。真实 Key 由用户配置；测试仅发送明确的小请求。可选 MCP/LSP 不阻塞普通对话。正常设置中的修复操作负责重新连接，详细运行时状态位于安装诊断。

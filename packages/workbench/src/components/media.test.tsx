@@ -8,6 +8,8 @@ import { LanguageProvider } from "../i18n";
 import { MediaStudio } from "./MediaStudio";
 import { ImageProviderSettings } from "./ImageProviderSettings";
 import { GeneratedGallery } from "./GeneratedGallery";
+import { ChatView } from "./WorkbenchStates";
+import { createDemoSnapshot } from "../demo";
 const caps = (...operations: string[]) => HostCapabilitiesSchema.parse({ profile_id: "isolated", protocol_version: "test", capabilities: operations.map((operation) => ({ operation, scope: "profile", state: "available" })) });
 const config: ImageProviderConfigSnapshot = { configured: false, has_key: false, protocol: "openai-images", base_url: "http://127.0.0.1:19001/v1", model: "synthetic-image" };
 let container: HTMLDivElement, root: Root;
@@ -39,12 +41,35 @@ describe("real media product surfaces", () => {
   it("only previews explicit verified content and revokes it when entering Replay", async () => {
     const artifact = { artifactId: "artifact_generated", runId: "run_generated", projectId: "project_generated", mediaType: "image/png" as const, bytes: 3, sha256: "sha256:" + "a".repeat(64), label: "Generated image" };
     const load = vi.fn(async () => ({ artifactId: artifact.artifactId, mediaType: artifact.mediaType, sha256: artifact.sha256, bytes: new Uint8Array([1, 2, 3]) })); Object.assign(URL, { createObjectURL: vi.fn(() => "blob:verified-generated"), revokeObjectURL: vi.fn() });
-    const render = async (disabled = false) => act(async () => root.render(<LanguageProvider><GeneratedGallery artifacts={[artifact]} onLoad={load} disabled={disabled} /></LanguageProvider>));
+    const render = async (disabled = false) => act(async () => root.render(<LanguageProvider><GeneratedGallery artifacts={[artifact]} onLoad={load} disabled={disabled} {...(disabled ? { disabledReason: "Return to now to preview generated artifacts." } : {})} /></LanguageProvider>));
     await render(); expect(load).not.toHaveBeenCalled(); await click("Preview generated artifact"); expect(load).toHaveBeenCalledWith("run_generated", "artifact_generated"); expect(container.querySelector("img")?.src).toBe("blob:verified-generated"); expect(container.querySelector("a")?.download).toBe("outlive-artifact_generated.png"); await render(true); expect(container.querySelector("img")).toBeNull(); expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:verified-generated"); expect(button("Preview generated artifact").disabled).toBe(true);
   });
   it("rejects an Artifact response with a mismatched recorded digest", async () => {
     const artifact = { artifactId: "artifact_generated", runId: "run_generated", projectId: "project_generated", mediaType: "image/png" as const, bytes: 1, sha256: "sha256:" + "a".repeat(64), label: "Generated image" };
     const load = vi.fn(async () => ({ artifactId: artifact.artifactId, mediaType: artifact.mediaType, sha256: "sha256:" + "b".repeat(64), bytes: new Uint8Array([1]) }));
     await act(async () => root.render(<LanguageProvider><GeneratedGallery artifacts={[artifact]} onLoad={load} /></LanguageProvider>)); await click("Preview generated artifact"); expect(container.querySelector("img")).toBeNull(); expect(container.querySelector('[role="alert"]')?.textContent).toContain("verification failed");
+  });
+  it("keeps offline, Replay and capability denial distinct without loading or downloading content", async () => {
+    const artifact = { artifactId: "artifact_generated", runId: "run_generated", projectId: "project_generated", mediaType: "image/png" as const, bytes: 1, sha256: "sha256:" + "a".repeat(64), label: "Generated image" };
+    const load = vi.fn();
+    for (const reason of ["Reconnect to preview generated artifacts.", "Return to now to preview generated artifacts.", "The current policy denies binary artifact reads."]) {
+      await act(async () => root.render(<LanguageProvider><GeneratedGallery artifacts={[artifact]} onLoad={load} disabled disabledReason={reason} /></LanguageProvider>));
+      expect(container.textContent).toContain(reason); expect(button("Preview generated artifact").disabled).toBe(true);
+      expect(container.querySelector("img")).toBeNull(); expect(container.querySelector("a[download]")).toBeNull();
+      if (reason !== "Return to now to preview generated artifacts.") expect(container.textContent).not.toContain("Return to now");
+    }
+    expect(load).not.toHaveBeenCalled();
+    await act(async () => root.render(<LanguageProvider><GeneratedGallery artifacts={[artifact]} disabled /></LanguageProvider>));
+    expect(container.textContent).toContain("This feature is unavailable on this installation."); expect(container.textContent).not.toContain("Return to now");
+  });
+  it("passes the real disconnected reason to both historical and current answer galleries", async () => {
+    HTMLElement.prototype.scrollIntoView = vi.fn();
+    const snapshot = createDemoSnapshot("completed");
+    const artifact = { artifactId: "artifact_generated", runId: "run_current", projectId: "project_generated", mediaType: "image/png" as const, bytes: 1, sha256: "sha256:" + "a".repeat(64), label: "Generated image" };
+    const load = vi.fn();
+    await act(async () => root.render(<LanguageProvider><ChatView runId="run_current" conversation={[{ runId: "run_old", task: "Earlier task", response: "Earlier result", status: "completed", events: [], generatedArtifacts: [{ ...artifact, runId: "run_old" }] }]} task="Current task" status="completed" events={[]} dataSource="live" changedFiles={[]} evidence={snapshot.evidence} generatedArtifacts={[artifact]} onLoadGeneratedArtifact={load} generatedPreviewsDisabled generatedPreviewsDisabledReason="Reconnect to preview generated artifacts." /></LanguageProvider>));
+    const cards = [...container.querySelectorAll(".generated-card")]; expect(cards).toHaveLength(2);
+    for (const card of cards) { expect(card.textContent).toContain("Reconnect to preview generated artifacts."); expect(card.textContent).not.toContain("Return to now"); expect(card.querySelector("button")?.disabled).toBe(true); }
+    expect(load).not.toHaveBeenCalled();
   });
 });

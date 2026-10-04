@@ -1,0 +1,20 @@
+
+DevTools listening on ws://127.0.0.1:59043/devtools/browser/d88efc7b-2096-4b34-bbba-c479baf8c808
+2026-10-03 22:36:47.715 Outlive Agent[41671:30363439] error messaging the mach port for IMKCFRunLoopWakeUpReliable
+Error occurred in handler for 'tracegraph:run-start': TraceGraphHttpError: The selected file changed. Select its current version before starting
+    at #httpError (file:///Users/cain/Applications/Outlive%20Agent.app/Contents/Resources/app/node_modules/@tracegraph/sdk/dist/index.js:812:16)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async #requestResponse (file:///Users/cain/Applications/Outlive%20Agent.app/Contents/Resources/app/node_modules/@tracegraph/sdk/dist/index.js:778:19)
+    at async #requestUnknown (file:///Users/cain/Applications/Outlive%20Agent.app/Contents/Resources/app/node_modules/@tracegraph/sdk/dist/index.js:736:26)
+    at async TraceGraphClient.startRun (file:///Users/cain/Applications/Outlive%20Agent.app/Contents/Resources/app/node_modules/@tracegraph/sdk/dist/index.js:397:42)
+    at async file:///Users/cain/Applications/Outlive%20Agent.app/Contents/Resources/app/apps/desktop/dist/main.js:237:58
+    at async LocalHostConnectionSupervisor.mutate (file:///Users/cain/Applications/Outlive%20Agent.app/Contents/Resources/app/node_modules/@tracegraph/host/dist/local-connection-supervisor.js:102:20)
+    at async file:///Users/cain/Applications/Outlive%20Agent.app/Contents/Resources/app/apps/desktop/dist/main.js:78:20
+    at async Session.<anonymous> (node:electron/js2c/browser_init:1:118948) {
+  status: 409,
+  body: {
+    error: 'file_context_revision_conflict',
+    message: 'The selected file changed. Select its current version before starting'
+  },
+  admission: undefined
+}

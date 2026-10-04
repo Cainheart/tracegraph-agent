@@ -447,7 +447,7 @@ export async function createHostComposition(options: HostCompositionOptions) {
   registerProjectFilesFeedbackRoutes(host.app,projectFiles);
   registerConversationRoutes(host.app,conversationControl);
   setupCleanup.length=0;
-  return { host, runtime, model, workspaceCoordinator, imageSettings,conversationControl,projectFiles,
+  return { host, runtime, model, workspaceCoordinator, imageSettings,conversationControl,projectFiles,fileContextAvailable:true,
     getImageConfig:()=>imageSettings.get(),
     capabilityOverrides:{"rollback.write":rollbackPolicy.enabled?{state:"available" as const,reason:rollbackPolicy.allowForce?"Linked workspace rollback requires explicit force confirmation":"Linked workspace rollback is denied; the Host force policy is disabled"}:{state:"policy-denied" as const,reason:"Rollback is disabled by the Host startup policy"}},
     updateRunSettings:(settings:WorkbenchSettingsValues)=>{runSettings=settings;workspaceCoordinator.setMaxParallelRuns(settings.developer.max_parallel_runs);},

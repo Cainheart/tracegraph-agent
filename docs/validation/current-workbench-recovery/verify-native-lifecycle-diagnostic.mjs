@@ -1,0 +1,57 @@
+import assert from 'node:assert/strict';
+import { readFile, writeFile } from 'node:fs/promises';
+import { join, resolve } from 'node:path';
+
+const directory=resolve(process.argv[2]??'');
+const report=JSON.parse(await readFile(join(directory,'report.json'),'utf8'));
+let checks=0;
+const equal=(actual,expected)=>{assert.deepEqual(actual,expected);checks++;};
+const check=value=>{assert.ok(value);checks++;};
+equal(report.status,'failed');
+equal(report.surface,'packaged-desktop');
+equal(report.errors,[]);
+equal(report.assertions.length,11);
+equal(report.cleanup.completed,false);
+equal(report.cleanup.processes_verified_exited,true);
+equal(report.cleanup.isolated_profile_removed,true);
+equal(report.cleanup.failures.length,1);
+equal(report.cleanup.failures[0].resource,'owned download CDP session');
+check(report.cleanup.failures[0].message.includes('Target page, context or browser has been closed'));
+equal(report.native_before_crash.live_read_proof.host_state,'ready');
+equal(report.native_before_crash.live_read_proof.models_read,true);
+equal(report.native_before_crash.live_read_proof.settings_read,true);
+equal(report.native_before_crash.renderer.return_to_now_controls,0);
+equal(report.native_recovery_observations.map(state=>state.state),['connected','recovering','connected']);
+const n=report.native_lifecycle,f=report.native_fresh_main;
+equal(n.before.http_address,n.crash_recovered.http_address);
+check(n.before.pid!==n.crash_recovered.pid&&n.before.boot_nonce!==n.crash_recovered.boot_nonce);
+equal(n.connection_recovered.generation,n.connection_before.generation+1);
+equal(n.connection_stable,n.connection_recovered);
+equal(n.connection_stopped.state,'stopped');
+equal(n.read_while_stopped.succeeded,false);
+equal(n.connection_repaired.state,'connected');
+equal(n.crash_recovered.http_address,n.repaired.http_address);
+check(n.crash_recovered.boot_nonce!==n.repaired.boot_nonce);
+equal(n.snapshot_before,n.snapshot_after);
+equal(f.snapshot_before,n.snapshot_before);
+equal(f.snapshot_after,n.snapshot_before);
+equal(f.old_main_stopped.state,'stopped');
+equal(f.old_main_exited_before_launch,true);
+check(f.old_main_pid!==f.new_main_pid&&f.before.pid!==f.started.pid&&f.before.boot_nonce!==f.started.boot_nonce);
+equal(f.before.profile_id,f.started.profile_id);
+equal(f.connection.state,'connected');
+equal(f.connection.owner_nonce,f.started.boot_nonce);
+const expectedIds=[report.plain_run.run_id,report.project_run.run_id,report.attachment_run.run_id,report.file_context_proof.run_id,report.cli_file_context_proof.run_id,report.artifact_proof.run_id].sort();
+equal(n.snapshot_before.run_ids,expectedIds);equal(new Set(expectedIds).size,6);
+let baseline;
+for(const name of ['native-runtime-runs-before.json','native-runtime-runs-after-repair.json','native-runtime-runs-after-fresh-main.json']){
+  const runs=JSON.parse(await readFile(join(directory,name),'utf8'));
+  equal(runs.map(run=>run.run_id).sort(),expectedIds);
+  equal(runs.flatMap(run=>run.timeline.map(event=>event.event_id)).sort(),n.snapshot_before.runtime_event_ids);
+  const facts=runs.map(run=>({run_id:run.run_id,timeline:run.timeline}));
+  if(!baseline)baseline=facts;else equal(facts,baseline);
+  for(const run of runs){equal(run.status,'completed');check(run.timeline.some(event=>event.type==='run.created'));check(run.timeline.some(event=>event.type==='run.completed'));}
+}
+const result={status:'diagnostic-passed',source_report_status:report.status,checks,boundary:'Read-only independent verification of actual native owner lifecycle and six completed Run Ledgers. Source attempt remains FAILED because its download CDP cleanup occurred after the old browser had closed. This diagnostic does not promote the GUI receipt or establish the cause of attempt021 recovery timeout.'};
+await writeFile(join(directory,'independent-native-lifecycle-diagnostic.json'),JSON.stringify(result,null,2)+'\n');
+process.stdout.write(JSON.stringify(result)+'\n');

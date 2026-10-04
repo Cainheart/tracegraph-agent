@@ -134,6 +134,14 @@ function harness(options: {
 }
 
 describe("RunSessionController in-process", () => {
+  it("binds selected file versions to idempotent command identity",async()=>{
+    const {controller,startInputs}=harness({startStatus:"completed"});
+    const input={command_id:"command:file-context",project_id:"project-one",task:"Inspect a file",mode:"execute" as const,file_contexts:[{path:"source.ts",expected_sha256:`sha256:${"a".repeat(64)}`}]};
+    const first=await controller.startRun(input);expect((await controller.startRun(input)).run_id).toBe(first.run_id);expect(startInputs).toHaveLength(1);
+    await expect(controller.startRun({...input,file_contexts:[{path:"source.ts",expected_sha256:`sha256:${"b".repeat(64)}`}]})).rejects.toMatchObject({code:"command_id_conflict"});
+    await expect(controller.startRun({...input,file_contexts:[{path:"other.ts",expected_sha256:input.file_contexts[0]!.expected_sha256}]})).rejects.toMatchObject({code:"command_id_conflict"});
+    expect(startInputs).toHaveLength(1);
+  });
   it("revalidates recovery authority after admission and releases the claim without durable resume on denial",async()=>{
     const order:string[]=[];const {controller,resumeInputs}=harness({beforeStart:async()=>{order.push("admitted");return {release:()=>{order.push("released");}};},beforeResume:async({workspace:bound,session:detail})=>{expect(bound.project_id).toBe(detail.header.project_id);order.push("policy");throw new RunSessionControllerError(409,"resume_policy_changed","Start a new Run");}});
     await expect(controller.resumeSession("session-one",{command_id:"resume:restricted"})).rejects.toMatchObject({code:"resume_policy_changed"});expect(order).toEqual(["admitted","policy","released"]);expect(resumeInputs).toEqual([]);

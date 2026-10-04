@@ -5,8 +5,8 @@ import type {ConnectedLocalHost,LocalHostStatus} from "./local-host.js";
 import {HostConnectionSnapshotSchema} from "@tracegraph/contracts";
 import {TraceGraphHttpError,TraceGraphMutationPreflightError} from "@tracegraph/sdk";
 
-function fixture(profileId=randomUUID(),nonce=randomUUID()) {
-  const status:LocalHostStatus={protocol_version:"outlive.local-host.v1",profile_id:profileId,profile_root:"/isolated-supervisor",data_root:"/isolated-supervisor/data",session_root:"/isolated-supervisor/sessions",pid:12345,boot_nonce:nonce,http_address:"http://127.0.0.1:49123"};
+function fixture(profileId=randomUUID(),nonce=randomUUID(),pid=12345) {
+  const status:LocalHostStatus={protocol_version:"outlive.local-host.v1",profile_id:profileId,profile_root:"/isolated-supervisor",data_root:"/isolated-supervisor/data",session_root:"/isolated-supervisor/sessions",pid,boot_nonce:nonce,http_address:"http://127.0.0.1:49123"};
   const value={status,client:{replayActive:false,bootstrap:vi.fn(async()=>({token:"synthetic-private-fixture"}))},probe:vi.fn(async()=>undefined),close:vi.fn(async()=>undefined),stop:vi.fn(async()=>undefined),native:{}} as unknown as ConnectedLocalHost;
   return value;
 }
@@ -61,10 +61,65 @@ describe("local owner connection authority",()=>{
     expect(HostConnectionSnapshotSchema.safeParse({state:"connected",generation:1,socket_path:"forbidden"}).success).toBe(false);
     expect(HostConnectionSnapshotSchema.safeParse({state:"connected",generation:1,profile_root:"forbidden"}).success).toBe(false);
   });
+  it("does not spend the crash budget on successful first startup or authenticated planned socket gaps",async()=>{
+    const clock=vi.spyOn(Date,"now");let now=10_000;clock.mockImplementation(()=>now);
+    let owner=fixture(),nextOwner=owner,gap=true;const initial=owner;
+    const ensure=vi.fn(async()=>{owner=nextOwner;gap=false;return owner;});
+    const supervisor=new LocalHostConnectionSupervisor({profileRoot:"/isolated-supervisor",pollIntervalMs:60_000,recoveryAttempts:2,stopped:async()=>false,identity:async()=>{if(gap)throw absent();return owner.status;},connect:async()=>{if(gap)throw absent();return owner;},ensure});
+    const replace=async(pid:number)=>{(owner.probe as ReturnType<typeof vi.fn>).mockRejectedValue(absent());nextOwner=fixture(initial.status.profile_id,randomUUID(),pid);gap=true;now+=5_000;await supervisor.refresh();};
+    try{
+      await supervisor.initialize();expect(supervisor.getSnapshot()).toMatchObject({state:"connected",generation:1});
+      // A previous real crash remains charged even when planned replacements succeed.
+      await replace(initial.status.pid+1);expect(supervisor.getSnapshot()).toMatchObject({state:"connected",generation:2});
+      for(let cycle=0;cycle<3;cycle++){await replace(initial.status.pid+1);expect(supervisor.getSnapshot(),`planned replacement ${cycle} must refund only its own successful ensure`).toMatchObject({state:"connected",generation:3+cycle});}
+      await replace(initial.status.pid+2);expect(supervisor.getSnapshot()).toMatchObject({state:"connected",generation:6});
+      await replace(initial.status.pid+3);expect(supervisor.getSnapshot()).toMatchObject({state:"offline",code:"host_recovery_exhausted",generation:6});
+      expect(ensure).toHaveBeenCalledTimes(6);
+    }finally{await supervisor.close();clock.mockRestore();}
+  });
+  it("keeps failed initial startup attempts bounded instead of refunding unvalidated owners",async()=>{
+    const clock=vi.spyOn(Date,"now");let now=10_000;clock.mockImplementation(()=>now);
+    const ensure=vi.fn(async()=>{throw absent();});
+    const supervisor=new LocalHostConnectionSupervisor({profileRoot:"/isolated-supervisor",pollIntervalMs:60_000,recoveryAttempts:2,stopped:async()=>false,identity:async()=>{throw absent();},connect:async()=>{throw absent();},ensure});
+    try{
+      await supervisor.initialize();expect(supervisor.getSnapshot()).toMatchObject({state:"offline",generation:0,code:"host_offline"});
+      now+=5_000;await supervisor.refresh();expect(supervisor.getSnapshot()).toMatchObject({state:"offline",generation:0,code:"host_offline"});
+      now+=5_000;await supervisor.refresh();expect(supervisor.getSnapshot()).toMatchObject({state:"offline",generation:0,code:"host_recovery_exhausted"});expect(ensure).toHaveBeenCalledTimes(2);
+    }finally{await supervisor.close();clock.mockRestore();}
+  });
+  it("does not spend the remaining crash budget when the authenticated live owner is unchanged",async()=>{
+    const clock=vi.spyOn(Date,"now");let now=10_000;clock.mockImplementation(()=>now);
+    let owner=fixture(),nextOwner=owner,gap=false;const initial=owner,bind=vi.fn();
+    const ensure=vi.fn(async()=>{owner=nextOwner;gap=false;return owner;});
+    const supervisor=new LocalHostConnectionSupervisor({profileRoot:"/isolated-supervisor",pollIntervalMs:60_000,recoveryAttempts:2,stopped:async()=>false,identity:async()=>{if(gap)throw absent();return owner.status;},connect:async()=>{if(gap)throw absent();return owner;},ensure,onRebind:bind});
+    const handshake=async(pid:number,nonce=randomUUID())=>{nextOwner=fixture(initial.status.profile_id,nonce,pid);gap=true;now+=5_000;await supervisor.refresh();};
+    try{
+      await supervisor.initialize();await handshake(initial.status.pid+1);expect(supervisor.getSnapshot()).toMatchObject({state:"connected",generation:2});
+      for(let cycle=0;cycle<3;cycle++){const nonce=owner.status.boot_nonce;await handshake(initial.status.pid+1,nonce);expect(supervisor.getSnapshot(),`unchanged authenticated handshake ${cycle} must refund only its charge`).toMatchObject({state:"connected",generation:2,owner_nonce:nonce});expect(nextOwner.close).toHaveBeenCalledOnce();}
+      await handshake(initial.status.pid+2);expect(supervisor.getSnapshot()).toMatchObject({state:"connected",generation:3});
+      await handshake(initial.status.pid+3);expect(supervisor.getSnapshot()).toMatchObject({state:"offline",code:"host_recovery_exhausted",generation:3});expect(ensure).toHaveBeenCalledTimes(5);expect(bind).toHaveBeenCalledTimes(3);
+    }finally{await supervisor.close();clock.mockRestore();}
+  });
+  it("does not refund a same-process replacement with another profile or product build",async()=>{
+    const clock=vi.spyOn(Date,"now");let now=10_000;clock.mockImplementation(()=>now);
+    try{
+      for(const invalid of ["profile","build"]){
+        const build="a".repeat(64),owner=fixture();Object.assign(owner.status,{product_build_id:build});
+        const replacement=fixture(invalid==="profile"?randomUUID():owner.status.profile_id);Object.assign(replacement.status,{product_build_id:invalid==="build"?"b".repeat(64):build});
+        let gap=false;const ensure=vi.fn(async()=>replacement);
+        const supervisor=new LocalHostConnectionSupervisor({profileRoot:"/isolated-supervisor",productBuildId:build,pollIntervalMs:60_000,recoveryAttempts:1,stopped:async()=>false,identity:async()=>{if(gap)throw absent();return owner.status;},connect:async()=>{if(gap)throw absent();return owner;},ensure});
+        try{
+          await supervisor.initialize();gap=true;now+=5_000;await supervisor.refresh();
+          expect(supervisor.getSnapshot()).toMatchObject({state:invalid==="build"?"upgrade-required":"offline",generation:1,code:invalid==="build"?"host_upgrade_required":"host_profile_invalid"});
+          now+=5_000;await supervisor.refresh();expect(supervisor.getSnapshot()).toMatchObject({state:"offline",generation:1,code:"host_recovery_exhausted"});expect(ensure).toHaveBeenCalledOnce();expect(replacement.close).toHaveBeenCalledOnce();
+        }finally{await supervisor.close();}
+      }
+    }finally{clock.mockRestore();}
+  });
   it("bounds repeated crash recovery and preserves the authenticated gateway for explicit repair",async()=>{
     const clock=vi.spyOn(Date,"now");let now=10_000;clock.mockImplementation(()=>now);
     let owner=fixture();let crashed=false;const initial=owner;
-    const ensure=vi.fn(async()=>{owner=fixture(initial.status.profile_id);crashed=false;return owner;});
+    const ensure=vi.fn(async()=>{owner=fixture(initial.status.profile_id,randomUUID(),owner.status.pid+1);crashed=false;return owner;});
     const supervisor=new LocalHostConnectionSupervisor({profileRoot:"/isolated-supervisor",pollIntervalMs:60_000,recoveryAttempts:2,stopped:async()=>false,identity:async()=>{if(crashed)throw absent();return owner.status;},connect:async()=>{if(crashed)throw absent();return owner;},ensure});
     try{
       await supervisor.initialize();

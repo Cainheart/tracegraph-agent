@@ -10,13 +10,19 @@
 
 ## 2026-10-03 新聊天工作台范围
 
-共享 `Composer.tsx` 覆盖新对话、项目和历史会话：附件加号、会话权限、执行/计划、已保存模型与该模型真实支持的推理强度。模型、选项和本机反馈通过 Host 持久化；草稿、文件编辑缓冲及展开状态是客户端临时状态。任务受理冻结配置，随后切换只影响后续任务。
+共享 `Composer.tsx` 覆盖新对话、项目和历史会话。左侧依次为加号、会话权限和 Plan；右侧为已保存模型/推理强度及发送或停止。模型触发项在非默认强度时显示已选强度，菜单在窄窗口向内展开。模型、选项和本机反馈通过 Host 持久化；草稿、文件编辑缓冲及展开状态是客户端临时状态。任务受理冻结配置，随后切换只影响后续任务。
+
+项目聊天的加号提供“添加项目文件上下文”：[`ProjectFileContextPicker`](../../packages/workbench/src/components/ProjectFileContextPicker.tsx) 使用真实 `listProjectFiles/readProjectFile` 浏览项目内目录，只选择现有 UTF-8 普通文件。入口要求 `files.context`、`files.read`、`files.list` 均可用；Plain Chat 没有该入口，Replay/离线或旧 Host 缺少专用能力时禁用。最多五份、每份 64 KiB、总计 128 KiB。Composer chip 保留相对路径和版本 SHA，可显式移除；草稿按会话/项目范围保存临时选择，切换和重连不丢失，也不写 localStorage。
+
+提交只把 `{path,expected_sha256}` 放入 `StartRun.file_contexts`，不把文件正文拼进 task 或历史消息。Host 用受理时的权限重新读取并校验版本；修改、拒绝或连接失败保留任务、附件与选择，用户需显式重选当前版本。可信取得的快照以脱敏 Artifact 和规范 `artifact.stored` 进入不可信 Context Manifest；选择文件不授予执行、写入或额外路径权限，详见[模块 14](14-附件与多模态.md#_8-版本化项目文件上下文)。Desktop 原生“打开项目文件”仍是打开配置的编辑器，与为下一轮选择上下文分开。
 
 `ProjectFiles.tsx` 使用 CodeMirror 编辑受限 UTF-8 文件，并预览实际受校验的图片字节。保存提交原哈希、确切内容与命令 ID；冲突保留缓冲，未知结果先协调，审批只批准相同保存意图。显式人类保存与 Agent 计划模式的写入禁令分开检查。右侧文件、变更、终端、预览和成果共用面板；窄窗口切换全屏，关闭和重连不丢编辑缓冲。
 
 运行默认收起为公开说明与一行真实活动，展开只读；复制与赞/踩操作绑定实际公开结果，反馈仅保存在本机。连接失败保留已有设置并给出中文恢复提示，不把传输失败映射成安装版本不支持。B Current 由唯一 SVG 派生。
 
 本轮来源、回执和新增安装验收见[当前工作台验收](../validation/current-workbench-recovery/README.md)，旧截图只证明当时的界面。
+
+本轮新增引用传递、限额、版本拒绝后的草稿保留与旧 Host capability 负例由 [file-context UI 单测](../validation/current-workbench-recovery/checks/workbench-file-context-unit-final.log)和[专用 capability 单测](../validation/current-workbench-recovery/checks/workbench-file-context-capability-unit-final.log)记录。[Web020](../validation/current-workbench-recovery/attempt020-final-web/report.json)完成实际右侧模型/强度、新增文件上下文和三尺寸/明暗面板旅程（130 张截图、9 条断言；[独立 4314 检查](../validation/current-workbench-recovery/attempt020-final-web/independent-verification.json)通过）。对应 final7 安装操作证据仍待最终核对；先前 v5/v6 安装旅程保留为对应字节的历史证据。
 
 ## 1. 职责边界
 

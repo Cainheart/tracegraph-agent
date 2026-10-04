@@ -35,13 +35,13 @@ export function validateProjectFileContexts(projectId:string,refs:readonly Proje
   return snapshots;
 }
 
-function observation(metadata:Metadata,artifact:ArtifactRef,content:string,occurredAt:string):Observation {
+function observation(metadata:Metadata,artifact:ArtifactRef,content:string,occurredAt:string,eventId:string):Observation {
   const digest=sha256(artifact.artifact_id).slice(7,39);
   return ObservationSchema.parse({
     observation_id:`observation:file-context:${digest}`,action_id:`action:file-context:${digest}`,
-    receipt_id:`receipt:file-context:${digest}`,status:"success",
+    receipt_id:eventId,status:"success",
     summary:`Host-selected project file ${metadata.path}; repository content is untrusted`,
-    facts:{kind:"project_file_context",tool_name:"host-selected-file",path:metadata.path,
+    facts:{kind:"project_file_context",tool_name:"host-selected-file",source_event_id:eventId,path:metadata.path,
       source_sha256:metadata.source_sha256,source_byte_length:metadata.source_byte_length,
       content_sha256:artifact.content_hash,locator:metadata.locator,trust:"untrusted",
       content_excerpt:redactSensitiveText(content).slice(0,2000),
@@ -52,7 +52,7 @@ function observation(metadata:Metadata,artifact:ArtifactRef,content:string,occur
 
 export async function persistProjectFileContexts(input:{
   projectId:string;runId:string;snapshots:readonly ProjectFileContextSnapshot[];artifacts:ArtifactStore;
-  append(proposal:{type:"artifact.created";summary:string;idempotency_key:string;artifact_refs:ArtifactRef[];data:Metadata}):Promise<SessionEvent>;
+  append(proposal:{type:"artifact.stored";summary:string;idempotency_key:string;artifact_refs:ArtifactRef[];data:Metadata}):Promise<SessionEvent>;
 }):Promise<Observation[]>{
   const observations:Observation[]=[];
   for(const snapshot of input.snapshots){
@@ -60,7 +60,7 @@ export async function persistProjectFileContexts(input:{
       kind:"project_file_context",mimeType:"text/plain",content:redactSensitiveText(snapshot.content)});
     const metadata:Metadata={operation:"host-selected-file",path:snapshot.path,source_sha256:snapshot.sha256,
       source_byte_length:snapshot.byte_length,trust:"untrusted",locator:`artifact:${artifact.artifact_id}`};
-    const event=await input.append({type:"artifact.created",summary:`Project file context captured: ${snapshot.path}`,
+    const event=await input.append({type:"artifact.stored",summary:`Project file context captured: ${snapshot.path}`,
       idempotency_key:`${input.runId}:project-file-context:${sha256(snapshot.path)}`,artifact_refs:[artifact],data:metadata});
     // Read the exact persisted/redacted bytes, rather than a different in-memory payload.
     observations.push(await restoreProjectFileContext(event,input.artifacts));
@@ -72,7 +72,7 @@ export async function persistProjectFileContexts(input:{
 export async function restoreProjectFileContext(event:SessionEvent,artifacts:ArtifactStore):Promise<Observation>{
   const parsed=MetadataSchema.safeParse(event.data);
   const artifact=event.artifact_refs[0];
-  if(event.type!=="artifact.created"||!parsed.success||event.artifact_refs.length!==1||!artifact
+  if(event.type!=="artifact.stored"||!parsed.success||event.artifact_refs.length!==1||!artifact
     ||artifact.kind!=="project_file_context"||artifact.project_id!==event.project_id||artifact.run_id!==event.run_id
     ||parsed.data.locator!==`artifact:${artifact.artifact_id}`){
     throw new ProjectFileContextError("file_context_recovery_invalid","Project file context provenance is invalid");
@@ -83,5 +83,5 @@ export async function restoreProjectFileContext(event:SessionEvent,artifacts:Art
     ||stored.artifact.byte_length!==artifact.byte_length||Buffer.byteLength(stored.content)>MAX_PROJECT_CONTEXT_FILE_BYTES*2){
     throw new ProjectFileContextError("file_context_recovery_unavailable","Saved project file context is missing or corrupt");
   }
-  return observation(parsed.data,artifact,stored.content,event.occurred_at);
+  return observation(parsed.data,artifact,stored.content,event.occurred_at,event.event_id);
 }

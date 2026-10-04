@@ -450,7 +450,35 @@ SDK 对终态活动可立即结束；对 `plan.ready` 则不会在 yield 时武�
 | 保存的模型连接 | `getModelConnections()`、`saveModelConnection()`、`removeModelConnection()`、`testModelConnection()`；保存/移除返回 registry snapshot，revision/CAS，原始 Key 只写 |
 | 会话选项与本地授权 | `get/updateSessionRunOptions()`、`get/setPermissionGrant()`；模型、mode、reasoning、bounded preset 在新 Run 冻结；Full grant 不能覆盖管理员 ceiling |
 | 项目文件 | `listProjectFiles()`、`readProjectFile()`、`saveProjectFile()`、`reconcileProjectFileSave()`；相对路径、有界读取、CAS/policy/工作区协调及持久回执 |
+| 项目文件上下文 | `startRun({file_contexts:[{path,expected_sha256}]})`；最多五份项目 UTF-8 文件，Host 准入冻结，客户端不传正文；普通 chat 不接受该字段 |
 | 回答反馈 | `getAnswerFeedback()`、`setAnswerFeedback()`；绑定当前 Run 的实际 answer Event，`like/dislike/clear` 只保存本地事实 |
+
+项目文件上下文经 [`ConversationControl.prepare()`](../../packages/host/src/conversation-control.ts)
+绑定本次 Session/模型/策略，再调用 [`readContext()`](../../packages/host/src/project-files-feedback.ts)
+按该策略读取固定项目内普通文件。路径排除、symlink/多硬链接拒绝和 O_NOFOLLOW/固定 inode
+边界与文件编辑共用；每份 64 KiB、总计 128 KiB，严格 UTF-8 且不接受 NUL。
+非 allow 策略直接拒绝，不签发交互审批；哈希变化返回 `file_context_revision_conflict`，
+创建 Run 和模型派发前即失败。`files.context` 仅在真实 reader 已装配时广告 available，
+generic control 缺 reader 时为 unavailable，路径权限仍在准入时校验。
+
+[`Core context seam`](../../packages/core/src/domains/runtime/project-file-context.ts) 再核对
+可信 snapshot 的 project/path/原始字节 SHA/长度与请求引用一致，随后写脱敏的
+`project_file_context` text Artifact。规范 `artifact.stored` 只保存 path、原始 SHA/长度、
+locator 与实际 Artifact ref，不保存文件正文。模型 Observation 的 source event ID 是该
+真实存储 Event；Context Manifest 使用同一 ref、tool source 和 untrusted trust。摘要片段
+有界，更多内容由当前 Run 的 `read_artifact` 分页读取。显式恢复读取旧 Artifact，不重新
+读取已变化的工作区文件；缺失或损坏的 Artifact fail closed。详见
+[Runtime tests](../../packages/core/src/domains/runtime/runtime.project-file-context.test.ts) 和
+[Host tests](../../packages/host/src/project-file-context.test.ts)。final8 的 [Web attempt 024](../validation/current-workbench-recovery/attempt024-final8-web/report.json)
+与外部 CLI 上下文已通过，安装后 Desktop 的
+[attempt 025](../validation/current-workbench-recovery/attempt025-final8-installed-desktop/report.json)
+也通过实际上下文、SIGKILL 恢复、stop/Repair 与 fresh Main，清理完成；六条已完成
+Run 事实与模型请求数保持不变。历史 final7 的
+[attempt 021](../validation/current-workbench-recovery/attempt021-final-installed-desktop/report.json)
+恢复超时原因未知，
+[attempt 023](../validation/current-workbench-recovery/attempt023-final7-native-lifecycle-diagnostic/report.json)
+观察了实际恢复/stop/Repair/fresh Main，但清理阶段 CDP detach 失败；不能用
+业务子步骤替代整轮结果或用旧字节证明 final8。
 
 ```467:479:packages/sdk/src/index.ts
 function isBrowserRuntime(): boolean {
@@ -549,6 +577,13 @@ CLI 单测验证 stdout 纯净、无效输入不 bootstrap、事件 envelope 与
 | `host_recovery_exhausted` | 自动恢复预算已用尽；需要显式修复，而非无限拉起进程 |
 
 每次 owner 替换建立新 `DesktopStreamManager(generation)`，旧 handles 关闭，晚到 packet/读取不得刷新新视图。CLI 的 [`supervisedLocalHost()`](../../packages/host/src/local-connection-client.ts) 同样保留持久 ledger sequence，新 owner 的 activity/model-surface cursor 从零重建；订阅自身不持久化游标，也不取消任务。
+
+自动恢复预算只在 ensure 拉起/等待 owner 时暂记一次。完成私有 profile/build
+验证及 bind 后，成功首次启动，或已确认仍为同一 PID 的 live/计划重连，仅退回
+本次成功的计数；之前失败启动和不同 PID 的崩溃恢复计数继续保留。不会每次成功
+都清零；原有稳定连接窗口、显式 Repair 和耗尽上限不变。该计数修复有
+[`local-connection-supervisor.test.ts`](../../packages/host/src/local-connection-supervisor.test.ts)
+的先失败负例与回归，不被用作 attempt 021 实际超时的已证实解释。
 
 Desktop `app.whenReady` 的新 Main 启动是可信用户启动意图：supervisor 完成普通
 `initialize()` 后，只有 safe snapshot 为 `stopped` 才执行一次显式 `repair()`。

@@ -20,16 +20,69 @@ window retains background tasks. An unspecified Web gateway port is dynamic.
 Use the local address shown in diagnostics or the bundled CLI's `host status`
 output to reach the same owner's Web workbench.
 
-The next local installer candidate is final7. Assembly and acceptance are
-pending; the paths below are expected outputs, not verified final7 files:
+The current local installer candidate is final8. Both files below exist and
+their SHA-256 values were independently recomputed from the container bytes.
+Installed macOS acceptance passed in attempt 025; Windows native use is
+unverified:
 
 | Target | Installer path from the source checkout | Current acceptance |
 | --- | --- | --- |
-| macOS Apple Silicon | `_tmp_release/current-workbench-recovery-mac-final7/artifacts/Outlive-Agent-0.1.0-alpha.0-mac-arm64.dmg` | Build and acceptance pending. |
-| Windows x64 | `_tmp_release/current-workbench-recovery-win-final7/artifacts/Outlive-Agent-0.1.0-alpha.0-win-x64.exe` | Build pending; native Windows installation and use remain unverified. |
+| macOS Apple Silicon | `_tmp_release/current-workbench-recovery-mac-final8/artifacts/Outlive-Agent-0.1.0-alpha.0-mac-arm64.dmg` | Built unsigned; controlled installed Desktop acceptance passed. |
+| Windows x64 | `_tmp_release/current-workbench-recovery-win-final8/artifacts/Outlive-Agent-0.1.0-alpha.0-win-x64.exe` | Cross-built unsigned; native installation and use unverified. |
 
 The builder also generates a ZIP and `SHA256SUMS` for each target. These are
 local artifacts, not a published download service.
+
+Final8 macOS DMG SHA-256:
+`7538966e67dca660b4661c68f35ef4b22e9f735932bdda351cd626a4932d04e5`;
+product build ID:
+`871f507b0b4cc01f59950715d542b2a40294cf38022a9aed49e2bcbf5832ed8f`.
+Final8 Windows EXE SHA-256:
+`eac0970abf8872ce2cffd921c7d781d64f5fca769d766039efbcd7c288269e53`;
+product build ID:
+`d3bf4978eaa4708cfca015e56bb7994fddd64d11d88d59893736633750599fd3`.
+Both manifests identify bundled Node 24.21.0, no external Node/pnpm requirement
+and `signature_status:not-requested`.
+
+Final8 includes the fresh-application start exception and the trusted
+project-file-context path. Project Runs select at most five project-relative
+UTF-8 files (64 KiB each, 128 KiB combined). Clients submit paths and hashes;
+Host admission rechecks read policy/version and Core stores redacted scoped
+Artifacts with untrusted provenance. A stale selection is rejected before Run
+creation. Explicit recovery uses the admitted Artifact rather than rereading
+the workspace. [Source-level verification](../validation/current-workbench-recovery/host-connection-verification.md#trusted-project-file-context)
+has passed. [Built Web attempt 024](../validation/current-workbench-recovery/attempt024-final8-web/report.json)
+passed all nine journeys with 130 PNGs including supplementary context views,
+completed cleanup and [4,314 independent external-state checks](../validation/current-workbench-recovery/attempt024-final8-web/independent-verification.json).
+Its external CLI proof also verifies `run start --context`, Artifact bytes and
+Ledger provenance. [Installed Desktop attempt 025](../validation/current-workbench-recovery/attempt025-final8-installed-desktop/report.json)
+passed 11 assertions and 130 PNGs including supplementary views, with
+[4,429 independent checks](../validation/current-workbench-recovery/attempt025-final8-installed-desktop/independent-verification.json)
+and completed process/profile cleanup. Actual SIGKILL recovery, explicit
+stop/Repair and a fresh Main launch retained six completed Run timelines and
+issued no extra task/model/file command. These are controlled maintainer-Agent
+results with a loopback provider, not clean-machine or independent-user results.
+The [bundled product smoke](../validation/current-workbench-recovery/final8-product-smoke/report.json)
+also passed 13 assertions, two loopback provider requests and completed cleanup.
+
+### Retained final7 artifacts and observations
+
+Final7 macOS DMG remains at
+`_tmp_release/current-workbench-recovery-mac-final7/artifacts/Outlive-Agent-0.1.0-alpha.0-mac-arm64.dmg`
+with SHA-256 `2681cbac033ea7eb083b851aa7b85d78977a6b77426a70ae6d60b2fcaed4b1bb`
+and build ID `6feb63e9dcaae87c59f4cece4afc3d4a769379ee439167e15e7df6a48d9b7c7e`.
+Its Windows EXE remains at
+`_tmp_release/current-workbench-recovery-win-final7/artifacts/Outlive-Agent-0.1.0-alpha.0-win-x64.exe`
+with SHA-256 `07054fd3b5dbf0e8e6ee236d5550923f4122f6dad0582e098da9aef200f89dde`
+and build ID `d95557434a86ce688f150d9ab7c42bdda68c60a1940f20d170cdb417c5bf8ad1`.
+[Installed Desktop attempt 021](../validation/current-workbench-recovery/attempt021-final-installed-desktop/report.json)
+failed at automatic owner recovery after SIGKILL, after all nine GUI workflows
+and 130 workflow PNGs. Cleanup completed. Its cause remains unknown.
+[Attempt 023](../validation/current-workbench-recovery/attempt023-final7-native-lifecycle-diagnostic/report.json)
+observed actual crash recovery, stop/Repair and fresh Main launch, but remains
+failed because download CDP cleanup ran after browser close. Its owned processes
+exited and profile was removed. Neither observation certifies final8 bytes or
+establishes the cause of attempt 021.
 
 ### Retained final6 artifacts and observations
 

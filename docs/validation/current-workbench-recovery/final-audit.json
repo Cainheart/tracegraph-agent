@@ -1,0 +1,31 @@
+{
+  "status": "passed",
+  "recorded_at": "2026-10-03T15:25:30.357Z",
+  "checks": 83,
+  "file_hash_references_verified": 25,
+  "local_links_verified": 250,
+  "missing_links": [],
+  "scope": "Independent read-only final receipts, archives, counts, identity and local-link audit. No app/service/build/source operation, private credential access or Dock inference.",
+  "findings": [
+    {
+      "file": "README.md",
+      "finding": "Unselected/A preview text contradicted delivered B Current.",
+      "disposition": "Corrected by parent authorization to B Current with current evidence/brand links."
+    },
+    {
+      "file": "docs/validation/installable-product/README.md",
+      "finding": "Historical Mac-v2 is still described as current/final and A selection pending; linked by older roadmap DIST row.",
+      "disposition": "Corrected by parent authorization: a historical Mac-v2 stage banner scopes old current/final/A-pending descriptions and links final8/current release; all old SHA/metrics/receipts remain unchanged."
+    }
+  ],
+  "retained_boundaries": [
+    "Dock display is unobserved through enabled CUA surfaces",
+    "real OS sleep/wake is not tested",
+    "native Windows installation/UI/PTY/icons",
+    "clean macOS and Windows installation and upgrade",
+    "signing/notarization",
+    "independent non-maintainer acceptance",
+    "paid-provider quality, account image capabilities and cost"
+  ],
+  "document_corrections_authorized_by_parent": true
+}

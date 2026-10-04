@@ -12,7 +12,7 @@ export function ProjectFileContextPicker({ client, projectId, selected, onChange
 }) {
   const { t } = useI18n(); const dialog = useRef<HTMLElement>(null); const generation = useRef(0);
   const [directory, setDirectory] = useState(""); const [listing, setListing] = useState<ProjectFileList | null>(null); const [busy, setBusy] = useState(false); const [error, setError] = useState<string | null>(null);
-  const available = online && !readOnly && capabilityAvailable(capabilities, "files.list") && capabilityAvailable(capabilities, "files.read");
+  const available = online && !readOnly && capabilityAvailable(capabilities, "files.context") && capabilityAvailable(capabilities, "files.list") && capabilityAvailable(capabilities, "files.read");
   const list = async (path: string) => {
     if (!available || !client.listProjectFiles) return;
     const token = ++generation.current; setBusy(true); setError(null);

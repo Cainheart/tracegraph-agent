@@ -9,11 +9,35 @@ content-derived build identity are not an OS vulnerability audit. The older
 archive contains built JavaScript and renderer assets, pinned manifests and
 lockfile, instructions, SHA-256 checksums and a CycloneDX dependency inventory.
 
-The next final7 local installer candidate has expected output paths
-`_tmp_release/current-workbench-recovery-mac-final7/artifacts/Outlive-Agent-0.1.0-alpha.0-mac-arm64.dmg`
+The current final8 local installer candidate has verified existing output files
+`_tmp_release/current-workbench-recovery-mac-final8/artifacts/Outlive-Agent-0.1.0-alpha.0-mac-arm64.dmg`
 and
-`_tmp_release/current-workbench-recovery-win-final7/artifacts/Outlive-Agent-0.1.0-alpha.0-win-x64.exe`.
-Its build and acceptance are pending; these paths are not yet verified files.
+`_tmp_release/current-workbench-recovery-win-final8/artifacts/Outlive-Agent-0.1.0-alpha.0-win-x64.exe`.
+The macOS DMG hash is `7538966e67dca660b4661c68f35ef4b22e9f735932bdda351cd626a4932d04e5`,
+with build ID `871f507b0b4cc01f59950715d542b2a40294cf38022a9aed49e2bcbf5832ed8f`.
+The Windows EXE hash is `eac0970abf8872ce2cffd921c7d781d64f5fca769d766039efbcd7c288269e53`,
+with build ID `d3bf4978eaa4708cfca015e56bb7994fddd64d11d88d59893736633750599fd3`.
+Both bundle Node 24.21.0, require no external Node/pnpm and remain unsigned.
+[Built Web attempt 024](../validation/current-workbench-recovery/attempt024-final8-web/report.json)
+and its external CLI/context oracles passed;
+[installed Desktop attempt 025](../validation/current-workbench-recovery/attempt025-final8-installed-desktop/report.json)
+passed 11 assertions, 130 PNGs and
+[4,429 independent checks](../validation/current-workbench-recovery/attempt025-final8-installed-desktop/independent-verification.json),
+including actual owner SIGKILL recovery, explicit stop/Repair and fresh Main
+launch with six completed Run timelines unchanged and no extra execution.
+Isolated process/profile cleanup completed. This is controlled maintainer-Agent
+acceptance on macOS, not a clean-machine, independent-user or OS sleep/wake
+acceptance. The earlier final7
+[installed macOS attempt 021](../validation/current-workbench-recovery/attempt021-final-installed-desktop/report.json)
+failed at automatic owner recovery after SIGKILL; cleanup completed. The
+full GUI business flows passed before this failure, whose cause remains unknown.
+[Attempt 023](../validation/current-workbench-recovery/attempt023-final7-native-lifecycle-diagnostic/report.json)
+observed actual crash recovery/stop/Repair/fresh Main but retained a failed
+download-CDP cleanup result; owned processes exited and profile was removed.
+Neither receipt proves final8 installation acceptance. Final7 hashes and build
+identities remain in the [retained release record](README.md#retained-final7-artifacts-and-observations).
+Native Windows installation/use and formal signing are not
+proved by container hashes or macOS cross-builds.
 Retained final6 installers are
 `_tmp_release/current-workbench-recovery-mac-final6/artifacts/Outlive-Agent-0.1.0-alpha.0-mac-arm64.dmg`
 and
@@ -92,6 +116,21 @@ Previous archive/installer observations below remain historical evidence.
   Human file saves use exact content/base hash, policy, approvals and a workspace
   lease; unknown writes require reconciliation. In-place text writes are not a
   filesystem-wide transaction. See the [file/editor limits](../validation/current-workbench-recovery/README.md).
+- Patch, Plan and human file-save approvals have explicit public decision paths.
+  A general non-Patch tool policy `ask` still requires a trusted Runtime
+  `approvalAnswerer`; without one it fails closed as `approval_unavailable`.
+  The current approval UI cannot approve every tool-policy `ask`.
+- Project-file context is limited to five existing project-relative UTF-8 files,
+  64 KiB per file and 128 KiB total. Binary/NUL, excluded private/dependency paths,
+  symlinks, multiple hard links and non-allow read policies are rejected. Client
+  requests carry paths and hashes, never trusted content. Admission freezes the
+  version; a changed selection creates no Run. Core verifies the trusted bytes
+  and persists redacted Artifacts with untrusted provenance. Original source
+  hashes and redacted Artifact hashes are distinct. Explicit recovery reads
+  saved Artifacts, and missing/corrupt ones fail closed. Plain chat has no project
+  selection. Source tests and final8 built Web/external CLI context acceptance have passed;
+  final8 installed Desktop acceptance passed. Final7 crash recovery failed in attempt 021, and earlier final6
+  receipts cannot prove this new behavior.
 - Native restricted process enforcement remains macOS Seatbelt only. Linux and
   Windows restricted execution reports unavailable and fails closed. An explicit
   full-access preset has its existing broader authority. This preview does not

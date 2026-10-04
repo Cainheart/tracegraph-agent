@@ -114,6 +114,8 @@ export class LocalHostConnectionSupervisor {
         try{await current.probe();if(Date.now()-this.#stableSince>=60_000){this.#attempts=0;this.#nextRecovery=0;}this.#set("connected");return;}catch(error){if(!transportError(error))throw error;}
       }
       if(current?.client.replayActive){this.#set("offline","host_replay_stale","The Host owner changed during replay. Exit replay to reconnect; replay does not gain live write authority.");return;}
+      const firstBinding=this.#snapshot.generation===0;
+      let chargedRecovery=false;
       this.#set("reconnecting","host_reconnecting","Reconnecting to the current local Host owner");
       let next:ConnectedLocalHost;
       try { next=await (this.#options.connect??connectLocalHost)(this.#options); }
@@ -122,12 +124,22 @@ export class LocalHostConnectionSupervisor {
         if(Date.now()<this.#nextRecovery)return;
         if(this.#attempts>=(this.#options.recoveryAttempts??3)){this.#set("offline","host_recovery_exhausted","Automatic Host recovery did not succeed. Repair the connection to try again.");return;}
         this.#attempts++;this.#nextRecovery=Date.now()+Math.min(5_000,1_000*2**(this.#attempts-1));
+        chargedRecovery=true;
         this.#set("recovering","host_recovering","Recovering the local Host. Saved Runs remain paused until explicitly resumed.");
         next=await (this.#options.ensure??ensureLocalHost)({...this.#options,...(this.#lastPort===undefined?{}:{httpPort:this.#lastPort}),recoveryMode:true});
       }
       const expected=this.#buildId??current?.status.product_build_id;
       if(expected!==undefined&&next.status.product_build_id!==expected){await next.close();throw new LocalHostUpgradeRequiredError();}
       await this.#bind(next);
+      // Refund only this successful ensure after all identity/build and rebind checks.
+      // A verified unchanged process or its nonce rotation is not another crash.
+      // Earlier failed startups and different-process recoveries remain charged.
+      const ready=this.#connection;
+      if(chargedRecovery&&this.#snapshot.state==="connected"
+        &&ready?.status.profile_id===next.status.profile_id&&ready.status.boot_nonce===next.status.boot_nonce&&ready.status.pid===next.status.pid
+        &&(firstBinding||current?.status.pid===next.status.pid)){
+        this.#attempts=Math.max(0,this.#attempts-1);
+      }
     }catch(error){this.#failure(error);}
   }
   async #bind(next:ConnectedLocalHost):Promise<void> {

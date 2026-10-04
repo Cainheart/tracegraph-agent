@@ -1,0 +1,37 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+ ❯ src/local-connection-supervisor.test.ts (11 tests | 1 failed) 64ms
+   ❯ local owner connection authority (11)
+     × does not spend the crash budget on successful first startup or authenticated planned socket gaps 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/local-connection-supervisor.test.ts > local owner connection authority > does not spend the crash budget on successful first startup or authenticated planned socket gaps
+AssertionError: planned replacement 0 must refund only its own successful ensure: expected { state: 'offline', …(5) } to match object { state: 'connected', generation: 3 }
+(4 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "generation": 3,
+-   "state": "connected",
++   "generation": 2,
++   "state": "offline",
+  }
+
+ ❯ src/local-connection-supervisor.test.ts:74:183
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 10 passed (11)
+   Start at  22:56:03
+   Duration  891ms (transform 69%, import 23%, tests 8%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/local-connection-supervisor.test.ts '--maxWorkers=1'

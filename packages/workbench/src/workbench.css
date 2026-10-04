@@ -616,6 +616,15 @@ html[data-outlive-density=expanded] .app.outlive-workbench .public-progress-item
 .outlive-workbench .project-file-editor > header { justify-content:space-between; }
 .outlive-workbench .project-file-editor > header strong { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .outlive-workbench .code-editor { flex:1; min-height:300px; overflow:auto; }
+.outlive-workbench.theme-dark .code-editor {
+  --project-syntax-404740:#c4c4c4; --project-syntax-708:#c792ea;
+  --project-syntax-219:#9dbdfb; --project-syntax-164:#8bd49c;
+  --project-syntax-a11:#f2a79e; --project-syntax-e40:#ffbd80;
+  --project-syntax-00f:#9fc5ff; --project-syntax-30a:#b6b4ff;
+  --project-syntax-085:#80d6c0; --project-syntax-167:#79ced4;
+  --project-syntax-256:#9bc9d0; --project-syntax-00c:#c5b8ff;
+  --project-syntax-940:#b4b59d; --project-syntax-f00:#ff8e8e;
+}
 .outlive-workbench .file-version { font-size:10px; padding:6px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); }
 .outlive-workbench .project-files > p,.outlive-workbench .file-save-result,.outlive-workbench .project-files > div:last-child:not(.project-file-editor) { grid-column:1/-1; }
 .outlive-workbench .file-save-result { padding:12px; border-top:1px solid var(--line); font-size:12px; overflow-wrap:anywhere; }

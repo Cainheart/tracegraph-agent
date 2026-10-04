@@ -1,0 +1,62 @@
+Window: "Outlive Agent", App: Outlive Agent.
+0 标准窗口 Outlive Agent, Secondary Actions: Raise
+	1 container Outlive Agent
+		2 container
+			3 HTML 内容 Outlive Agent, URL: file:///Users/cain/Applications/Outlive%20Agent.app/Contents/Resources/app/apps/desktop/dist/renderer/index.html
+				4 container 设置
+					5 container
+						6 按钮 返回工作台
+						7 标题 设置, Value: 2
+							8 文本 设置
+						9 搜索文本字段 (settable) 搜索设置
+						10 container 设置分类
+							11 按钮 常规
+							12 按钮 外观
+							13 按钮 模型
+							14 按钮 权限
+							15 按钮 记忆与隐私
+							16 按钮 开发者
+							17 按钮 Skills 与扩展
+							18 按钮 MCP 与 LSP
+							19 按钮 用量与诊断
+							20 按钮 关于
+						21 文本 Outlive Agent
+					22 container
+						23 标题 权限, Value: 1
+							24 文本 权限
+						25 按钮 刷新
+						26 标题 权限, Value: 2
+							27 文本 权限
+						28 container
+							29 text 权限预设 Host 根据一个受限预设统一解析沙箱与审批策略。 当前权限 工作区写入 工作区沙箱  ·  写入前询问
+							30 container 权限预设
+								31 切换按钮 只读 只读沙箱 · 不弹出审批, Value: 0
+									32 文本 只读
+									33 文本 只读沙箱
+									34 文本  · 
+									35 文本 不弹出审批
+								36 切换按钮 工作区写入 当前 工作区沙箱 · 写入前询问, Value: 1
+									37 文本 工作区写入
+									38 文本 当前
+									39 文本 工作区沙箱
+									40 文本  · 
+									41 文本 写入前询问
+							42 定义列表
+								43 container 来源
+									44 文本 来源
+								45 文本 默认
+								46 container 权限上限
+									47 文本 权限上限
+								48 文本 工作区写入
+							49 text 浏览器只提交预设键；规则、路径、沙箱和审批均由 Host 掌控。 变更仅对新 Run 生效；进行中和历史 Run 保留各自已记录的策略。
+	50 关闭按钮
+	51 全屏幕按钮 Help: 此按钮也可以执行缩放窗口的操作, Secondary Actions: 缩放窗口
+	52 最小化按钮
+53 menu bar
+	54 Outlive Agent
+	55 File
+	56 Edit
+	57 View
+	58 Window
+
+The focused UI element is 14 按钮 权限

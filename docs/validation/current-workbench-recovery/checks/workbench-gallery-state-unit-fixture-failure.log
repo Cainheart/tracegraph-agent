@@ -1,0 +1,39 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench
+
+ ❯ src/components/media.test.tsx (8 tests | 1 failed) 66ms
+   ❯ real media product surfaces (8)
+     × passes the real disconnected reason to both historical and current answer galleries 7ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/media.test.tsx > real media product surfaces > passes the real disconnected reason to both historical and current answer galleries
+TypeError: endRef.current?.scrollIntoView is not a function
+ ❯ src/components/WorkbenchStates.tsx:252:47
+    250|         : language === "zh-CN" ? "Agent 正在处理任务。请通过持久化轨迹查看最新的规范进度。" : "…
+    251|   useEffect(() => {
+    252|     if (followingRef.current) endRef.current?.scrollIntoView({ block: …
+       |                                               ^
+    253|   }, [conversation.length, events.length, outcome, publicActivities?.l…
+    254|   return (
+ ❯ Object.react_stack_bottom_frame ../../node_modules/.pnpm/react-dom@19.3.0_react@19.3.0/node_modules/react-dom/cjs/react-dom-client.development.js:28656:20
+ ❯ runWithFiberInDEV ../../node_modules/.pnpm/react-dom@19.3.0_react@19.3.0/node_modules/react-dom/cjs/react-dom-client.development.js:1048:13
+ ❯ commitHookEffectListMount ../../node_modules/.pnpm/react-dom@19.3.0_react@19.3.0/node_modules/react-dom/cjs/react-dom-client.development.js:13748:29
+ ❯ commitHookPassiveMountEffects ../../node_modules/.pnpm/react-dom@19.3.0_react@19.3.0/node_modules/react-dom/cjs/react-dom-client.development.js:13835:11
+ ❯ commitPassiveMountOnFiber ../../node_modules/.pnpm/react-dom@19.3.0_react@19.3.0/node_modules/react-dom/cjs/react-dom-client.development.js:16906:13
+ ❯ recursivelyTraversePassiveMountEffects ../../node_modules/.pnpm/react-dom@19.3.0_react@19.3.0/node_modules/react-dom/cjs/react-dom-client.development.js:16851:13
+ ❯ commitPassiveMountOnFiber ../../node_modules/.pnpm/react-dom@19.3.0_react@19.3.0/node_modules/react-dom/cjs/react-dom-client.development.js:17183:11
+ ❯ recursivelyTraversePassiveMountEffects ../../node_modules/.pnpm/react-dom@19.3.0_react@19.3.0/node_modules/react-dom/cjs/react-dom-client.development.js:16851:13
+ ❯ commitPassiveMountOnFiber ../../node_modules/.pnpm/react-dom@19.3.0_react@19.3.0/node_modules/react-dom/cjs/react-dom-client.development.js:16898:11
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 31 passed (32)
+   Start at  22:50:41
+   Duration  1.02s (transform 38%, import 30%, environment 17%, tests 15%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/components/media.test.tsx src/current-workbench.test.tsx

@@ -2,7 +2,7 @@
 
 # Generated reference catalogs
 
-Source set: `sha256:939a1a9ff274d829cb70698a24345ae93e1c64ea07e33ad4372d96a292d210d1`. Generator: `sha256:164175c682e6830959c4ce9271481fdfaadbc058080e1e51ff84d852f801c1e3`.
+Source set: `sha256:45056137898fea881147331f768f78e7d37e15ddcc5415ceef6eccc4fdcdf8ef`. Generator: `sha256:164175c682e6830959c4ce9271481fdfaadbc058080e1e51ff84d852f801c1e3`.
 
 See [input manifest](catalog-manifest.json) for exact source hashes.
 
@@ -10,7 +10,7 @@ All catalogs are deterministic source projections. Regenerate with `node scripts
 
 - [Events](events.md): 108 enum members.
 - [Built-in tools](tools.md): 20 declared names.
-- [Modules](modules.md): 22 packages and 555 source files.
+- [Modules](modules.md): 22 packages and 558 source files.
 - [Profiles](profiles.md): 1 versioned profile source files.
 
 [Package/module graph](module-graph.md) and [current baseline](current-baseline.md) have their own existing generators and check commands. Generated catalogs do not certify translation review, external quality, or production deployment.

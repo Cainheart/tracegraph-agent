@@ -123,9 +123,9 @@ Open Outlive Agent and the application discovers or starts its bundled runtime. 
 
 Web, Desktop and CLI share `~/.outlive/profiles/default`, including configuration, projects, sessions, Memory and tasks. The installed `outlive` CLI starts or discovers this owner for normal commands. Lifecycle commands include `host status`, `host restart` and `host stop`; they are diagnostic operations, not prerequisites for first use. Legacy data migration is explicit in About → Installation diagnostics or the CLI, with conflict preview and backup before committing.
 
-Optional image settings support a dedicated image endpoint, a Responses image tool, or compatible chat-native PNG output. Actual PNG bytes and locally rendered SVG charts are scoped Run Artifacts, verified for preview/download in Web/Desktop and export through CLI. Text, code, or an image URL alone never counts as generation success. See [media boundaries](docs/modules/14-附件与多模态.md) and [current installed-product evidence](docs/validation/installable-product/README.md).
+Optional image settings support a dedicated image endpoint, a Responses image tool, or compatible chat-native PNG output. Actual PNG bytes and locally rendered SVG charts are scoped Run Artifacts, verified for preview/download in Web/Desktop and export through CLI. Text, code, or an image URL alone never counts as generation success. See [media boundaries](docs/modules/14-附件与多模态.md) and [current workbench evidence](docs/validation/current-workbench-recovery/README.md).
 
-[Four original natural-color logo candidates](docs/brand/logo-candidates.png) are available; A is provisional until the user selects a final mark.
+The user selected **B Current** as the production mark. The workbench and installers share the same vector source; see the [brand assets and actual display boundaries](docs/brand/README.md).
 
 ## Source development start
 

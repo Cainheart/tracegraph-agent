@@ -2,7 +2,15 @@
 
 本轮任务：HOST-087、PAR-088、CLI-089、SET-090、DEV-091、RUN-092、UX-086 二次验收。三端调用同一 Host 控制器；每项能力由 Host 返回状态和原因。下表描述操作入口，最终验证结果和冻结归档摘要见 [验收报告](README.md)。方法存在、HTTP 成功或模型配置保存成功都不算业务完成。
 
-2026-10-03 当前连接/会话工作台增量以源码与[本轮窄验证](../current-workbench-recovery/host-connection-verification.md)为准；下面同步当前具名接口，不改写上一次归档或 GUI 验收事实。本轮新安装包完整 GUI 恢复、会话选项、文件/反馈及授权旅程仍待最终 QA。
+2026-10-03 当前连接/会话工作台增量以源码与[本轮窄验证](../current-workbench-recovery/host-connection-verification.md)为准；下面同步当前具名接口，不改写上一次归档或 GUI 验收事实。final8 [Web attempt 024](../current-workbench-recovery/attempt024-final8-web/report.json)
+及外部 CLI/context 已通过；
+[安装后 Desktop attempt 025](../current-workbench-recovery/attempt025-final8-installed-desktop/report.json)
+也通过真实 SIGKILL 恢复、stop/Repair、fresh Main 和完整业务流程，130 PNG、11 断言、
+[独立 4429 检查](../current-workbench-recovery/attempt025-final8-installed-desktop/independent-verification.json)、清理完成。历史 final7 的
+attempt 021 恢复超时原因未知，attempt 023 实际生命周期子步骤通过但 CDP cleanup
+失败，不能把这些子步骤或上次归档视为当前全旅程通过。
+
+当前 Composer 左侧为加号、权限、Plan，右侧为模型/已选非默认推理强度、发送或停止。新增项目文件上下文以版本引用传递；源级 [UI 单测](../current-workbench-recovery/checks/workbench-file-context-unit-final.log)及[专用 capability 负例](../current-workbench-recovery/checks/workbench-file-context-capability-unit-final.log)已记录。[最新源码 Web024](../current-workbench-recovery/attempt024-final8-web/report.json)已通过 130 张截图 / 9 条断言及[独立 4314 检查](../current-workbench-recovery/attempt024-final8-web/independent-verification.json)，包括版本冲突、Provider/Artifact/Manifest 与 CLI；final8 安装后 Desktop025 也通过相应旅程。此前 v5/v6/v7 记录继续只证明对应归档。
 
 | 能力 | Web / Desktop | CLI | 权威与边界 |
 | --- | --- | --- | --- |
@@ -10,13 +18,14 @@
 | 共享设置 | 头像菜单或快捷键进入，十类分类和搜索 | `config get/set` | revision/CAS；字段展示来源、作用范围和生效时机 |
 | 模型与凭据 | 模型分类：保存、替换、清除、独立测试 | `model get/configure/test/clear-key` | Key 只写；CLI 通过 stdin；测试无项目/对话内容；Run 绑定原模型与凭据 |
 | 保存的模型连接 | `getModelConnections/saveModelConnection/removeModelConnection/testModelConnection`；设置与会话选择 | `models list/save/test/remove` | revision/CAS 与 command ID；保存/测试/实际 Run 分别验收；新 Run 冻结连接/型号/凭据 lease |
-| Session 下一 Run 选项 | `getSessionRunOptions/updateSessionRunOptions`；模型、强度、plan/execute、bounded preset | `sessions options-get/options-set`；chat/run start 的 connection/model/preset/mode/effort | Session revision/CAS，Host 校验并冻结于 admission；更改不热切换活动 Run |
+| Session 下一 Run 选项 | `getSessionRunOptions/updateSessionRunOptions`；左侧权限/Plan，右侧模型/强度 | `sessions options-get/options-set`；chat/run start 的 connection/model/preset/mode/effort | Session revision/CAS，Host 校验并冻结于 admission；更改不热切换活动 Run |
 | 本地 Full 授权资格 | `getPermissionGrant/setPermissionGrant`；明确确认 | `config permission grant-status/grant/revoke --confirm-full-access` | 本地默认/用户授权来源才可提升；管理员 ceiling 只读；活跃工作保留 pending，空闲安全重启后生效 |
 | 权限与工作区 | 权限分类、项目选择与审批 | `config permission get/set`、`projects` | ceiling 和项目规则由 Host 执行；实际沙箱状态可见 |
 | 会话与任务 | 新对话/任务、切换、继续、归档/恢复、后台列表 | `chat start`、`run start/get/input/cancel`、`sessions`、`resources` | 每会话串行；独立工作区并行；同工作区写操作 FIFO |
 | 实时公开进度 | 一句公开说明和一条实际活动；内联展开和命令输出 | `run events/activity/model --jsonl` | 三种独立游标；私有推理过滤；停止订阅不取消任务 |
 | 审批、Todo、Artifact | 待审批/计划控件、Todo、结果/制品入口 | `approval`、`run approve-plan`、`todo`、`artifact get` | 精确 locator 和 command ID；结果来自对应事实/回执 |
-| 附件与文件上下文 | 附件输入；Desktop 原生范围化文件操作 | `attachments upload/content` | 项目范围、真实 media/模型能力、内容 hash 校验 |
+| 附件 | 加号选择/粘贴/拖入 PNG、JPEG、PDF；图片内联显式选择 | `attachments upload/content` | scope 与 hash；图片模型需显式声明，文本测试不证明图片能力；当前 30 MiB/份、8 份 |
+| 项目文件上下文 | 项目 Composer 加号真实目录选择、路径/SHA chip 与移除；需 `files.context` + `files.read` + `files.list` | `run start --context <project-relative-file>` 可重复；CLI 先读取 SHA 再提交 `file_contexts` | 五份 UTF-8、64 KiB/份、128 KiB 总量；Host 用同轮策略重读并检查版本，私有可信快照进 Core；脱敏 `project_file_context` Artifact + `artifact.stored` + 不可信 Manifest；原文件 SHA 与制品 SHA 分开，恢复不重读，普通 chat 不接受 |
 | 项目文件目录/编辑 | `listProjectFiles/readProjectFile/saveProjectFile/reconcileProjectFileSave`；三端固定 typed API | `files list/read/save/reconcile` | 相对路径/有界文本、symlink/containment、expected SHA/CAS、policy 与共享写 lease；approval/unknown 必须显式处理 |
 | 本地回答反馈 | `getAnswerFeedback/setAnswerFeedback`；真实 answer Event 的 like/dislike/clear | `feedback get/set` | Run/answer 关系与 command ID；本地 Ledger 事实，不发给 provider |
 | 回放与回滚 | 历史回放只读；审阅中显式回滚 | `replay`、`rollback` | 回滚仍受 Host policy、工作区、WAL 与当前文件校验；恢复不自动执行 |

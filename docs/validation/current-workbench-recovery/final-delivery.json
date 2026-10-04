@@ -1,0 +1,236 @@
+{
+  "schema_version": "outlive.delivery-evidence.v1",
+  "recorded_at": "2026-10-03T15:23:03.937016+00:00",
+  "scope_status": "implemented-and-macos-local-acceptance-passed",
+  "formal_release_complete": false,
+  "artifacts": [
+    {
+      "path": "_tmp_release/current-workbench-recovery-mac-final8/artifacts/Outlive-Agent-0.1.0-alpha.0-mac-arm64.dmg",
+      "sha256": "7538966e67dca660b4661c68f35ef4b22e9f735932bdda351cd626a4932d04e5",
+      "platform": "macos-arm64",
+      "size": 237323550,
+      "product_build_id": "871f507b0b4cc01f59950715d542b2a40294cf38022a9aed49e2bcbf5832ed8f",
+      "signed": false,
+      "native_acceptance": true
+    },
+    {
+      "path": "_tmp_release/current-workbench-recovery-win-final8/artifacts/Outlive-Agent-0.1.0-alpha.0-win-x64.exe",
+      "sha256": "eac0970abf8872ce2cffd921c7d781d64f5fca769d766039efbcd7c288269e53",
+      "platform": "windows-x64",
+      "size": 206513331,
+      "product_build_id": "d3bf4978eaa4708cfca015e56bb7994fddd64d11d88d59893736633750599fd3",
+      "signed": false,
+      "native_acceptance": false
+    }
+  ],
+  "installed_application": {
+    "path": "/Users/cain/Applications/Outlive Agent.app",
+    "source": "mounted-final8-DMG",
+    "resource_files_verified": 11523,
+    "profile_changed_by_copy": false,
+    "backup_path": "/Users/cain/Applications/Outlive Agent.previous-20261003-230311",
+    "icon_sha256": "bc59efedb9292c9235f75c594dab406daf5dd15bad34c729e5e4a36a765de8d2",
+    "receipt": {
+      "path": "docs/validation/current-workbench-recovery/native-install.json",
+      "sha256": "7a8b16b58f876d0455e7cb441462e0cb543c1331568571923d592dc2e9b05dda"
+    },
+    "default_native_observation": {
+      "path": "docs/validation/current-workbench-recovery/native-default/report.json",
+      "sha256": "c40b91b13cf6a6d5fadeedd7f9cb60dd69fb63d125a5645590a43e92d3984c13"
+    }
+  },
+  "source_checks": {
+    "workspace_builds": 22,
+    "workspace_types": 22,
+    "unit_tests": 1571,
+    "unit_suites": 21,
+    "logs": {
+      "build": {
+        "path": "docs/validation/current-workbench-recovery/checks/build-final8.log",
+        "sha256": "ff7736d9aba0c235d35e652ba33e0bb031c22b5445a9a938fea533868772ba87"
+      },
+      "types": {
+        "path": "docs/validation/current-workbench-recovery/checks/types-final8.log",
+        "sha256": "35404d1322f60dcf153adb86713b30a9b9ce0fc338897ffd7d35fc1d6e059e38"
+      },
+      "evaluation_types": {
+        "path": "docs/validation/current-workbench-recovery/checks/eval-types-final8.log",
+        "sha256": "2dcd2ca2df34e631d13b565dab2eb1f2a5f0580f85f505d9c8a86df79f8def6f"
+      },
+      "unit": {
+        "path": "docs/validation/current-workbench-recovery/checks/unit-final8.log",
+        "sha256": "1cbba64426a37712dccfe2a821b1297f8b9cdbc301f6424cd3240be4c55db529"
+      },
+      "boundary": {
+        "path": "docs/validation/current-workbench-recovery/checks/boundaries-final8.log",
+        "sha256": "a56fda61635fa035ff3b154d0afcb84c9c651c488fa6ed0468dca704beaa91de"
+      },
+      "invariants": {
+        "path": "docs/validation/current-workbench-recovery/checks/invariants-final8.log",
+        "sha256": "341ef3154d4e443debc0814df23d8b3f1e4d33b30320a8f7f235c5830c8c9d23"
+      },
+      "manifests": {
+        "path": "docs/validation/current-workbench-recovery/checks/manifests-final8.log",
+        "sha256": "8cbb069e900719b526a2ca175caaef67cac5a11316ab3dec05ae459e145499cb"
+      },
+      "brand": {
+        "path": "docs/validation/current-workbench-recovery/checks/brand-final8.log",
+        "sha256": "e6533245d6f6b263ece738a7df5405de7888926c6117387de12327b1be8d4623"
+      },
+      "catalog": {
+        "path": "docs/validation/current-workbench-recovery/checks/catalog-final8.log",
+        "sha256": "19a363ed7027890fe68dddeb84d64ddc77950162b669c72b6d6427389239f076"
+      },
+      "graph": {
+        "path": "docs/validation/current-workbench-recovery/checks/graph-final8.log",
+        "sha256": "349408a067e836e75297dcdcdef3abd7ed564d4067d9467c62bc90694c4609c4"
+      },
+      "baseline": {
+        "path": "docs/validation/current-workbench-recovery/checks/baseline-final8.log",
+        "sha256": "1c64522b3ae511f802b559441993a2caa8298e560b26cd85a7f38751cd2eb2bf"
+      },
+      "roadmap": {
+        "path": "docs/validation/current-workbench-recovery/checks/v2-docs-final8.log",
+        "sha256": "df00e8d7b2543dfce299ea55417a139e5e0c154214fe2fdbf0f778e1cb5140cb"
+      },
+      "translation": {
+        "path": "docs/validation/current-workbench-recovery/checks/i18n-final8-readme-sync.log",
+        "sha256": "cd71655abc07331f4849c979a2adff3c8ae6a1072c684616a3283eea6ea85cab"
+      }
+    },
+    "unchanged_scope_prior_stage_checks": {
+      "engineering_tests": 112,
+      "offline_evaluations": 32,
+      "semantic_replay_snapshots": 5,
+      "stage": "final7",
+      "logs": [
+        {
+          "path": "docs/validation/current-workbench-recovery/checks/engineering-final7.log",
+          "sha256": "56597e796a18193c5df4fe8b88e8acb0d4cfbeaf27932b3aca90320de2c3307e"
+        },
+        {
+          "path": "docs/validation/current-workbench-recovery/checks/evals-final7.log",
+          "sha256": "2e171562a53184b01aeed8d5b465ac431e726099f6a87bb2b3c62b9550f36759"
+        },
+        {
+          "path": "docs/validation/current-workbench-recovery/checks/snapshots-final7.log",
+          "sha256": "cb3b24ca7b67fd7a85de9f013cca51c78feb56ff5739c332e3b598069b592e45"
+        }
+      ]
+    }
+  },
+  "real_ui_acceptance": [
+    {
+      "surface": "built-web",
+      "status": "passed",
+      "matrix_screenshots": 126,
+      "supplementary_screenshots": 4,
+      "journey_assertions": 9,
+      "independent_checks": 4314,
+      "cleanup": {
+        "completed": true,
+        "failures": [],
+        "owner_pids": [
+          45977
+        ],
+        "main_pids": [],
+        "processes_verified_exited": true,
+        "isolated_profile_removed": true
+      },
+      "receipt": {
+        "path": "docs/validation/current-workbench-recovery/attempt024-final8-web/report.json",
+        "sha256": "83fa231af3e9fc3f93969828c3e59ba2c4157d0ccc40b59bcbc436db9f1c4ab6"
+      },
+      "independent_receipt": {
+        "path": "docs/validation/current-workbench-recovery/attempt024-final8-web/independent-verification.json",
+        "sha256": "5352b8c31b62cd9f7288513091970a908022628df904b7b765c4e217a502b637"
+      }
+    },
+    {
+      "surface": "packaged-desktop",
+      "status": "passed",
+      "matrix_screenshots": 126,
+      "supplementary_screenshots": 4,
+      "journey_assertions": 11,
+      "independent_checks": 4429,
+      "cleanup": {
+        "completed": true,
+        "failures": [],
+        "owner_pids": [
+          49366,
+          49657,
+          49684,
+          49704
+        ],
+        "main_pids": [
+          49353,
+          49696
+        ],
+        "processes_verified_exited": true,
+        "isolated_profile_removed": true
+      },
+      "receipt": {
+        "path": "docs/validation/current-workbench-recovery/attempt025-final8-installed-desktop/report.json",
+        "sha256": "4cdc50043bd2ac089351f11af6c77026f4f693e2210b5b9709b92aedeeffb758"
+      },
+      "independent_receipt": {
+        "path": "docs/validation/current-workbench-recovery/attempt025-final8-installed-desktop/independent-verification.json",
+        "sha256": "a77195edc841a9edd6f7e004b528f5af67cb59fbd3bec6a4e6a7692c7e69d43c"
+      }
+    }
+  ],
+  "packaged_staging_smoke": {
+    "assertions": 13,
+    "provider_calls": 2,
+    "external_node_or_pnpm": false,
+    "cleanup": {
+      "owner_stopped": true,
+      "apps_exited": true,
+      "isolated_profile_removed": true,
+      "app_processes": [
+        {
+          "pid": 50570,
+          "exit_code": null,
+          "signal": "SIGKILL"
+        },
+        {
+          "pid": 50620,
+          "exit_code": null,
+          "signal": "SIGKILL"
+        }
+      ]
+    },
+    "receipt": {
+      "path": "docs/validation/current-workbench-recovery/final8-product-smoke/report.json",
+      "sha256": "95f6f1033730be41ddfb16903392bc5845ad278622ae3fff0fd3f9ba3544065b"
+    }
+  },
+  "retained_failures": {
+    "native021": "original failure retained; recovery timeout cause unknown",
+    "native023": "product assertions passed; original receipt remains failed due cleanup CDP timing",
+    "i18n_final8_first_check": "paired paragraph structure drift fixed; original failure retained, new gate passed",
+    "i18n_readme_first_check": "README translation drift after authorized B Current correction retained; English/Chinese README pair synchronized with legacy-unreviewed status unchanged and current gate passed"
+  },
+  "remaining_acceptance": [
+    "Dock display is unobserved through enabled CUA surfaces",
+    "real OS sleep/wake is not tested",
+    "native Windows installation/UI/PTY/icons",
+    "clean macOS and Windows installation and upgrade",
+    "signing/notarization",
+    "independent non-maintainer acceptance",
+    "paid-provider quality, account image capabilities and cost"
+  ],
+  "boundaries": [
+    "generic non-Patch tool ask requires existing trusted approvalAnswerer integration and fails closed when absent",
+    "reconnect never resubmits tasks or unknown writes",
+    "external filesystem writers may race final CAS; saves are not filesystem-wide atomic transactions",
+    "model image declarations and a text connection test do not certify provider image support"
+  ],
+  "independent_audit": {
+    "path": "docs/validation/current-workbench-recovery/final-audit.json",
+    "status": "passed",
+    "checks": 83,
+    "file_hash_references_verified": 25,
+    "local_links_verified": 250
+  }
+}

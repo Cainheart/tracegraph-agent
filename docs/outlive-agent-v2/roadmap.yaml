@@ -847,7 +847,7 @@ tasks:
 
       - 保留首轮 UX-086 历史证据；二次验收移除置顶/顶部设置/常驻页签，头像设置入口、紧凑公开进度与真实结果展开一致
       - 现有全页面、十类设置及 Git/终端/预览/定时任务入口在 Web/Desktop 三种尺寸验证；CLI 有等价真实操作
-      - 新对话、项目和历史会话共用 Composer；加号附件、会话模型/推理、权限与执行/计划模式接入真实控制器，中文输入法和发送快捷键保持有效
+      - 新对话、项目和历史会话共用 Composer；左侧加号附件/项目文件上下文、权限/计划与右侧会话模型/推理、权限与执行/计划模式接入真实控制器，中文输入法和发送快捷键保持有效
       - 默认仅公开当前说明与一行真实活动，点击展开不执行任务；回答复制/本机反馈、逐 Run 写入卡片及文件/变更/终端/预览/成果面板由真实事件与资源驱动
       - 宽度 1200px 起使用右侧面板，较窄使用全屏；关闭、切换、重连保留草稿、附件、未保存文件；明暗与三尺寸通过实际客户端验收
 
@@ -865,6 +865,7 @@ tasks:
       - 安装包携带独立运行时；自动启动/监测/重连/安全恢复，不依赖用户 Node/pnpm，未指定端口时自动选择可用端口
       - 普通 Web/Desktop/CLI 流程自动连接同一 owner；异常恢复不自动重跑历史任务或重复 side effect
       - 共享连接监督器覆盖外部 CLI 重启、崩溃、唤醒和显式停止，单一恢复请求更新实例/凭据/订阅，游标补齐且不重新提交任务
+      - 明确的新应用进程启动可恢复已停止 owner；已有 Main 的激活/重开仍保持停止意图，恢复不提交或重跑任务
       - 连接状态与能力状态分离；已读值保留，失败不能显示安装版本不支持，普通界面提供中文恢复操作
 
   - id: PAR-088
@@ -879,6 +880,7 @@ tasks:
       - Desktop 补齐权限/用量/遥测/Skills/扩展/MCP/LSP/附件/Team/子 Agent/回放/回滚与真实公开流；已有审批/Todo/Artifact/Memory共同验收
       - 回放只读、恢复不自动重跑；模型请求和活动只展示公开受校验文本及真实回执
       - 保存模型连接、会话选项、本机完全访问资格、项目文件 CAS/回执协调与本机反馈经 HTTP/固定 preload/CLI 同义操作，密钥不回传
+      - files.context 能力仅由真实 Host 装配提供；版本化文件选择在受理前校验权限/范围/哈希，Core 只接收可信装配快照并生成真实 scoped Artifact 与不可信 ContextManifest 来源
 
   - id: CLI-089
     phase: P8
@@ -891,7 +893,8 @@ tasks:
       - host/config/doctor/projects/chat/run/sessions/approval/todo/artifact/attachments/replay/rollback/experience/usage/lsp 命令族经同一业务控制器执行，保留既有 Team/Memory/Skills/MCP/扩展命令
       - 实时进度和 JSON/JSONL 对应真实事件/回执；错误码与退出码稳定，停止订阅不取消任务
       - 新增开发资源和定时任务有等价命令；凭据通过 stdin 读取，不出现在命令行参数/输出/诊断中
-      - models、files、feedback 与 sessions options-get/options-set 提供真实操作；模型密钥仅 stdin，未知保存可按命令 ID reconcile，显式 host start 才解除已停止状态
+      - run start --context 经受限文件读取选择版本，最多 5 文件/每文件 64 KiB/合计 128 KiB；提交内容不能拼入 task，普通 chat 拒绝项目文件上下文
+      - models、files、feedback 与 sessions options-get/options-set 提供真实操作；模型密钥仅 stdin，未知保存可按命令 ID reconcile，显式 host start 才解除已停止状态；应用完整退出后的明确新启动可启动后台，已有 Main 内的窗口重开不能解除停止
 
   - id: SET-090
     phase: P8

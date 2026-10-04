@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { EditorState, Compartment } from "@codemirror/state";
 import { EditorView, lineNumbers, keymap } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap } from "@codemirror/commands";
-import { defaultHighlightStyle, syntaxHighlighting } from "@codemirror/language";
+import { defaultHighlightStyle, HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { javascript } from "@codemirror/lang-javascript";
 import { json } from "@codemirror/lang-json";
 import { markdown } from "@codemirror/lang-markdown";
@@ -93,12 +93,17 @@ function isRejectedBeforeAdmission(error: unknown): boolean {
   return ["capability_required", "capability_invalid", "capability_expired"].includes(String(error.body.error));
 }
 
+// Keep CodeMirror's light palette and tag semantics; scoped variables adapt only this editor in dark mode.
+const projectHighlightStyle = HighlightStyle.define(defaultHighlightStyle.specs.map((style) => typeof style.color === "string"
+  ? { ...style, color: `var(--project-syntax-${style.color.slice(1)}, ${style.color})` }
+  : style));
+
 export function CodeEditor({ path, value, onChange, readOnly, onSave }: { path: string; value: string; onChange: (value: string) => void; readOnly: boolean; onSave?: () => void }) {
   const host = useRef<HTMLDivElement>(null); const editor = useRef<EditorView | null>(null); const readonly = useRef(new Compartment()); const callback = useRef(onChange); callback.current = onChange; const saveCallback = useRef(onSave); saveCallback.current = onSave;
   useEffect(() => {
     if (!host.current) return;
     const language = /\.[jt]sx?$/u.test(path) ? javascript({ typescript: /\.tsx?$/u.test(path), jsx: /x$/u.test(path) }) : /\.json$/u.test(path) ? json() : /\.md$/u.test(path) ? markdown() : [];
-    const view = new EditorView({ parent: host.current, state: EditorState.create({ doc: value, extensions: [lineNumbers(), history(), keymap.of([{ key: "Mod-s", run: () => { saveCallback.current?.(); return true; } }, ...defaultKeymap, ...historyKeymap]), syntaxHighlighting(defaultHighlightStyle), language, readonly.current.of([EditorState.readOnly.of(readOnly), EditorView.editable.of(!readOnly)]), EditorView.updateListener.of((update) => { if (update.docChanged) callback.current(update.state.doc.toString()); }), EditorView.theme({ "&": { height: "100%", fontSize: "13px", backgroundColor: "var(--panel)", color: "var(--text)" }, ".cm-scroller": { overflow: "auto", fontFamily: "ui-monospace, monospace" }, ".cm-gutters": { backgroundColor: "var(--panel)", color: "var(--muted)", border: "none" }, ".cm-content": { minHeight: "300px" } })] }) }); editor.current = view;
+    const view = new EditorView({ parent: host.current, state: EditorState.create({ doc: value, extensions: [lineNumbers(), history(), keymap.of([{ key: "Mod-s", run: () => { saveCallback.current?.(); return true; } }, ...defaultKeymap, ...historyKeymap]), syntaxHighlighting(projectHighlightStyle), language, readonly.current.of([EditorState.readOnly.of(readOnly), EditorView.editable.of(!readOnly)]), EditorView.updateListener.of((update) => { if (update.docChanged) callback.current(update.state.doc.toString()); }), EditorView.theme({ "&": { height: "100%", fontSize: "13px", backgroundColor: "var(--panel)", color: "var(--text)" }, ".cm-scroller": { overflow: "auto", fontFamily: "ui-monospace, monospace" }, ".cm-gutters": { backgroundColor: "var(--panel)", color: "var(--muted)", border: "none" }, ".cm-content": { minHeight: "300px" } })] }) }); editor.current = view;
     return () => { view.destroy(); editor.current = null; };
   }, [path]);
   useEffect(() => { const view = editor.current; if (view && view.state.doc.toString() !== value) view.dispatch({ changes: { from: 0, to: view.state.doc.length, insert: value } }); }, [value]);

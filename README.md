@@ -49,7 +49,7 @@ G-01 至 G-23 的迁移去向见[Outlive Agent 迁移基线](docs/outlive-agent-
 
 图片服务是可选项；设置中保存专用图片接口、Responses 图片工具或兼容聊天图片输出配置。实际生成的 PNG 与本地绘制的 SVG 图表均保存为任务 Artifact，Web/Desktop 可校验预览和下载，CLI 可导出；仅返回文字、代码或图片地址不算生成成功。完整协议与验证边界见[媒体说明](docs/modules/14-附件与多模态.md)。
 
-本轮产品交付与真实操作证据见[安装即用验收](docs/validation/installable-product/README.md)。最终标志待选择：[四幅自然色候选](docs/brand/logo-candidates.png)。当前应用采用 A 作为预览。
+本轮产品交付与真实操作证据见[当前工作台验收](docs/validation/current-workbench-recovery/README.md)。用户已确认 **B Current** 为生产标志，工作台和安装包统一使用同一矢量源；派生图标与实际显示边界见[品牌说明](docs/brand/README.md)。
 
 ## 共享本机工作台
 

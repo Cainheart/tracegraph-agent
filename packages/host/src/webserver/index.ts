@@ -477,7 +477,7 @@ export async function createTraceGraphHost(
 
   app.setErrorHandler((error, request, reply) => {
     const safeTyped=error as {code?:unknown;statusCode?:unknown;message?:unknown};
-    if(typeof safeTyped.code === "string" && /^[a-z][a-z0-9_]{0,100}$/u.test(safeTyped.code) && typeof safeTyped.statusCode === "number" && safeTyped.statusCode>=400 && safeTyped.statusCode<=599 && (request.url.startsWith("/api/workbench/") || ["model_config_readonly","credential_storage_failed","credential_required","migration_busy","migration_source_required","workspace_queue_cancelled","host_restarting"].includes(safeTyped.code))) {
+    if(typeof safeTyped.code === "string" && /^[a-z][a-z0-9_]{0,100}$/u.test(safeTyped.code) && typeof safeTyped.statusCode === "number" && safeTyped.statusCode>=400 && safeTyped.statusCode<=599 && (request.url.startsWith("/api/workbench/") || ["model_config_readonly","credential_storage_failed","credential_required","migration_busy","migration_source_required","workspace_queue_cancelled","host_restarting","file_context_unavailable","file_context_revision_conflict","file_context_limit","file_context_not_text","file_read_approval_required","file_read_policy_denied","file_scope_denied","file_symlink_denied","file_hardlink_denied","file_too_large","file_changed","file_unavailable","file_kind_unsupported","project_scope_denied","session_project_mismatch","workspace_project_mismatch"].includes(safeTyped.code))) {
       void reply.status(safeTyped.statusCode).send({error:safeTyped.code,message:redactSensitiveText(typeof safeTyped.message === "string"?safeTyped.message:"Host operation failed")});return;
     }
     if (error instanceof HostCapabilityError) {

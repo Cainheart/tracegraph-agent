@@ -1,7 +1,7 @@
 ---
 id: 2026-10-03-current-workbench-recovery
 title: Recoverable owner connections and a complete conversation workbench
-status: proposed
+status: implemented
 language: en
 owners: [host, desktop, workbench]
 created: 2026-10-03
@@ -26,6 +26,8 @@ Project file context is a versioned project-relative selection, separate from th
 
 [B Current](../../../docs/brand/current.svg) is the sole production vector. Fixed resvg rendering derives transparent marks and a single warm native board, complete ICNS and multi-size ICO. Build and installed inventories separately identify delivered bytes. Legacy package names, schema identifiers and original ledgers remain compatible technical identifiers; public branding is Outlive Agent.
 
+A successful first startup and a privately validated same-process owner replacement must not spend the repeated-crash budget. Failed startup and actual replacement processes remain bounded; a planned replacement never erases earlier crash charges. This boundary is independently testable and is not asserted as the unproven cause of the retained native021 timeout.
+
 ## Invariants and boundaries
 The Host owns business state and one Runtime writer. No private reasoning, secret, editor content or image bytes enter public receipt metadata. Reconnect, detail expansion and historical inspection do not execute tasks. Replay cannot bootstrap live authority or write. An unknown dispatched write is reconciled, never automatically repeated. File descriptors remain pinned to authorized inodes, but an external writer can race the final hash check; this is not an atomic filesystem transaction. Existing UTF-8 files are bounded to one MiB. Native Windows behavior and model-service quality require their own evidence.
 
@@ -33,7 +35,7 @@ The Host owns business state and one Runtime writer. No private reasoning, secre
 Legacy single-provider data becomes the default saved connection; old directories and events are preserved. Model edits use revisions and versioned credentials; active leases retain their admitted versions. Application replacement leaves the profile outside the bundle and retains a recoverable prior bundle. Different live product builds cannot share an owner; an idle explicit stop precedes replacement. Runtime crash recovery restores facts and marks interrupted Runs without executing them.
 
 ## Verification
-[The current report](../../../docs/validation/current-workbench-recovery/README.md) retains full build/types/unit/engineering/evaluation logs, negative authority and file fixtures, actual owner-process restart/crash/stop tests, independent external-state oracles and GUI attempt records. The new GUI scope and final installation must pass before this Note moves to implemented. The earlier evidence remains historical and cannot prove newly packaged bytes.
+[The current report](../../../docs/validation/current-workbench-recovery/README.md) retains full build/types/unit/engineering/evaluation logs, negative authority and file fixtures, actual owner-process restart/crash/stop tests, independent external-state oracles and GUI attempt records. The final8 clean build/type checks and 1,571 unit tests passed. Web attempt024 and the actual final8 DMG-installed Desktop attempt025 passed all three window sizes in light/dark themes, respectively 9 and 11 actual journeys and 4,314/4,429 independent checks. A separate packaged smoke passed 13 assertions without external Node/pnpm. The default installed application auto-started and loaded permissions, memory and model settings; Finder and App Information showed the complete B Current icon. Dock was not observable through the enabled CUA surface and remains unverified. Historical failed attempts and their limits remain unchanged; Native021 recovery timeout has no proven cause. Actual OS sleep/wake, Windows native behavior and clean-machine distribution remain unverified.
 
 ## Deferred release conditions
 Signing/notarization, clean macOS/Windows installation and upgrade, native Windows UI/PTY/icon checks and independent non-maintainer acceptance remain release conditions. Loopback-provider fixtures do not establish paid-provider quality, account access or cost.

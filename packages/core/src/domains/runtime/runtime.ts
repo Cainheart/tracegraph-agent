@@ -5464,9 +5464,9 @@ class AgentRuntimeImpl implements AgentRuntime {
           if (!isArchivedContextSource && result.artifact.kind !== "context_manifest" && result.artifact.kind !== "project_file_context") {
             throw new Error("Artifact locator does not reference a readable Context artifact");
           }
-          // A manifest is a readable, current-Run Context artifact, but it is
-          // not a spill archive. Keep it in the tool receipt without emitting
-          // the misleading `context.spill_refetched` event below.
+          // Manifests and admitted project files are readable current-Run
+          // Context artifacts, rather than spill archives. Keep their actual
+          // refs in receipts without claiming a spill was refetched.
           readArtifactRef = result.artifact;
           if (isArchivedContextSource) refetchedContextArtifact = result.artifact;
           const chunk = boundedUtf8Chunk(result.content, offset, limit);
@@ -7260,7 +7260,7 @@ class AgentRuntimeImpl implements AgentRuntime {
       if (observation.success) {
         observations.push(observationWithEligibleEvidence(observation.data, event));
       }
-      if(event.type==="artifact.created"&&event.artifact_refs.some(ref=>ref.kind==="project_file_context")){
+      if(event.type==="artifact.stored"&&event.artifact_refs.some(ref=>ref.kind==="project_file_context")){
         try{observations.push(await restoreProjectFileContext(event,this.#artifacts));}catch(error){if(error instanceof ProjectFileContextError)throw new RuntimeCommandError(error.code,error.message);throw error;}
       }
       if (event.type === "attachment.added") {

@@ -208,7 +208,7 @@ export function ChatView({
   currentStep,
   onInspectEvent,
   runDetails,
-  generatedArtifacts, onLoadGeneratedArtifact, generatedPreviewsDisabled = false,
+  generatedArtifacts, onLoadGeneratedArtifact, generatedPreviewsDisabled = false, generatedPreviewsDisabledReason,
 }: {
   client?: WorkbenchClient; runId?: string; feedbackReadable?: boolean; feedbackWritable?: boolean; onReviewFile?: (runId: string, path: string, patchEventId?: string) => void;
   conversation: readonly ConversationTurn[];
@@ -231,7 +231,7 @@ export function ChatView({
   currentStep?: string;
   onInspectEvent?: (event: TraceEvent) => void;
   runDetails?: ReactNode;
-  generatedArtifacts?: readonly GeneratedArtifact[]; onLoadGeneratedArtifact?: (runId: string, artifactId: string) => Promise<GeneratedArtifactContent>; generatedPreviewsDisabled?: boolean;
+  generatedArtifacts?: readonly GeneratedArtifact[]; onLoadGeneratedArtifact?: (runId: string, artifactId: string) => Promise<GeneratedArtifactContent>; generatedPreviewsDisabled?: boolean; generatedPreviewsDisabledReason?: string;
 }) {
   const { language, t } = useI18n();
   const endRef = useRef<HTMLDivElement>(null);
@@ -254,14 +254,14 @@ export function ChatView({
   return (
     <section className="chat-view" onScroll={(event) => { const node = event.currentTarget; followingRef.current = node.scrollHeight - node.scrollTop - node.clientHeight < 72; }}>
       <div className="chat-date"><span />{t("Today")}<span /></div>
-      {conversation.map((turn) => <ChatTurn generatedPreviewsDisabled={generatedPreviewsDisabled} {...(onLoadGeneratedArtifact ? { onLoadGeneratedArtifact } : {})} {...(turn.generatedArtifacts ? { generatedArtifacts: turn.generatedArtifacts } : {})} dataSource={dataSource} events={turn.events} key={turn.runId} runId={turn.runId} {...(client ? { client } : {})} feedbackReadable={feedbackReadable} feedbackWritable={feedbackWritable} {...(onReviewFile ? { onReviewFile } : {})} changedFiles={turn.changedFiles ?? []} response={turn.response} status={turn.status} task={turn.task} {...(turn.contextBudget === undefined ? {} : { contextBudget: turn.contextBudget })} {...(turn.elapsed === undefined ? {} : { elapsed: turn.elapsed })} {...(turn.inputTokens === undefined ? {} : { inputTokens: turn.inputTokens })} {...(turn.totalTokens === undefined ? {} : { totalTokens: turn.totalTokens })} />)}
-      <ChatTurn {...(client ? { client } : {})} {...(runId ? { runId } : {})} feedbackReadable={feedbackReadable} feedbackWritable={feedbackWritable} {...(onReviewFile ? { onReviewFile } : {})} generatedPreviewsDisabled={generatedPreviewsDisabled} {...(onLoadGeneratedArtifact ? { onLoadGeneratedArtifact } : {})} {...(generatedArtifacts ? { generatedArtifacts } : {})} {...(runDetails === undefined ? {} : { runDetails })} {...(currentStep === undefined ? {} : { currentStep })} {...(onInspectEvent === undefined ? {} : { onInspectEvent })} changedFiles={changedFiles} dataSource={dataSource} events={events} evidence={evidence} progressive={progressive} response={response} status={status} task={task} {...(elapsed === undefined ? {} : { elapsed })} {...(inputTokens === undefined ? {} : { inputTokens })} {...(totalTokens === undefined ? {} : { totalTokens })} {...(contextBudget === undefined ? {} : { contextBudget })} {...(turnsCompleted === undefined ? {} : { turnsCompleted })} {...(turnLimit === undefined ? {} : { turnLimit })} {...(publicActivities === undefined ? {} : { publicActivities })} {...(modelSurface === undefined ? {} : { modelSurface })} />
+      {conversation.map((turn) => <ChatTurn generatedPreviewsDisabled={generatedPreviewsDisabled} {...(generatedPreviewsDisabledReason ? { generatedPreviewsDisabledReason } : {})} {...(onLoadGeneratedArtifact ? { onLoadGeneratedArtifact } : {})} {...(turn.generatedArtifacts ? { generatedArtifacts: turn.generatedArtifacts } : {})} dataSource={dataSource} events={turn.events} key={turn.runId} runId={turn.runId} {...(client ? { client } : {})} feedbackReadable={feedbackReadable} feedbackWritable={feedbackWritable} {...(onReviewFile ? { onReviewFile } : {})} changedFiles={turn.changedFiles ?? []} response={turn.response} status={turn.status} task={turn.task} {...(turn.contextBudget === undefined ? {} : { contextBudget: turn.contextBudget })} {...(turn.elapsed === undefined ? {} : { elapsed: turn.elapsed })} {...(turn.inputTokens === undefined ? {} : { inputTokens: turn.inputTokens })} {...(turn.totalTokens === undefined ? {} : { totalTokens: turn.totalTokens })} />)}
+      <ChatTurn {...(client ? { client } : {})} {...(runId ? { runId } : {})} feedbackReadable={feedbackReadable} feedbackWritable={feedbackWritable} {...(onReviewFile ? { onReviewFile } : {})} generatedPreviewsDisabled={generatedPreviewsDisabled} {...(generatedPreviewsDisabledReason ? { generatedPreviewsDisabledReason } : {})} {...(onLoadGeneratedArtifact ? { onLoadGeneratedArtifact } : {})} {...(generatedArtifacts ? { generatedArtifacts } : {})} {...(runDetails === undefined ? {} : { runDetails })} {...(currentStep === undefined ? {} : { currentStep })} {...(onInspectEvent === undefined ? {} : { onInspectEvent })} changedFiles={changedFiles} dataSource={dataSource} events={events} evidence={evidence} progressive={progressive} response={response} status={status} task={task} {...(elapsed === undefined ? {} : { elapsed })} {...(inputTokens === undefined ? {} : { inputTokens })} {...(totalTokens === undefined ? {} : { totalTokens })} {...(contextBudget === undefined ? {} : { contextBudget })} {...(turnsCompleted === undefined ? {} : { turnsCompleted })} {...(turnLimit === undefined ? {} : { turnLimit })} {...(publicActivities === undefined ? {} : { publicActivities })} {...(modelSurface === undefined ? {} : { modelSurface })} />
       <div ref={endRef} />
     </section>
   );
 }
 
-function ChatTurn({ client, runId, feedbackReadable = false, feedbackWritable = false, onReviewFile, task, response, status, events, dataSource, changedFiles = [], evidence, contextBudget, turnsCompleted, turnLimit, publicActivities, modelSurface, elapsed, inputTokens, totalTokens, progressive = false, currentStep, onInspectEvent, runDetails, generatedArtifacts = [], onLoadGeneratedArtifact, generatedPreviewsDisabled = false }: {
+function ChatTurn({ client, runId, feedbackReadable = false, feedbackWritable = false, onReviewFile, task, response, status, events, dataSource, changedFiles = [], evidence, contextBudget, turnsCompleted, turnLimit, publicActivities, modelSurface, elapsed, inputTokens, totalTokens, progressive = false, currentStep, onInspectEvent, runDetails, generatedArtifacts = [], onLoadGeneratedArtifact, generatedPreviewsDisabled = false, generatedPreviewsDisabledReason }: {
   client?: WorkbenchClient; runId?: string; feedbackReadable?: boolean; feedbackWritable?: boolean; onReviewFile?: (runId: string, path: string, patchEventId?: string) => void;
   task: string;
   response: string;
@@ -282,7 +282,7 @@ function ChatTurn({ client, runId, feedbackReadable = false, feedbackWritable = 
   currentStep?: string;
   onInspectEvent?: (event: TraceEvent) => void;
   runDetails?: ReactNode;
-  generatedArtifacts?: readonly GeneratedArtifact[]; onLoadGeneratedArtifact?: (runId: string, artifactId: string) => Promise<GeneratedArtifactContent>; generatedPreviewsDisabled?: boolean;
+  generatedArtifacts?: readonly GeneratedArtifact[]; onLoadGeneratedArtifact?: (runId: string, artifactId: string) => Promise<GeneratedArtifactContent>; generatedPreviewsDisabled?: boolean; generatedPreviewsDisabledReason?: string;
 }) {
   const { language, t } = useI18n();
   const process = publicProcess(events, publicActivities);
@@ -363,7 +363,7 @@ function ChatTurn({ client, runId, feedbackReadable = false, feedbackWritable = 
         ? <div aria-live="polite" className="chat-live-answer"><MarkdownContent content={progressiveResponse} />{(active || answerStreaming) && <span aria-hidden="true" className="public-model-caret">▍</span>}</div>
           : active ? null : <MarkdownContent content={progressiveResponse} />}
       </div>
-      <GeneratedGallery artifacts={generatedArtifacts} disabled={generatedPreviewsDisabled} {...(onLoadGeneratedArtifact ? { onLoad: onLoadGeneratedArtifact } : {})} />
+      <GeneratedGallery artifacts={generatedArtifacts} disabled={generatedPreviewsDisabled} {...(generatedPreviewsDisabledReason ? { disabledReason: generatedPreviewsDisabledReason } : {})} {...(onLoadGeneratedArtifact ? { onLoad: onLoadGeneratedArtifact } : {})} />
       {changedFiles.length > 0 && <section className="turn-changed-files" aria-label={t("Edited files")}><header><Icon name="diff" size={14} /><strong>{changedFiles.length} {t("Edited files")}</strong><small>+{totalDiff(changedFiles).additions} −{totalDiff(changedFiles).deletions}</small></header>{changedFiles.map((file) => <button disabled={!runId || !onReviewFile} onClick={() => { if (runId) onReviewFile?.(runId, file.path, file.patchEventId); }} key={file.path} type="button"><Icon name="file" size={13} /><span>{file.path}</span><small>+{file.additions} −{file.deletions}</small></button>)}</section>}
       {!active && !answerStreaming && answerTarget && <MessageActions text={answerTarget} {...(client ? { client } : {})} {...(runId ? { runId } : {})} feedbackReadable={feedbackReadable && status === "completed"} feedbackWritable={feedbackWritable && status === "completed"} />}
       <div className="chat-evidence" hidden>{changedFiles.length > 0 && <span><Icon name="diff" size={13} />{changedFiles.length} {t("files")} · +{totalDiff(changedFiles).additions} −{totalDiff(changedFiles).deletions}</span>}{evidence && <span><Icon name="graph" size={13} />{t("Graph")} {evidence.graph.status}</span>}<span><Icon name="shield" size={13} />{t(status)}</span></div>

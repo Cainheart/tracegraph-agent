@@ -1,0 +1,16 @@
+$ pnpm snapshots replay --case runtime/minimal-completion && pnpm snapshots replay --case runtime/recovery && pnpm snapshots replay --case runtime/cancel && pnpm snapshots replay --case memory/memory-recall && pnpm snapshots replay --case runtime/subagent
+$ pnpm --filter @tracegraph/test-support snapshots replay --case runtime/minimal-completion
+$ node dist/recorded-session/cli.js replay --case runtime/minimal-completion
+Replayed runtime/minimal-completion: completed; 11 semantic events.
+$ pnpm --filter @tracegraph/test-support snapshots replay --case runtime/recovery
+$ node dist/recorded-session/cli.js replay --case runtime/recovery
+Replayed runtime/recovery: completed; 30 semantic events.
+$ pnpm --filter @tracegraph/test-support snapshots replay --case runtime/cancel
+$ node dist/recorded-session/cli.js replay --case runtime/cancel
+Replayed runtime/cancel: cancelled; 12 semantic events.
+$ pnpm --filter @tracegraph/test-support snapshots replay --case memory/memory-recall
+$ node dist/recorded-session/cli.js replay --case memory/memory-recall
+Replayed memory/memory-recall: completed; 14 semantic events.
+$ pnpm --filter @tracegraph/test-support snapshots replay --case runtime/subagent
+$ node dist/recorded-session/cli.js replay --case runtime/subagent
+Replayed runtime/subagent: completed; 20 semantic events.

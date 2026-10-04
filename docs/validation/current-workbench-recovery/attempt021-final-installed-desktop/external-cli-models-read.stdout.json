@@ -1,0 +1,78 @@
+{
+  "connections": [
+    {
+      "connection_id": "52cd3eb0-57ae-4bac-a36a-c3c6d2c4a105",
+      "label": "Alpha provider",
+      "revision": 1,
+      "provider": "openai",
+      "protocol": "openai-chat-completions",
+      "base_url": "http://127.0.0.1:59042/v1",
+      "model": "gpt-4.1-mini",
+      "models": [
+        "gpt-4.1-mini",
+        "o3-mini"
+      ],
+      "image_input_models": [
+        "gpt-4.1-mini"
+      ],
+      "reasoning_by_model": {
+        "gpt-4.1-mini": [
+          "default"
+        ],
+        "o3-mini": [
+          "default",
+          "low",
+          "medium",
+          "high",
+          "xhigh",
+          "max"
+        ]
+      },
+      "has_key": true,
+      "credential": {
+        "name": "TRACEGRAPH_OPENAI_KEY_5F58DEDCDA16",
+        "backend": "private_file",
+        "writable": true,
+        "last_updated_at": "2026-10-03T14:36:46.446Z"
+      },
+      "source": "profile",
+      "writable": true
+    },
+    {
+      "connection_id": "536f6d9d-3f4b-4a36-9b5c-f45483472d27",
+      "label": "Beta provider",
+      "revision": 0,
+      "provider": "custom",
+      "protocol": "openai-chat-completions",
+      "base_url": "http://127.0.0.1:59042/v1",
+      "model": "synthetic-beta",
+      "models": [
+        "synthetic-beta"
+      ],
+      "image_input_models": [],
+      "reasoning_by_model": {
+        "synthetic-beta": [
+          "default"
+        ]
+      },
+      "has_key": true,
+      "credential": {
+        "name": "TRACEGRAPH_CUSTOM_KEY_16C91F8310F1",
+        "backend": "private_file",
+        "writable": true,
+        "last_updated_at": "2026-10-03T14:36:48.081Z"
+      },
+      "source": "profile",
+      "writable": true,
+      "test": {
+        "status": "passed",
+        "code": "connection_ok",
+        "message": "模型连接成功",
+        "checked_at": "2026-10-03T14:36:48.966Z",
+        "model": "synthetic-beta",
+        "duration_ms": 14
+      }
+    }
+  ],
+  "default_connection_id": "52cd3eb0-57ae-4bac-a36a-c3c6d2c4a105"
+}

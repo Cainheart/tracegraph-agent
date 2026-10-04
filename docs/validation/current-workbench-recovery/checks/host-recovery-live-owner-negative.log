@@ -1,0 +1,37 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+ ❯ src/local-connection-supervisor.test.ts (13 tests | 1 failed) 63ms
+   ❯ local owner connection authority (13)
+     × does not spend the remaining crash budget when the authenticated live owner is unchanged 4ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/local-connection-supervisor.test.ts > local owner connection authority > does not spend the remaining crash budget when the authenticated live owner is unchanged
+AssertionError: unchanged authenticated handshake 1 must refund only its charge: expected { state: 'offline', …(5) } to match object { state: 'connected', …(2) }
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "generation": 2,
+    "owner_nonce": "dabaf11f-b186-4c3e-8914-a63fe5b707db",
+-   "state": "connected",
++   "state": "offline",
+  }
+
+ ❯ src/local-connection-supervisor.test.ts:98:226
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 12 passed (13)
+   Start at  22:57:57
+   Duration  875ms (transform 69%, import 23%, tests 8%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/local-connection-supervisor.test.ts '--maxWorkers=1'

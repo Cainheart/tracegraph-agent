@@ -223,11 +223,40 @@ Desktop 技术选择必须先有 Note；当前倾向 Electron，不在任务里�
 
 | Task | 新交付 | 当前状态 |
 | --- | --- | --- |
-| `BRAND-093` | 产品展示名称统一、自然色无圆点 SVG 标志候选 | **用户已确认 B Current，生产资源已统一；新安装显示复验中：**[唯一 SVG 与派生清单](../../brand/README.md)、透明 favicon/工作台及单底板完整 ICNS/ICO 通过资源校验。候选与旧 A 截图保留为历史；Windows 原生显示仍待验收。兼容技术标识与原始 Ledger 保留。 |
+| `BRAND-093` | 产品展示名称统一、自然色无圆点 SVG 标志候选 | **用户已确认 B Current，生产资源已统一，实际安装应用与 Finder 显示通过：**[唯一 SVG 与派生清单](../../brand/README.md)、透明 favicon/工作台及单底板完整 ICNS/ICO 通过资源校验。候选与旧 A 截图保留为历史；Windows 原生显示仍待验收。兼容技术标识与原始 Ledger 保留。 |
 | `MEDIA-094` | 专用图片接口、原生图片输出、受限图表、三端真实 Artifact | **实现与受控三端验收完成：**实际 PNG/SVG、Ledger/Receipt/Artifact、权限与范围、冻结凭据、unknown 去重、回放限制；最终安装版 94 断言/20 次 CLI/6 份真实文件，独立 666 检查通过。[验收与限制](../../validation/media-094/README.md)。真实付费 Provider 质量/权限/成本未知，普通非 Patch UI 手动审批 fail closed。 |
 | `DIST-095` | macOS/Windows 随包运行时、CLI、首次使用与升级安全 | **安装器实现、本机 macOS 操作与 Windows cross-build 完成；完整发行验收待完成：**最终 DMG 已实际安装，随包 Node/CLI/项目/媒体/审批/审阅通过。Windows EXE/ZIP 已生成并验证目标资源，尚无原生安装/PTY；干净 macOS/Windows 安装与升级、签名/公证、非维护者仍待验收。[交付字节与边界](../../validation/installable-product/README.md)。 |
 
-本轮连接恢复、会话模型/权限、CAS 文件编辑、反馈和 B Current 扩展验收记录于[当前工作台闭环报告](../../validation/current-workbench-recovery/README.md)。上述旧完成记录保留其原范围；只有本轮最终安装字节及实际操作复验通过后，才关闭新增验收项。
+本轮连接恢复、会话模型/权限、CAS 文件编辑、反馈和 B Current 扩展验收记录于[当前工作台闭环报告](../../validation/current-workbench-recovery/README.md)。上述旧完成记录保留其原范围；final8 本机 Web/Desktop/CLI 实现与操作证据已闭环；原生 Dock、Windows、干净双平台发行与独立用户条件继续待验收，详见下表。
+
+### 11.1 当前工作台增量闭环 · final8（2026-10-03）
+
+本表只更新本轮明确授权的本机工作台增量，不覆盖以上历史验收，也不把任务实现
+完成等同正式发行。final8 的 [Web attempt 024](../../validation/current-workbench-recovery/attempt024-final8-web/report.json)
+通过 9 条断言、126 张矩阵截图与 4 张补充图，
+[独立校验 4,314 项](../../validation/current-workbench-recovery/attempt024-final8-web/independent-verification.json)；
+[实际 DMG 安装版 Desktop attempt 025](../../validation/current-workbench-recovery/attempt025-final8-installed-desktop/report.json)
+通过 11 条断言、126 张矩阵截图与 4 张补充图，
+[独立校验 4,429 项](../../validation/current-workbench-recovery/attempt025-final8-installed-desktop/independent-verification.json)。
+两轮隔离进程/profile 清理完成。[随包产品 smoke](../../validation/current-workbench-recovery/final8-product-smoke/report.json)
+另通过 13 条断言、2 次 loopback provider 请求及全部清理。
+冻结安装包路径、容器 SHA 与 product build identity 见[发布记录](../../releases/README.md)。
+
+| Task | 本轮范围与实际闭环 | 当前边界 |
+| --- | --- | --- |
+| `HOST-087` | **本机增量已验收：**随包 Node 自动启动单 owner；外部 CLI 重启重新绑定 nonce/认证/流，实际 SIGKILL 恢复；明确 stop 保持停止，Repair 与完全退出后的新 Main 启动可继续。六条已完成 Run 的完整事实、模型请求数及文件回执不变，不自动重提任务或写命令。首次/同 PID 成功重连只退本次计数，真实反复崩溃仍有界。 | 单 owner/权限/迁移负例见[连接与 Host 验证](../../validation/current-workbench-recovery/host-connection-verification.md)；实际 OS sleep/wake、干净双平台升级和 Windows 原生运行未验收。 |
+| `PAR-088` | **本机增量已验收：**连接状态与 backend capability 分开；保存模型连接、Session 选项、本机授权、CAS 文件保存/对账、反馈及文件上下文经 typed HTTP、固定 preload 和 CLI 同义处理。Replay 不升为 live；文件上下文先验范围/策略/版本，真实 Artifact/Manifest 与独立字节一致。 | 通用 non-Patch tool `ask` 没有可信 answerer 时仍 `approval_unavailable` fail closed；已有 Patch/Plan/人工文件审批不代表可代批所有 tool ask。 |
+| `CLI-089` | **本机增量已验收：**实际 CLI 外部重启、模型/会话/文件/反馈读取与 `run start --context` 对账；结构化错误、冲突非零退出、未知结果 reconcile 与停止状态不复活有窄回归。随包 CLI 使用固定 Node，不要求用户 Node/pnpm。 | CLI 是命令与真实 JSON/JSONL 进度入口，不是完整 TUI；停止订阅不取消 Run。 |
+| `SET-090` | **本机增量已验收：**模型保存与显式小请求测试分开，多服务/会话配置持久化；模型、版本化 Key、图片声明和权限在 admission 冻结。完全访问资格明确确认并等空闲 owner 替换后真实生效；设置 CAS、失效恢复和模型未配置首次入口实际可见。 | 管理员上限不可越过；保存成功、连接测试和 Run 完成是三个结果。loopback 测试不证明真实付费服务质量、成本或图片理解质量。 |
+| `DEV-091` | **本机增量已验收：**真实编辑/CAS 冲突/审批写入与独立文件回执；后台任务和重连保留未保存缓冲；PTY 键盘输入产生实际文件，预览服务与隔离视图、Artifact 预览/下载使用真实受限资源。此前 Git/worktree、job-control/guardian 窄证据保持原范围。 | 文本读写有界、未知写入不自动重写；原生受限执行与 PTY 实际证明限 macOS，不能推广到 Windows/Linux。 |
+| `UX-086` | **本机增量已验收：**新对话/项目/历史共用 Composer；左侧 Add/权限/Plan、右侧模型/发送；三种尺寸、明暗、公开说明/实际活动、按需面板、复制/反馈、图片与项目文件上下文均连接真实后端。外部重启和真实恢复保留草稿/编辑意图，主动 Retry 不自动派发。 | 本轮截图与事实只证明 final8 受控 macOS/Web 流程；不声称复制 Codex 品牌或纳入云账号/多人能力。 |
+| `BRAND-093` | **生产资源与本机应用/Finder 显示已验收：**用户确认的 B Current 是唯一源，透明标志及完整 ICNS/ICO 来自同一派生图；final8 实际安装资源清单与图标像素已核验；[默认安装观察](../../validation/current-workbench-recovery/native-default/report.json)与 [Finder 应用简介](../../validation/current-workbench-recovery/native-default/finder-app-info.png)证明完整居中标志。 | Dock 无启用的 CUA 可观察界面，未完成实际显示验收；Windows 原生显示未验收。技术 scope/schema 与历史 Ledger 保持兼容。 |
+
+final7 的 [attempt 021](../../validation/current-workbench-recovery/attempt021-final-installed-desktop/report.json)
+恢复超时原因仍未知；[attempt 023](../../validation/current-workbench-recovery/attempt023-final7-native-lifecycle-diagnostic/report.json)
+观察了真实生命周期但 CDP cleanup 失败，两者原样保留，不将后续通过倒写为根因证明。
+`REL-083/084` 的本机/维护者模拟边界不变；正式签名/公证、干净双平台安装升级、
+原生 Windows、独立非维护者与 P8 外部退出条件仍待验收。
 
 Star 不是工程验收项，但这三条公开证明比“支持几十个工具”更容易形成可信差异。
 

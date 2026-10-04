@@ -64,6 +64,15 @@ API Key 仅从 `--key-stdin` 收集，CLI 不接受 argv Key；存储由共享 H
 
 `chat start` / `run start` 支持 `--connection-id`、`--model`、`--preset`、`--mode`、`--reasoning-effort`；Host 在 admission 校验连接/model/权限并冻结本次 Run，选项调整只影响下一次提交。模型列表并不代表 provider 自动发现或所有列出的型号都已测试。[argv parser](../../apps/cli/src/workbench-command.ts)、[连接控制器](../../packages/host/src/conversation-control.ts)、[契约](../../packages/contracts/src/conversation-options.ts)是当前事实源。
 
+项目 `run start` 另支持重复 `--context <project-relative-file>`，最多五个不同路径。
+CLI 经现有 typed `files.read` 得到当前 SHA，校验每份文本不超过 64 KiB、总计
+128 KiB 后只提交 `file_contexts:[{path,expected_sha256}]`。Host 在准入时重新验证
+策略和文件 SHA 并冻结快照；两次读取之间的文件变化会拒绝，不能用 CLI 先读内容
+替代 Host 授权。选中文件不拼接进 task，不接受 client content；`chat start` 没有项目
+上下文入口。原 command ID 与路径/SHA 都参与准入请求身份，变化的选择不能用同一
+ID 冒充原请求。脱敏 Artifact、真实 `artifact.stored` 来源和显式恢复边界见
+[Host/SDK 模块](09-Host-与-SDK-接口层.md)与[文件上下文契约](../../packages/contracts/src/project-file-context.ts)。
+
 ### 1.1.2 本地 Full 授权、项目文件与回答反馈
 
 | 命令 | 权限、对账与真实结果 |
@@ -80,7 +89,16 @@ API Key 仅从 `--key-stdin` 收集，CLI 不接受 argv Key；存储由共享 H
 
 文件 save 的 `awaiting_approval`、`conflict` 和 `unknown` 都不表示保存成功；`receipt_event_id`/原 command 的事实用于后续审阅和对账。当前 CLI failed/conflict/rejected/interrupted 返回 1，unknown/pending/awaiting_approval 返回 3；单纯读取或已接纳的启动返回 0 不能外推最终 Run 业务完成。HTTP 请求不自动 retry。文件与反馈的 [Host controller](../../packages/host/src/project-files-feedback.ts) 使用同一 canonical Ledger 语义，CLI 不自行写项目或事件文件。
 
-这些操作有源码/窄测试，连接 owner 的真实 macOS worker 回归见[连接验证](../validation/current-workbench-recovery/host-connection-verification.md)。本轮新安装包的完整 GUI 模型/文件/反馈/授权与保留草稿恢复仍等待最终独立验证，不能用先前安装版本的成功截图代替。
+这些操作有源码/窄测试，连接 owner 的真实 macOS worker 回归见[连接验证](../validation/current-workbench-recovery/host-connection-verification.md)。final8 [Web attempt 024](../validation/current-workbench-recovery/attempt024-final8-web/report.json)
+已通过完整旅程及外部 CLI 对账，包含真实 `--context` 字节/Artifact/Ledger 核验。
+[当前安装后 Desktop attempt 025](../validation/current-workbench-recovery/attempt025-final8-installed-desktop/report.json)
+已通过实际上下文与 CLI 对账、SIGKILL 恢复、stop/Repair 及 fresh Main，清理完成；
+六条已完成 Run 的事实与请求数保持不变。历史 final7 的
+[attempt 021](../validation/current-workbench-recovery/attempt021-final-installed-desktop/report.json)
+实际恢复超时原因未知，
+[attempt 023](../validation/current-workbench-recovery/attempt023-final7-native-lifecycle-diagnostic/report.json)
+实际恢复/stop/Repair/fresh Main 已观察但 CDP cleanup 失败；先前安装字节或成功
+子步骤不能代替当前整轮验收。
 
 ### 1.2 保留的旧装配入口与 helper
 

@@ -9,7 +9,7 @@ import {
  type ModelConnectionTestResult,type SessionRunOptions,type SessionRunOptionsSnapshot,
  type SessionRunOptionsUpdateRequest,type PermissionGrantUpdateRequest,type StartRunRequest,
  type WorkspaceHandle,type EffectivePermissionPolicy,type SessionReadResult,type ReasoningEffort,
- ProjectFileContextSnapshotsSchema,type ProjectFileContextSnapshot,type ProjectFileContextRef,
+ ProjectFileContextSnapshotsSchema,MAX_PROJECT_CONTEXT_TOTAL_BYTES,type ProjectFileContextSnapshot,type ProjectFileContextRef,
 } from "@tracegraph/contracts";
 import {createSecretReference,redactSensitiveText, type CredentialStore,type ModelAdapter,type ModelProviderConfig} from "@tracegraph/core";
 import type {TrustedRunDispatch} from "@tracegraph/api";
@@ -137,6 +137,7 @@ export class ConversationControl {
  async #assertGrant(options:SessionRunOptions){if(options.permission_preset==="full-write"&&this.#ctx.permission.snapshot().ceiling_source==="user-consent"&&!(await this.#ctx.permission.localGrant()).enabled)throw workbenchError("permission_grant_revoked","Full access has been revoked for new operations");}
  async resolvePolicy(projectId:string,sessionId?:string){const workspace=await this.#ctx.resolveWorkspace(projectId);const session=sessionId?await this.#ctx.readSession(sessionId):undefined;if(session&&session.header.project_id!==projectId)throw workbenchError("session_project_mismatch","Conversation belongs to another project");const options=sessionId?(await this.options(sessionId)).options:this.#defaults();await this.#assertGrant(options);return this.#ctx.permission.resolveProject(workspace.real_root,options.permission_preset);}
  async prepare(input:StartRunRequest,workspace:WorkspaceHandle):Promise<TrustedRunDispatch>{
+  if(workspace.project_id!==input.project_id)throw workbenchError("workspace_project_mismatch","Workspace belongs to another project",403);
   if(input.session_id&&(await this.#ctx.readSession(input.session_id)).header.project_id!==input.project_id)throw workbenchError("session_project_mismatch","Conversation belongs to another project",403);
   const saved=input.session_id?(await this.options(input.session_id)).options:this.#defaults();
   const options=SessionRunOptionsSchema.parse({...saved,...input.run_options,mode:input.run_options?.mode??input.mode,reasoning_effort:input.reasoning_effort??input.run_options?.reasoning_effort??saved.reasoning_effort});this.#validate(options);await this.#assertGrant(options);
@@ -161,7 +162,8 @@ export class ConversationControl {
   if(!refs.length)return [];
   if(!this.#ctx.readFileContext)throw workbenchError("file_context_unavailable","Project file context is unavailable in this Host",503);
   const snapshots:ProjectFileContextSnapshot[]=[];
-  for(const ref of refs){const snapshot=await this.#ctx.readFileContext(projectId,ref.path,policy);if(snapshot.sha256!==ref.expected_sha256)throw workbenchError("file_context_revision_conflict","The selected file changed. Select its current version before starting",409);snapshots.push(snapshot);}
+  let total=0;
+  for(const ref of refs){const snapshot=await this.#ctx.readFileContext(projectId,ref.path,policy);if(snapshot.sha256!==ref.expected_sha256)throw workbenchError("file_context_revision_conflict","The selected file changed. Select its current version before starting",409);total+=snapshot.byte_length;if(total>MAX_PROJECT_CONTEXT_TOTAL_BYTES)throw workbenchError("file_context_limit","Selected files exceed the 128 KiB total context limit",413);snapshots.push(snapshot);}
   const parsed=ProjectFileContextSnapshotsSchema.safeParse(snapshots);if(!parsed.success)throw workbenchError("file_context_limit","Select at most five files within the 128 KiB total context limit",413);return parsed.data;
  }
  getPermissionGrant(){return this.#ctx.permission.localGrant();}

@@ -2,70 +2,12 @@ $ vitest run src
 
  RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench
 
- ❯ src/components/Trajectory.test.tsx (2 tests | 1 failed) 10ms
-   ❯ VerifiedAttachmentPreview (2)
-     × offers untrusted PDFs only as downloads and never embeds them 4ms
- ❯ src/ux-086-journey.test.tsx (4 tests | 1 failed) 291ms
-   ❯ UX-086 shared Workbench journeys (4)
-     × preserves existing sessions while removing pins, and inspects evidence without replay 136ms
 
-⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+ Test Files  30 passed (30)
+      Tests  247 passed (247)
+   Start at  22:18:36
+   Duration  2.58s (transform 51%, import 28%, tests 13%, environment 7%)
 
- FAIL  src/ux-086-journey.test.tsx > UX-086 shared Workbench journeys > preserves existing sessions while removing pins, and inspects evidence without replay
-AssertionError: expected "vi.fn()" to be called with arguments: [ 'Inspect the imports', …(4) ]
-
-Received:
-
-  1st vi.fn() call:
-
-@@ -6,6 +6,7 @@
-    {
-      "mode": "execute",
-      "permission_preset": "workspace-write",
-      "reasoning_effort": "default",
-    },
-+   [],
-  ]
-
-
-Number of calls: 1
-
- ❯ src/ux-086-journey.test.tsx:141:29
-    139|     const task = await type("Task", "Inspect the imports");
-    140|     await key(task, { key: "Enter" });
-    141|     expect(client.startRun).toHaveBeenCalledWith("Inspect the imports"…
-       |                             ^
-    142|   });
-    143|
-
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
-
- FAIL  src/components/Trajectory.test.tsx > VerifiedAttachmentPreview > offers untrusted PDFs only as downloads and never embeds them
-AssertionError: expected '<div class="pdf-download"><svg aria-h…' to contain 'download="tracegraph-attachment.pdf"'
-
-Expected: "download="tracegraph-attachment.pdf""
-Received: "<div class="pdf-download"><svg aria-hidden="true" fill="none" height="14" viewBox="0 0 24 24" width="14" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7"><path d="M12 3 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-3Z"></path><path d="m9 12 2 2 4-4"></path></svg><span>PDF is not embedded because uploaded documents are untrusted.</span><a download="outlive-attachment.pdf" href="blob:verified-pdf">Download verified PDF</a></div>"
-
- ❯ src/components/Trajectory.test.tsx:24:18
-     22|     /></LanguageProvider>);
-     23|
-     24|     expect(html).toContain('download="tracegraph-attachment.pdf"');
-       |                  ^
-     25|     expect(html).toContain("PDF is not embedded because uploaded docum…
-     26|     expect(html).not.toContain("<iframe");
-
-⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
-
-
- Test Files  2 failed | 28 passed (30)
-      Tests  2 failed | 245 passed (247)
-   Start at  22:17:43
-   Duration  2.83s (transform 50%, import 29%, tests 13%, environment 8%)
-
-  Transform  transforming modules took 10.58s · 50% of tracked time, re-done on every run
+  Transform  transforming modules took 9.50s · 51% of tracked time, re-done on every run
              persist transforms across runs with fsModuleCache: true
              learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
-
-/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench:
-[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @tracegraph/workbench@0.1.0-alpha.0 test:unit: `vitest run src`
-Exit status 1

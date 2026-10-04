@@ -65,3 +65,112 @@ Two Host tests that timed out in the broader concurrent run passed unchanged in 
 The approved stop boundary distinguishes a new user application launch after fully quitting from activation or window recreation in an existing Main. Source inspection found that initial Main only called the preserving supervisor `initialize()`, so a previous explicit stop also blocked the new user launch. The narrow [Main fix](../../../apps/desktop/src/main.ts) marks only initial `app.whenReady` and explicit native Start as trusted start intents. After initialization, only a safe `stopped` snapshot requests one `repair()`; other failures do not trigger this exception. Activation and existing-process window recreation still only refresh/recreate the window. Shared supervisor and ordinary CLI stop semantics are unchanged, and starting the owner does not resubmit a historical task.
 
 Source froze at 22:03 local time. The complete Desktop suite passed 44 tests across 8 files, including six new lifecycle cases: fresh stopped launch repairs once, a later stop persists through activation/window recreation, profile/upgrade/replay initial failures each do not repair, and retained Replay stays read-only even through explicit Start. [Raw unit stdout](checks/desktop-fresh-launch-lifecycle.log) and [typecheck stdout](checks/desktop-fresh-launch-types.log) are retained; both commands exited 0. These are Main lifecycle tests with isolated doubles, not an installed GUI claim. Final7 must contain rebuilt Main and obtain its own actual launch/stop/recovery acceptance; earlier artifact results remain separate.
+
+## Trusted project file context
+
+The approved Add action now has an actual backend admission path. Its strict
+[request contract](../../../packages/contracts/src/project-file-context.ts)
+contains only project-relative path and expected SHA, never client content or
+policy. Plain chat rejects this field. The
+[conversation controller](../../../packages/host/src/conversation-control.ts)
+checks Session/project ownership, binds the selected policy/model/credential,
+then uses the actual
+[internal file reader](../../../packages/host/src/project-files-feedback.ts)
+to capture at most five authorized UTF-8 snapshots: 64 KiB per file, 128 KiB total.
+Non-allow read rules fail closed without a prompt. The same pinned-descriptor,
+private-path, symlink and multi-hardlink exclusions as file editing apply. A
+changed SHA rejects admission before Run creation or provider dispatch and
+releases the selected model lease. The controller is initialized once in shared
+composition, with the same scoped read boundary also available to legacy HTTP.
+`files.context` is available only when that real composition reader is present;
+generic control without it advertises unavailable.
+
+The [Core seam](../../../packages/core/src/domains/runtime/project-file-context.ts)
+checks raw snapshot project/path/length/SHA against the input references before
+creating Run facts. It persists redacted UTF-8 `project_file_context` Artifacts.
+`artifact.stored` contains only operation/path/original source hash and length,
+untrusted trust, locator and the actual scoped Artifact ref; it does not store
+file content. The redacted Artifact's own content hash may differ from the
+original source SHA. The model receives a bounded excerpt and locator as an
+untrusted Observation. Its source ID is the actual `artifact.stored` Event ID,
+and the Context Manifest binds the same untrusted tool source and Artifact ref.
+Additional content can be paged through current-Run `read_artifact`; this does
+not synthesize a spill-refetched event. Explicit pending-plan recovery reloads
+the admitted redacted Artifact rather than reading a changed workspace file,
+and still waits for explicit plan approval. Missing/corrupt Artifact content
+fails closed. API command identity includes selected paths and version hashes.
+
+Source froze at 22:32 local time. The following commands completed with exit 0;
+their raw stdout is retained rather than reconstructed:
+
+| Process-scoped command | Captured result |
+| --- | --- |
+| `env -u NODE_OPTIONS pnpm --filter @tracegraph/core exec vitest run src/domains/runtime/runtime.project-file-context.test.ts src/domains/runtime/runtime.plan-mode.test.ts src/domains/runtime/runtime.attachment.test.ts --maxWorkers=1` | [3 files, 21 passed](checks/project-file-context-core-final.log) |
+| `env -u NODE_OPTIONS pnpm --filter @tracegraph/host exec vitest run src/project-file-context.test.ts src/project-files-feedback.test.ts src/conversation-control.test.ts src/saved-image-capabilities.test.ts --maxWorkers=1` | [4 files, 29 passed](checks/project-file-context-host-final.log) |
+| `env -u NODE_OPTIONS pnpm --filter @tracegraph/api exec vitest run src/run-session-controller.test.ts --maxWorkers=1` | [1 file, 8 passed](checks/project-file-context-api-final.log) |
+| `env -u NODE_OPTIONS pnpm --filter @tracegraph/core typecheck` | [exit 0](checks/project-file-context-core-types.log) |
+| `env -u NODE_OPTIONS pnpm --filter @tracegraph/host typecheck` | [exit 0](checks/project-file-context-host-types.log) |
+| `env -u NODE_OPTIONS pnpm --filter @tracegraph/api typecheck` | [exit 0](checks/project-file-context-api-types.log) |
+
+The four new Core tests include forged/missing/foreign snapshots with no Run
+facts, real model/manifest/Artifact paging, explicit Session recovery after an
+external file change, and Artifact tampering. The eight new Host tests include
+real public Run admission, a lease-releasing stale SHA rejection with no Run,
+frozen bytes/policy after later changes, BOM/UTF-8/NUL/65,537-byte boundaries,
+private paths/symlinks/hardlinks/foreign projects, ask/deny with no prompt or
+dispatch, aggregate overflow/foreign Session, and truthful capability assembly.
+The API suite proves the same command ID cannot be reused for another selected
+path or SHA. These are isolated source/targeted-build facts; final7 packaging,
+installed Main/UI/CLI acceptance and native Windows remain separate gates.
+
+## Recovery budget accounting follow-up
+
+An independent source negative fixture proved that successful initial startup
+and authenticated same-process planned replacements could spend the repeated
+crash budget when their private socket was briefly absent. A second negative
+fixture proved the same defect for a validated unchanged live owner. The
+[initial negative log](checks/host-recovery-budget-negative.log) and
+[unchanged-owner negative log](checks/host-recovery-live-owner-negative.log)
+retain these failures; they do not establish the cause of installed attempt 021.
+
+The supervisor now refunds only this ensure attempt after profile/build
+validation and a ready bound identity. Successful first binding and an
+authenticated unchanged PID qualify; previous failed startup attempts and
+different-PID crash recoveries remain charged. Failed identity/build validation
+does not refund. The original attempt limit, backoff, stable-window reset and
+explicit Repair reset remain unchanged. The flapping fixture now changes PID
+for each actual process replacement, instead of representing every crash with
+one fixed mock PID.
+
+Source froze at 22:58:19 local time. The command
+`env -u NODE_OPTIONS pnpm --filter @tracegraph/host exec vitest run src/local-connection-supervisor.test.ts src/local-connection-client.test.ts --maxWorkers=1`
+passed 15 tests in two files, including planned/live gaps after an earlier real
+crash and exhaustion after additional real crashes. [Raw unit stdout](checks/host-recovery-budget-final.log)
+and [Host typecheck stdout](checks/host-recovery-budget-types.log) are retained;
+both exited 0. No default-profile process was operated and no Runtime fixture
+owner was started by these tests. A new installation must validate its rebuilt
+bytes separately.
+
+The earlier installed [attempt 021](attempt021-final-installed-desktop/report.json)
+retains its unexplained recovery timeout. On the same final7 bytes,
+[attempt 023](attempt023-final7-native-lifecycle-diagnostic/report.json)
+observed an actual SIGKILL followed by connected generation 4 in approximately
+425 ms, explicit stop/Repair and a fresh Main launch, with six durable completed
+Run timelines unchanged and no extra model/file command. Its report remains
+failed solely because an owned download CDP session was detached after its
+browser had closed; all owned processes exited and the isolated profile was
+removed. This product-path observation does not turn the failed cleanup report
+into a pass or explain attempt 021.
+
+The rebuilt final8 [Web attempt 024](attempt024-final8-web/report.json) passed
+nine assertions, 126 matrix PNGs plus four supplementary views, and
+[4,314 independent checks](attempt024-final8-web/independent-verification.json).
+[Installed Desktop attempt 025](attempt025-final8-installed-desktop/report.json)
+passed 11 assertions, 126 matrix PNGs plus four supplementary views, and
+[4,429 independent checks](attempt025-final8-installed-desktop/independent-verification.json).
+Both completed isolated cleanup. The installed binary observed actual owner
+SIGKILL recovery, explicit stop/Repair and a fresh Main launch; six completed
+Run payloads/timelines, model request count and file receipt identities remained
+unchanged. These final8 controlled macOS/loopback-provider results do not prove
+native Windows, OS sleep/wake, signing, clean-machine installation or independent
+external-user acceptance. Final7 attempt 021's cause remains unknown.

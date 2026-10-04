@@ -13,6 +13,8 @@
 
 `project-files-feedback.ts` 定义项目相对路径、受限文本/图片快照、原哈希保存、审批/冲突/未知结果协调和本机公开回答反馈。保存成功必须包含目标哈希及规范回执；HTTP 200 不等于写入成功。连接状态由 `host-connection.ts` 区分连接失败和能力不支持。
 
+`project-file-context.ts` 区分客户端的版本引用与私有 Host→Core 快照：`StartRun.file_contexts` 只接收项目相对 `path` 和 `expected_sha256`，不接受正文、权限或 Workspace。最多五份 UTF-8 文件、每份 64 KiB、合计 128 KiB；Host 按本轮冻结的读取策略重新打开文件并核对版本，再把可信取得的快照交给 Core。快照取得可信不代表文件内容可信；脱敏正文写入 `project_file_context` Artifact，`artifact.stored` 只记录来源元数据，Context Manifest 保持 `untrusted`。`files.context` 独立 capability 证明 Host 实际装配了该入口，`files.read` 不能代替它；Plain Chat 不接受 `file_contexts`。
+
 实现、负例与实际传输证据见[本轮验收](../validation/current-workbench-recovery/README.md)。
 
 ## 1. 一句话职责
@@ -31,11 +33,12 @@
 | `tool.ts` | — | G-05 有界 JSON Schema、完整 Host descriptor/模型白名单、标准失败类与 strict batch 审计载荷 |
 | `action-wal.ts` | — | G-04 WAL phase/target/record 与 Recovery recipe/attempt v1 契约 |
 | `commands.ts` | — | 浏览器→Host 请求、Host→Core 输入、`plan|execute`、Plan/Tool 审批与显式 rollback 命令 |
+| `project-file-context.ts` | — | 项目相对路径/SHA 版本引用、私有可信读取快照与 5 份 / 64 KiB / 128 KiB 限额；不接收客户端正文或 authority |
 | `todo.ts` | — | G-09 Todo item/list/read-write、四种状态事件、Plan revision 与 strict browser request |
 | `steering.ts` | — | G-14 有界用户输入、Host 绑定提交命令、队列/消费事件载荷与公开 inbox 投影 |
 | `subagent.ts` | — | G-07 可信 profile/任务包、冻结 spec、父子 Run link、预算/结果、lifecycle payload、恢复与父侧投影 |
 | `team.ts` | — | G-08 Team limits/roster/mailbox/task board、13 种 Event payload（含 durable sweep receipt）、5 个模型 Tool input、Host/SDK request/command/result |
-| `attachment.ts` | — | G-18 PNG/JPEG/PDF、5 MiB/8 个上限、stage receipt、offload/inline、模型能力、PDF 抽取结果与附件投影 |
+| `attachment.ts` | — | PNG/JPEG/PDF、当前 30 MiB/8 个上限、stage receipt、offload/inline、模型能力、PDF 抽取结果与附件投影 |
 | `extension.ts` | — | G-17 API/config/status/command/error、Run snapshot 与 strict trusted-catalog 数据契约 |
 | `telemetry.ts` | — | G-15 浏览器安全的 strict 只读状态：独立 schema v1、sink/state/error count/last error；结构上排除 Host-only 配置与 payload |
 | `credentials.ts` | 约 100 行 | Credential backend/name、`${secret:NAME}`、迁移 outbox、安全元数据、模型配置写入/公开响应 |
@@ -99,7 +102,7 @@ export const PROJECTOR_VERSION = "tracegraph.projector.v9" as const;
 | `Sha256Schema` | 正则 `^sha256:[a-f0-9]{64}$`，**带算法前缀** |
 | `RelativePathSchema` | 拒绝绝对路径、`\` 开头、Windows 盘符、任何 `..` 段 |
 | `TrustLevelSchema` | `trusted` / `untrusted` / `quarantined` |
-| `ArtifactKindSchema` | 14 种：包含 G-02 `spilled_tool_output` / `context_source_archive`、内部恢复用 `recovery_state` 与 G-18 `image/png` / `image/jpeg` / `application/pdf` |
+| `ArtifactKindSchema` | 包含 G-02 `spilled_tool_output` / `context_source_archive`、内部恢复用 `recovery_state`、图片/PDF 与 `project_file_context`；精确枚举以源码为准 |
 | `ArtifactWireResponseSchema` | 判别联合：`available`（带 range）/ `unavailable`（`not_found`/`out_of_scope`/`unsupported_mime`/`too_large`）/ `corrupt`（带 `expected_hash` 与可选 `actual_hash`） |
 
 `RelativePathSchema` 值得单独记住：**路径安全是在契约层强制的**，不是靠调用方自觉。
@@ -162,8 +165,8 @@ ObservationSchema   观测：status / summary / facts / artifact_refs
 |---|---|
 | `OpenLocalProjectRequestSchema` | `command_id` + `access`（默认 `read_write`），`.strict()` |
 | `RevealProjectRequestSchema` / `RemoveProjectRequestSchema` | wire 只有 `command_id`；项目 id 取自 Host 路由，浏览器不能提交本机路径 |
-| `StartRunRequestSchema` | 浏览器→Host：有 `project_id`、`mode` 与可选的最多 8 个 opaque `attachment_upload_ids`；**没有 sandbox 字段或附件字节** |
-| `StartChatRequestSchema` | `StartRunRequestSchema.omit({project_id, mode}).strict()`——**纯对话没有项目、没有路径、没有客户端可选执行模式**，由 Host 绑定私有空工作区并强制 execute；可带已按 chat scope staging 的 upload ids |
+| `StartRunRequestSchema` | 浏览器→Host：有 `project_id`、`mode`、可选 `run_options`、最多 8 个 opaque `attachment_upload_ids` 与最多 5 个 `file_contexts` 版本引用；**没有 sandbox 字段、附件字节或项目文件正文** |
+| `StartChatRequestSchema` | `StartRunRequestSchema.omit({project_id, file_contexts})` 后增加可选 `mode`，并 `.strict()`；由 Host 绑定私有工作区，旧客户端省略 mode 时为 execute；可带已按 chat scope staging 的 upload ids，但不能指定项目文件路径 |
 | `ApprovePlanRequest/CommandSchema` | wire 只有 `command_id + plan_event_id`；Host 才绑定 `project_id/run_id`，防止批准过期 revision 或跨 scope 请求 |
 | `SubmitUserInputRequest/CommandSchema` | wire 只有 `command_id/input_id/kind/body`；Host/Core command 才绑定 `project_id/run_id/actor`，其中 `user` 用于浏览器 steering、`parent_agent` 只用于受信父 Runtime 向 direct child 投递；浏览器不能夹带 scope、actor 或服务端时间戳 |
 | `StartRunInputSchema` | Host→Core：多出 `workspace: WorkspaceHandleSchema` |
@@ -183,12 +186,24 @@ ObservationSchema   观测：status / summary / facts / artifact_refs
 | `AttachmentUploadRequestSchema` | wire metadata；project/chat 两个目标分支，正文必须另走 raw bytes |
 | `AttachmentStageReceiptSchema` | accepted/rejected 判别联合；公开 receipt 只有 opaque upload id，不含 project/session scope |
 | `AttachmentUploadIdsSchema` | 每 Run 最多 8 个，必须唯一 |
-| `AttachmentRefSchema` | attachment id、MIME、1..5 MiB、SHA-256、source 与可选 PDF 文本 Artifact id |
+| `AttachmentRefSchema` | attachment id、MIME、1..30 MiB、SHA-256、source 与可选 PDF 文本 Artifact id |
 | `AttachmentAdded/Rejected/OffloadedDataSchema` | 三种 durable Event 的 strict payload；PDF/delivery/extraction/locator 有交叉约束 |
-| `ModelCapabilitiesSchema` / `ModelImageInputSchema` | Host-owned `image_input`；只允许 PNG/JPEG base64，解码后仍须落在 5 MiB 内 |
+| `ModelCapabilitiesSchema` / `ModelImageInputSchema` | Host-owned `image_input`；只允许 PNG/JPEG base64，解码后仍须落在 30 MiB 内 |
 | `AttachmentListProjectionSchema` | G-18 在 v7 引入的 replay 派生列表；旧 Ledger 默认为空，当前随整体 Projection 使用 v9 |
 
 附件 raw bytes 不属于任何 command/event JSON schema。StartRun/StartChat 只携带 opaque upload ids，Host/Core 再用内部 staging record 恢复 project/session scope；这避免 Plain Chat 隐藏 project id 被 receipt 回显，也避免 base64 膨胀进入 Ledger。
+
+### 5.5c `project-file-context.ts` — 版本化项目文件上下文
+
+| 导出 | 关键点 |
+|---|---|
+| `ProjectFileContextRefSchema` / `ProjectFileContextRefsSchema` | strict `{path, expected_sha256}`；相对路径、带算法前缀的 SHA-256、最多五项且路径唯一 |
+| `ProjectFileContextSnapshotSchema` | 私有 Host→Core `{project_id,path,sha256,byte_length,content}`；UTF-8 编码长度必须等于声明长度，单份最多 65,536 bytes |
+| `ProjectFileContextSnapshotsSchema` | 最多五份、路径唯一、总 UTF-8 bytes 不超过 131,072；Core 另核对每份对应客户端引用、项目及内容哈希 |
+
+客户端不能把 `content` 混入引用。Host 使用同轮权限、路径包含关系、普通文件身份与读取大小限制取得快照；版本变化在 Run 受理前拒绝。Core 将脱敏后的正文按同项目/Run 存为 Artifact，规范 `artifact.stored` 记录原文件 `source_sha256` 和制品引用，两者的 SHA 可能因脱敏而不同。恢复只校验并读该制品，不重读当前仓库文件；正文仍是不可信模型上下文，不增加工具权限。
+
+共享 UI 的引用传递、旧 Host 缺少 `files.context` 时拒绝入口、限额及草稿保留证据见 [UI 单测日志](../validation/current-workbench-recovery/checks/workbench-file-context-unit-final.log)和[专用 capability 负例](../validation/current-workbench-recovery/checks/workbench-file-context-capability-unit-final.log)。最新源码 [Web020 操作旅程](../validation/current-workbench-recovery/attempt020-final-web/report.json)通过，包含版本冲突后重选、实际 Provider/Artifact/Manifest 与 CLI；final7 最新安装字节上的对应旅程仍待验收，不把此前安装包记录升级为本轮通过。
 
 ### 5.5b `team.ts` — G-08 Agent Team
 
@@ -459,7 +474,8 @@ G-02 又增加了四组契约：
 | `ToolDescriptor/ModelTool` | Host descriptor 所有字段必填；模型投影只能出现 `name/description/input_schema`；JSON Schema strict 且有 byte/depth/node/property 上限 |
 | `ToolBatchStarted/CompletedData` | count、并发度、action id 唯一/成员关系、序列化原因、结果顺序、失败数与 failure class/status 必须自洽；stop race 可形成零完成审计 |
 | `StartRunCommandSchema` | 信封 `command_id` === `input.command_id` |
-| `StartChatRequestSchema` | 由 `omit` 结构性移除 `project_id` / `mode`，且 `.strict()` |
+| `StartChatRequestSchema` | 由 `omit` 结构性移除 `project_id` / `file_contexts`，mode 可选，且 `.strict()` |
+| `ProjectFileContextRefs/SnapshotsSchema` | 引用路径唯一；可信快照按 UTF-8 bytes 校验单份/总量，不能使用客户端正文替代 Host 读取 |
 | `ApprovePlanRequest/CommandSchema` | wire 不能夹带 project/run；Host command 必须绑定当前 `plan_event_id` |
 | `SubmitUserInputRequest/CommandSchema` | wire 不能夹带 project/run/actor/timestamp；普通 Host 请求绑定 `actor:"user"`，只有受信父 Runtime 的 child mailbox 路径可绑定 `actor:"parent_agent"`；正文、队列和 step 都有硬上限 |
 | `UserInputQueued/ConsumedData` | queued/consumed payload strict；消费时间与 step 合法并绑定 queued event；内部 command/input digest 只留 canonical 平面 |

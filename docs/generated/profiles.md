@@ -2,7 +2,7 @@
 
 # Entry profile catalog
 
-Source set: `sha256:939a1a9ff274d829cb70698a24345ae93e1c64ea07e33ad4372d96a292d210d1`. Generator: `sha256:164175c682e6830959c4ce9271481fdfaadbc058080e1e51ff84d852f801c1e3`.
+Source set: `sha256:45056137898fea881147331f768f78e7d37e15ddcc5415ceef6eccc4fdcdf8ef`. Generator: `sha256:164175c682e6830959c4ce9271481fdfaadbc058080e1e51ff84d852f801c1e3`.
 
 See [input manifest](catalog-manifest.json) for exact source hashes.
 

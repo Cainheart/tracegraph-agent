@@ -2003,7 +2003,7 @@ describe("LiveTraceGraphClient", () => {
       file: new Blob([Uint8Array.from([1, 2, 3])], { type: "application/pdf" }),
       declaredMediaType: "application/pdf",
       delivery: "offload",
-    }]);
+    }], undefined, [{ path: "src/add.ts", expected_sha256: hash }]);
 
     expect(sdk.attachmentUploads).toEqual([
       expect.objectContaining({ target: "project", project_id: fixtureProject.project_id, declared_media_type: "image/png", delivery: "inline" }),
@@ -2011,7 +2011,10 @@ describe("LiveTraceGraphClient", () => {
     ]);
     expect(sdk.startInputs.at(-1)).toMatchObject({
       attachment_upload_ids: ["upload:image", "upload:pdf-rejected"],
+      file_contexts: [{ path: "src/add.ts", expected_sha256: hash }],
+      task: "Inspect selected files",
     });
+    expect(sdk.startInputs.at(-1)?.file_contexts?.[0]).not.toHaveProperty("content");
 
     sdk.attachmentUploads.length = 0;
     sdk.attachmentUploadHandler = null;

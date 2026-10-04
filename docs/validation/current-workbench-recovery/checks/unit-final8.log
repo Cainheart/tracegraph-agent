@@ -1,0 +1,447 @@
+Scope: 22 of 23 workspace projects
+$ vitest run src --maxWorkers=1
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/contracts
+
+
+ Test Files  33 passed (33)
+      Tests  190 passed (190)
+   Start at  23:00:26
+   Duration  4.75s (import 68%, transform 18%, tests 12%, worker 2%)
+
+    Isolate  33 workers spawned · ~57ms startup each (spawn + environment, per file)
+             at least ~1.81s faster with isolate: false — reuses workers across files instead of one per file
+
+$ vitest run tests --maxWorkers=1
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/retrieval
+
+
+ Test Files  3 passed (3)
+      Tests  22 passed (22)
+   Start at  23:00:31
+   Duration  485ms (tests 75%, transform 14%, import 9%, worker 2%)
+
+$ vitest run tests --maxWorkers=1
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/telemetry
+
+
+ Test Files  2 passed (2)
+      Tests  26 passed (26)
+   Start at  23:00:32
+   Duration  206ms (transform 42%, tests 35%, import 20%, worker 3%)
+
+$ vitest run tests --maxWorkers=1
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/retrieval-service
+
+
+ Test Files  2 passed (2)
+      Tests  14 passed (14)
+   Start at  23:00:32
+   Duration  462ms (tests 52%, import 31%, transform 15%, worker 1%)
+
+$ vitest run src --maxWorkers=1
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/api
+
+
+ Test Files  3 passed (3)
+      Tests  17 passed (17)
+   Start at  23:00:33
+   Duration  551ms (import 53%, transform 40%, tests 6%, worker 1%)
+
+$ vitest run tests --maxWorkers=1
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/codegraph
+
+
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+   Start at  23:00:33
+   Duration  719ms (tests 63%, transform 24%, import 13%)
+
+$ vitest run src --maxWorkers=1
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/evidence
+
+
+ Test Files  1 passed (1)
+      Tests  5 passed (5)
+   Start at  23:00:34
+   Duration  402ms (transform 49%, tests 28%, import 23%, worker 1%)
+
+$ vitest run src --maxWorkers=1
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/lsp
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  23:00:35
+   Duration  429ms (transform 42%, tests 37%, import 20%)
+
+$ vitest run src --maxWorkers=1
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/mcp
+
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  23:00:35
+   Duration  422ms (transform 43%, tests 35%, import 21%)
+
+$ vitest run src --maxWorkers=1
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/sdk
+
+
+ Test Files  8 passed (8)
+      Tests  76 passed (76)
+   Start at  23:00:36
+   Duration  3.51s (tests 76%, import 16%, transform 8%)
+
+    Isolate  8 workers spawned · ~51ms startup each (spawn + environment, per file)
+             at least ~360ms faster with isolate: false — reuses workers across files instead of one per file
+
+$ vitest run src --maxWorkers=1
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/session
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  23:00:40
+   Duration  334ms (transform 55%, import 27%, tests 18%, worker 1%)
+
+$ vitest run src --maxWorkers=1
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/tool
+
+
+ Test Files  3 passed (3)
+      Tests  24 passed (24)
+   Start at  23:00:40
+   Duration  612ms (import 52%, transform 39%, tests 8%, worker 1%)
+
+$ vitest run src --maxWorkers=1
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/context
+
+
+ Test Files  2 passed (2)
+      Tests  28 passed (28)
+   Start at  23:00:41
+   Duration  712ms (transform 40%, tests 32%, import 28%, worker 1%)
+
+$ vitest run src --maxWorkers=1
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench
+
+
+ Test Files  30 passed (30)
+      Tests  250 passed (250)
+   Start at  23:00:42
+   Duration  15.33s (import 48%, tests 27%, transform 13%, environment 11%)
+
+     Import  152 modules were evaluated 318 times · 6.39s total, 48% of tracked time
+             ~3.33s faster with isolate: false — shared modules are evaluated once per worker instead of once per file
+             learn more: https://vitest.dev/guide/improving-performance#test-isolation
+
+$ vitest run src --maxWorkers=1
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/web
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  23:00:57
+   Duration  469ms (transform 77%, import 20%, tests 2%)
+
+$ vitest run src --maxWorkers=1
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/core
+
+
+ Test Files  59 passed (59)
+      Tests  514 passed (514)
+   Start at  23:00:58
+   Duration  86.25s (tests 93%, import 6%, transform 1%)
+
+$ vitest run src --maxWorkers=1
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: read-only (sandbox: read-only)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: fixture=ready(0)
+LSP: no configured servers (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: read-only (sandbox: read-only)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: read-only (sandbox: read-only)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: readonly (parallel 2, depth 1)
+
+ Test Files  22 passed (22)
+      Tests  160 passed (160)
+   Start at  23:02:24
+   Duration  33.58s (tests 87%, import 10%, transform 3%)
+
+$ vitest run src --maxWorkers=1
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/test-support
+
+
+ Test Files  4 passed (4)
+      Tests  67 passed (67)
+   Start at  23:02:58
+   Duration  17.66s (tests 94%, import 3%, transform 3%)
+
+$ vitest run src --exclude src/e2e.test.ts --maxWorkers=1
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/cli
+
+
+ Test Files  19 passed (19)
+      Tests  93 passed (93)
+   Start at  23:03:16
+   Duration  3.69s (import 59%, transform 23%, tests 18%, worker 1%)
+
+    Isolate  19 workers spawned · ~47ms startup each (spawn + environment, per file)
+             at least ~846ms faster with isolate: false — reuses workers across files instead of one per file
+
+$ vitest run src --exclude src/desktop-host.e2e.test.ts --maxWorkers=1
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/desktop-host
+
+
+ Test Files  6 passed (6)
+      Tests  18 passed (18)
+   Start at  23:03:20
+   Duration  5.64s (tests 78%, import 12%, transform 10%)
+
+$ vitest run --config vitest.config.ts --maxWorkers=1
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/desktop
+
+
+ Test Files  8 passed (8)
+      Tests  44 passed (44)
+   Start at  23:03:26
+   Duration  2.57s (tests 83%, import 15%, transform 2%, worker 1%)
+
+    Isolate  8 workers spawned · ~48ms startup each (spawn + environment, per file)
+             at least ~339ms faster with isolate: false — reuses workers across files instead of one per file
+

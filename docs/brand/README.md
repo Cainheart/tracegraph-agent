@@ -22,3 +22,5 @@ node --test scripts/build-brand-icons.test.mjs
 ```
 
 [资源清单](assets-manifest.json)记录唯一源 SHA256、派生参数和每个文件的哈希。打包前须通过派生校验；更换 PNG 而保留旧 ICNS 不视为更新完成。实际安装后的 Dock、Finder 与 Windows 图标需要单独查看，文件校验不能替代真实系统显示验收。
+
+本轮 final8 安装资源与应用内、Finder/应用简介显示已核验，见[实际原生观察](../validation/current-workbench-recovery/native-default/report.json)。Dock 在启用的 CUA 界面中不可观察，Windows 原生显示尚未验收；这两项不计入已完成显示验证。
