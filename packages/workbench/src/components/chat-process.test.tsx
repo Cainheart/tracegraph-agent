@@ -116,7 +116,7 @@ describe("reference chat process", () => {
     expect(completed.every((item) => item.querySelector(".chat-running-dot") === null)).toBe(true);
   });
   it("ships the running animation rules in the workbench stylesheet", async () => {
-    const css = await readFile(resolve(process.cwd(), "src/workbench.css"), "utf8");
+    const css = await readFile(resolve(import.meta.dirname, "../workbench.css"), "utf8");
     for (const marker of ["@keyframes chat-activity-spin", "@keyframes chat-activity-sweep", "@keyframes chat-activity-breathe",
       ".chat-operation.is-running .chat-operation-label", ".chat-operation-group.is-running > summary > span", "prefers-reduced-motion: reduce"]) {
       expect(css).toContain(marker);

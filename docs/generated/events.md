@@ -2,7 +2,7 @@
 
 # Event catalog
 
-Source set: `sha256:97a0639a3724b1cc84b018f542be5ddcb3dd1270ed16e71413bd7578b04a48c1`. Generator: `sha256:cc2a7b4213121031c159d682983da045193bcea429846edb77d8c909472dfe89`.
+Source set: `sha256:a8abe9045ed3857eef63f83ab98e76bed95ba189521d9313331042ba0f49a6cf`. Generator: `sha256:cc2a7b4213121031c159d682983da045193bcea429846edb77d8c909472dfe89`.
 
 See [input manifest](catalog-manifest.json) for exact source hashes.
 
