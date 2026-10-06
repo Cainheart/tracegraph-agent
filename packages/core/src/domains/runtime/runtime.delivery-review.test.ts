@@ -98,10 +98,12 @@ describe("independent finite-budget software delivery",()=>{
   const runtime=await runtimeFixture(f,provider.model),started=await runtime.startRun(input(f)),result=await wait(runtime,started.run_id);
   expect(result.failure_code).toBe("timeout");expect(provider.calls()).toBe(1);expect(result.timeline.some(event=>event.data.operation==="delivery.verification_failure_checkpoint")).toBe(false);expect(result.subagents.items).toEqual([]);
  });
+// deliveryReview:false drops the delivery config, so the by-design background memory derivation stays on
+// and adds its own request shortly after settle; opt out so the request count below is deterministic.
  it("keeps legacy embeddings fail-closed for the same actual nonzero command",async()=>{
   const f=await fixture();await writeFile(join(f.project,"verify.mjs"),"process.exit(7);\n");
   const provider=await modelFixture(()=>call("run_project_command",{path:"outlive.commands.json",command:"verify",expected_manifest_sha256:f.manifestHash}));
-  const runtime=await runtimeFixture(f,provider.model,{deliveryReview:false}),started=await runtime.startRun(input(f)),result=await wait(runtime,started.run_id);
+  const runtime=await runtimeFixture(f,provider.model,{deliveryReview:false}),started=await runtime.startRun(input(f),{model:provider.model,backgroundModelDerivation:false}),result=await wait(runtime,started.run_id);
   expect(result.failure_code).toBe("project_command_failed");expect(provider.calls()).toBe(1);expect(result.timeline.some(event=>String(event.data.operation).startsWith("delivery."))).toBe(false);
  });
  it("fences an external source change during actual independent inspection",async()=>{const f=await fixture();let root=0,review=0;const provider=await modelFixture(async({child,body})=>{if(child){if(++review===1)return reviewReads(body);await writeFile(join(f.project,"src/clamp.mjs"),fixed);return answer(passed);}return ++root===1?call("preview_patch",{path:"src/clamp.mjs",expected:before,replacement:buggy}):root===2?call("run_project_command",{path:"outlive.commands.json",command:"verify",expected_manifest_sha256:f.manifestHash}):answer();}),runtime=await runtimeFixture(f,provider.model),started=await runtime.startRun(input(f)),result=await wait(runtime,started.run_id);expect(result.failure_code).toBe("delivery_review_source_changed");expect(result.timeline.some(event=>event.type==="run.completed")).toBe(false);expect(result.subagents.items[0]?.status).toBe("completed");expect(await readFile(join(f.project,"src/clamp.mjs"),"utf8")).toBe(fixed);});

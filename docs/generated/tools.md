@@ -2,7 +2,7 @@
 
 # Built-in tool catalog
 
-Source set: `sha256:6109d267d4cb74e5eca5d624d18fcae51d2965d4c57cf3cca7a1ec9f96970f1a`. Generator: `sha256:cc2a7b4213121031c159d682983da045193bcea429846edb77d8c909472dfe89`.
+Source set: `sha256:e7775e692b2350e8086161d39f91b1be9341392f1a7cc8a5425b632db058d5c9`. Generator: `sha256:cc2a7b4213121031c159d682983da045193bcea429846edb77d8c909472dfe89`.
 
 See [input manifest](catalog-manifest.json) for exact source hashes.
 
