@@ -325,7 +325,7 @@ async function runInterruptedWorker() {
       }
       if (input.mode === "plan") {
         entered.resolve();
-        return finishDecision("decision:bench-recovery-plan-ready");
+        return finishDecision("decision:bench-recovery-plan-ready", { finish_intent: "submit_plan" });
       }
       return new Promise(() => undefined);
     },
@@ -453,7 +453,7 @@ function oneToolThenFinishModel(name) {
   };
 }
 
-function finishDecision(decisionId) {
+function finishDecision(decisionId, overrides = {}) {
   return {
     decision_id: decisionId,
     kind: "finish",
@@ -461,6 +461,7 @@ function finishDecision(decisionId) {
     evidence_refs: [],
     risk: "none",
     final_answer: "Benchmark path complete.",
+    ...overrides,
   };
 }
 
