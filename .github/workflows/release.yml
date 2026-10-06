@@ -98,6 +98,16 @@ jobs:
       - run: pnpm typecheck
       - name: Install the pinned browser for real browser tests
         run: pnpm --filter @tracegraph/host exec playwright-core install --with-deps chromium
+      - name: Support Chromium's real sandbox on this runner
+        # Same Ubuntu 24.04 AppArmor restriction as in CI: Chromium refuses to start
+        # with "Chromium sandboxing failed!" unless the runner allows unprivileged
+        # user namespaces. Product code keeps chromiumSandbox: true.
+        run: |
+          if [ -f /proc/sys/kernel/apparmor_restrict_unprivileged_userns ]; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+          sysctl kernel.apparmor_restrict_unprivileged_userns 2>/dev/null || true
+          sysctl kernel.unprivileged_userns_clone 2>/dev/null || true
       - run: pnpm test
       - run: pnpm test:e2e
       - run: pnpm coverage
