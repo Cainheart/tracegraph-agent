@@ -28,6 +28,8 @@ type NodeRef = { handle: ElementHandle<Node>; fingerprint: string };
 type TabState = { snapshot: BrowserTab; context: BrowserContext; page: Page; refs: Map<string, NodeRef>; queue: Promise<unknown> };
 const hash = (bytes: string | Uint8Array) => `sha256:${createHash("sha256").update(bytes).digest("hex")}` as const;
 const failure = (code: string, message: string, status = 409) => workbenchError(code, message, status);
+/** Chromium's own startup complaint is the only diagnosis for a refused launch, so keep it bounded. */
+const launchFailureDetail = (error: unknown) => (error instanceof Error ? error.message : String(error)).replace(/\s+/g, " ").trim().slice(0, 300) || "no detail";
 
 /** Business controller shared by authenticated clients and registered Runtime tools. */
 export class BrowserControl {
@@ -278,7 +280,7 @@ export class BrowserControl {
       this.#browser = browser; browser.on("disconnected", () => { for (const tab of this.#tabs.values()) if (tab.snapshot.state !== "closed") tab.snapshot = { ...tab.snapshot, state: "interrupted", revision: tab.snapshot.revision + 1 }; }); return browser;
     }).catch(error => {
       if ((error as { code?: string }).code === "browser_closed") throw error;
-      this.#available = false; throw failure("browser_runtime_unavailable", "The matching browser could not start; repair the application installation", 503);
+      this.#available = false; throw failure("browser_runtime_unavailable", `The matching browser could not start; repair the application installation (${launchFailureDetail(error)})`, 503);
     }).finally(() => { this.#launch = undefined; });
     return this.#launch;
   }

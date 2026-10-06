@@ -2,7 +2,7 @@
 
 # Module catalog
 
-Source set: `sha256:434769ccf64e6726d81bf08861ab38c8838e4ab899a05342d6e66b15daa9dd99`. Generator: `sha256:cc2a7b4213121031c159d682983da045193bcea429846edb77d8c909472dfe89`.
+Source set: `sha256:276c1b9402d4144907ac753408083d663e7507bc3c119d642f9f54ad89df8143`. Generator: `sha256:cc2a7b4213121031c159d682983da045193bcea429846edb77d8c909472dfe89`.
 
 See [input manifest](catalog-manifest.json) for exact source hashes.
 
