@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { access, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -75,7 +76,7 @@ test("runner isolates each command, strips credentials, and writes an auditable 
     assert.equal(report.raw.samples.length, 3);
     assert.equal(report.summary.sample_count, 3);
     assert.equal(report.budget.passed, true);
-    assert.equal(report.source.working_tree_clean, false);
+    assert.equal(typeof report.source.working_tree_clean, "boolean");
     assert.equal(report.machine.runtime.name, "node");
 
     const invocations = (await readFile(logPath, "utf8")).trim().split("\n").map((line) => line.split("|"));
@@ -94,6 +95,30 @@ test("runner isolates each command, strips credentials, and writes an auditable 
     if (previousNodeOptions === undefined) delete process.env.NODE_OPTIONS;
     else process.env.NODE_OPTIONS = previousNodeOptions;
   }
+});
+
+test("source metadata reads commit and cleanliness from the repository it is pointed at", async (context) => {
+  const repositoryRoot = await makeTempRoot(context);
+  const reportRoot = await makeTempRoot(context);
+  await initializeGitRepository(repositoryRoot);
+  const clean = await runBenchmark({
+    scenario: scenario({ warmup_iterations: 0 }),
+    scenarioConfigSha256: createHash("sha256").update("git-metadata-clean").digest("hex"),
+    reportPath: join(reportRoot, "clean.json"),
+    repositoryRoot,
+  });
+  assert.equal(clean.source.working_tree_clean, true);
+  assert.match(clean.source.git_commit, /^[a-f0-9]{40}$/u);
+
+  await writeFile(join(repositoryRoot, "tracked.txt"), "modified\n", "utf8");
+  const dirty = await runBenchmark({
+    scenario: scenario({ warmup_iterations: 0 }),
+    scenarioConfigSha256: createHash("sha256").update("git-metadata-dirty").digest("hex"),
+    reportPath: join(reportRoot, "dirty.json"),
+    repositoryRoot,
+  });
+  assert.equal(dirty.source.working_tree_clean, false);
+  assert.equal(dirty.source.git_commit, clean.source.git_commit);
 });
 
 test("correctness failure creates a failed report and skips every measurement", async (context) => {
@@ -160,6 +185,29 @@ test("timed out samples stop the run and are not counted as passing measurements
   assert.equal(report.summary, null);
   assert.equal(report.budget.passed, null);
 });
+
+async function initializeGitRepository(root) {
+  const env = { ...process.env, GIT_TERMINAL_PROMPT: "0" };
+  delete env.GIT_DIR;
+  delete env.GIT_WORK_TREE;
+  delete env.GIT_INDEX_FILE;
+  const git = (...args) => spawnSync(
+    "git",
+    [
+      "-c", "user.name=benchmark harness",
+      "-c", "user.email=benchmark@example.invalid",
+      "-c", "commit.gpgsign=false",
+      "-c", "init.defaultBranch=main",
+      ...args,
+    ],
+    { cwd: root, env, encoding: "utf8" },
+  );
+  await writeFile(join(root, "tracked.txt"), "committed\n", "utf8");
+  for (const args of [["init"], ["add", "tracked.txt"], ["commit", "-m", "initial"]]) {
+    const result = git(...args);
+    assert.equal(result.status, 0, `git ${args.join(" ")} failed: ${result.stderr || result.error?.message || "unknown error"}`);
+  }
+}
 
 async function makeTempRoot(context) {
   const root = await mkdtemp(join(tmpdir(), "tracegraph-benchmark-test-"));
