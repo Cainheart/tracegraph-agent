@@ -2,7 +2,7 @@
 
 # Generated reference catalogs
 
-Source set: `sha256:276c1b9402d4144907ac753408083d663e7507bc3c119d642f9f54ad89df8143`. Generator: `sha256:cc2a7b4213121031c159d682983da045193bcea429846edb77d8c909472dfe89`.
+Source set: `sha256:6109d267d4cb74e5eca5d624d18fcae51d2965d4c57cf3cca7a1ec9f96970f1a`. Generator: `sha256:cc2a7b4213121031c159d682983da045193bcea429846edb77d8c909472dfe89`.
 
 See [input manifest](catalog-manifest.json) for exact source hashes.
 
