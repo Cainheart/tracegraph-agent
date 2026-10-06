@@ -36,8 +36,16 @@ catalog:
   zod: 4.6.5
 
 overrides:
+  # GHSA-ch52-4w7c-c8xp (high)：http-cache-semantics <= 4.2.0 泄露跨用户缓存响应；4.2.1 未发布，补丁线为 4.3.0。
+  http-cache-semantics: 4.3.0
   lodash-es: 4.18.1
+  # GHSA-68fv-2mgg-jv7q (high)：source-map-js >= 1.0.0 < 1.2.2 可被索引段的 source-map 触发事件循环 DoS（postcss / @vue 传递依赖）。
+  source-map-js: 1.2.2
 
 minimumReleaseAgeExclude:
   - '@types/node@22.20.3'
   - fastify@5.12.5
+  # 供应链修复：下述两个补丁版本发布未满隔离期，显式豁免发布年龄检查
+  # （GHSA-ch52-4w7c-c8xp / GHSA-68fv-2mgg-jv7q，均为 high）。
+  - http-cache-semantics@4.3.0
+  - source-map-js@1.2.2
