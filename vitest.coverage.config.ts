@@ -22,7 +22,13 @@ export default defineConfig({
       "packages/*/tests/**/*.test.{ts,tsx}",
       "scripts/check-coverage.test.ts",
     ],
-    exclude: ["apps/cli/src/e2e.test.ts"],
+    // 该 e2e spawn 真实 owner：插桩观测不到子进程，且插桩变慢后它会撞上产品内部的 20s owner
+    // 就绪窗口（packages/host/src/local-host.ts）与用例自行声明的 20s 超时。其真实时序由
+    // `pnpm test` 覆盖；同目录另两个 e2e 在插桩下仍能通过，故不排除。
+    exclude: [
+      "apps/cli/src/e2e.test.ts",
+      "packages/host/src/local-host-upgrade-owner.e2e.test.ts",
+    ],
     isolate: true,
     passWithNoTests: false,
     testTimeout: 30_000,
