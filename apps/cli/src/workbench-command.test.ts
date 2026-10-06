@@ -15,6 +15,58 @@ function harness(methods:Record<string,unknown>={}) {
 }
 
 describe("Unified local Workbench CLI",()=>{
+  it("reads the shared public chat projection without starting or resuming tasks",async()=>{
+    const result={run_id:"run:test",status:"completed",blocks:[{kind:"answer",id:"event:answer",sequence:8,text:"The durable final answer.",source_event_ids:["event:answer"]}]};
+    const getPublicChat=vi.fn(async()=>result),startRun=vi.fn(),resumeSession=vi.fn();
+    const state=harness({getPublicChat,startRun,resumeSession});
+    expect(await maybeRunWorkbenchCommand(["run","public-chat","run:test","--json"],state.options)).toBe(0);
+    expect(getPublicChat).toHaveBeenCalledExactlyOnceWith("run:test");
+    expect(startRun).not.toHaveBeenCalled(); expect(resumeSession).not.toHaveBeenCalled();
+    expect(state.writes.join("\n")).toContain('"kind": "answer"');
+    expect(state.writes.join("\n")).toContain("The durable final answer.");
+  });
+
+  it("runs explicitly confirmed capability probes and reports unknown feature outcomes even in completed receipts",async()=>{const base={command_id:"probe:one",expected_revision:1,model:"configured",features:["tools"],confirmed:true};const testModelCapabilities=vi.fn(async()=>({connection_revision:1,results:[{status:"unknown"}]})),getModelCapabilityTestReceipt=vi.fn(async()=>({state:"completed",result:{connection_revision:1,results:[{status:"unknown"}]}}));const state=harness({testModelCapabilities,getModelCapabilityTestReceipt});expect(await maybeRunWorkbenchCommand(["models","capability-test","service","--command-id",base.command_id,"--input-json",JSON.stringify(base)],state.options)).toBe(3);expect(testModelCapabilities).toHaveBeenCalledExactlyOnceWith("service",base);expect(await maybeRunWorkbenchCommand(["models","capability-receipt",base.command_id],state.options)).toBe(3);expect(testModelCapabilities).toHaveBeenCalledOnce();expect(getModelCapabilityTestReceipt).toHaveBeenCalledExactlyOnceWith(base.command_id);});
+  it("a cancelled capability confirmation is rejected before any provider test",async()=>{const testModelCapabilities=vi.fn(),state=harness({testModelCapabilities});expect(await maybeRunWorkbenchCommand(["models","capability-test","service","--input-json",JSON.stringify({expected_revision:0,model:"configured",features:["tools"],confirmed:false})],state.options)).toBe(1);expect(testModelCapabilities).not.toHaveBeenCalled();});
+  it("manages global Skills without a project and binds project tombstones to both hashes",async()=>{
+    const sha="sha256:"+"a".repeat(64),stateSha="sha256:"+"b".repeat(64),listManagedSkills=vi.fn(async()=>({entries:[]})),managedSkillCommand=vi.fn(async input=>({command_id:input.command_id,status:"succeeded"}));const state=harness({listManagedSkills,managedSkillCommand});
+    expect(await maybeRunWorkbenchCommand(["skills","list"],state.options)).toBe(0);expect(listManagedSkills).toHaveBeenCalledExactlyOnceWith({kind:"global"});
+    expect(await maybeRunWorkbenchCommand(["skills","remove","--project-id","project:test","--command-id","skill:remove","--input-json",JSON.stringify({name:"review",expected_sha256:sha,expected_state_sha256:stateSha})],state.options)).toBe(0);expect(managedSkillCommand).toHaveBeenCalledExactlyOnceWith({type:"remove",command_id:"skill:remove",scope:{kind:"project",project_id:"project:test"},name:"review",expected_sha256:sha,expected_state_sha256:stateSha});
+  });
+  it("keeps Skill approval and unknown receipts unresolved and rejects invalid documents",async()=>{
+    const validateManagedSkill=vi.fn(async()=>({valid:false})),getManagedSkillCommandReceipt=vi.fn(async()=>({command_id:"skill:unknown",state:"unknown",observed_sha256:"sha256:"+"a".repeat(64)})),managedSkillCommand=vi.fn(async()=>({status:"awaiting_approval"}));const state=harness({validateManagedSkill,getManagedSkillCommandReceipt,managedSkillCommand});
+    expect(await maybeRunWorkbenchCommand(["skills","validate","--input-json",JSON.stringify({name:"review",content:"invalid local document"})],state.options)).toBe(1);expect(await maybeRunWorkbenchCommand(["skills","receipt","skill:unknown"],state.options)).toBe(3);expect(managedSkillCommand).not.toHaveBeenCalled();
+    expect(await maybeRunWorkbenchCommand(["skills","create","--command-id","skill:create","--input-json",JSON.stringify({name:"review",expected_sha256:null,content:"explicit local content"})],state.options)).toBe(3);expect(managedSkillCommand).toHaveBeenCalledOnce();
+  });
+  it("dispatches typed retention and pin commands, keeping unknown cleanup receipts exit 3",async()=>{
+    const cleanupVisualEvidence=vi.fn(async()=>({command_id:"cleanup:one",status:"unknown",deleted:[],unknown:["browser-evidence:one"],checked_at:"2026-10-05T00:00:00Z"})),pinVisualEvidence=vi.fn(async()=>({pinned:true})),getVisualEvidenceCommandReceipt=vi.fn(async()=>({state:"completed",result:{status:"unknown"}})),listVisualEvidence=vi.fn(async()=>({entries:[]}));const state=harness({cleanupVisualEvidence,pinVisualEvidence,getVisualEvidenceCommandReceipt,listVisualEvidence});
+    expect(await maybeRunWorkbenchCommand(["evidence","cleanup","--project-id","project:test","--run-id","run:test","--command-id","cleanup:one"],state.options)).toBe(3);expect(cleanupVisualEvidence).toHaveBeenCalledExactlyOnceWith({command_id:"cleanup:one",project_id:"project:test",run_id:"run:test",limit:50});
+    expect(await maybeRunWorkbenchCommand(["evidence","pin","browser-evidence:one","--state","pinned","--expected-revision","2","--command-id","pin:one"],state.options)).toBe(0);expect(pinVisualEvidence).toHaveBeenCalledExactlyOnceWith("browser-evidence:one",{command_id:"pin:one",expected_revision:2,pinned:true});
+    expect(await maybeRunWorkbenchCommand(["evidence","receipt","cleanup:one"],state.options)).toBe(3);expect(cleanupVisualEvidence).toHaveBeenCalledOnce();
+    expect(await maybeRunWorkbenchCommand(["evidence","list","--limit","5","--offset","3"],state.options)).toBe(0);expect(listVisualEvidence).toHaveBeenCalledExactlyOnceWith({limit:5,offset:3});
+  });
+  it("keeps exact distinct Goal and command IDs for read-only reconciliation",async()=>{
+    const getGoalCommandReceipt=vi.fn(async()=>({state:"unknown",command_id:"command:goal"})),getGoalCreationReceipt=vi.fn(async()=>({state:"not_found",command_id:"command:create"}));const state=harness({getGoalCommandReceipt,getGoalCreationReceipt});
+    expect(await maybeRunWorkbenchCommand(["goal","receipt","goal:one","command:goal"],state.options)).toBe(3);
+    expect(getGoalCommandReceipt).toHaveBeenCalledExactlyOnceWith("goal:one","command:goal");
+    expect(await maybeRunWorkbenchCommand(["goal","creation-receipt","command:create"],state.options)).toBe(1);
+    expect(getGoalCreationReceipt).toHaveBeenCalledExactlyOnceWith("command:create");
+  });
+  it("delivers typed local profile CAS and readonly bounded public queries",async()=>{
+    const updatePersonalProfile=vi.fn(async()=>({revision:1,last_command_id:"command:profile"})),searchPublicSessions=vi.fn(async()=>({hits:[],page:{complete:true}})),queryPersonalUsage=vi.fn(async()=>({source:"ledger",totals:{cost_status:"unknown"}}));const state=harness({updatePersonalProfile,searchPublicSessions,queryPersonalUsage});
+    const values={display_name:"Ada",bio:"Local only",avatar_color:"blue"};
+    expect(await maybeRunWorkbenchCommand(["profile","set","--command-id","command:profile","--input-json",JSON.stringify({expected_revision:0,values})],state.options)).toBe(0);
+    expect(updatePersonalProfile).toHaveBeenCalledExactlyOnceWith({command_id:"command:profile",expected_revision:0,values});
+    expect(await maybeRunWorkbenchCommand(["search","sessions","--q","report","--project-id","project:test","--session-id","session:test","--state","completed","--archive","archived","--limit","5"],state.options)).toBe(0);
+    expect(searchPublicSessions).toHaveBeenCalledExactlyOnceWith({q:"report",project_id:"project:test",session_id:"session:test",status:"completed",archive:"archived",limit:5});
+    expect(await maybeRunWorkbenchCommand(["usage","daily","--from-day","2026-10-01","--to-day","2026-10-05","--project-id","project:test"],state.options)).toBe(0);
+    expect(queryPersonalUsage).toHaveBeenCalledExactlyOnceWith({from_day:"2026-10-01",to_day:"2026-10-05",project_id:"project:test"});
+    expect(await maybeRunWorkbenchCommand(["usage","daily","--from-day","2026-02-30","--to-day","2026-10-05"],state.options)).toBe(1);
+    expect(queryPersonalUsage).toHaveBeenCalledOnce();
+  });
+  it("never treats an uncertain observed profile as a successful command receipt",async()=>{
+    for(const [receipt,exit]of [[{state:"unknown",observed_profile:{revision:1}},3],[{state:"failed",code:"personal_profile_revision_conflict"},1],[{state:"not_found"},1],[{state:"completed",result:{revision:1}},0]] as const){const getPersonalProfileCommandReceipt=vi.fn(async()=>receipt),state=harness({getPersonalProfileCommandReceipt});expect(await maybeRunWorkbenchCommand(["profile","receipt","command:profile"],state.options)).toBe(exit);expect(getPersonalProfileCommandReceipt).toHaveBeenCalledExactlyOnceWith("command:profile");expect(state.writes).toHaveLength(1);}
+  });
   it("selects project context through real scoped reads and sends versions without file contents",async()=>{
     const sha="sha256:"+"a".repeat(64);
     const readProjectFile=vi.fn(async(projectId:string,input:{path:string})=>({project_id:projectId,path:input.path,sha256:sha,byte_length:19,kind:"text",content:"private source text"}));
@@ -83,6 +135,11 @@ describe("Unified local Workbench CLI",()=>{
     const startMediaRun=vi.fn(async()=>({run_id:"run:media"}));const getArtifactContent=vi.fn();
     const noOutput=harness({startMediaRun,getRun:vi.fn(async()=>({run_id:"run:media",status:"completed",timeline:[],artifact_refs:[]})),getArtifactContent});
     expect(await maybeRunWorkbenchCommand(["media","generate","--prompt","Fixture"],noOutput.options)).toBe(1);expect(noOutput.writes[0]).toContain("media_output_missing");expect(getArtifactContent).not.toHaveBeenCalled();
+    const unconfiguredReceipt={receipt_id:"receipt:image-unconfigured",action_id:"action:image-unconfigured",tool_name:"generate_image",status:"failure",transport_status:"success",business_status:"failure",code:"image_provider_unconfigured",summary:"Configure an image provider for the next Run",started_at:"2026-10-05T00:00:00Z",completed_at:"2026-10-05T00:00:01Z",duration_ms:1000,artifact_refs:[],metadata:{}};
+    const unconfigured=harness({startMediaRun,getRun:vi.fn(async()=>({run_id:"run:media",status:"failed",timeline:[{type:"tool.failed",data:{receipt:unconfiguredReceipt}}],artifact_refs:[]})),getArtifactContent});
+    expect(await maybeRunWorkbenchCommand(["media","generate","--prompt","Fixture"],unconfigured.options)).toBe(1);
+    expect(JSON.parse(unconfigured.writes[0]!)).toMatchObject({status:"failed",code:"image_provider_unconfigured",message:"Configure an image provider for the next Run"});
+    expect(getArtifactContent).not.toHaveBeenCalled();
     const receipt={receipt_id:"receipt:unknown",action_id:"action:unknown",tool_name:"generate_image",status:"unknown",transport_status:"unknown",business_status:"unknown",code:"image_outcome_unknown",summary:"Unknown image outcome",started_at:"2026-10-03T00:00:00Z",completed_at:"2026-10-03T00:00:01Z",duration_ms:1000,artifact_refs:[],metadata:{}};
     const unknown=harness({startMediaRun,getRun:vi.fn(async()=>({run_id:"run:media",status:"needs_manual_review",timeline:[{type:"tool.unknown",data:{receipt}}],artifact_refs:[]})),getArtifactContent});
     expect(await maybeRunWorkbenchCommand(["media","generate","--prompt","Fixture","--command-id","cmd:media-exact"],unknown.options)).toBe(3);expect(startMediaRun).toHaveBeenCalledWith(expect.objectContaining({command_id:"cmd:media-exact"}));expect(unknown.writes[0]).toContain("image_outcome_unknown");expect(getArtifactContent).not.toHaveBeenCalled();
@@ -190,6 +247,16 @@ describe("Unified local Workbench CLI",()=>{
       [["mcp","list"],"getMcpStatus",{servers:[]}],
       [["extensions","list"],"listExtensions",[]],
     ] as const){const action=vi.fn(async()=>result);const state=harness({[method]:action});expect(await maybeRunWorkbenchCommand(argv,state.options)).toBe(0);expect(action).toHaveBeenCalledOnce();expect(state.close).toHaveBeenCalledOnce();}
+  });
+  it("routes history, CAS restore and inheritance controls without replaying task commands",async()=>{
+    const getWorkbenchSettingsHistory=vi.fn(async()=>({entries:[],current_revision:4})),restoreWorkbenchSettings=vi.fn(async()=>({snapshot:{revision:5},preserved_sections:["tools"]})),getProjectRunDefaults=vi.fn(async()=>({revision:0,overrides:{}})),updateProjectRunDefaults=vi.fn(async()=>({revision:1})),resetSessionRunOptions=vi.fn(async()=>({revision:2})),startRun=vi.fn();
+    const state=harness({getWorkbenchSettingsHistory,restoreWorkbenchSettings,getProjectRunDefaults,updateProjectRunDefaults,resetSessionRunOptions,startRun});
+    expect(await maybeRunWorkbenchCommand(["config","history"],state.options)).toBe(0);
+    expect(await maybeRunWorkbenchCommand(["config","restore","--target-revision","1","--expected-revision","4","--command-id","restore:cli"],state.options)).toBe(0);expect(restoreWorkbenchSettings).toHaveBeenCalledWith({command_id:"restore:cli",expected_revision:4,target_revision:1});
+    expect(await maybeRunWorkbenchCommand(["config","project-get","--project-id","project:one"],state.options)).toBe(0);expect(getProjectRunDefaults).toHaveBeenCalledWith("project:one");
+    expect(await maybeRunWorkbenchCommand(["config","project-set","--project-id","project:one","--input-json",JSON.stringify({expected_revision:0,overrides:{reasoning_effort:"high"}}),"--command-id","project:cli"],state.options)).toBe(0);expect(updateProjectRunDefaults).toHaveBeenCalledWith("project:one",{command_id:"project:cli",expected_revision:0,overrides:{reasoning_effort:"high"}});
+    expect(await maybeRunWorkbenchCommand(["sessions","options-reset","session:one","--expected-revision","1","--command-id","session:cli"],state.options)).toBe(0);expect(resetSessionRunOptions).toHaveBeenCalledWith("session:one",{command_id:"session:cli",expected_revision:1});expect(startRun).not.toHaveBeenCalled();
+    expect(await maybeRunWorkbenchCommand(["config","restore","--target-revision","0"],state.options)).toBe(2);expect(restoreWorkbenchSettings).toHaveBeenCalledOnce();
   });
   it("dispatches scoped resource commands and source/revision settings through closed contracts",async()=>{
     const workbenchCommand=vi.fn(async()=>({status:"succeeded",code:"synthetic_ok"}));const updateWorkbenchSettings=vi.fn(async()=>({revision:2}));

@@ -27,6 +27,7 @@ import { JsonlSessionStore } from "@tracegraph/session";
 import { ModelUsageReportSchema, UsageSnapshotSchema, type UsageSnapshot } from "@tracegraph/contracts";
 import { createHostComposition,ensureLocalHost,acquireRuntimeRootLease } from "@tracegraph/host";
 import {maybeRunWorkbenchCommand} from "./workbench-command.js";
+import {maybeRunInteractiveChat} from "./interactive-chat.js";
 import { closeHostAndFlushTelemetry, createCodeGraphProvider } from "./composition.js";
 import { resolveCliProfile } from "./boot/profile.js";
 import { runExtensionsCommand } from "./extension-command.js";
@@ -54,7 +55,8 @@ import { runRunSessionCommand, RunSessionCommandError } from "./run-session-comm
 import { HostExtensionController } from "./extension-config.js";
 
 const command = process.argv[2] ?? "serve";
-const unifiedExitCode=await maybeRunWorkbenchCommand(process.argv.slice(2));
+const interactiveExitCode = await maybeRunInteractiveChat(process.argv.slice(2));
+const unifiedExitCode = interactiveExitCode ?? await maybeRunWorkbenchCommand(process.argv.slice(2));
 
 if(unifiedExitCode!==undefined){process.exitCode=unifiedExitCode;}else if (command === "serve") {
   await runServer(process.argv.slice(3));

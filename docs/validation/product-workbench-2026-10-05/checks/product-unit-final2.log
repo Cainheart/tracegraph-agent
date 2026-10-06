@@ -1,0 +1,182 @@
+Scope: 22 of 23 workspace projects
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/contracts
+
+
+ Test Files  43 passed (43)
+      Tests  220 passed (220)
+   Start at  05:27:08
+   Duration  1.50s (transform 63%, import 33%, tests 3%, worker 1%)
+
+  Transform  transforming modules took 10.23s · 63% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+
+$ vitest run tests
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/retrieval
+
+
+ Test Files  3 passed (3)
+      Tests  22 passed (22)
+   Start at  05:27:09
+   Duration  377ms (tests 56%, transform 32%, import 11%, worker 1%)
+
+$ vitest run tests
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/telemetry
+
+
+ Test Files  2 passed (2)
+      Tests  26 passed (26)
+   Start at  05:27:10
+   Duration  148ms (transform 56%, tests 25%, import 16%, worker 2%)
+
+$ vitest run tests
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/retrieval-service
+
+
+ Test Files  2 passed (2)
+      Tests  14 passed (14)
+   Start at  05:27:10
+   Duration  285ms (tests 49%, import 27%, transform 23%, worker 1%)
+
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/api
+
+
+ Test Files  3 passed (3)
+      Tests  17 passed (17)
+   Start at  05:27:11
+   Duration  360ms (transform 64%, import 32%, tests 3%, worker 1%)
+
+$ vitest run tests
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/codegraph
+
+
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+   Start at  05:27:11
+   Duration  765ms (tests 58%, transform 27%, import 15%)
+
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/evidence
+
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  05:27:12
+   Duration  471ms (transform 49%, tests 28%, import 22%)
+
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/lsp
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  05:27:13
+   Duration  471ms (transform 46%, tests 32%, import 22%)
+
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/mcp
+
+
+ Test Files  2 passed (2)
+      Tests  14 passed (14)
+   Start at  05:27:13
+   Duration  489ms (transform 43%, tests 34%, import 22%)
+
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/sdk
+
+
+ Test Files  13 passed (13)
+      Tests  99 passed (99)
+   Start at  05:27:14
+   Duration  2.48s (transform 43%, tests 35%, import 21%)
+
+  Transform  transforming modules took 3.09s · 43% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/session
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  05:27:17
+   Duration  340ms (transform 57%, import 28%, tests 15%, worker 1%)
+
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/tool
+
+
+ Test Files  3 passed (3)
+      Tests  24 passed (24)
+   Start at  05:27:17
+   Duration  348ms (transform 65%, import 31%, tests 4%, worker 1%)
+
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/context
+
+
+ Test Files  2 passed (2)
+      Tests  28 passed (28)
+   Start at  05:27:18
+   Duration  502ms (transform 53%, tests 24%, import 23%)
+
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench
+
+
+ Test Files  44 passed (44)
+      Tests  361 passed (361)
+   Start at  05:27:18
+   Duration  3.54s (transform 37%, import 30%, tests 17%, environment 15%)
+
+  Transform  transforming modules took 14.84s · 37% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/web
+
+ ❯ src/protocol-conformance.test.ts (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/protocol-conformance.test.ts [ src/protocol-conformance.test.ts ]
+Error: Cannot find package '@tracegraph/sdk/protocol' imported from /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/web/src/protocol-conformance.test.ts
+ ❯ src/protocol-conformance.test.ts:2:1
+      1| import { describe, expect, it } from "vitest";
+      2| import {
+       | ^
+      3|   CLIENT_PROTOCOL_CONFORMANCE_FIXTURES,
+      4|   ClientProtocolMessageSchema,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  05:27:22
+   Duration  111ms (worker 98%, environment 2%)
+
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/web:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @tracegraph/web@0.1.0-alpha.0 test:unit: `vitest run src`
+Exit status 1
+$ vitest run src --maxWorkers=1 --no-file-parallelism

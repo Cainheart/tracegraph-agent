@@ -41,6 +41,8 @@ export class LocalHostConnectionSupervisor {
   #paused=0;
   #lastPort:number|undefined;
   #stableSince=0;
+  #nextUpgrade=0;
+  #upgradeAvailable=false;
   constructor(options: LocalConnectionSupervisorOptions={}) {
     this.#options={...options,profileRoot:resolve(options.profileRoot??defaultLocalProfileRoot(options.environment))};
     this.#lastPort=options.httpPort;
@@ -100,7 +102,7 @@ export class LocalHostConnectionSupervisor {
   }
   async #refresh():Promise<void> {
     try {
-      if(!this.#buildLoaded){this.#buildId=this.#options.productBuildId??(this.#options.runtimeDirectory?await resolveBundledRuntime(this.#options.runtimeDirectory):await discoverCurrentBundledRuntime())?.productBuildId;this.#buildLoaded=true;}
+      if(!this.#buildLoaded){const bundled=this.#options.runtimeDirectory?await resolveBundledRuntime(this.#options.runtimeDirectory):await discoverCurrentBundledRuntime();this.#buildId=this.#options.productBuildId??bundled?.productBuildId;this.#upgradeAvailable=bundled!==undefined&&bundled.productBuildId===this.#buildId;this.#buildLoaded=true;}
       if(await (this.#options.stopped??readLocalOwnerStopIntent)(this.#options)) {
         if(this.#snapshot.state!=="stopped"){await this.#options.onDisconnect?.();await this.#connection?.close();this.#connection=undefined;}
         this.#set("stopped","host_stopped","The local Host was explicitly stopped. Start it explicitly to continue.");return;
@@ -110,6 +112,10 @@ export class LocalHostConnectionSupervisor {
       catch(error){if(!transportError(error))throw error;}
       if(identity&&this.#profileId&&identity.profile_id!==this.#profileId)throw new Error("Profile identity changed");
       const current=this.#connection;
+      // A client already bound to its build never attempts to replace a foreign newer owner.
+      // Fresh installed clients can request only the verified private upgrade transaction.
+      if(identity&&this.#buildId!==undefined&&identity.product_build_id!==this.#buildId&&current?.client.replayActive){this.#set("offline","host_replay_stale","The Host owner changed during replay. Exit replay before reconnecting; replay cannot prepare an upgrade.");return;}
+      if(identity&&this.#buildId!==undefined&&identity.product_build_id!==this.#buildId&&current)throw new LocalHostUpgradeRequiredError("This client belongs to a retired application build. Open the updated application; it will not downgrade the running Host.");
       if(identity&&current?.status.boot_nonce===identity.boot_nonce){
         try{await current.probe();if(Date.now()-this.#stableSince>=60_000){this.#attempts=0;this.#nextRecovery=0;}this.#set("connected");return;}catch(error){if(!transportError(error))throw error;}
       }
@@ -129,7 +135,15 @@ export class LocalHostConnectionSupervisor {
         next=await (this.#options.ensure??ensureLocalHost)({...this.#options,...(this.#lastPort===undefined?{}:{httpPort:this.#lastPort}),recoveryMode:true});
       }
       const expected=this.#buildId??current?.status.product_build_id;
-      if(expected!==undefined&&next.status.product_build_id!==expected){await next.close();throw new LocalHostUpgradeRequiredError();}
+      if(expected!==undefined&&next.status.product_build_id!==expected){
+        await next.close();
+        if(current||!this.#upgradeAvailable)throw new LocalHostUpgradeRequiredError("This client belongs to a different application build. Open the updated application; existing work is preserved.");
+        if(Date.now()<this.#nextUpgrade)throw new LocalHostUpgradeRequiredError();
+        this.#nextUpgrade=Date.now()+5_000;
+        // Upgrade checks have their own bounded polling cadence and do not consume crash recovery attempts.
+        next=await (this.#options.ensure??ensureLocalHost)({...this.#options,...(this.#lastPort===undefined?{}:{httpPort:this.#lastPort}),recoveryMode:true});
+        if(next.status.product_build_id!==expected){await next.close();throw new LocalHostUpgradeRequiredError();}
+      }
       await this.#bind(next);
       // Refund only this successful ensure after all identity/build and rebind checks.
       // A verified unchanged process or its nonce rotation is not another crash.

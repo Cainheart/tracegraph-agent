@@ -1,0 +1,34 @@
+import type {WorkbenchSettingsSnapshot,WorkbenchResources,WorkbenchNotification} from "@tracegraph/contracts";
+export interface NativeBackgroundRead {profileId:string;ownerNonce:string;generation:number;settings:WorkbenchSettingsSnapshot;resources:WorkbenchResources;}
+export interface BackgroundMenuItem {id?:"outlive-floating"|"outlive-on-top";label?:string;type?:"separator"|"checkbox";checked?:boolean;enabled?:boolean;click?:()=>void;}
+export interface NativeBackgroundEffects {
+ setMenu(items:BackgroundMenuItem[]):void;setTooltip(text:string):void;destroyTray():void;
+ notify(input:{title:string;body:string;click:()=>void;failed:()=>void}):boolean;
+ startPowerBlocker():number;stopPowerBlocker(id:number):void;
+}
+export interface NativeBackgroundContext {
+ read():Promise<NativeBackgroundRead|undefined>;
+ showWindow():Promise<void>;navigate(notification:WorkbenchNotification,generation:number,profileId:string):Promise<void>;
+ setPreventSleep(enabled:boolean):Promise<void>;stopBackgroundAndQuit(snapshot:NativeBackgroundRead):Promise<void>;quit():void;
+ windowPresentation?():{floating:boolean;alwaysOnTop:boolean};setFloating?(enabled:boolean):Promise<void>;setAlwaysOnTop?(enabled:boolean):Promise<void>;
+ effects:NativeBackgroundEffects;pollMs?:number;
+}
+const executing=new Set(["created","indexing","running"]);
+/** Native effects stay in Main. No ledger or second Runtime is created here. */
+export class NativeBackgroundController {
+ readonly #context:NativeBackgroundContext;#timer:ReturnType<typeof setInterval>|undefined;#poll:Promise<void>|undefined;
+ #closed=false;#baselineProfile:string|undefined;#seen=new Set<string>();#power:number|undefined;#snapshot:NativeBackgroundRead|undefined;#notificationFailed=false;#busy=false;
+ constructor(context:NativeBackgroundContext){this.#context=context;this.#render();}
+ start(){if(this.#timer||this.#closed)return;void this.refresh();this.#timer=setInterval(()=>void this.refresh(),this.#context.pollMs??2000);this.#timer.unref();}
+ async refresh(){if(this.#closed)return;if(this.#poll)return this.#poll;const poll=this.#refresh();this.#poll=poll;try{await poll;}finally{if(this.#poll===poll)this.#poll=undefined;}}
+ async #refresh(){try{const next=await this.#context.read();if(this.#closed)return;if(!next){this.#snapshot=undefined;this.#releasePower();this.#render();return;}const first=this.#baselineProfile!==next.profileId;if(first){this.#seen.clear();this.#baselineProfile=next.profileId;}this.#snapshot=next;const generation=next.generation,profileId=next.profileId;for(const notification of next.resources.notifications??[]){if(this.#seen.has(notification.event_id))continue;this.#seen.add(notification.event_id);if(first)continue;const general=next.settings.settings.general;const enabled=notification.status==="completed"?general.notify_completed:notification.status==="failed"||notification.status==="interrupted"?general.notify_failed:general.notify_approval;if(!enabled)continue;const chinese=general.language==="zh-CN";const body=notification.status==="completed"?(chinese?"任务已完成。点击查看结果。":"A task finished. Click to view the result."):notification.status==="failed"||notification.status==="interrupted"?(chinese?"任务已停止。点击查看详情。":"A task stopped. Click to view details."):(chinese?"一项任务需要你确认。点击查看审批。":"A task needs your confirmation. Click to review.");const accepted=this.#context.effects.notify({title:"Outlive Agent",body,click:()=>{if(this.#closed)return;void this.#context.navigate(notification,generation,profileId).catch(()=>{void this.#context.showWindow().catch(()=>undefined);});},failed:()=>{this.#notificationFailed=true;this.#render();}});if(!accepted)this.#notificationFailed=true;}
+ while(this.#seen.size>1024)this.#seen.delete(this.#seen.values().next().value!);
+ const prevent=next.settings.settings.general.prevent_sleep_during_tasks===true&&next.resources.runs.some(run=>executing.has(run.status));if(prevent&&this.#power===undefined)this.#power=this.#context.effects.startPowerBlocker();else if(!prevent)this.#releasePower();this.#render();
+ }catch{if(this.#closed)return;this.#snapshot=undefined;this.#releasePower();this.#render();}}
+ #releasePower(){if(this.#power!==undefined){this.#context.effects.stopPowerBlocker(this.#power);this.#power=undefined;}}
+ #run(operation:()=>Promise<void>){if(this.#busy||this.#closed)return;this.#busy=true;this.#render();void operation().catch(()=>undefined).finally(()=>{this.#busy=false;if(!this.#closed)void this.refresh();});}
+ #render(){if(this.#closed)return;const current=this.#snapshot;const zh=current?.settings.settings.general.language!=="en";const runs=current?.resources.runs.length??0;const terminals=current?.resources.terminals.filter(resource=>resource.state==="running").length??0;const previews=current?.resources.previews.filter(resource=>resource.owned_process&&["starting","ready"].includes(resource.state)).length??0;const status=current?(zh?`${runs} 项后台任务 · ${terminals} 个终端 · ${previews} 个预览`:`${runs} background tasks · ${terminals} terminals · ${previews} previews`):(zh?"后台未连接":"Background offline");this.#context.effects.setTooltip(`Outlive Agent · ${status}${this.#notificationFailed?(zh?" · 通知不可用":" · Notifications unavailable"):""}`);
+ const presentation=this.#context.windowPresentation?.();
+ this.#context.effects.setMenu([{label:zh?"显示 Outlive Agent":"Show Outlive Agent",click:()=>void this.#context.showWindow().catch(()=>undefined)},...(presentation&&this.#context.setFloating&&this.#context.setAlwaysOnTop?[{id:"outlive-floating" as const,label:zh?"浮动聊天窗口":"Floating chat window",type:"checkbox" as const,checked:presentation.floating,enabled:!this.#busy,click:()=>this.#run(()=>this.#context.setFloating!(!presentation.floating))},{id:"outlive-on-top" as const,label:zh?"窗口置顶":"Keep window on top",type:"checkbox" as const,checked:presentation.alwaysOnTop,enabled:!this.#busy,click:()=>this.#run(()=>this.#context.setAlwaysOnTop!(!presentation.alwaysOnTop))}]:[]),{label:status,enabled:false},{type:"separator"},{label:zh?"仅运行任务时防止休眠":"Prevent sleep while tasks are running",type:"checkbox",checked:current?.settings.settings.general.prevent_sleep_during_tasks===true,enabled:Boolean(current)&&!this.#busy,click:()=>{if(current)this.#run(()=>this.#context.setPreventSleep(current.settings.settings.general.prevent_sleep_during_tasks!==true));}},{type:"separator"},{label:zh?"退出应用（后台任务继续）":"Quit application (background continues)",enabled:!this.#busy,click:()=>this.#context.quit()},{label:zh?"停止后台并退出…":"Stop background and quit…",enabled:Boolean(current)&&!this.#busy,click:()=>{if(current)this.#run(()=>this.#context.stopBackgroundAndQuit(current));}}]);}
+ async close(){if(this.#closed)return;this.#closed=true;if(this.#timer)clearInterval(this.#timer);this.#releasePower();this.#context.effects.destroyTray();/* In-flight reads cannot publish once closed; quit never waits on a stalled gateway. */}
+}

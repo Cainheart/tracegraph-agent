@@ -505,7 +505,12 @@ describe("G16 documentation consistency", () => {
     expect(eventTypes.filter((event) => event.startsWith("lsp."))).toHaveLength(2);
     expect(eventTypes.filter((event) => event.startsWith("code."))).toHaveLength(2);
     const builtinToolNames = assignedStringArray(actionContract, "BUILTIN_TOOL_NAMES");
-    expect(builtinToolNames).toHaveLength(20);
+    // FLOW-097 adds existing-manifest discovery and bounded project execution.
+    // Keep the earlier G20 event/projector versions while pinning the actual
+    // expanded builtin inventory; optional extension tools remain separate.
+    expect(builtinToolNames).toHaveLength(22);
+    expect(builtinToolNames).toContain("discover_project_commands");
+    expect(builtinToolNames).toContain("run_project_command");
     expect(assignedConstantLiteral(teamContract, "DEFAULT_TEAM_READ_PAGE_ITEMS")).toBe("25");
     expect(assignedConstantLiteral(teamContract, "MAX_TEAM_READ_PAGE_ITEMS")).toBe("100");
     expect(teamContract).toContain("expected_last_sequence");

@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import type { ModelConfigSnapshot, WorkbenchClient } from "./client";
 import { Composer } from "./components/Composer";
 import { ProjectFileContextPicker } from "./components/ProjectFileContextPicker";
-import { useConversationOptions, ComposerModelMenu, ComposerPermissionMenu } from "./conversation-options";
+import { useRunMessage } from "./run-messages";
+import { useConversationOptions, ComposerModelMenu, ComposerPermissionMenu, ConversationSettingsSource } from "./conversation-options";
 import { useConversationDraft } from "./drafts";
 import { ApprovalStrip } from "./components/ApprovalStrip";
 import { ChangesView } from "./components/ChangesView";
@@ -13,6 +14,10 @@ import { Inspector } from "./components/Inspector";
 import { PlanApprovalBanner } from "./components/PlanApprovalBanner";
 import { ReplayBanner } from "./components/ReplayBanner";
 import { IconButton, Notice } from "./components/Primitives";
+import { BrowserPanel } from "./components/BrowserPanel";
+import { PublicSessionSearch } from "./components/PublicSessionSearch";
+import { GoalWorkspace } from "./components/GoalWorkspace";
+import { WorkbenchHelp } from "./components/WorkbenchHelp";
 import { Sidebar } from "./components/Sidebar";
 import { type Theme } from "./components/SettingsPanel";
 import { UnifiedSettings, capabilityAvailable, capabilityReadable, capabilityFor, commandId, type SettingsCategory } from "./components/UnifiedSettings";
@@ -28,7 +33,7 @@ import { ChatView, NoProject, ProjectReady } from "./components/WorkbenchStates"
 import { ReasoningEffortPicker } from "./components/ReasoningEffortPicker";
 import { LanguageProvider, useI18n } from "./i18n";
 import { canUseExecuteMode, evidenceForSelection, type MainView, type EvidenceSlot, type PendingAttachment, type ReasoningEffort, type RunMode, type RunStatus, type TraceEvent, type WorkspaceKind } from "./model";
-import type { HostCapabilities, WorkbenchSettingsSnapshot, WorkbenchResources, WorkbenchNotification, TaskBoardItem, TodoItem, TodoState, UserInputKind, ProjectFileContextRef } from "@tracegraph/contracts";
+import type { PersonalProfileSnapshot, HostCapabilities, WorkbenchSettingsSnapshot, WorkbenchResources, WorkbenchNotification, TaskBoardItem, TodoItem, TodoState, UserInputKind, ProjectFileContextRef } from "@tracegraph/contracts";
 
 const THEME_STORAGE_KEY = "tracegraph.theme";
 const REASONING_STORAGE_KEY = "tracegraph.reasoning-effort";
@@ -138,14 +143,14 @@ export function StateNotice({ status, sessionViewState, onResumeSession, onRevie
   const { language, t } = useI18n();
   if (status === "interrupted") return <Notice action={readOnly ? undefined : <button className="button primary" onClick={onResumeSession} type="button"><Icon name="play" size={13} />{t("Resume session")}</button>} icon="alert" title={t("Last session was interrupted")} tone="warning">{t("The durable view was recovered. No tool was rerun automatically.")}</Notice>;
   if (status === "needs_manual_review") return <Notice icon="alert" title={t("Needs manual review")} tone="warning">{t("The workspace no longer matches the Action WAL. Outlive Agent did not change files automatically.")}</Notice>;
-  if (sessionViewState === "restored") return <Notice icon="clock" title={t("Recovered session view")} tone="info">{t("This view was rebuilt from the durable ledger. Opening it did not execute tools.")}</Notice>;
-  if (sessionViewState === "resumed") return <Notice icon="refresh" title={t("Session resumed")} tone="success">{t("The Host appended a resume event and restored the canonical projection.")}</Notice>;
   if (status === "indexing") return <Notice icon="search" title={t("Building the baseline graph")} tone="info">{scanScope ? (language === "zh-CN" ? `正在扫描 ${scanScope}` : `Scanning ${scanScope}`) : currentStep}{indexedFiles === undefined ? ` · ${t("progress is event-based")}` : language === "zh-CN" ? ` · 已处理 ${indexedFiles} 个文件` : ` · ${indexedFiles} files processed`} · {t("no percentage estimated")}</Notice>;
   if (status === "reconnecting") return <Notice action={<button className="button subtle" onClick={onRefresh} type="button"><Icon name="refresh" size={13} />{t("Retry now")}</button>} icon="refresh" title={t("Reconnecting to the local host")} tone="warning">{language === "zh-CN" ? `已保留最后一个持久化事件 #${lastSequence}。` : `Last durable event #${lastSequence} is preserved.`} {connectionMessage}</Notice>;
-  if (status === "failed") return <Notice icon="alert" title={t("Run stopped safely")} tone="danger">{currentStep}{language === "zh-CN" ? "。此前已提交的事件仍可检查。" : ". Earlier committed events remain available for inspection."}</Notice>;
-  if (status === "cancelled") return <Notice icon="stop" title={t("Run cancelled")} tone="warning">{currentStep}</Notice>;
+  // A task failure belongs to its chat turn, not the entire conversation.
+  if (status === "failed") return null;
+  if (status === "cancelled") return <Notice icon="stop" title={t("Run cancelled")} tone="warning">{t(currentStep)}</Notice>;
   if (status === "ready_for_review") return <Notice action={<button className="button primary" onClick={onReview} type="button">{t("Review changes")} <Icon name="chevron" size={13} /></button>} icon="check" title={t("Ready for review")} tone="success">{t("Patch, graph delta, and test receipt are linked and ready to inspect.")}</Notice>;
   if (status === "historical") return <Notice icon="clock" title={t("Historical run")} tone="info">{t("This projection is read-only. Opening it never executes tools.")}</Notice>;
+  if (sessionViewState === "resumed" && status !== "completed") return <Notice icon="refresh" title={t("Session resumed")} tone="success">{t("The Host appended a resume event and restored the canonical projection.")}</Notice>;
   return null;
 }
 
@@ -159,19 +164,29 @@ function Workbench({ client }: { client: WorkbenchClient }) {
   const [theme, setTheme] = useState<Theme>(initialTheme);
   const [reasoningEffort, setReasoningEffort] = useState<ReasoningEffort>(initialReasoningEffort);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const workbenchSurface = useRef<HTMLDivElement>(null);
   const [settingsCategory, setSettingsCategory] = useState<SettingsCategory>("general");
   const [mediaOpen, setMediaOpen] = useState(false);
   const [memoryOpen, setMemoryOpen] = useState(false);
+  const [memoryDraft, setMemoryDraft] = useState<{ claim: string; sourceDescription: string } | null>(null);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [goalsOpen, setGoalsOpen] = useState(false);
+  const [goalCreateOpen, setGoalCreateOpen] = useState(false);
   const [resourcesOpen, setResourcesOpen] = useState(false);
-  const [panelTab, setPanelTab] = useState<"files" | "changes" | "terminal" | "preview" | "artifacts" | "tools">("changes");
+  const [panelTab, setPanelTab] = useState<"files" | "changes" | "terminal" | "preview" | "artifacts" | "tools" | "browser">("changes");
   const [reviewSnapshot, setReviewSnapshot] = useState<ReturnType<WorkbenchClient["getSnapshot"]> | null>(null);
   const [reviewEventId, setReviewEventId] = useState<string | null>(null);
   const [reviewPath, setReviewPath] = useState<string | null>(null);
   const [panelLoading, setPanelLoading] = useState(false);
   const [panelError, setPanelError] = useState<string | null>(null);
   const [fileDirty, setFileDirty] = useState(false);
+  const [projectFileOpenRequest, setProjectFileOpenRequest] = useState<{ id: number; path: string; projectId: string } | null>(null);
+  const projectFileOpenRequestId = useRef(0);
   const [paletteOpen, setPaletteOpen] = useState(false);
+  const [historySearchOpen, setHistorySearchOpen] = useState(false);
+  const [navigationError, setNavigationError] = useState<string | null>(null);
   const [capabilities, setCapabilities] = useState<HostCapabilities | null>(null);
+  const [personalIdentity, setPersonalIdentity] = useState<{ client: WorkbenchClient; generation: number | undefined; profileId: string; value: Pick<PersonalProfileSnapshot["values"], "display_name" | "avatar_color"> } | null>(null);
   const [sharedSettings, setSharedSettings] = useState<WorkbenchSettingsSnapshot | null>(null);
   const [backgroundResources, setBackgroundResources] = useState<WorkbenchResources | null>(null);
   const [notifications, setNotifications] = useState<readonly WorkbenchNotification[]>([]);
@@ -184,13 +199,13 @@ function Workbench({ client }: { client: WorkbenchClient }) {
   const setupPrompted = useRef(false);
   const [modelRevision, setModelRevision] = useState(0);
   const [approvalBusy, setApprovalBusy] = useState(false);
-  const [approvalError, setApprovalError] = useState<string | null>(null);
+  const [approvalError, setApprovalError] = useRunMessage(snapshot.run?.id ?? "no-run");
   const [planApprovalBusy, setPlanApprovalBusy] = useState(false);
-  const [planApprovalError, setPlanApprovalError] = useState<string | null>(null);
+  const [planApprovalError, setPlanApprovalError] = useRunMessage(snapshot.run?.id ?? "no-run");
   const [busyTodoId, setBusyTodoId] = useState<string | null>(null);
-  const [todoError, setTodoError] = useState<string | null>(null);
+  const [todoError, setTodoError] = useRunMessage(snapshot.run?.id ?? "no-run");
   const [teamBusyKey, setTeamBusyKey] = useState<string | null>(null);
-  const [teamError, setTeamError] = useState<string | null>(null);
+  const [teamError, setTeamError] = useRunMessage(snapshot.run?.id ?? "no-run");
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const draftScope = snapshot.selectedSessionId ?? (snapshot.project ? `new-project:${snapshot.project.id}` : "new-chat");
@@ -208,6 +223,16 @@ function Workbench({ client }: { client: WorkbenchClient }) {
   const run = snapshot.run;
   const replay = snapshot.replay;
   const replayReadOnly = replay !== undefined;
+  const personalReadAvailable = capabilityReadable(capabilities, "personal.read"), personalProfileId = capabilities?.profile_id;
+  const visiblePersonalIdentity = personalIdentity?.client === client && personalIdentity.generation === snapshot.connection.generation && personalIdentity.profileId === capabilities?.profile_id && snapshot.dataSource === "live" ? personalIdentity.value : undefined;
+  useEffect(() => {
+    if (settingsOpen || replayReadOnly || snapshot.dataSource !== "live" || snapshot.connection.state !== "live" || !personalReadAvailable || !personalProfileId || !client.getPersonalProfile) return;
+    let current = true; const profileId = personalProfileId;
+    void client.getPersonalProfile().then((profile) => {
+      if (current && profile.profile_id === profileId) setPersonalIdentity({ client, generation: snapshot.connection.generation, profileId, value: { display_name: profile.values.display_name, avatar_color: profile.values.avatar_color } });
+    }).catch(() => { /* A failed read keeps only an already verified identity for this binding. */ });
+    return () => { current = false; };
+  }, [client, personalReadAvailable, personalProfileId, settingsOpen, replayReadOnly, snapshot.dataSource, snapshot.connection.state, snapshot.connection.generation]);
   const generatedPreviewCapability = capabilityFor(capabilities, "artifacts.binary.read");
   const generatedPreviewsDisabledReason = replayReadOnly ? "Return to now to preview generated artifacts."
     : snapshot.connection.state !== "live" ? "Reconnect to preview generated artifacts."
@@ -294,8 +319,9 @@ function Workbench({ client }: { client: WorkbenchClient }) {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.isComposing || event.defaultPrevented) return;
+      if (settingsOpen && event.key !== "Escape") return;
       if (event.key === "Escape") {
-        setPaletteOpen(false);
+        setPaletteOpen(false); setHistorySearchOpen(false);
         if (!fileDirty || window.confirm(t("Discard unsaved edits?"))) { setResourcesOpen(false); setView("chat"); }
         setDetailsOpen(false);
         setLogOpen(false);
@@ -318,7 +344,7 @@ function Workbench({ client }: { client: WorkbenchClient }) {
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [replayReadOnly, fileDirty, t]);
+  }, [replayReadOnly, fileDirty, settingsOpen, t]);
 
   const inspectEvent = (event: TraceEvent) => {
     setSelectedId(event.id);
@@ -348,6 +374,14 @@ function Workbench({ client }: { client: WorkbenchClient }) {
   };
 
   const confirmFileNavigation = () => !fileDirty || window.confirm(t("Discard unsaved edits?"));
+  const openProjectFile = (path: string) => {
+    const projectId = snapshot.project?.id;
+    if (!projectId || replayReadOnly || snapshot.dataSource !== "live" || !client.readProjectFile
+      || !capabilityReadable(capabilities, "files.read") || !confirmFileNavigation()) return;
+    setView("chat"); setReviewSnapshot(null); setReviewEventId(null); setReviewPath(null);
+    setPanelError(null); setPanelTab("files"); setResourcesOpen(true);
+    setProjectFileOpenRequest({ id: ++projectFileOpenRequestId.current, path, projectId });
+  };
   const chooseProject = (kind: WorkspaceKind) => { if (confirmFileNavigation()) void client.chooseProject(kind); };
   const previewState = (status: RunStatus) => {
     setView(status === "completed" || status === "ready_for_review" || status === "historical" ? "changes" : "trajectory");
@@ -358,13 +392,13 @@ function Workbench({ client }: { client: WorkbenchClient }) {
     setView("chat");
     setSelectedId(null);
     setTailFollowing(true);
-    await client.startRun(task, mode, effort, attachments, { ...conversationOptions.options, mode, reasoning_effort: effort }, ...(fileContexts.length ? [fileContexts] as const : [] as const));
+    await client.startRun(task, mode, conversationOptions.overrides.reasoning_effort, attachments, { ...conversationOptions.overrides, mode }, ...(fileContexts.length ? [fileContexts] as const : [] as const));
   };
   const startChat = async (task: string, effort: ReasoningEffort = reasoningEffort, attachments: readonly PendingAttachment[] = []) => {
     setView("chat");
     setSelectedId(null);
     setTailFollowing(true);
-    await client.startChat(task, effort, attachments, { ...conversationOptions.options, reasoning_effort: effort });
+    await client.startChat(task, conversationOptions.overrides.reasoning_effort, attachments, conversationOptions.overrides);
   };
   const approve = async () => {
     if (!run?.approval) return;
@@ -513,6 +547,19 @@ function Workbench({ client }: { client: WorkbenchClient }) {
     setTailFollowing(true);
     await client.openSession(sessionId);
   };
+  useEffect(() => {
+    if (!client.onNativeRunRequested || !client.openRun) return;
+    return client.onNativeRunRequested((navigation) => {
+      if (replayReadOnly) return;
+      // Notification clicks never discard the user's editing buffer or confer
+      // execution authority. Drafts remain in their existing session scope.
+      if (fileDirty) { setNavigationError(t("Save or close your unsaved file before opening this task.")); return; }
+      void client.openRun!(navigation.run_id).then(() => {
+        setView("chat"); setSelectedId(null); setTailFollowing(true);
+        setSettingsOpen(false); setMemoryOpen(false); setGoalsOpen(false);
+      }).catch((error: unknown) => setNavigationError(error instanceof Error ? error.message : t("Could not open this task. Try again.")));
+    });
+  }, [client, fileDirty, replayReadOnly, t]);
   const resumeSession = async (sessionId = snapshot.selectedSessionId) => {
     if (!sessionId || !confirmFileNavigation()) return;
     setView("chat");
@@ -610,25 +657,31 @@ function Workbench({ client }: { client: WorkbenchClient }) {
   const reviewEvidence = reviewSnapshot ? evidenceForSelection(reviewSnapshot, reviewSnapshot.run?.events.find((event) => event.id === reviewEventId) ?? null) : selectedEvidence;
   const projectCanExecute = canUseExecuteMode(snapshot.project);
   const activeInput = Boolean(run && ["running", "indexing", "awaiting_plan_approval", "needs_approval", "reconnecting", "interrupted", "needs_manual_review"].includes(run.status));
-  const inputDisabledReason = replayReadOnly ? "Replay is read-only. Return to now to make changes." : snapshot.connection.state !== "live" || run?.status === "reconnecting" ? "Repair the connection before sending a message." : run?.status === "interrupted" ? "Resume the Run before sending guidance." : run?.status === "needs_manual_review" ? "Review this Run before sending guidance." : null;
-  const composer = <Composer value={followupTask} onChange={setFollowupTask} onSubmit={() => void (activeInput ? submitSteering() : startFollowup())} {...(activeInput ? { onStop: () => void cancelRun() } : {})} active={activeInput} busy={activeInput ? steeringBusy || approvalBusy || planApprovalBusy : followupBusy || modelLoading} stopping={cancelBusy} disabledReason={inputDisabledReason} label={!run ? snapshot.project ? "Task" : "Plain chat message" : activeInput ? "Steer this run" : "New task"} submitDisabled={!activeInput && (!modelReady || conversationOptions.loading || conversationOptions.busy)} mode={conversationOptions.options.mode} onModeChange={(mode) => void conversationOptions.update({ mode })} enterBehavior={sharedSettings?.settings.general.enter_behavior ?? "enter"} fileContexts={draft.fileContexts} onFileContextsChange={setFollowupFileContexts} fileContextAvailable={Boolean(snapshot.project && !replayReadOnly && snapshot.connection.state === "live" && capabilityAvailable(capabilities, "files.context") && capabilityAvailable(capabilities, "files.list") && capabilityAvailable(capabilities, "files.read"))} {...(snapshot.project ? { onAddFileContext: () => setFileContextOpen(true) } : {})} attachments={followupAttachments} onAttachmentsChange={setFollowupAttachments} imageInputAvailable={imageInputAvailable} onConfigureImageInput={() => { setSettingsCategory("model"); setSettingsOpen(true); }} attachmentsAvailable={capabilityAvailable(capabilities, "attachments.upload")} {...(!replayReadOnly && ["media.generate", "media.diagram", "media.chart"].some((operation) => capabilityAvailable(capabilities, operation)) ? { onCreateMedia: () => setMediaOpen(true) } : {})} modelControl={<ComposerModelMenu connections={conversationOptions.connections} options={conversationOptions.options} onChange={(patch) => void conversationOptions.update(patch)} onSettings={() => { setSettingsCategory("model"); setSettingsOpen(true); }} active={activeInput} disabled={replayReadOnly || snapshot.connection.state !== "live" || conversationOptions.busy || conversationOptions.loading} />} permissionControl={<ComposerPermissionMenu options={conversationOptions.options} permission={conversationOptions.permission} grant={conversationOptions.grant} active={activeInput} disabled={replayReadOnly || snapshot.connection.state !== "live" || conversationOptions.busy || conversationOptions.loading} onChange={(patch) => void conversationOptions.update(patch)} onGrant={() => void conversationOptions.allowFull()} />} optionsDisabled={conversationOptions.busy || conversationOptions.loading} pending={run?.inputQueue.pending ?? []} error={steeringError ?? conversationOptions.error} />;
+  const inputDisabledReason = replayReadOnly ? "Replay is read-only. Return to now to make changes." : snapshot.connection.state === "connecting" ? "Connecting to Outlive Agent…" : snapshot.connection.state === "reconnecting" ? "Restoring your connection…" : snapshot.connection.state !== "live" || run?.status === "reconnecting" ? "Repair the connection before sending a message." : run?.status === "interrupted" ? "Resume the Run before sending guidance." : run?.status === "needs_manual_review" ? "Review this Run before sending guidance." : null;
+  const composer = <Composer value={followupTask} onChange={setFollowupTask} onSubmit={() => void (activeInput ? submitSteering() : startFollowup())} {...(activeInput ? { onStop: () => void cancelRun() } : {})} active={activeInput} busy={activeInput ? steeringBusy || approvalBusy || planApprovalBusy : followupBusy || modelLoading} stopping={cancelBusy} disabledReason={inputDisabledReason} label={!run ? snapshot.project ? "Task" : "Plain chat message" : activeInput ? "Steer this run" : "New task"} submitDisabled={!activeInput && (!modelReady || !conversationOptions.ready || conversationOptions.loading || conversationOptions.busy)} mode={conversationOptions.options.mode} onModeChange={(mode) => void conversationOptions.update({ mode })} enterBehavior={sharedSettings?.settings.general.enter_behavior ?? "enter"} fileContexts={draft.fileContexts} onFileContextsChange={setFollowupFileContexts} fileContextAvailable={Boolean(snapshot.project && !replayReadOnly && snapshot.connection.state === "live" && capabilityAvailable(capabilities, "files.context") && capabilityAvailable(capabilities, "files.list") && capabilityAvailable(capabilities, "files.read"))} {...(snapshot.project ? { onAddFileContext: () => setFileContextOpen(true) } : {})} attachments={followupAttachments} onAttachmentsChange={setFollowupAttachments} imageInputAvailable={imageInputAvailable} onConfigureImageInput={() => { setSettingsCategory("model"); setSettingsOpen(true); }} attachmentsAvailable={capabilityAvailable(capabilities, "attachments.upload")} {...(!replayReadOnly && ["media.generate", "media.diagram", "media.chart"].some((operation) => capabilityAvailable(capabilities, operation)) ? { onCreateMedia: () => setMediaOpen(true) } : {})} {...(snapshot.project && !replayReadOnly && capabilityAvailable(capabilities, "goals.write") ? { onCreateGoal: () => { setGoalCreateOpen(true); setGoalsOpen(true); } } : {})} modelControl={<ComposerModelMenu connections={conversationOptions.connections} options={conversationOptions.options} onChange={(patch) => void conversationOptions.update(patch)} onSettings={() => { setSettingsCategory("model"); setSettingsOpen(true); }} active={activeInput} disabled={replayReadOnly || snapshot.connection.state !== "live" || conversationOptions.busy || conversationOptions.loading} />} permissionControl={<ComposerPermissionMenu options={conversationOptions.options} permission={conversationOptions.permission} grant={conversationOptions.grant} active={activeInput} disabled={replayReadOnly || snapshot.connection.state !== "live" || conversationOptions.busy || conversationOptions.loading} onChange={(patch) => void conversationOptions.update(patch)} onGrant={() => void conversationOptions.allowFull()} />} optionsDisabled={conversationOptions.busy || conversationOptions.loading} pending={run?.inputQueue.pending ?? []} error={steeringError ?? conversationOptions.error} optionsHelp={<ConversationSettingsSource fields={conversationOptions.fields} overrides={conversationOptions.explicitOverrides} onReset={(field) => void conversationOptions.reset(field)} disabled={replayReadOnly || snapshot.connection.state !== "live" || conversationOptions.busy || conversationOptions.loading || Boolean(snapshot.selectedSessionId && !capabilityAvailable(capabilities, "session.options.reset"))} />} />;
   return (
-    <div className={`app outlive-workbench theme-${theme} ${view === "changes" ? "changes-mode" : ""}`}>
-      <div className={`desktop-app ${navigationOpen ? "navigation-open" : "navigation-closed"}`}>
+    <div
+      className={`app outlive-workbench theme-${theme} ${view === "changes" ? "changes-mode" : ""}`}
+      onPointerDownCapture={(event) => { event.currentTarget.dataset.inputModality = "pointer"; }}
+      onKeyDownCapture={(event) => { if (event.key === "Tab") event.currentTarget.dataset.inputModality = "keyboard"; }}
+    >
+      <div ref={workbenchSurface} className={`desktop-app ${navigationOpen ? "navigation-open" : "navigation-closed"}`}>
         <RunHeader navigationOpen={navigationOpen} onToggleNavigation={() => setNavigationOpen((open) => !open)} onReview={() => { if (panelOpen && panelTab === "changes") closePanel(); else if (confirmFileNavigation()) { setPanelTab("changes"); setReviewSnapshot(null); setView("changes"); } }} onOpenResources={() => { if (confirmFileNavigation()) { setPanelTab("terminal"); setResourcesOpen(true); } }} snapshot={snapshot} />
         {replay && <ReplayBanner error={replayError} onReturnToLive={returnToLive} onStep={(direction) => { setReplayError(null); void client.stepReplay(direction).catch((error: unknown) => setReplayError(error instanceof Error ? error.message : "Replay step failed")); }} replay={replay} />}
-        <Sidebar onOpenResources={() => { if (confirmFileNavigation()) { setPanelTab("tools"); setResourcesOpen(true); } }} onOpenNotifications={() => setNotificationsOpen(true)} onOpenPalette={() => setPaletteOpen(true)} {...(capabilityAvailable(capabilities, "sessions.archive") ? { onArchiveSession: async (sessionId: string) => { await client.workbenchCommand({ type: "sessions.archive", command_id: commandId(), session_id: sessionId }); await client.searchSessions(""); } } : {})} archivedSessionIds={backgroundResources?.archived_session_ids ?? []} onRenameSession={(sessionId, title) => client.renameSession(sessionId, title)} onChooseProject={chooseProject} onDeleteSession={(sessionId) => client.deleteSession(sessionId)} onOpenLocal={async (access) => { if (confirmFileNavigation()) await client.openLocalProject(access); }} {...(client.openProjectFile ? { onOpenProjectFile: (projectId: string) => client.openProjectFile!(projectId) } : {})} onOpenMemory={() => setMemoryOpen(true)} onOpenSettings={() => setSettingsOpen(true)} onPreviewState={previewState} onRemoveProject={async (projectId) => { await client.removeProject(projectId); }} onResumeSession={resumeSession} onReturnHome={() => { if (confirmFileNavigation()) void client.returnHome(); }} onSearchSessions={(query) => client.searchSessions(query)} onSelectProject={(projectId) => { if (confirmFileNavigation()) void client.chooseProjectById(projectId); }} onSelectSession={openSession} readOnly={replayReadOnly} snapshot={snapshot} />
+        <Sidebar personalIdentity={visiblePersonalIdentity} {...(capabilityReadable(capabilities, "search.public") ? {onOpenHistory:()=>setHistorySearchOpen(true)}:{})} {...(capabilityReadable(capabilities, "goals.read") ? { onOpenGoals: () => { setGoalCreateOpen(false); setGoalsOpen(true); } } : {})} onOpenHelp={() => setHelpOpen(true)} onOpenResources={() => { if (confirmFileNavigation()) { setPanelTab("tools"); setResourcesOpen(true); } }} onOpenNotifications={() => setNotificationsOpen(true)} onOpenPalette={() => setPaletteOpen(true)} {...(capabilityAvailable(capabilities, "sessions.archive") ? { onArchiveSession: async (sessionId: string) => { await client.workbenchCommand({ type: "sessions.archive", command_id: commandId(), session_id: sessionId }); await client.searchSessions(""); } } : {})} archivedSessionIds={backgroundResources?.archived_session_ids ?? []} onRenameSession={(sessionId, title) => client.renameSession(sessionId, title)} onChooseProject={chooseProject} onDeleteSession={(sessionId) => client.deleteSession(sessionId)} onOpenLocal={async (access) => { if (confirmFileNavigation()) await client.openLocalProject(access); }} {...(client.openProjectFile ? { onOpenProjectFile: (projectId: string) => client.openProjectFile!(projectId) } : {})} onOpenMemory={() => setMemoryOpen(true)} onOpenSettings={() => setSettingsOpen(true)} onPreviewState={previewState} onRemoveProject={async (projectId) => { await client.removeProject(projectId); }} onResumeSession={resumeSession} onReturnHome={() => { if (confirmFileNavigation()) void client.returnHome(); }} onSearchSessions={(query) => client.searchSessions(query)} onSelectProject={(projectId) => { if (confirmFileNavigation()) void client.chooseProjectById(projectId); }} onSelectSession={openSession} readOnly={replayReadOnly} snapshot={snapshot} />
+        {navigationError && <div role="alert" className="navigation-message">{t(navigationError)}<button className="icon-button" aria-label={t("Close")} onClick={()=>setNavigationError(null)} type="button"><Icon name="close" size={13} /></button></div>}
         <div className={`workspace workspace-chat ${panelOpen ? "review-open" : ""}`}>
 
 
-          {!snapshot.project && !run && <NoProject composer={composer} onDraftChange={setFollowupTask} modelReady={modelReady} modelLoading={modelLoading} modelError={modelError} onConnectModel={connectModel} onOpenDiagnostics={() => { setSettingsCategory("about"); setSettingsOpen(true); }} {...(!replayReadOnly && ["media.generate", "media.diagram", "media.chart"].some((operation) => capabilityAvailable(capabilities, operation)) ? { onCreateMedia: () => setMediaOpen(true) } : {})} attachmentsAvailable={capabilityAvailable(capabilities, "attachments.upload")} modelName={modelName} enterBehavior={sharedSettings?.settings.general.enter_behavior ?? "enter"} connection={snapshot.connection} onReasoningEffortChange={setReasoningEffort} onReconnect={repairConnection} onStartChat={startChat} reasoningEffort={reasoningEffort} />}
-          {snapshot.project && !run && <ProjectReady composer={composer} onDraftChange={setFollowupTask} modelReady={modelReady} modelLoading={modelLoading} modelError={modelError} onConnectModel={connectModel} onReconnect={repairConnection} onOpenDiagnostics={() => { setSettingsCategory("about"); setSettingsOpen(true); }} {...(!replayReadOnly && ["media.generate", "media.diagram", "media.chart"].some((operation) => capabilityAvailable(capabilities, operation)) ? { onCreateMedia: () => setMediaOpen(true) } : {})} attachmentsAvailable={capabilityAvailable(capabilities, "attachments.upload")} modelName={modelName} enterBehavior={sharedSettings?.settings.general.enter_behavior ?? "enter"} connection={snapshot.connection} projectName={snapshot.project.name} key={snapshot.project.id} onReasoningEffortChange={setReasoningEffort} onStart={startRun} readonly={!projectCanExecute} reasoningEffort={reasoningEffort} />}
+          {!snapshot.project && !run && <NoProject composer={composer} modelReady={modelReady} modelLoading={modelLoading} modelError={modelError} onConnectModel={connectModel} onOpenDiagnostics={() => { setSettingsCategory("about"); setSettingsOpen(true); }} {...(!replayReadOnly && ["media.generate", "media.diagram", "media.chart"].some((operation) => capabilityAvailable(capabilities, operation)) ? { onCreateMedia: () => setMediaOpen(true) } : {})} attachmentsAvailable={capabilityAvailable(capabilities, "attachments.upload")} modelName={modelName} enterBehavior={sharedSettings?.settings.general.enter_behavior ?? "enter"} connection={snapshot.connection} onReasoningEffortChange={setReasoningEffort} onReconnect={repairConnection} onStartChat={startChat} reasoningEffort={reasoningEffort} />}
+          {snapshot.project && !run && <ProjectReady composer={composer} modelReady={modelReady} modelLoading={modelLoading} modelError={modelError} onConnectModel={connectModel} onReconnect={repairConnection} onOpenDiagnostics={() => { setSettingsCategory("about"); setSettingsOpen(true); }} {...(!replayReadOnly && ["media.generate", "media.diagram", "media.chart"].some((operation) => capabilityAvailable(capabilities, operation)) ? { onCreateMedia: () => setMediaOpen(true) } : {})} attachmentsAvailable={capabilityAvailable(capabilities, "attachments.upload")} modelName={modelName} enterBehavior={sharedSettings?.settings.general.enter_behavior ?? "enter"} connection={snapshot.connection} projectName={snapshot.project.name} key={snapshot.project.id} onReasoningEffortChange={setReasoningEffort} onStart={startRun} readonly={!projectCanExecute} reasoningEffort={reasoningEffort} />}
 
           {run && (
             <main className="main-workbench">
               <StateNotice connectionMessage={snapshot.connection.message} currentStep={run.currentStep} indexedFiles={run.indexedFiles} lastSequence={run.lastSequence} onRefresh={() => void repairConnection().catch((error: unknown) => setSteeringError(error instanceof Error ? error.message : String(error)))} onResumeSession={() => void resumeSession()} onReview={reviewLatest} readOnly={replayReadOnly} scanScope={run.scanScope} sessionViewState={snapshot.sessionViewState} status={run.status} />
-                <ChatView client={client} runId={run.id} feedbackReadable={!replayReadOnly && snapshot.connection.state === "live" && capabilityReadable(capabilities, "feedback.read")} feedbackWritable={!replayReadOnly && snapshot.connection.state === "live" && capabilityAvailable(capabilities, "feedback.write")} onReviewFile={(id, path, patchEventId) => void reviewFile(id, path, patchEventId)}
+                <ChatView onConfigureModel={connectModel} client={client} runId={run.id} feedbackReadable={!replayReadOnly && snapshot.connection.state === "live" && capabilityReadable(capabilities, "feedback.read")} feedbackWritable={!replayReadOnly && snapshot.connection.state === "live" && capabilityAvailable(capabilities, "feedback.write")} {...(capabilityAvailable(capabilities, "memory.write") ? { onSaveAsMemory: (draft: { claim: string; sourceDescription: string }) => { setMemoryDraft(draft); setMemoryOpen(true); } } : {})} {...(snapshot.project && !replayReadOnly && capabilityReadable(capabilities, "files.read") ? { onOpenProjectFile: openProjectFile } : {})} onReviewFile={(id, path, patchEventId) => void reviewFile(id, path, patchEventId)}
                   runDetails={<Trajectory
+                  compactControls
                   busyTodoId={busyTodoId}
                   events={run.events}
                   onResumeLive={returnToLive}
@@ -698,12 +751,13 @@ function Workbench({ client }: { client: WorkbenchClient }) {
 
           {panelOpen && <aside className="developer-side-panel" aria-label={t(panelTab === "changes" ? "Review changes" : "Developer panel")}>
             <header><strong>{t("Workspace")}</strong><button className="icon-button" aria-label={t("Close panel")} onClick={closePanel} type="button"><Icon name="close" size={17} /></button></header>
-            <nav aria-label={t("Developer panel sections")}>{(["files", "changes", "terminal", "preview", "artifacts", "tools"] as const).map((tab) => <button aria-current={panelTab === tab ? "page" : undefined} className={panelTab === tab ? "active" : ""} key={tab} onClick={() => { if (fileDirty && !window.confirm(t("Discard unsaved edits?"))) return; setPanelTab(tab); }} type="button">{t({ files: "Files", changes: "Changes", terminal: "Terminal", preview: "Preview", artifacts: "Artifacts", tools: "More" }[tab])}</button>)}</nav>
+            <nav aria-label={t("Developer panel sections")}>{(["files", "changes", "terminal", "preview", "artifacts", "browser", "tools"] as const).map((tab) => <button aria-current={panelTab === tab ? "page" : undefined} className={panelTab === tab ? "active" : ""} key={tab} onClick={() => { if (fileDirty && !window.confirm(t("Discard unsaved edits?"))) return; setPanelTab(tab); }} type="button">{t({ files: "Files", changes: "Changes", terminal: "Terminal", preview: "Project preview", artifacts: "Artifacts", browser: "Browser", tools: "More" }[tab])}</button>)}</nav>
             <div className="developer-panel-body">
               {panelLoading && <p role="status">{t("Loading…")}</p>}{panelError && <p role="alert">{panelError}</p>}
-              {panelTab === "files" && <ProjectFiles client={client} {...(snapshot.project ? { projectId: snapshot.project.id } : {})} {...(snapshot.selectedSessionId ? { sessionId: snapshot.selectedSessionId } : {})} capabilities={capabilities} readOnly={replayReadOnly} online={snapshot.connection.state === "live"} onDirty={setFileDirty} />}
+              {panelTab === "files" && <ProjectFiles client={client} {...(snapshot.project ? { projectId: snapshot.project.id } : {})} {...(snapshot.selectedSessionId ? { sessionId: snapshot.selectedSessionId } : {})} {...(projectFileOpenRequest && projectFileOpenRequest.projectId === snapshot.project?.id ? { openRequest: projectFileOpenRequest } : {})} onOpenRequestHandled={(id) => setProjectFileOpenRequest((current) => current?.id === id ? null : current)} capabilities={capabilities} readOnly={replayReadOnly} online={snapshot.connection.state === "live"} onDirty={setFileDirty} />}
               {panelTab === "changes" && (review.run ? <><ChangesView {...(reviewPath ? { requestedPath: reviewPath } : {})} {...(review.run.codeIntel ? { codeIntel: review.run.codeIntel } : {})} diffs={reviewEvidence.diffs} edges={reviewEvidence.graphEdges} evidence={reviewEvidence.evidence} files={reviewEvidence.changedFiles} nodes={reviewEvidence.graphNodes} onJumpToPatch={() => { if (!reviewSnapshot) { jumpToPatch(); setDetailsOpen(true); } }} patchId={reviewEvidence.patchEventId} verified={["available", "demo"].includes(reviewEvidence.evidence.test.status)} /><RollbackControls key={review.run.id} actions={review.run.appliedActions ?? []} client={client} capabilities={capabilities} status={review.run.status} readOnly={replayReadOnly || snapshot.dataSource !== "live" || Boolean(reviewSnapshot)} /></> : <p className="panel-empty">{t("No recorded changes yet.")}</p>)}
               {panelTab === "artifacts" && <><GeneratedGallery artifacts={review.run?.generatedArtifacts ?? []} disabled={generatedPreviewsDisabledReason !== null} {...(generatedPreviewsDisabledReason ? { disabledReason: generatedPreviewsDisabledReason } : {})} onLoad={(runId, artifactId) => client.loadGeneratedArtifact(runId, artifactId)} />{!review.run?.generatedArtifacts?.length && <p className="panel-empty">{t("No generated artifacts in this Run.")}</p>}</>}
+              {panelTab === "browser" && <BrowserPanel key={snapshot.project?.id ?? "no-project"} client={client} {...(snapshot.project ? { projectId: snapshot.project.id } : {})} capabilities={capabilities} online={snapshot.connection.state === "live"} readOnly={replayReadOnly} generation={snapshot.connection.generation} onDiagnostics={() => { setSettingsCategory("about"); setSettingsOpen(true); }} />}
               {["terminal", "preview", "tools"].includes(panelTab) && <WorkspaceResources key={panelTab} embedded initialTab={panelTab === "terminal" ? "terminal" : panelTab === "preview" ? "preview" : "runs"} client={client} onClose={closePanel} onOpenSession={openSession} snapshot={snapshot} />}
             </div>
           </aside>}
@@ -722,13 +776,16 @@ function Workbench({ client }: { client: WorkbenchClient }) {
       {setupOpen && modelConfiguration && !replayReadOnly && snapshot.dataSource === "live" && <SetupFlow client={client} configuration={modelConfiguration} capabilities={capabilities} projects={snapshot.availableProjects} onConfigured={(value) => { setModelConfiguration(value); setModelName(value.configured ? value.model : null); setModelError(null); }} onClose={() => setSetupOpen(false)} onFinish={() => { setSetupOpen(false); setView("chat"); }} />}
       {fileContextOpen && snapshot.project && <ProjectFileContextPicker key={snapshot.project.id} client={client} projectId={snapshot.project.id} selected={draft.fileContexts} onChange={setFollowupFileContexts} onClose={() => setFileContextOpen(false)} online={snapshot.connection.state === "live"} readOnly={replayReadOnly} capabilities={capabilities} />}
       {snapshot.dataSource === "live" && <MediaStudio open={mediaOpen && !replayReadOnly} client={client} capabilities={capabilities} onClose={() => setMediaOpen(false)} onSettings={() => { setSettingsCategory("model"); setSettingsOpen(true); }} onCreated={() => setView("chat")} />}
-      <UnifiedSettings initialCategory={settingsCategory} client={client} onClose={closeSettings} onMemory={() => { setSettingsOpen(false); setMemoryOpen(true); }} onApplied={applySharedSettings} open={settingsOpen && !replayReadOnly} />
-      {paletteOpen && <CommandPalette snapshot={snapshot} onClose={() => setPaletteOpen(false)} onSearch={(query) => client.searchSessions(query)} onSession={openSession} onNewChat={async () => { if (confirmFileNavigation()) await client.returnHome(); }} onSettings={() => setSettingsOpen(true)} onMemory={() => setMemoryOpen(true)} onResources={() => setResourcesOpen(true)} onReview={reviewLatest} {...(!replayReadOnly && ["media.generate", "media.diagram", "media.chart"].some((operation) => capabilityAvailable(capabilities, operation)) ? { onCreateMedia: () => setMediaOpen(true) } : {})} />}
-      {memoryOpen && !replayReadOnly && <MemoryControlPanel page online={snapshot.connection.state === "live"} readable={capabilities === null ? null : capabilityReadable(capabilities, "memory.read")} onReconnect={repairConnection} writable={capabilityAvailable(capabilities, "memory.write")} experienceWritable={capabilityAvailable(capabilities, "experience.write")}
+      {goalsOpen && <GoalWorkspace initialCreate={goalCreateOpen} client={client} {...(snapshot.project ? { projectId: snapshot.project.id } : {})} {...(snapshot.selectedSessionId ? { sessionId: snapshot.selectedSessionId } : {})} capabilities={capabilities} online={snapshot.connection.state === "live"} readOnly={replayReadOnly} onClose={() => setGoalsOpen(false)} {...(client.inspectRun ? { onInspectRun: async (runId: string) => { const inspected = await client.inspectRun!(runId); setReviewSnapshot(inspected); setReviewEventId(null); setReviewPath(null); setPanelTab("changes"); setView("changes"); setGoalsOpen(false); } } : {})} />}
+      {helpOpen && <WorkbenchHelp capabilities={capabilities} online={snapshot.connection.state === "live"} onClose={() => setHelpOpen(false)} onSettings={(category) => { setHelpOpen(false); setSettingsCategory(category); setSettingsOpen(true); }} />}
+      <UnifiedSettings background={workbenchSurface} onBrowser={() => { setSettingsOpen(false); setPanelTab("browser"); setResourcesOpen(true); }} onGoals={() => { setSettingsOpen(false); setGoalCreateOpen(false); setGoalsOpen(true); }} initialCategory={settingsCategory} client={client} onClose={closeSettings} onMemory={() => { setSettingsOpen(false); setMemoryOpen(true); }} onApplied={applySharedSettings} open={settingsOpen && !replayReadOnly} />
+      {historySearchOpen && !replayReadOnly && <PublicSessionSearch generation={snapshot.connection.generation} client={client} capabilities={capabilities} online={snapshot.connection.state === "live"} onClose={()=>setHistorySearchOpen(false)} onOpenResult={async(hit)=>{if(fileDirty)throw new Error(t("Save or close your unsaved file before opening this task."));if(!client.openRun)throw new Error(t("Could not open this task. Try again."));await client.openRun(hit.run_id);const opened=client.getSnapshot();if(opened.run?.id!==hit.run_id||opened.selectedSessionId!==hit.session_id)throw new Error("Search result no longer belongs to this conversation.");setView("chat");setSelectedId(hit.event_id);setTailFollowing(false);setSettingsOpen(false);setReviewSnapshot(null);setReviewPath(hit.path??null);}} />}
+      {paletteOpen && <CommandPalette {...(capabilityReadable(capabilities,"search.public")?{onHistorySearch:()=>setHistorySearchOpen(true)}:{})} snapshot={snapshot} onClose={() => setPaletteOpen(false)} onSearch={(query) => client.searchSessions(query)} onSession={openSession} onNewChat={async () => { if (confirmFileNavigation()) await client.returnHome(); }} onSettings={() => setSettingsOpen(true)} onMemory={() => setMemoryOpen(true)} onResources={() => setResourcesOpen(true)} onReview={reviewLatest} {...(!replayReadOnly && ["media.generate", "media.diagram", "media.chart"].some((operation) => capabilityAvailable(capabilities, operation)) ? { onCreateMedia: () => setMediaOpen(true) } : {})} />}
+      {memoryOpen && !replayReadOnly && <MemoryControlPanel page online={snapshot.connection.state === "live"} readable={capabilities === null ? null : capabilityReadable(capabilities, "memory.read")} onReconnect={repairConnection} writable={capabilityAvailable(capabilities, "memory.write")} experienceWritable={capabilityAvailable(capabilities, "experience.write")} initialDraft={memoryDraft} memoryRecall={sharedSettings?.settings.memory.memory_recall ?? null} experienceRecall={sharedSettings?.settings.memory.experience_recall ?? null} onSettings={() => { setMemoryOpen(false); setSettingsCategory("memory"); setSettingsOpen(true); }}
         onClose={() => setMemoryOpen(false)}
         {...(snapshot.project?.id === undefined ? {} : { projectId: snapshot.project.id })}
         onList={() => client.listMemoryControl()}
-        onCreate={(input) => client.createMemoryCandidate(input)}
+        onCreate={async (input) => { const created = await client.createMemoryCandidate(input); setMemoryDraft(null); return created; }}
         onReview={(memoryId, input) => client.reviewMemory(memoryId, input)}
         onCorrect={(memoryId, input) => client.correctMemory(memoryId, input)}
         onRevoke={(memoryId, input) => client.revokeMemory(memoryId, input)}

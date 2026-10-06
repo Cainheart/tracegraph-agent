@@ -1,0 +1,65 @@
+{
+  "schema_version": "outlive.mac-install-check.v1",
+  "status": "installed-and-launched",
+  "checked_at": "2026-10-06",
+  "installation": {
+    "path": "/Users/cain/Applications/Outlive Agent.app",
+    "bundle_id": "com.outlive.agent",
+    "version": "0.1.0-alpha.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "product_build_id": "311840e5a1e81e0d83c75f6f56aa5fef3987fe5749ca405922e9353c3a37f15f",
+    "application_pid": 50657,
+    "host_pid": 50697,
+    "host_http_address": "http://127.0.0.1:57787",
+    "host_health": "ok",
+    "bundled_node_version": "24.21.0",
+    "rollback_path": "/Users/cain/Applications/Outlive Agent.previous-20261006-before-311840e5"
+  },
+  "profile": {
+    "profile_root": "/Users/cain/.outlive/profiles/default",
+    "profile_id": "54b5faa9-13ca-4a7b-adf7-31b42e1cbf4b",
+    "profile_preserved": true,
+    "backup_path": "/Users/cain/.outlive/backups/default-before-desktop-20261006-a28efc77b050",
+    "active_runs_before_install": 0,
+    "sessions_after_install": 2,
+    "recorded_runs_after_install": 3
+  },
+  "package_validation": {
+    "dmg_checksum": "valid",
+    "zip_integrity": "valid",
+    "product_build_id_matches_runtime_manifest": true,
+    "signed": false,
+    "notarized": false,
+    "spctl_assessment": "rejected: code has no resources but signature indicates they must be present",
+    "distribution_release_ready": false
+  },
+  "verification": {
+    "workspace_build": "passed",
+    "workspace_typecheck": "passed",
+    "engineering_tests": {"passed": 109, "failed": 0},
+    "coverage_check_tests": {"passed": 8, "failed": 0},
+    "workbench_regression_tests": {"passed": 50, "failed": 0},
+    "host_model_catalog_fixture_tests": {"passed": 2, "failed": 0},
+    "finite_budget_recovery_tests": {"passed": 38, "failed": 0},
+    "actual_packaged_window": "opened; renderer loaded from the installed app path",
+    "actual_provider_model_catalog": "passed; see real-provider-model-catalog.json",
+    "actual_paid_model_completion": "not run"
+  },
+  "cleanup": {
+    "user_profile_deleted": false,
+    "profile_backup_deleted": false,
+    "historical_validation_records_deleted": false,
+    "old_duplicate_app_bundles_removed": true,
+    "old_duplicate_app_bundle_count": 6,
+    "temporary_stage_cleanup": "removed after package and install verification",
+    "redundant_unpacked_bundle_removed": true,
+    "rollback_preserved": true,
+    "latest_dmg_zip_and_inventory_preserved": true
+  },
+  "external_acceptance": {
+    "developer_id_signing": "pending credentials",
+    "notarization": "pending credentials",
+    "windows_native_install_and_ui": "pending user validation"
+  }
+}

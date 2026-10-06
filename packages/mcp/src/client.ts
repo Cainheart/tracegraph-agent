@@ -1,5 +1,5 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
-import { McpToolCatalogEntrySchema, type McpServerConfig, type McpToolCatalogEntry, type McpJsonSchema } from "@tracegraph/contracts";
+import { McpToolCatalogEntrySchema, type McpServerConfig, type McpStdioServerConfig, type McpToolCatalogEntry, type McpJsonSchema } from "@tracegraph/contracts";
 
 const MCP_PROTOCOL_VERSION = "2024-11-05";
 const MAX_LINE_BYTES = 512 * 1024;
@@ -17,6 +17,8 @@ export interface McpClientOptions {
   readonly env: NodeJS.ProcessEnv;
   readonly cwd?: string;
   readonly requestTimeoutMs?: number;
+  readonly authorization?: string;
+  readonly fetch?: typeof fetch;
   readonly onToolsChanged?: () => void | Promise<void>;
   readonly onExit?: (info: {
     code: number | null;
@@ -28,6 +30,15 @@ export interface McpClientOptions {
     args: readonly string[],
     options: { cwd?: string; env: NodeJS.ProcessEnv; stdio: ["pipe", "pipe", "pipe"]; shell: false },
   ) => ChildProcessWithoutNullStreams;
+}
+
+export interface McpClientPort {
+  readonly stderrTail: string;
+  readonly running: boolean;
+  start(): Promise<readonly McpRemoteTool[]>;
+  listTools(): Promise<readonly McpRemoteTool[]>;
+  callTool(name: string, argumentsValue: Record<string, unknown>, signal?: AbortSignal): Promise<unknown>;
+  stop(reason?: string): Promise<void>;
 }
 
 interface JsonRpcResponse {
@@ -56,7 +67,7 @@ export class McpProtocolError extends Error {
 
 /** One MCP server maps to one stdio JSON-RPC client. */
 export class McpStdioClient {
-  readonly #config: McpServerConfig;
+  readonly #config: McpStdioServerConfig;
   readonly #options: McpClientOptions;
   readonly #pending = new Map<number, PendingRequest>();
   #child: ChildProcessWithoutNullStreams | undefined;
@@ -66,6 +77,7 @@ export class McpStdioClient {
   #closed = false;
 
   constructor(config: McpServerConfig, options: McpClientOptions) {
+    if (config.transport !== "stdio") throw new McpProtocolError("mcp_transport_invalid", "STDIO client requires a STDIO server");
     this.#config = config;
     this.#options = options;
   }
@@ -265,7 +277,7 @@ export class McpStdioClient {
   }
 }
 
-function parseRemoteTool(value: unknown): McpRemoteTool {
+export function parseRemoteTool(value: unknown): McpRemoteTool {
   if (!isRecord(value) || typeof value.name !== "string" || typeof value.description !== "string") {
     throw new McpProtocolError("mcp_tool_invalid", "MCP tools/list contains an invalid tool");
   }

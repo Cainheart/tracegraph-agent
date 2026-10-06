@@ -20,18 +20,23 @@ window retains background tasks. An unspecified Web gateway port is dynamic.
 Use the local address shown in diagnostics or the bundled CLI's `host status`
 output to reach the same owner's Web workbench.
 
-The current local installer candidate is final8. Both files below exist and
-their SHA-256 values were independently recomputed from the container bytes.
-Installed macOS acceptance passed in attempt 025; Windows native use is
-unverified:
+The latest macOS app built from the current workspace was installed locally
+on 2026-10-06 at `/Users/cain/Applications/Outlive Agent.app`. Its version is
+`0.1.0-alpha.0` and Build ID is
+`05497c906eb674213d5db0104b304a14287450adebc7cd2a57d261e2707e3dd9`. Its
+build, isolated packaged smoke and installation evidence are in the
+[macOS install record](../validation/desktop-install-2026-10-06/README.md).
+The temporary build tree and older installer payloads have been cleaned;
+Windows native installation/use remains for later user validation:
 
 | Target | Installer path from the source checkout | Current acceptance |
 | --- | --- | --- |
-| macOS Apple Silicon | `_tmp_release/current-workbench-recovery-mac-final8/artifacts/Outlive-Agent-0.1.0-alpha.0-mac-arm64.dmg` | Built unsigned; controlled installed Desktop acceptance passed. |
-| Windows x64 | `_tmp_release/current-workbench-recovery-win-final8/artifacts/Outlive-Agent-0.1.0-alpha.0-win-x64.exe` | Cross-built unsigned; native installation and use unverified. |
+| macOS Apple Silicon | Installed app: `/Users/cain/Applications/Outlive Agent.app` | Local install and packaged smoke passed; unsigned/unnotarized, not a public installer. |
+| Windows x64 | No current installer retained | Native validation pending; rebuild from current source before testing. |
 
-The builder also generates a ZIP and `SHA256SUMS` for each target. These are
-local artifacts, not a published download service.
+The builder can generate a ZIP and `SHA256SUMS` for each target. These are
+local artifacts, not a published download service; older generated files were
+removed during the 2026-10-06 cleanup.
 
 Final8 macOS DMG SHA-256:
 `7538966e67dca660b4661c68f35ef4b22e9f735932bdda351cd626a4932d04e5`;
@@ -65,16 +70,18 @@ results with a loopback provider, not clean-machine or independent-user results.
 The [bundled product smoke](../validation/current-workbench-recovery/final8-product-smoke/report.json)
 also passed 13 assertions, two loopback provider requests and completed cleanup.
 
-### Retained final7 artifacts and observations
+### Historical final7 build receipts (payloads cleaned 2026-10-06)
 
-Final7 macOS DMG remains at
+The final7 macOS DMG was stored at
 `_tmp_release/current-workbench-recovery-mac-final7/artifacts/Outlive-Agent-0.1.0-alpha.0-mac-arm64.dmg`
 with SHA-256 `2681cbac033ea7eb083b851aa7b85d78977a6b77426a70ae6d60b2fcaed4b1bb`
 and build ID `6feb63e9dcaae87c59f4cece4afc3d4a769379ee439167e15e7df6a48d9b7c7e`.
-Its Windows EXE remains at
+Its Windows EXE was stored at
 `_tmp_release/current-workbench-recovery-win-final7/artifacts/Outlive-Agent-0.1.0-alpha.0-win-x64.exe`
 with SHA-256 `07054fd3b5dbf0e8e6ee236d5550923f4122f6dad0582e098da9aef200f89dde`
 and build ID `d95557434a86ce688f150d9ab7c42bdda68c60a1940f20d170cdb417c5bf8ad1`.
+Both payloads have been removed; these hashes and the behavioral receipts
+below remain as historical evidence.
 [Installed Desktop attempt 021](../validation/current-workbench-recovery/attempt021-final-installed-desktop/report.json)
 failed at automatic owner recovery after SIGKILL, after all nine GUI workflows
 and 130 workflow PNGs. Cleanup completed. Its cause remains unknown.
@@ -84,15 +91,16 @@ failed because download CDP cleanup ran after browser close. Its owned processes
 exited and profile was removed. Neither observation certifies final8 bytes or
 establishes the cause of attempt 021.
 
-### Retained final6 artifacts and observations
+### Historical final6 build receipts (payloads cleaned 2026-10-06)
 
-The verified existing files are
+The previously verified files were
 `_tmp_release/current-workbench-recovery-mac-final6/artifacts/Outlive-Agent-0.1.0-alpha.0-mac-arm64.dmg`
 (SHA-256 `280e44eb2bd3fba94bede7d1148751b26cd4504af2816b2a1e564ce2ccbd7a52`)
 and
 `_tmp_release/current-workbench-recovery-win-final6/artifacts/Outlive-Agent-0.1.0-alpha.0-win-x64.exe`
 (SHA-256 `d43969679f764776466f4d8069f321ce500f6ffcd89347e6cb92e92237d255a7`).
-Both byte hashes match their adjacent `SHA256SUMS`. The exact final6 product
+Both payloads have been removed; their byte hashes were checked against their
+adjacent `SHA256SUMS`. The exact final6 product
 build identities are `7c07335476e0c48a314fe36b9c8435b830d289f489e10e1dc1961032f030457f`
 (macOS) and `04c2a2d958c51ddc8dc385aeac86e63ea6858909f481ece0f93c69c03537e308`
 (Windows); both bundle Node 24.21.0 and are unsigned. The

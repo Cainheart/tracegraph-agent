@@ -36,6 +36,44 @@ afterEach(async () => {
 });
 
 describe("G09 Runtime Plan Mode", () => {
+  it("completes an ordinary Plan answer with one canonical terminal event and no approval", async () => {
+    const harness = await createHarness("direct-answer");
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model: { name: "ordinary-answer", async decide() { return finishDecision("decision:direct-answer", "A compiler translates source code.", "answer"); } } });
+    const started = await runtime.startRun({ ...startInput(harness.workspace), task: "What is a compiler?" });
+    const completed = await waitForStatus(runtime, started.run_id, "completed");
+    expect(completed.mode).toBe("plan");
+    expect(completed.timeline.filter(({ type }) => ["run.completed", "run.failed", "run.cancelled"].includes(type))).toHaveLength(1);
+    expect(completed.timeline.at(-1)?.data).toMatchObject({ code: "completed", outcome: "A compiler translates source code.", finish_intent: "answer" });
+    expect(completed.timeline.some(({ type }) => type === "plan.ready" || type === "tool.started")).toBe(false);
+    expect(await readFile(join(harness.workspace.real_root, "src/value.ts"), "utf8")).toBe("before\n");
+  });
+
+  it("accepts legacy finish with Todos as an answer without granting or resuming execution", async () => {
+    const harness = await createHarness("legacy-todo-answer");
+    let calls = 0;
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model: { name: "legacy-answer", async decide() {
+      if (++calls === 1) return toolDecision("decision:legacy-todo", "action:legacy-todo", "todo_write", { operation: "create", todo_id: "todo:legacy", title: "A proposed inspection" });
+      const legacy = finishDecision("decision:legacy-answer", "This is the proposed work; nothing was executed.", "answer");
+      const { finish_intent: _intent, ...withoutIntent } = legacy;
+      return withoutIntent;
+    } } });
+    const started = await runtime.startRun(startInput(harness.workspace));
+    const completed = await waitForStatus(runtime, started.run_id, "completed");
+    expect(completed.todos.items[0]?.state).toBe("pending");
+    expect(completed.timeline.some(({ type }) => type === "plan.ready" || type === "plan.approved")).toBe(false);
+    await expect(runtime.approvePlan({ type: "approve_plan", command_id: "command:legacy-cannot-approve", project_id: completed.project_id, run_id: completed.run_id, plan_event_id: "event:not-a-plan" })).rejects.toBeDefined();
+    expect(calls).toBe(2);
+  });
+
+  it("fails an explicit empty execution-plan submission and never records successful completion", async () => {
+    const harness = await createHarness("explicit-empty-plan");
+    const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model: { name: "empty-plan", async decide() { return finishDecision("decision:empty", "Please execute this plan."); } } });
+    const started = await runtime.startRun(startInput(harness.workspace));
+    const failed = await waitForStatus(runtime, started.run_id, "failed");
+    expect(failed.failure_code).toBe("plan_missing_todos");
+    expect(failed.timeline.some(({ type }) => type === "plan.ready" || type === "run.completed")).toBe(false);
+  });
+
   it("rejects invalid Todo batches without execution, then lets the model correct them", async () => {
     const harness = await createHarness("todo-correct-input");
     let step = 0;
@@ -750,7 +788,7 @@ function planThenExecuteModel(): ModelAdapter {
           evidence_event_ids: [evidenceEventId],
         });
       }
-      return finishDecision("decision:execute-finish", "The approved plan was executed.");
+      return finishDecision("decision:execute-finish", "The approved plan was executed.", "answer");
     },
   };
 }
@@ -772,7 +810,7 @@ function toolDecision(
   };
 }
 
-function finishDecision(decisionId: string, answer: string) {
+function finishDecision(decisionId: string, answer: string, intent: "answer" | "submit_plan" = "submit_plan") {
   return {
     decision_id: decisionId,
     kind: "finish",
@@ -780,6 +818,7 @@ function finishDecision(decisionId: string, answer: string) {
     evidence_refs: [],
     risk: "none",
     final_answer: answer,
+    finish_intent: intent,
   };
 }
 

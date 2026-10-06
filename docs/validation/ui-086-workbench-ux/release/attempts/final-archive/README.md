@@ -1,5 +1,7 @@
 # UX-086 final immutable Preview acceptance
 
+该历史归档已于 2026-10-06 清理；本目录保留哈希和验收回执，原 `_tmp_release` 路径不再存在。
+
 The final archive passed fresh macOS installation, smoke, three Runtime proofs, actual installed LIVE Main/Node-worker/Seatbelt test, native Preview observation, change-review capture and process cleanup. Linux fresh install and smoke passed; DEMO-080 initially failed closed while reading an active session, then all three proofs passed in one entirely fresh container rerun. The first failure remains preserved and its cause is unlocated. Report status is `passed_on_recorded_retry_with_retained_unlocated_failure`.
 
 ## Frozen artifact and participant

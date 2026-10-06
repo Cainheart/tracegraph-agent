@@ -1,0 +1,20 @@
+$ tsc -p tsconfig.json
+src/skill-management.ts(6,9): error TS2305: Module '"@tracegraph/contracts"' has no exported member 'ManagedSkillCommandSchema'.
+src/skill-management.ts(6,35): error TS2305: Module '"@tracegraph/contracts"' has no exported member 'ManagedSkillScopeSchema'.
+src/skill-management.ts(6,59): error TS2305: Module '"@tracegraph/contracts"' has no exported member 'ManagedSkillSelectorSchema'.
+src/skill-management.ts(6,86): error TS2305: Module '"@tracegraph/contracts"' has no exported member 'ValidateManagedSkillRequestSchema'.
+src/skill-management.ts(6,120): error TS2305: Module '"@tracegraph/contracts"' has no exported member 'MAX_MANAGED_SKILL_BYTES'.
+src/skill-management.ts(6,165): error TS2305: Module '"@tracegraph/contracts"' has no exported member 'ManagedSkillCommand'.
+src/skill-management.ts(6,190): error TS2305: Module '"@tracegraph/contracts"' has no exported member 'ManagedSkillCommandResult'.
+src/skill-management.ts(6,221): error TS2305: Module '"@tracegraph/contracts"' has no exported member 'ManagedSkillCommandReceipt'.
+src/skill-management.ts(6,253): error TS2305: Module '"@tracegraph/contracts"' has no exported member 'ManagedSkillScope'.
+src/skill-management.ts(6,276): error TS2305: Module '"@tracegraph/contracts"' has no exported member 'ManagedSkillSelector'.
+src/skill-management.ts(6,302): error TS2305: Module '"@tracegraph/contracts"' has no exported member 'ManagedSkillEntry'.
+src/skill-management.ts(6,325): error TS2305: Module '"@tracegraph/contracts"' has no exported member 'ManagedSkillsSnapshot'.
+src/skill-management.ts(6,352): error TS2305: Module '"@tracegraph/contracts"' has no exported member 'ManagedSkillDocument'.
+src/skill-management.ts(6,378): error TS2305: Module '"@tracegraph/contracts"' has no exported member 'ManagedSkillValidation'.
+src/skill-management.ts(6,406): error TS2305: Module '"@tracegraph/contracts"' has no exported member 'ValidateManagedSkillRequest'.
+src/skill-management.ts(41,102): error TS2339: Property '#state' does not exist on type 'SkillManagementController'.
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @tracegraph/host@0.1.0-alpha.0 build: `tsc -p tsconfig.json`
+Exit status 2

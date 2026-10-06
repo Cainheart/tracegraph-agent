@@ -1,0 +1,56 @@
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench
+
+ ❯ src/ux-086-journey.test.tsx (4 tests | 1 failed) 263ms
+   ❯ UX-086 shared Workbench journeys (4)
+     × preserves existing sessions while removing pins, and inspects evidence without replay 129ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/ux-086-journey.test.tsx > UX-086 shared Workbench journeys > preserves existing sessions while removing pins, and inspects evidence without replay
+AssertionError: expected "vi.fn()" to be called with arguments: [ 'Inspect the imports', …(4) ]
+
+Received:
+
+  1st vi.fn() call:
+
+  [
+    "Inspect the imports",
+    "execute",
+-   "default",
++   undefined,
+    [],
+    {
+      "mode": "execute",
+-     "permission_preset": "workspace-write",
+-     "reasoning_effort": "default",
+    },
+  ]
+
+
+Number of calls: 1
+
+ ❯ src/ux-086-journey.test.tsx:147:29
+    145|     const task = await type("Task", "Inspect the imports");
+    146|     await key(task, { key: "Enter" });
+    147|     expect(client.startRun).toHaveBeenCalledWith("Inspect the imports"…
+       |                             ^
+    148|   });
+    149|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 32 passed (33)
+      Tests  1 failed | 262 passed (263)
+   Start at  00:46:35
+   Duration  2.73s (transform 48%, import 30%, tests 12%, environment 9%)
+
+  Transform  transforming modules took 10.80s · 48% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @tracegraph/workbench@0.1.0-alpha.0 test:unit: `vitest run src`
+Exit status 1

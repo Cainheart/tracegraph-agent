@@ -1,0 +1,1090 @@
+$ pnpm run build && pnpm run test:snapshots && pnpm --workspace-concurrency=1 -r --if-present test:unit && pnpm run test:engineering
+$ pnpm run clean:dist && pnpm -r --if-present build
+$ node scripts/clean-dist.mjs
+[clean-dist] removed 21 generated directories
+Scope: 22 of 23 workspace projects
+packages/contracts build$ tsc -p tsconfig.json
+packages/retrieval build$ tsc -p tsconfig.json
+packages/telemetry build$ tsc -p tsconfig.json
+packages/telemetry build: Done
+packages/retrieval build: Done
+packages/contracts build: Done
+apps/retrieval-service build$ tsc -p tsconfig.json
+packages/api build$ tsc -p tsconfig.json
+packages/codegraph build$ tsc -p tsconfig.json
+packages/evidence build$ tsc -p tsconfig.json
+packages/codegraph build: Done
+packages/api build: Done
+packages/lsp build$ tsc -p tsconfig.json
+packages/mcp build$ tsc -p tsconfig.json
+packages/evidence build: Done
+packages/sdk build$ tsc -p tsconfig.json
+packages/lsp build: Done
+packages/mcp build: Done
+packages/session build$ tsc -p tsconfig.json
+packages/tool build$ tsc -p tsconfig.json
+apps/retrieval-service build: Done
+packages/tool build: Done
+packages/session build: Done
+packages/sdk build: Done
+packages/workbench build$ tsc -p tsconfig.json && node scripts/copy-assets.mjs
+packages/context build$ tsc -p tsconfig.json
+packages/context build: Done
+packages/workbench build: Done
+apps/web build$ tsc --noEmit && vite build
+packages/core build$ tsc -p tsconfig.json
+apps/web build: vite v8.3.0 building client environment for production...
+apps/web build: transforming...
+apps/web build: ✓ 2386 modules transformed.
+packages/core build: Done
+apps/web build: rendering chunks...
+apps/web build: computing gzip size...
+apps/web build: dist/index.html                                           1.98 kB │ gzip:   0.68 kB
+apps/web build: dist/assets/index-Ck_aSm3W.css                          257.11 kB │ gzip:  42.03 kB
+apps/web build: dist/assets/array-BifhSqXX.js                             0.10 kB │ gzip:   0.11 kB
+apps/web build: dist/assets/channel-BLO7HWqJ.js                           0.11 kB │ gzip:   0.12 kB
+apps/web build: dist/assets/pie-WAS4IAKB-CVx5QxPg.js                      0.12 kB │ gzip:   0.12 kB
+apps/web build: dist/assets/info-A6RAGUB7-gHia8fvZ.js                     0.12 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/radar-RG4KPBEZ-IyOWNggW.js                    0.12 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/packet-AYTQ26CC-n1Pj8hMo.js                   0.12 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/cynefin-OW5HDTMX-C2GwAx94.js                  0.12 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/treemap-WGGIJYW6-C6UowBGE.js                  0.12 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/wardley-WFR3VGLG-CqtzcL8H.js                  0.12 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/gitGraph-4MIJSDKK-TwNBc8VJ.js                 0.12 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/railroad-74A4TZTK-BpTPHHPC.js                 0.12 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/treeView-Q6P3EWNA-azfBAO5o.js                 0.12 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/railroad-peg-WCYAUIDC-DpbZiZBD.js             0.13 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/architecture-7GRP2DOG-CJBR08NZ.js             0.13 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/railroad-abnf-HS5TGJTU-DBPYx5vX.js            0.13 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/railroad-ebnf-LZEXJU2U-DJpAGoPd.js            0.13 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/eventmodeling-NTZA5JFV-D590o0tA.js            0.13 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/init-C-OQMol4.js                              0.14 kB │ gzip:   0.12 kB
+apps/web build: dist/assets/chunk-Y2CYZVJY-DsF7k-Jl.js                    0.15 kB │ gzip:   0.14 kB
+apps/web build: dist/assets/chunk-2Q5K7J3B-C1jixKkw.js                    0.19 kB │ gzip:   0.16 kB
+apps/web build: dist/assets/chunk-JWPE2WC7-DVXcaiue.js                    0.22 kB │ gzip:   0.17 kB
+apps/web build: dist/assets/chunk-XXDRQBXY-BEJkdqK0.js                    0.26 kB │ gzip:   0.22 kB
+apps/web build: dist/assets/chunk-5VM5RSS4-ZNzvKenW.js                    0.36 kB │ gzip:   0.27 kB
+apps/web build: dist/assets/flowDiagram-KWPJA3E3-r-_ZTV98.js              0.49 kB │ gzip:   0.28 kB
+apps/web build: dist/assets/chunk-WEXAMYUT-CepcfMg0.js                    0.57 kB │ gzip:   0.40 kB
+apps/web build: dist/assets/chunk-J5ZVWO5B-oDCd-gWO.js                    0.63 kB │ gzip:   0.43 kB
+apps/web build: dist/assets/infoDiagram-VRGFBTTK-sPDK2j_e.js              0.64 kB │ gzip:   0.42 kB
+apps/web build: dist/assets/swimlanesDiagram-TC7HE7FX-D0ACabsF.js         0.74 kB │ gzip:   0.44 kB
+apps/web build: dist/assets/sizeCapture-INFHLROL-B0uUizjq.js              0.87 kB │ gzip:   0.51 kB
+apps/web build: dist/assets/line-BN7c7OdS.js                              0.94 kB │ gzip:   0.47 kB
+apps/web build: dist/assets/ordinal-BDEzSJ7C.js                           1.17 kB │ gzip:   0.56 kB
+apps/web build: dist/assets/addon-fit-DIOBYJe3.js                         1.20 kB │ gzip:   0.49 kB
+apps/web build: dist/assets/chunk-5DYCD2WN-CWyYiX_0.js                    1.41 kB │ gzip:   0.78 kB
+apps/web build: dist/assets/railroadDiagram-XR7U4H2S-DDGazkVJ.js          1.66 kB │ gzip:   0.77 kB
+apps/web build: dist/assets/abnfDiagram-O67JEVCF-BQzu8YHM.js              1.84 kB │ gzip:   0.90 kB
+apps/web build: dist/assets/chunk-7PRAP22T-BjsQmbm4.js                    1.95 kB │ gzip:   0.95 kB
+apps/web build: dist/assets/chunk-GWA4HPMP-DmIpE2wc.js                    1.97 kB │ gzip:   0.88 kB
+apps/web build: dist/assets/pegDiagram-GJSIUBJH-DTyujqlB.js               2.00 kB │ gzip:   0.94 kB
+apps/web build: dist/assets/ebnfDiagram-ZINNZB2B-BtbmU4pc.js              2.06 kB │ gzip:   0.89 kB
+apps/web build: dist/assets/dist-BcQTzhN8.js                              2.16 kB │ gzip:   0.97 kB
+apps/web build: dist/assets/path-fybaL0A-.js                              2.27 kB │ gzip:   0.98 kB
+apps/web build: dist/assets/arc-BiYjP8Ws.js                               3.47 kB │ gzip:   1.46 kB
+apps/web build: dist/assets/diagram-MLGK6HIB-C2sl1O9w.js                  4.27 kB │ gzip:   1.84 kB
+apps/web build: dist/assets/defaultLocale-BFoDCU3G.js                     4.63 kB │ gzip:   2.12 kB
+apps/web build: dist/assets/chunk-NETBCI7D-BNlv-i6K.js                    5.43 kB │ gzip:   2.49 kB
+apps/web build: dist/assets/linear-Cq62aS4k.js                            5.51 kB │ gzip:   2.25 kB
+apps/web build: dist/assets/chunk-742MDFTN-D1jeKlzU.js                    5.83 kB │ gzip:   2.68 kB
+apps/web build: dist/assets/graphlib-C9Tl7QrK.js                          5.85 kB │ gzip:   1.82 kB
+apps/web build: dist/assets/diagram-MPIPVDR6-CKdPcGUc.js                  6.06 kB │ gzip:   2.56 kB
+apps/web build: dist/assets/pieDiagram-5QR66LMP-DGJtXd7Q.js               6.20 kB │ gzip:   2.59 kB
+apps/web build: dist/assets/_basePickBy-QJXUw_pr.js                       7.58 kB │ gzip:   3.15 kB
+apps/web build: dist/assets/diagram-CDSNMT55-BWaFP8Vd.js                  8.19 kB │ gzip:   3.65 kB
+apps/web build: dist/assets/cynefinDiagram-VND7K2PF-BW1A4GUX.js           9.93 kB │ gzip:   3.51 kB
+apps/web build: dist/assets/chunk-3FUC2YCW-DtZyqqc4.js                   10.63 kB │ gzip:   4.27 kB
+apps/web build: dist/assets/diagram-ATOU4E4O-CiE9lmM-.js                 10.65 kB │ gzip:   4.12 kB
+apps/web build: dist/assets/chunk-GTNCS2PH-D_FEM_5l.js                   15.63 kB │ gzip:   4.35 kB
+apps/web build: dist/assets/diagram-3UASUU5V-Ck-sHuFi.js                 15.73 kB │ gzip:   5.52 kB
+apps/web build: dist/assets/mermaid-parser.core-kVAmPWVQ.js              16.59 kB │ gzip:   3.93 kB
+apps/web build: dist/assets/ishikawaDiagram-OU5B5YK6-B7eZm-C_.js         17.30 kB │ gzip:   6.53 kB
+apps/web build: dist/assets/_baseUniq-DR4vVjyC.js                        18.23 kB │ gzip:   6.72 kB
+apps/web build: dist/assets/kanban-definition-PNTS6WVX-B5ZOhjux.js       20.21 kB │ gzip:   7.12 kB
+apps/web build: dist/assets/sankeyDiagram-IPEJSGJF-4e0wFI2d.js           22.78 kB │ gzip:   8.25 kB
+apps/web build: dist/assets/journeyDiagram-ZHPQQLJL-CchOEV2D.js          23.16 kB │ gzip:   8.15 kB
+apps/web build: dist/assets/mindmap-definition-NLK3R4M7-DNGCfDpg.js      23.36 kB │ gzip:   7.95 kB
+apps/web build: dist/assets/wardleyDiagram-VNRHLVJA-BkeLxB-8.js          25.19 kB │ gzip:   6.54 kB
+apps/web build: dist/assets/rough.esm-Dy-Kn_BL.js                        27.10 kB │ gzip:   8.85 kB
+apps/web build: dist/assets/gitGraphDiagram-X574FWY7-DGeTtBUp.js         29.00 kB │ gzip:   8.55 kB
+apps/web build: dist/assets/timeline-definition-EJHVYXUP-COt4jWA0.js     30.44 kB │ gzip:  10.02 kB
+apps/web build: dist/assets/erDiagram-OPXOYQCR-CZPHNBOd.js               30.56 kB │ gzip:  10.51 kB
+apps/web build: dist/assets/chunk-ZIGJFQKS-BocB5t0-.js                   30.74 kB │ gzip:   8.51 kB
+apps/web build: dist/assets/requirementDiagram-PLB6GJNP-CbA3VpW9.js      30.98 kB │ gzip:   9.79 kB
+apps/web build: dist/assets/quadrantDiagram-O4NWA36T-DRRhhySo.js         33.51 kB │ gzip:   9.73 kB
+apps/web build: dist/assets/dagre-6A5THRUB-CSdEI-xY.js                   40.71 kB │ gzip:  14.53 kB
+apps/web build: dist/assets/vennDiagram-UO4OBE2U-WkrKFk4o.js             41.17 kB │ gzip:  15.11 kB
+apps/web build: dist/assets/stateDiagram-v2-GCMORJYK-DI_EUXiT.js         41.45 kB │ gzip:  13.84 kB
+apps/web build: dist/assets/blockDiagram-BEXU5L5S-DeCo_yKO.js            42.40 kB │ gzip:  13.85 kB
+apps/web build: dist/assets/xychartDiagram-PMCCYNJV-rcwy59sC.js          44.14 kB │ gzip:  12.21 kB
+apps/web build: dist/assets/src-BIGLCdTx.js                              46.74 kB │ gzip:  16.48 kB
+apps/web build: dist/assets/classDiagram-v2-NBCMYWYE-Da06G5GA.js         49.61 kB │ gzip:  16.10 kB
+apps/web build: dist/assets/chunk-MBY4JIJT-CXMkTLaj.js                   51.28 kB │ gzip:  16.45 kB
+apps/web build: dist/assets/chunk-7M6MHVWA-1vVDxVJ2.js                   62.71 kB │ gzip:  20.35 kB
+apps/web build: dist/assets/c4Diagram-YGBWAQC7-GdwIwp1e.js               65.07 kB │ gzip:  18.60 kB
+apps/web build: dist/assets/ganttDiagram-FUAMR5RP-CnQoRHk9.js            69.31 kB │ gzip:  22.74 kB
+apps/web build: dist/assets/diagram-22UHCM2B-BjqlSAVN.js                 80.40 kB │ gzip:  25.14 kB
+apps/web build: dist/assets/cose-bilkent-JH36ORCC-DUijqcXI.js            81.21 kB │ gzip:  21.52 kB
+apps/web build: dist/assets/swimlanes-2SLR337P-B8zuryhg.js              106.19 kB │ gzip:  36.10 kB
+apps/web build: dist/assets/chunk-7INBJB4K--hj_HKVF.js                  115.48 kB │ gzip:  29.21 kB
+apps/web build: dist/assets/sequenceDiagram-PO4LG4MO-uBLKyxuw.js        117.30 kB │ gzip:  31.24 kB
+apps/web build: dist/assets/architectureDiagram-NJMV4G6O-62PWj67G.js    148.86 kB │ gzip:  41.11 kB
+apps/web build: dist/assets/usecaseDiagram-POWQR4AR-C2Y85vbm.js         186.59 kB │ gzip:  50.11 kB
+apps/web build: dist/assets/chunk-O7XYJQB3-BFaWaugy.js                  239.48 kB │ gzip:  39.69 kB
+apps/web build: dist/assets/katex-ZlcWpGUi.js                           258.68 kB │ gzip:  77.43 kB
+apps/web build: dist/assets/xterm-ScmBfeDI.js                           331.17 kB │ gzip:  83.03 kB
+apps/web build: dist/assets/cytoscape.esm-Yq6u8L66.js                   434.85 kB │ gzip: 137.78 kB
+apps/web build: dist/assets/chunk-FOHPRMQF-DzxwRta7.js                  662.10 kB │ gzip: 143.16 kB
+apps/web build: dist/assets/elk-276RUBZZ-CWpT4rse.js                  1,456.33 kB │ gzip: 453.19 kB
+apps/web build: dist/assets/index-DiGHmFWx.js                         1,932.58 kB │ gzip: 574.72 kB
+apps/web build: ✓ built in 482ms
+apps/web build: [33m[INEFFECTIVE_DYNAMIC_IMPORT] [0m../../packages/contracts/dist/index.js is dynamically imported by ../../packages/sdk/dist/index.js but also statically imported by ../../packages/sdk/dist/index.js, ../../packages/sdk/dist/project-file-integrity.js, ../../packages/sdk/dist/protocol/fixtures.js, ../../packages/sdk/dist/protocol/index.js, ../../packages/workbench/dist/client.js, ..., dynamic import will not move module into another chunk.
+apps/web build: [plugin builtin:vite-reporter] 
+apps/web build: (!) Some chunks are larger than 500 kB after minification. Consider:
+apps/web build: - Using dynamic import() to code-split the application
+apps/web build: - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+apps/web build: - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+apps/web build: Done
+packages/test-support build$ tsc -p tsconfig.json
+packages/host build$ tsc -p tsconfig.json
+packages/test-support build: Done
+packages/host build: Done
+apps/cli build$ tsc -p tsconfig.json
+apps/desktop-host build$ tsc -p tsconfig.json
+apps/cli build: Done
+apps/desktop-host build: Done
+apps/desktop build$ pnpm run build:renderer && pnpm run build:main && pnpm run build:preload
+apps/desktop build: $ vite build
+apps/desktop build: vite v8.3.0 building client environment for production...
+apps/desktop build: transforming...
+apps/desktop build: ✓ 2390 modules transformed.
+apps/desktop build: rendering chunks...
+apps/desktop build: computing gzip size...
+apps/desktop build: dist/renderer/index.html                                           2.02 kB │ gzip:   0.70 kB
+apps/desktop build: dist/renderer/assets/index-CYFivt36.css                          257.37 kB │ gzip:  42.04 kB
+apps/desktop build: dist/renderer/assets/array-BifhSqXX.js                             0.10 kB │ gzip:   0.11 kB
+apps/desktop build: dist/renderer/assets/channel-UP2xb2et.js                           0.11 kB │ gzip:   0.12 kB
+apps/desktop build: dist/renderer/assets/pie-WAS4IAKB-B7gSovxS.js                      0.12 kB │ gzip:   0.12 kB
+apps/desktop build: dist/renderer/assets/info-A6RAGUB7-DZHws4wb.js                     0.12 kB │ gzip:   0.12 kB
+apps/desktop build: dist/renderer/assets/radar-RG4KPBEZ-Djw6-3oD.js                    0.12 kB │ gzip:   0.12 kB
+apps/desktop build: dist/renderer/assets/packet-AYTQ26CC-wsoRWCdU.js                   0.12 kB │ gzip:   0.13 kB
+apps/desktop build: dist/renderer/assets/cynefin-OW5HDTMX-BgBBwuhB.js                  0.12 kB │ gzip:   0.13 kB
+apps/desktop build: dist/renderer/assets/treemap-WGGIJYW6-Cd3n4i9u.js                  0.12 kB │ gzip:   0.13 kB
+apps/desktop build: dist/renderer/assets/wardley-WFR3VGLG-DSng1g26.js                  0.12 kB │ gzip:   0.13 kB
+apps/desktop build: dist/renderer/assets/gitGraph-4MIJSDKK-DbzpbIlg.js                 0.12 kB │ gzip:   0.13 kB
+apps/desktop build: dist/renderer/assets/railroad-74A4TZTK-CeCVgtay.js                 0.12 kB │ gzip:   0.13 kB
+apps/desktop build: dist/renderer/assets/treeView-Q6P3EWNA-BYqkgruX.js                 0.12 kB │ gzip:   0.13 kB
+apps/desktop build: dist/renderer/assets/railroad-peg-WCYAUIDC-DGdzmfA0.js             0.13 kB │ gzip:   0.13 kB
+apps/desktop build: dist/renderer/assets/architecture-7GRP2DOG-DxdIX9KA.js             0.13 kB │ gzip:   0.13 kB
+apps/desktop build: dist/renderer/assets/railroad-abnf-HS5TGJTU-D-uXwXYD.js            0.13 kB │ gzip:   0.13 kB
+apps/desktop build: dist/renderer/assets/railroad-ebnf-LZEXJU2U-jh3zWyLG.js            0.13 kB │ gzip:   0.13 kB
+apps/desktop build: dist/renderer/assets/eventmodeling-NTZA5JFV-CpZd_fPf.js            0.13 kB │ gzip:   0.13 kB
+apps/desktop build: dist/renderer/assets/init-C-OQMol4.js                              0.14 kB │ gzip:   0.12 kB
+apps/desktop build: dist/renderer/assets/chunk-Y2CYZVJY-DsF7k-Jl.js                    0.15 kB │ gzip:   0.14 kB
+apps/desktop build: dist/renderer/assets/chunk-2Q5K7J3B-C1jixKkw.js                    0.19 kB │ gzip:   0.16 kB
+apps/desktop build: dist/renderer/assets/chunk-JWPE2WC7-DVXcaiue.js                    0.22 kB │ gzip:   0.17 kB
+apps/desktop build: dist/renderer/assets/chunk-XXDRQBXY-BEJkdqK0.js                    0.26 kB │ gzip:   0.22 kB
+apps/desktop build: dist/renderer/assets/chunk-5VM5RSS4-ZNzvKenW.js                    0.36 kB │ gzip:   0.27 kB
+apps/desktop build: dist/renderer/assets/flowDiagram-KWPJA3E3-B3zr4AAg.js              0.49 kB │ gzip:   0.28 kB
+apps/desktop build: dist/renderer/assets/chunk-WEXAMYUT-Orzknnwc.js                    0.57 kB │ gzip:   0.40 kB
+apps/desktop build: dist/renderer/assets/chunk-J5ZVWO5B-oDCd-gWO.js                    0.63 kB │ gzip:   0.43 kB
+apps/desktop build: dist/renderer/assets/infoDiagram-VRGFBTTK-ClIU-44R.js              0.64 kB │ gzip:   0.42 kB
+apps/desktop build: dist/renderer/assets/swimlanesDiagram-TC7HE7FX-DhISiWpS.js         0.74 kB │ gzip:   0.44 kB
+apps/desktop build: dist/renderer/assets/sizeCapture-INFHLROL-B0uUizjq.js              0.87 kB │ gzip:   0.51 kB
+apps/desktop build: dist/renderer/assets/line-3zFFSrgG.js                              0.94 kB │ gzip:   0.47 kB
+apps/desktop build: dist/renderer/assets/ordinal-BDEzSJ7C.js                           1.17 kB │ gzip:   0.56 kB
+apps/desktop build: dist/renderer/assets/addon-fit-DIOBYJe3.js                         1.20 kB │ gzip:   0.49 kB
+apps/desktop build: dist/renderer/assets/chunk-5DYCD2WN-x_YAT-_J.js                    1.41 kB │ gzip:   0.78 kB
+apps/desktop build: dist/renderer/assets/railroadDiagram-XR7U4H2S-DF4RdpMs.js          1.66 kB │ gzip:   0.77 kB
+apps/desktop build: dist/renderer/assets/abnfDiagram-O67JEVCF-Cho7j0wz.js              1.84 kB │ gzip:   0.90 kB
+apps/desktop build: dist/renderer/assets/chunk-7PRAP22T-JhHUCD5t.js                    1.95 kB │ gzip:   0.95 kB
+apps/desktop build: dist/renderer/assets/chunk-GWA4HPMP-Sj7PvCrn.js                    1.97 kB │ gzip:   0.88 kB
+apps/desktop build: dist/renderer/assets/pegDiagram-GJSIUBJH-D7okYKzq.js               2.00 kB │ gzip:   0.94 kB
+apps/desktop build: dist/renderer/assets/ebnfDiagram-ZINNZB2B-C9wPY8R3.js              2.06 kB │ gzip:   0.89 kB
+apps/desktop build: dist/renderer/assets/dist-BcQTzhN8.js                              2.16 kB │ gzip:   0.97 kB
+apps/desktop build: dist/renderer/assets/path-fybaL0A-.js                              2.27 kB │ gzip:   0.98 kB
+apps/desktop build: dist/renderer/assets/arc-BiYjP8Ws.js                               3.47 kB │ gzip:   1.46 kB
+apps/desktop build: dist/renderer/assets/diagram-MLGK6HIB-BDJDnxTy.js                  4.27 kB │ gzip:   1.84 kB
+apps/desktop build: dist/renderer/assets/defaultLocale-BFoDCU3G.js                     4.63 kB │ gzip:   2.12 kB
+apps/desktop build: dist/renderer/assets/chunk-NETBCI7D-DuYu-lMD.js                    5.43 kB │ gzip:   2.49 kB
+apps/desktop build: dist/renderer/assets/linear-Cq62aS4k.js                            5.51 kB │ gzip:   2.25 kB
+apps/desktop build: dist/renderer/assets/chunk-742MDFTN-DnzebVB_.js                    5.83 kB │ gzip:   2.68 kB
+apps/desktop build: dist/renderer/assets/graphlib-C9Tl7QrK.js                          5.85 kB │ gzip:   1.82 kB
+apps/desktop build: dist/renderer/assets/diagram-MPIPVDR6-CFi_0szc.js                  6.06 kB │ gzip:   2.56 kB
+apps/desktop build: dist/renderer/assets/pieDiagram-5QR66LMP-B3VbAUtx.js               6.20 kB │ gzip:   2.59 kB
+apps/desktop build: dist/renderer/assets/_basePickBy-QJXUw_pr.js                       7.58 kB │ gzip:   3.15 kB
+apps/desktop build: dist/renderer/assets/diagram-CDSNMT55-CLjc2Sdb.js                  8.19 kB │ gzip:   3.65 kB
+apps/desktop build: dist/renderer/assets/cynefinDiagram-VND7K2PF-dyHG16_H.js           9.93 kB │ gzip:   3.51 kB
+apps/desktop build: dist/renderer/assets/chunk-3FUC2YCW-BKROr66D.js                   10.64 kB │ gzip:   4.28 kB
+apps/desktop build: dist/renderer/assets/diagram-ATOU4E4O-B1dFck_5.js                 10.65 kB │ gzip:   4.12 kB
+apps/desktop build: dist/renderer/assets/chunk-GTNCS2PH-Cq9Hx2jH.js                   15.63 kB │ gzip:   4.36 kB
+apps/desktop build: dist/renderer/assets/diagram-3UASUU5V-C4tHH1di.js                 15.73 kB │ gzip:   5.52 kB
+apps/desktop build: dist/renderer/assets/mermaid-parser.core-f2thNuhR.js              16.75 kB │ gzip:   3.93 kB
+apps/desktop build: dist/renderer/assets/ishikawaDiagram-OU5B5YK6-B_eyWDTU.js         17.30 kB │ gzip:   6.53 kB
+apps/desktop build: dist/renderer/assets/_baseUniq-DR4vVjyC.js                        18.23 kB │ gzip:   6.72 kB
+apps/desktop build: dist/renderer/assets/kanban-definition-PNTS6WVX-DboZPR6S.js       20.21 kB │ gzip:   7.13 kB
+apps/desktop build: dist/renderer/assets/sankeyDiagram-IPEJSGJF-CU8ws1AR.js           22.78 kB │ gzip:   8.25 kB
+apps/desktop build: dist/renderer/assets/journeyDiagram-ZHPQQLJL-Beula65G.js          23.16 kB │ gzip:   8.15 kB
+apps/desktop build: dist/renderer/assets/mindmap-definition-NLK3R4M7-8yJXPQOC.js      23.36 kB │ gzip:   7.95 kB
+apps/desktop build: dist/renderer/assets/wardleyDiagram-VNRHLVJA-B6QOWNBK.js          25.19 kB │ gzip:   6.54 kB
+apps/desktop build: dist/renderer/assets/rough.esm-Dy-Kn_BL.js                        27.10 kB │ gzip:   8.85 kB
+apps/desktop build: dist/renderer/assets/gitGraphDiagram-X574FWY7-C0KX5s7g.js         29.00 kB │ gzip:   8.55 kB
+apps/desktop build: dist/renderer/assets/timeline-definition-EJHVYXUP-CwchlYAF.js     30.44 kB │ gzip:  10.02 kB
+apps/desktop build: dist/renderer/assets/erDiagram-OPXOYQCR-C0AVwvG0.js               30.56 kB │ gzip:  10.51 kB
+apps/desktop build: dist/renderer/assets/chunk-ZIGJFQKS-BW_b_YcH.js                   30.74 kB │ gzip:   8.51 kB
+apps/desktop build: dist/renderer/assets/requirementDiagram-PLB6GJNP-CV3_knkt.js      30.98 kB │ gzip:   9.79 kB
+apps/desktop build: dist/renderer/assets/quadrantDiagram-O4NWA36T-DFY_eZ8x.js         33.51 kB │ gzip:   9.73 kB
+apps/desktop build: dist/renderer/assets/dagre-6A5THRUB-DWLta1_h.js                   40.71 kB │ gzip:  14.54 kB
+apps/desktop build: dist/renderer/assets/vennDiagram-UO4OBE2U-CLhujGvS.js             41.17 kB │ gzip:  15.12 kB
+apps/desktop build: dist/renderer/assets/stateDiagram-v2-GCMORJYK-DjodVwZJ.js         41.45 kB │ gzip:  13.84 kB
+apps/desktop build: dist/renderer/assets/blockDiagram-BEXU5L5S-BVlh7FLh.js            42.40 kB │ gzip:  13.85 kB
+apps/desktop build: dist/renderer/assets/xychartDiagram-PMCCYNJV-BCnsjv3x.js          44.14 kB │ gzip:  12.21 kB
+apps/desktop build: dist/renderer/assets/src-BIGLCdTx.js                              46.74 kB │ gzip:  16.48 kB
+apps/desktop build: dist/renderer/assets/classDiagram-v2-NBCMYWYE-pL0Y4rYo.js         49.61 kB │ gzip:  16.10 kB
+apps/desktop build: dist/renderer/assets/chunk-MBY4JIJT-B5Y6f1fl.js                   51.28 kB │ gzip:  16.45 kB
+apps/desktop build: dist/renderer/assets/chunk-7M6MHVWA-C8qqbJ_0.js                   62.71 kB │ gzip:  20.35 kB
+apps/desktop build: dist/renderer/assets/c4Diagram-YGBWAQC7-CHrRFBer.js               65.07 kB │ gzip:  18.60 kB
+apps/desktop build: dist/renderer/assets/ganttDiagram-FUAMR5RP-B3IYBrMG.js            69.31 kB │ gzip:  22.74 kB
+apps/desktop build: dist/renderer/assets/diagram-22UHCM2B-DS-mhnOU.js                 80.40 kB │ gzip:  25.14 kB
+apps/desktop build: dist/renderer/assets/cose-bilkent-JH36ORCC-DUijqcXI.js            81.21 kB │ gzip:  21.52 kB
+apps/desktop build: dist/renderer/assets/swimlanes-2SLR337P-BcuTQc7T.js              106.19 kB │ gzip:  36.10 kB
+apps/desktop build: dist/renderer/assets/chunk-7INBJB4K-DHcvT5mK.js                  115.48 kB │ gzip:  29.22 kB
+apps/desktop build: dist/renderer/assets/sequenceDiagram-PO4LG4MO-DqWt_8f2.js        117.30 kB │ gzip:  31.24 kB
+apps/desktop build: dist/renderer/assets/architectureDiagram-NJMV4G6O-C_qYgGEY.js    148.86 kB │ gzip:  41.11 kB
+apps/desktop build: dist/renderer/assets/usecaseDiagram-POWQR4AR-gLeYCUaO.js         186.59 kB │ gzip:  50.11 kB
+apps/desktop build: dist/renderer/assets/chunk-O7XYJQB3-D_rjFZly.js                  239.51 kB │ gzip:  39.70 kB
+apps/desktop build: dist/renderer/assets/katex-ZlcWpGUi.js                           258.68 kB │ gzip:  77.43 kB
+apps/desktop build: dist/renderer/assets/xterm-ScmBfeDI.js                           331.17 kB │ gzip:  83.03 kB
+apps/desktop build: dist/renderer/assets/cytoscape.esm-Yq6u8L66.js                   434.85 kB │ gzip: 137.78 kB
+apps/desktop build: dist/renderer/assets/chunk-FOHPRMQF-DzxwRta7.js                  662.10 kB │ gzip: 143.16 kB
+apps/desktop build: dist/renderer/assets/elk-276RUBZZ-CRkSCDci.js                  1,456.33 kB │ gzip: 453.19 kB
+apps/desktop build: dist/renderer/assets/index-Cq5LP_o1.js                         1,967.60 kB │ gzip: 583.86 kB
+apps/desktop build: ✓ built in 402ms
+apps/desktop build: [33m[INEFFECTIVE_DYNAMIC_IMPORT] [0m../../packages/contracts/dist/index.js is dynamically imported by ../../packages/sdk/dist/index.js but also statically imported by src/desktop-sdk.ts, src/migration-contract.ts, src/stream-contract.ts, ../../packages/sdk/dist/index.js, ../../packages/sdk/dist/project-file-integrity.js, ..., dynamic import will not move module into another chunk.
+apps/desktop build: [plugin builtin:vite-reporter] 
+apps/desktop build: (!) Some chunks are larger than 500 kB after minification. Consider:
+apps/desktop build: - Using dynamic import() to code-split the application
+apps/desktop build: - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+apps/desktop build: - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+apps/desktop build: $ tsc -p tsconfig.main.json
+apps/desktop build: $ tsc -p tsconfig.preload.json
+apps/desktop build: Done
+$ pnpm snapshots replay --case runtime/minimal-completion && pnpm snapshots replay --case runtime/recovery && pnpm snapshots replay --case runtime/cancel && pnpm snapshots replay --case memory/memory-recall && pnpm snapshots replay --case runtime/subagent
+$ pnpm --filter @tracegraph/test-support snapshots replay --case runtime/minimal-completion
+$ node dist/recorded-session/cli.js replay --case runtime/minimal-completion
+Replayed runtime/minimal-completion: completed; 11 semantic events.
+$ pnpm --filter @tracegraph/test-support snapshots replay --case runtime/recovery
+$ node dist/recorded-session/cli.js replay --case runtime/recovery
+Replayed runtime/recovery: completed; 30 semantic events.
+$ pnpm --filter @tracegraph/test-support snapshots replay --case runtime/cancel
+$ node dist/recorded-session/cli.js replay --case runtime/cancel
+Replayed runtime/cancel: cancelled; 12 semantic events.
+$ pnpm --filter @tracegraph/test-support snapshots replay --case memory/memory-recall
+$ node dist/recorded-session/cli.js replay --case memory/memory-recall
+Replayed memory/memory-recall: completed; 14 semantic events.
+$ pnpm --filter @tracegraph/test-support snapshots replay --case runtime/subagent
+$ node dist/recorded-session/cli.js replay --case runtime/subagent
+Replayed runtime/subagent: completed; 20 semantic events.
+Scope: 22 of 23 workspace projects
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/contracts
+
+
+ Test Files  44 passed (44)
+      Tests  230 passed (230)
+   Start at  19:57:41
+   Duration  747ms (transform 47%, import 47%, tests 5%, worker 1%)
+
+  Transform  transforming modules took 3.58s · 47% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+
+$ vitest run tests
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/retrieval
+
+
+ Test Files  3 passed (3)
+      Tests  22 passed (22)
+   Start at  19:57:42
+   Duration  256ms (tests 68%, transform 24%, import 7%, worker 1%)
+
+$ vitest run tests
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/telemetry
+
+
+ Test Files  2 passed (2)
+      Tests  26 passed (26)
+   Start at  19:57:42
+   Duration  120ms (transform 56%, tests 25%, import 17%, worker 2%)
+
+$ vitest run tests
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/retrieval-service
+
+
+ Test Files  2 passed (2)
+      Tests  14 passed (14)
+   Start at  19:57:42
+   Duration  282ms (tests 46%, import 33%, transform 20%, worker 1%)
+
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/api
+
+
+ Test Files  3 passed (3)
+      Tests  17 passed (17)
+   Start at  19:57:43
+   Duration  327ms (transform 65%, import 31%, tests 3%, worker 1%)
+
+$ vitest run tests
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/codegraph
+
+
+ Test Files  1 passed (1)
+      Tests  12 passed (12)
+   Start at  19:57:43
+   Duration  710ms (tests 60%, transform 25%, import 15%)
+
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/evidence
+
+
+ Test Files  1 passed (1)
+      Tests  7 passed (7)
+   Start at  19:57:44
+   Duration  397ms (transform 46%, tests 32%, import 21%)
+
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/lsp
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  19:57:45
+   Duration  407ms (transform 42%, tests 37%, import 20%)
+
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/mcp
+
+
+ Test Files  2 passed (2)
+      Tests  14 passed (14)
+   Start at  19:57:45
+   Duration  445ms (transform 42%, tests 36%, import 22%)
+
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/sdk
+
+
+ Test Files  13 passed (13)
+      Tests  100 passed (100)
+   Start at  19:57:46
+   Duration  2.44s (transform 42%, tests 37%, import 20%)
+
+  Transform  transforming modules took 2.85s · 42% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/session
+
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  19:57:48
+   Duration  317ms (transform 60%, import 29%, tests 11%, worker 1%)
+
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/tool
+
+
+ Test Files  3 passed (3)
+      Tests  24 passed (24)
+   Start at  19:57:49
+   Duration  335ms (transform 66%, import 30%, tests 4%, worker 1%)
+
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/context
+
+
+ Test Files  2 passed (2)
+      Tests  28 passed (28)
+   Start at  19:57:49
+   Duration  476ms (transform 52%, tests 25%, import 22%)
+
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench
+
+
+ Test Files  46 passed (46)
+      Tests  370 passed (370)
+   Start at  19:57:50
+   Duration  3.06s (transform 35%, import 31%, environment 17%, tests 16%)
+
+  Transform  transforming modules took 12.21s · 35% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/web
+
+
+ Test Files  1 passed (1)
+      Tests  1 passed (1)
+   Start at  19:57:53
+   Duration  294ms (transform 67%, import 29%, tests 4%, worker 1%)
+
+$ vitest run src --maxWorkers=1 --no-file-parallelism
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/core
+
+
+ Test Files  71 passed (71)
+      Tests  640 passed (640)
+   Start at  19:57:54
+   Duration  130.17s (tests 94%, import 5%, transform 1%)
+
+$ vitest run src --maxWorkers=1 --no-file-parallelism
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: read-only (sandbox: read-only)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: fixture=ready(0)
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: read-only (sandbox: read-only)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: read-only (sandbox: read-only)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Visual evidence retention could not be verified; screenshot cleanup is disabled.
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Visual evidence retention could not be verified; screenshot cleanup is disabled.
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: read-only (sandbox: read-only)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: read-only (sandbox: read-only)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+
+ Test Files  51 passed (51)
+      Tests  319 passed (319)
+   Start at  20:00:04
+   Duration  99.42s (tests 87%, import 12%, transform 1%)
+
+$ vitest run src
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/test-support
+
+
+ Test Files  4 passed (4)
+      Tests  67 passed (67)
+   Start at  20:01:44
+   Duration  14.90s (tests 88%, transform 9%, import 3%)
+
+$ vitest run src --exclude src/e2e.test.ts
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/cli
+
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+
+ Test Files  23 passed (23)
+      Tests  118 passed (118)
+   Start at  20:01:59
+   Duration  2.14s (transform 64%, import 26%, tests 10%)
+
+  Transform  transforming modules took 11.82s · 64% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+
+$ vitest run src --exclude src/desktop-host.e2e.test.ts
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/desktop-host
+
+
+ Test Files  6 passed (6)
+      Tests  18 passed (18)
+   Start at  20:02:01
+   Duration  4.82s (tests 53%, transform 36%, import 11%)
+
+  Transform  transforming modules took 2.76s · 36% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+
+$ vitest run --config vitest.config.ts
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/desktop
+
+
+ Test Files  15 passed (15)
+      Tests  79 passed (79)
+   Start at  20:02:06
+   Duration  1.81s (tests 46%, transform 38%, import 16%)
+
+  Transform  transforming modules took 2.72s · 38% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+
+$ node --test scripts/build-brand-icons.test.mjs scripts/build-native-computer.test.mjs scripts/build-desktop-product.test.mjs scripts/preview-site.test.mjs scripts/site-projection.test.mjs scripts/create-preview-release.test.mjs scripts/clean-dist.test.mjs scripts/verify-lockfile.test.mjs scripts/verify-release.test.mjs scripts/verify-v2-docs.test.mjs scripts/gen-current-baseline.test.mjs scripts/verify-translation-pairs.test.mjs scripts/gen-reference-catalogs.test.mjs scripts/verify-boundaries.test.mjs scripts/gen-module-graph.test.mjs scripts/verify-invariants.test.mjs benchmarks/support/runner.test.mjs && vitest run scripts/check-coverage.test.ts
+✔ scenario manifests reject unknown keys, out-of-root paths, and unbounded settings (0.912625ms)
+✔ scenario loader hashes bounded regular JSON config bytes (9.447417ms)
+✔ summary uses nearest-rank p95 and median absolute deviation (0.450375ms)
+✔ runner isolates each command, strips credentials, and writes an auditable raw report (323.411375ms)
+✔ correctness failure creates a failed report and skips every measurement (86.0385ms)
+✔ Node subprocesses reject fetch, TCP, UDP, and DNS egress and reports a budget regression (264.276958ms)
+✔ timed out samples stop the run and are not counted as passing measurements (182.827667ms)
+✔ Current production geometry matches the user-selected B and has one tile with actual transparent padding (41.084542ms)
+✔ ICNS and ICO entries carry complete same-source actual PNG bytes at every declared size (50.78625ms)
+✔ derivation is deterministic and --check rejects a damaged existing family member (72.598083ms)
+✔ runtime downloads have pinned official archive hashes for each supported installer target (0.823041ms)
+✔ assembly refuses to mix a new build into a preexisting stage (4.765875ms)
+✔ CLI launchers select fixed bundled resources and clear Node injection options (4.299291ms)
+✔ unsigned builds ignore certificate configuration and requested signing fails closed without credentials (0.260041ms)
+✔ cross-platform native TypeScript selection requires the exact target and lockfile integrity (0.282ms)
+✔ a correct native manifest cannot hide a binary for the wrong Windows CPU (7.545792ms)
+✔ post-pack dependency relocation must preserve every exact dependency version (5.31425ms)
+✔ native computer delivery rejects mismatched platform and architecture headers (0.621875ms)
+✔ non-native assembly reports unavailable and removes a stale foreign executable (15.100375ms)
+✔ clean-dist removes only generated directories owned by manifests (29.854584ms)
+✔ clean-dist rejects a symlink target without touching its destination (7.05075ms)
+✔ clean-dist preflights every target before deleting an earlier directory (8.207792ms)
+✔ SBOM names pinned scoped registry packages and preserves integrity hashes (6.480458ms)
+✔ preview inventory rejects symlink sources (8.447791ms)
+✔ installer rejects modified dist bytes before running dependency installation (50.511792ms)
+✔ smoke refuses source directories without a release inventory (5.017209ms)
+▶ valid checksums never permit unlisted pnpm hooks, configs, workspace manifests or source files
+  ✔ .pnpmfile.cjs (21.1365ms)
+  ✔ apps/cli/.npmrc (19.090917ms)
+  ✔ packages/injected/package.json (17.897459ms)
+  ✔ apps/cli/dist/extra.js (17.77725ms)
+✔ valid checksums never permit unlisted pnpm hooks, configs, workspace manifests or source files (76.66925ms)
+✔ installed smoke permits only real node_modules roots of declared workspace packages (28.517208ms)
+✔ cleanup rejection attempts remaining cleanup and never publishes passed evidence (0.614667ms)
+▶ current baseline generator
+  ✔ collects package DAG, source LOC, static test inventory, and event schema size (144.077958ms)
+  ✔ checks deterministic structure while ignoring diagnostic metadata and performance samples (87.60175ms)
+  ✔ fails check mode when deterministic structural values drift (80.68125ms)
+✔ current baseline generator (313.156333ms)
+✔ collects package dependencies and resolvable module imports (25.01525ms)
+✔ --check accepts a fresh graph and fails when a package or module is added (26.803792ms)
+✔ CI checks the generated graph for drift (0.763708ms)
+✔ deterministically generates all four catalogs and check mode is read-only (69.027875ms)
+✔ reports every stale or deleted owned output without repairing it (26.427542ms)
+✔ source changes and newly added modules invalidate the catalogs (32.35825ms)
+✔ fails closed for missing definitions, unsupported enum expressions and unregistered packages (15.894459ms)
+✔ links imported registered definitions and hashes the actual module without evaluating tools (31.488792ms)
+✔ follows literal factory groups and function tool definitions (10.333333ms)
+✔ rejects missing imports, defined-but-unregistered tools, and get lookups masquerading as registration (10.118875ms)
+✔ serves only built versioned files on loopback with exact UTF-8 bytes (43.1145ms)
+✔ refuses non-loopback hosts and traversal or symlink escapes (10.315875ms)
+✔ validates real Mermaid and emits exact, deterministic source artifacts without changing canonical files (474.259416ms)
+✔ fails missing local targets and existing files with missing anchors (17.248542ms)
+✔ fails unknown versions and status/locale contradictions (22.217833ms)
+✔ fails malformed Mermaid via its real parser (10.175584ms)
+✔ rejects translated/internal/escaping pages instead of publishing them with a draft badge (36.504208ms)
+✔ rewrites selected routes without double base prefixes and withholds excluded translations/internal notes (19.826458ms)
+✔ validates every supported Mermaid fence, including tildes, long fences and indentation (80.011125ms)
+✔ checks heading anchors against actual VitePress punctuation and duplicate semantics (45.782417ms)
+✔ rejects includes and snippets so excluded content cannot bypass the source allowlist (19.098375ms)
+✔ rejects noncanonical paths and symlink aliases of translations or internal directories (34.755792ms)
+✔ the current workspace dependency and import graph satisfies architecture-policy.yaml (453.464041ms)
+✔ a forbidden reverse dependency fails (5.903875ms)
+✔ a legacy package reports boundary violations without blocking and names its migration owner (3.59675ms)
+✔ the CLI displays legacy findings while exiting successfully (63.043417ms)
+✔ dependency cycles made only of legacy packages are report-only (3.95375ms)
+✔ a legacy package without a migration owner is invalid policy (2.535875ms)
+✔ unknown package governance states are rejected (2.1175ms)
+✔ managed package violations remain blocking (2.833958ms)
+✔ an import outside a package's exports fails as a deep import (2.804292ms)
+✔ a workspace dependency cycle fails (3.255209ms)
+✔ removing the CI boundary-check step is detected (3.471417ms)
+✔ current repository satisfies the Ledger, wire, and Projection invariants (141.409667ms)
+✔ a second Event Ledger writer is rejected (9.407084ms)
+✔ Core's compatibility adapter does not hide another writer in the same file (8.697208ms)
+✔ private fields copied to wire are rejected (7.866959ms)
+✔ persistence-only envelope fields are rejected by the wire contract (6.535375ms)
+✔ I/O in Projection code is rejected (7.720167ms)
+✔ CI runs the invariant verifier (0.499291ms)
+▶ supply-chain lockfile guard
+  ✔ accepts exact dependencies, workspace:* and a synchronized pnpm 11 lockfile (672.690541ms)
+  ✔ fails closed when a production dependency introduces a range (361.364041ms)
+  ✔ rejects git, HTTP, file, and link dependency sources (1370.891417ms)
+  ✔ requires internal dependencies to use workspace:* and resolve to a real package (350.156875ms)
+  ✔ rejects a packageManager/lockfile format mismatch (351.950791ms)
+  ✔ detects a manifest change that was not written to the lockfile (538.994375ms)
+  ✔ rejects weakening the 24-hour release-age policy (336.376708ms)
+  ✔ rejects broad release-age exclusions (352.67575ms)
+  ✔ rejects ranged or exotic pnpm overrides (340.844458ms)
+✔ supply-chain lockfile guard (4677.01375ms)
+✔ release manifest serialization is explicitly bounded (2.754167ms)
+✔ release verification writes a deterministic bounded manifest (50.793166ms)
+▶ release verification fails closed on tag, changelog, and output drift
+  ✔ tag mismatch (7.705792ms)
+  ✔ missing changelog entry (8.520875ms)
+  ✔ missing declared build output (9.520791ms)
+  ✔ non-dist export or bin target (10.470708ms)
+  ✔ missing Desktop main entrypoint (12.257708ms)
+✔ release verification fails closed on tag, changelog, and output drift (49.320917ms)
+✔ checks drafts without claiming human review and inventories unregistered pairs (30.380875ms)
+✔ rejects source and translation hash drift (12.030167ms)
+✔ rejects structure, code and identifier drift even if hashes are refreshed (11.056708ms)
+✔ rejects broken links, deleted anchors and changed valid targets (11.246833ms)
+✔ rejects malformed YAML, duplicate IDs, invalid metadata and missing review evidence (12.340917ms)
+✔ rejects drift to another existing anchor and supports paired translated headings (11.395458ms)
+✔ records all legacy pairs without certifying equivalence and rejects later hash/structure/metadata drift (28.4515ms)
+✔ explicit refresh revokes old human review instead of silently preserving it (9.329875ms)
+✔ also discovers the repository English-source README.en.md and Chinese README.md convention (10.525167ms)
+✔ ignores generated preview archives while checking any explicitly tracked bilingual source (67.906167ms)
+✔ registers existing parallel English and Chinese Outlive skill directories (11.883709ms)
+▶ V2 documentation manifest and roadmap verifier
+  ✔ accepts a valid manifest and acyclic task graph (20.432625ms)
+  ✔ fails for missing manifest paths and invalid document status (13.287917ms)
+  ✔ fails for duplicate task IDs (10.53425ms)
+  ✔ fails for dependency cycles (10.344833ms)
+  ✔ returns exit code 1 for invalid repository input (69.32025ms)
+✔ V2 documentation manifest and roadmap verifier (124.96925ms)
+ℹ tests 109
+ℹ suites 3
+ℹ pass 109
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4737.318458
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent
+
+
+ Test Files  1 passed (1)
+      Tests  8 passed (8)
+   Start at  20:02:13
+   Duration  110ms (tests 59%, transform 29%, import 10%, worker 2%)
+

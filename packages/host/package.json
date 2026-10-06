@@ -55,26 +55,27 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test:unit": "vitest run src",
+    "test:unit": "vitest run src --maxWorkers=1 --no-file-parallelism",
     "test:watch": "vitest",
     "dev": "tsx src/dev.ts"
   },
   "dependencies": {
     "@fastify/cors": "catalog:",
     "@tracegraph/api": "workspace:*",
+    "@tracegraph/codegraph": "workspace:*",
     "@tracegraph/contracts": "workspace:*",
     "@tracegraph/core": "workspace:*",
-    "fastify": "catalog:",
-    "zod": "catalog:",
-    "@tracegraph/codegraph": "workspace:*",
-    "@tracegraph/sdk": "workspace:*",
-    "@tracegraph/session": "workspace:*",
-    "@tracegraph/mcp": "workspace:*",
     "@tracegraph/lsp": "workspace:*",
+    "@tracegraph/mcp": "workspace:*",
     "@tracegraph/retrieval": "workspace:*",
     "@tracegraph/retrieval-service": "workspace:*",
+    "@tracegraph/sdk": "workspace:*",
+    "@tracegraph/session": "workspace:*",
     "@tracegraph/telemetry": "workspace:*",
-    "node-pty": "1.1.0"
+    "fastify": "catalog:",
+    "node-pty": "1.1.0",
+    "playwright-core": "1.63.0",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",

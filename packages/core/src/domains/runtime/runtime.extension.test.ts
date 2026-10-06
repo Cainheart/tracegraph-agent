@@ -233,7 +233,7 @@ describe("G17 Runtime extension integration", () => {
             },
           };
         }
-        return finishDecision("decision:plan-ready");
+        return { ...finishDecision("decision:plan-ready"), finish_intent: "submit_plan" };
       },
     };
     const firstRuntime = await createTrackedRuntime({

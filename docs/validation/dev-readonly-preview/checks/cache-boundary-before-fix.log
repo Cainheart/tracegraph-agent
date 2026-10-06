@@ -1,0 +1,59 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+ ❯ src/readonly-preview.test.ts (9 tests | 1 failed | 8 skipped) 253ms
+   ❯ DEV-091 owned read-only preview actual processes (9)
+     × rejects a cache within source even when its relative directory name starts with two dots 252ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/readonly-preview.test.ts > DEV-091 owned read-only preview actual processes > rejects a cache within source even when its relative directory name starts with two dots
+AssertionError: promise resolved "{ result: { …(5) }, body: { …(7) } }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "body": {
++     "cacheSeparate": true,
++     "cacheWritten": true,
++     "ownerPID": 50660,
++     "pid": 50661,
++     "profileDenied": true,
++     "sourceDenied": true,
++     "tempSeparate": true,
++   },
++   "result": {
++     "code": "ok",
++     "command_id": "preview:one",
++     "message": "Operation completed",
++     "preview": {
++       "cache_writable": true,
++       "message": "Waiting for the local service",
++       "owned_process": true,
++       "preview_id": "preview:5c463443-1a95-4b0f-b7f0-9d8e0cee6d47",
++       "project_id": "project:preview",
++       "source_access": "read-only",
++       "state": "starting",
++       "url": "http://127.0.0.1:63588/",
++     },
++     "status": "succeeded",
++   },
+  }
+
+ ❯ src/readonly-preview.test.ts:46:383
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 8 skipped (9)
+   Start at  02:58:43
+   Duration  1.48s (transform 56%, import 26%, tests 18%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/readonly-preview.test.ts -t 'relative directory name' '--maxWorkers=1'

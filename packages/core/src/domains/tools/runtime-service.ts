@@ -7,6 +7,8 @@ export {
   createEffectivePermissionPolicy,
 } from "./policy-engine.js";
 export {
+  ArtifactCursorMismatchError,
+  ArtifactUnavailableError,
   ActionRejectedError,
   CommitPatchInputSchema,
   PatchInputSchema,

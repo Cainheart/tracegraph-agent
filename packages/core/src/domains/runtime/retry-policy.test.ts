@@ -8,22 +8,22 @@ import {
 
 describe("runtime retry taxonomy", () => {
   it("plans bounded deterministic backoff for explicitly transient provider failures", () => {
-    expect(MODEL_PROVIDER_RETRY_POLICY).toEqual({ maxAttempts: 3, baseDelayMs: 250, maxDelayMs: 1_000 });
+    expect(MODEL_PROVIDER_RETRY_POLICY).toEqual({ maxAttempts: 6, baseDelayMs: 500, maxDelayMs: 10_000 });
     expect(planModelProviderRetry(new ModelRequestError("model_http_503", "unavailable"), 1, false)).toEqual({
       attempt: 1,
       nextAttempt: 2,
-      maxAttempts: 3,
-      delayMs: 250,
+      maxAttempts: 6,
+      delayMs: 500,
       reasonCode: "http_503",
     });
     expect(planModelProviderRetry(new ModelRequestError("ECONNRESET", "connection lost"), 2, false)).toEqual({
       attempt: 2,
       nextAttempt: 3,
-      maxAttempts: 3,
-      delayMs: 500,
+      maxAttempts: 6,
+      delayMs: 1_000,
       reasonCode: "transport_network_error",
     });
-    expect(planModelProviderRetry(new ModelRequestError("model_http_504", "gateway timeout"), 3, false))
+    expect(planModelProviderRetry(new ModelRequestError("model_http_504", "gateway timeout"), 6, false))
       .toBeUndefined();
   });
 
@@ -41,9 +41,9 @@ describe("runtime retry taxonomy", () => {
     expect(retryTaxonomySnapshot(8)).toMatchObject({
       version: "retry-taxonomy.v1",
       model_provider: {
-        max_attempts: 3,
-        base_backoff_ms: 250,
-        max_backoff_ms: 1_000,
+        max_attempts: 6,
+        base_backoff_ms: 500,
+        max_backoff_ms: 10_000,
         stop_after_provider_usage: true,
       },
       tool: {

@@ -1,4 +1,10 @@
-import {ModelConnectionsSnapshotSchema,ModelConnectionSaveRequestSchema,ModelConnectionRemoveRequestSchema,SessionRunOptionsSnapshotSchema,SessionRunOptionsUpdateRequestSchema,PermissionGrantSchema,PermissionGrantUpdateRequestSchema,type ModelConnectionSaveRequest,type ModelConnectionRemoveRequest,type SessionRunOptionsUpdateRequest,type PermissionGrantUpdateRequest} from "@tracegraph/contracts";
+import { projectSessionPublicChat, type PublicChatBlock } from "@tracegraph/contracts";
+import {VisualRetentionSettingsSchema,VisualRetentionUpdateSchema,VisualEvidenceQuerySchema,VisualEvidenceInventorySchema,VisualEvidencePinSchema,VisualEvidenceEntrySchema,VisualEvidenceCleanupRequestSchema,VisualEvidenceCleanupResultSchema,VisualEvidenceCommandReceiptSchema,type VisualRetentionUpdate,type VisualEvidenceQuery,type VisualEvidencePin,type VisualEvidenceCleanupRequest} from "@tracegraph/contracts";
+import {GoalCreationReceiptSchema} from "@tracegraph/contracts";
+import {IdentifierSchema,PersonalProfileSnapshotSchema,PersonalProfileUpdateRequestSchema,PersonalProfileCommandReceiptSchema,PersonalUsageQuerySchema,PersonalUsageSnapshotSchema,PublicSessionSearchQuerySchema,PublicSessionSearchResultSchema,type PersonalProfileUpdateRequest,type PersonalUsageQuery,type PublicSessionSearchQuery} from "@tracegraph/contracts";
+import {ComputerActionRequestSchema,ComputerActionResultSchema,ComputerCaptureContentRequestSchema,ComputerCommandReceiptSchema,ComputerGrantRequestSchema,ComputerGrantSchema,ComputerLeaseReleaseRequestSchema,ComputerLeaseRequestSchema,ComputerLeaseResumeRequestSchema,ComputerLeaseSchema,ComputerObservationSchema,ComputerObserveRequestSchema,ComputerRevokeGrantRequestSchema,ComputerStatusSchema,ComputerTargetSchema,type ComputerActionRequest,type ComputerCaptureContentRequest,type ComputerGrantRequest,type ComputerLeaseReleaseRequest,type ComputerLeaseRequest,type ComputerLeaseResumeRequest,type ComputerObserveRequest,type ComputerRevokeGrantRequest} from "@tracegraph/contracts";
+import {WorkbenchSettingsHistorySchema,RestoreWorkbenchSettingsRequestSchema,RestoreWorkbenchSettingsResultSchema,ProjectRunDefaultsSnapshotSchema,ProjectRunDefaultsUpdateRequestSchema,SessionRunOptionsResetRequestSchema,type RestoreWorkbenchSettingsRequest,type ProjectRunDefaultsUpdateRequest,type SessionRunOptionsResetRequest} from "@tracegraph/contracts";
+import {ModelConnectionsSnapshotSchema,ModelConnectionSaveRequestSchema,ModelConnectionRemoveRequestSchema,ModelCatalogDiscoveryRequestSchema,ModelCatalogDiscoveryResultSchema,SessionRunOptionsSnapshotSchema,SessionRunOptionsUpdateRequestSchema,PermissionGrantSchema,PermissionGrantUpdateRequestSchema,type ModelConnectionSaveRequest,type ModelConnectionRemoveRequest,type ModelCatalogDiscoveryRequest,type SessionRunOptionsUpdateRequest,type PermissionGrantUpdateRequest} from "@tracegraph/contracts";
 import {ImageProviderConfigUpdateSchema,ImageProviderConfigSnapshotSchema,StartMediaRunRequestSchema,MediaMimeTypeSchema,MAX_GENERATED_IMAGE_BYTES,type ImageProviderConfigUpdate,type ImageProviderConfigSnapshot,type StartMediaRunRequest,type MediaMimeType} from "@tracegraph/contracts";
 import {ProjectFileListRequestSchema,ProjectFileReadRequestSchema,ProjectFileSaveRequestSchema,ProjectFileReconcileRequestSchema,ProjectFileListSchema,ProjectFileSnapshotSchema,ProjectFileSaveResultSchema,AnswerFeedbackRequestSchema,AnswerFeedbackSnapshotSchema,type ProjectFileListRequest,type ProjectFileReadRequest,type ProjectFileSaveRequest,type ProjectFileReconcileRequest,type ProjectFileList,type ProjectFileSnapshot,type ProjectFileSaveResult,type AnswerFeedbackRequest,type AnswerFeedbackSnapshot} from "@tracegraph/contracts";
 import {verifyProjectFileSnapshot,verifyProjectFileSaveResult} from "./project-file-integrity.js";
@@ -433,6 +439,64 @@ export class TraceGraphClient {
     return WorkbenchSettingsSnapshotSchema.parse(await this.#command("/api/workbench/settings", UpdateWorkbenchSettingsRequestSchema.parse(input)));
   }
 
+  async getWorkbenchSettingsHistory(){return WorkbenchSettingsHistorySchema.parse(await this.#requestUnknown("/api/workbench/settings/history"));}
+  async getBrowserCommandReceipt(id:string){return BrowserCommandReceiptSchema.parse(await this.#requestUnknown(`/api/workbench/browser/commands/${encodeURIComponent(id)}`));}
+  async getComputerStatus(){return ComputerStatusSchema.parse(await this.#requestUnknown("/api/workbench/computer"));}
+  async listComputerTargets(){return ComputerTargetSchema.array().max(128).parse(await this.#requestUnknown("/api/workbench/computer/targets"));}
+  async requestComputerGrant(input:ComputerGrantRequest){return ComputerGrantSchema.parse(await this.#command("/api/workbench/computer/grants",ComputerGrantRequestSchema.parse(input)));}
+  async revokeComputerGrant(input:ComputerRevokeGrantRequest){return ComputerGrantSchema.parse(await this.#command("/api/workbench/computer/revoke",ComputerRevokeGrantRequestSchema.parse(input)));}
+  async acquireComputerLease(input:ComputerLeaseRequest){return ComputerLeaseSchema.parse(await this.#command("/api/workbench/computer/leases",ComputerLeaseRequestSchema.parse(input)));}
+  async resumeComputerLease(input:ComputerLeaseResumeRequest){return ComputerLeaseSchema.parse(await this.#command("/api/workbench/computer/resume",ComputerLeaseResumeRequestSchema.parse(input)));}
+  async releaseComputerLease(input:ComputerLeaseReleaseRequest){return ComputerLeaseSchema.parse(await this.#command("/api/workbench/computer/release",ComputerLeaseReleaseRequestSchema.parse(input)));}
+  async observeComputer(input:ComputerObserveRequest){return ComputerObservationSchema.parse(await this.#command("/api/workbench/computer/observe",ComputerObserveRequestSchema.parse(input)));}
+  async computerAction(input:ComputerActionRequest){return ComputerActionResultSchema.parse(await this.#command("/api/workbench/computer/actions",ComputerActionRequestSchema.parse(input)));}
+  async getComputerCommandReceipt(id:string){return ComputerCommandReceiptSchema.parse(await this.#requestUnknown(`/api/workbench/computer/commands/${encodeURIComponent(id)}`));}
+  async getComputerCapture(input:ComputerCaptureContentRequest):Promise<{sha256:string;bytes:Uint8Array}>{
+    const response=await this.#requestResponse("/api/workbench/computer/capture",{method:"POST",headers:{"content-type":"application/json",accept:"image/png"},body:JSON.stringify(ComputerCaptureContentRequestSchema.parse(input))});
+    if(response.headers.get("content-type")?.split(";")[0]!=="image/png")throw new TypeError("Computer capture is not PNG");
+    const hash=response.headers.get("x-outlive-content-sha256");if(!hash||!/^sha256:[a-f0-9]{64}$/u.test(hash))throw new TypeError("Computer capture has no integrity header");
+    const reader=response.body?.getReader();if(!reader)throw new TypeError("Computer capture has no body");let length=0;const chunks:Uint8Array[]=[];
+    try{for(;;){const part=await reader.read();if(part.done)break;length+=part.value.length;if(length>16*1024*1024)throw new TypeError("Computer capture exceeds the limit");chunks.push(part.value);}}finally{await reader.cancel();reader.releaseLock();}
+    const bytes=new Uint8Array(length);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
+    if(!length)throw new TypeError("Computer capture is empty");const actual="sha256:"+Array.from(new Uint8Array(await globalThis.crypto.subtle.digest("SHA-256",bytes)),byte=>byte.toString(16).padStart(2,"0")).join("");if(actual!==hash)throw new TypeError("Computer capture integrity mismatch");return {sha256:hash,bytes};
+  }
+  async getBrowserStatus(){return BrowserStatusSchema.parse(await this.#requestUnknown("/api/workbench/browser"));}
+  async requestBrowserGrant(input:BrowserGrantRequest){return BrowserGrantSchema.parse(await this.#command("/api/workbench/browser/grants",BrowserGrantRequestSchema.parse(input)));}
+  async browserCommand(input:BrowserCommand){return BrowserCommandResultSchema.parse(await this.#command("/api/workbench/browser/commands",BrowserCommandSchema.parse(input)));}
+  async observeBrowser(id:string){return BrowserObservationSchema.parse(await this.#command(`/api/workbench/browser/tabs/${encodeURIComponent(id)}/observe`,{}));}
+  async getBrowserEvidence(id:string):Promise<{evidenceId:string;sha256:string;bytes:Uint8Array}>{
+    const response=await this.#requestResponse(`/api/workbench/browser/evidence/${encodeURIComponent(id)}`,{headers:{accept:"image/png"}});
+    if(response.headers.get("content-type")?.split(";")[0]!=="image/png")throw new TypeError("Browser evidence is not PNG");
+    const hash=response.headers.get("x-outlive-content-sha256");if(!hash||!/^sha256:[a-f0-9]{64}$/u.test(hash))throw new TypeError("Browser evidence has no integrity header");
+    const reader=response.body?.getReader();if(!reader)throw new TypeError("Browser evidence has no body");let length=0;const chunks:Uint8Array[]=[];
+    try{for(;;){const part=await reader.read();if(part.done)break;length+=part.value.length;if(length>8*1024*1024)throw new TypeError("Browser evidence exceeds the limit");chunks.push(part.value);}}finally{await reader.cancel();reader.releaseLock();}
+    const bytes=new Uint8Array(length);let offset=0;for(const chunk of chunks){bytes.set(chunk,offset);offset+=chunk.length;}
+    if(!length)throw new TypeError("Browser evidence is empty");const actual="sha256:"+Array.from(new Uint8Array(await globalThis.crypto.subtle.digest("SHA-256",bytes)),byte=>byte.toString(16).padStart(2,"0")).join("");if(actual!==hash)throw new TypeError("Browser evidence integrity mismatch");
+    return {evidenceId:id,sha256:hash,bytes};
+  }
+  async listGoals(){return GoalListResponseSchema.parse(await this.#requestUnknown("/api/workbench/goals"));}
+  async createGoal(input:GoalCreateRequest){return GoalSnapshotSchema.parse(await this.#command("/api/workbench/goals",GoalCreateRequestSchema.parse(input)));}
+  async getGoal(id:string){return GoalSnapshotSchema.parse(await this.#requestUnknown(`/api/workbench/goals/${encodeURIComponent(id)}`));}
+  async goalCommand(id:string,input:GoalCommandRequest){return GoalSnapshotSchema.parse(await this.#command(`/api/workbench/goals/${encodeURIComponent(id)}/commands`,GoalCommandRequestSchema.parse(input)));}
+  async getGoalCreationReceipt(id:string){return GoalCreationReceiptSchema.parse(await this.#requestUnknown(`/api/workbench/goals/creation-commands/${encodeURIComponent(id)}`));}
+  async getGoalCommandReceipt(id:string,commandId:string){return GoalCommandReceiptSchema.parse(await this.#requestUnknown(`/api/workbench/goals/${encodeURIComponent(id)}/commands/${encodeURIComponent(commandId)}`));}
+  async getVisualRetentionSettings(){return VisualRetentionSettingsSchema.parse(await this.#requestUnknown("/api/workbench/visual-evidence/settings"));}
+  async updateVisualRetentionSettings(input:VisualRetentionUpdate){const value=VisualRetentionUpdateSchema.parse(input);const result=VisualRetentionSettingsSchema.parse(await this.#command("/api/workbench/visual-evidence/settings",value));if(result.last_command_id!==value.command_id)throw new Error("Retention receipt belongs to another command");return result;}
+  async listVisualEvidence(input:VisualEvidenceQuery){const value=VisualEvidenceQuerySchema.parse(input),query=new URLSearchParams();for(const [key,item]of Object.entries(value))if(item!==undefined)query.set(key,String(item));const result=VisualEvidenceInventorySchema.parse(await this.#requestUnknown(`/api/workbench/visual-evidence?${query}`));if(value.run_id&&result.entries.some(entry=>!entry.run_artifacts.length||entry.run_artifacts.some(ref=>ref.project_id!==value.project_id||ref.run_id!==value.run_id)))throw new Error("Screenshot inventory is outside the requested Run scope");return result;}
+  async pinVisualEvidence(evidenceId:string,input:VisualEvidencePin){const id=IdentifierSchema.parse(evidenceId),value=VisualEvidencePinSchema.parse(input),result=VisualEvidenceEntrySchema.parse(await this.#command(`/api/workbench/visual-evidence/${encodeURIComponent(id)}/pin`,value));if(result.evidence_id!==id)throw new Error("Screenshot pin receipt is outside its scope");return result;}
+  async cleanupVisualEvidence(input:VisualEvidenceCleanupRequest){const value=VisualEvidenceCleanupRequestSchema.parse(input),result=VisualEvidenceCleanupResultSchema.parse(await this.#command("/api/workbench/visual-evidence/cleanup",value));if(result.command_id!==value.command_id)throw new Error("Screenshot cleanup receipt belongs to another command");return result;}
+  async getVisualEvidenceCommandReceipt(commandId:string){const id=IdentifierSchema.parse(commandId),result=VisualEvidenceCommandReceiptSchema.parse(await this.#requestUnknown(`/api/workbench/visual-evidence/commands/${encodeURIComponent(id)}`));if(result.command_id!==id)throw new Error("Screenshot command receipt belongs to another command");return result;}
+  async getPersonalProfile(){return PersonalProfileSnapshotSchema.parse(await this.#requestUnknown("/api/workbench/personal/profile"));}
+  async updatePersonalProfile(input:PersonalProfileUpdateRequest){const parsed=PersonalProfileUpdateRequestSchema.parse(input),result=PersonalProfileSnapshotSchema.parse(await this.#command("/api/workbench/personal/profile",parsed));if(result.last_command_id!==parsed.command_id||result.revision!==parsed.expected_revision+1)throw new Error("Personal profile reply does not match its bound command");return result;}
+  async getPersonalProfileCommandReceipt(commandId:string){IdentifierSchema.parse(commandId);const result=PersonalProfileCommandReceiptSchema.parse(await this.#requestUnknown(`/api/workbench/personal/profile/commands/${encodeURIComponent(commandId)}`));if(result.command_id!==commandId||result.result&&result.result.last_command_id!==commandId||result.observed_profile&&result.observed_profile.last_command_id!==commandId)throw new Error("Personal profile receipt is outside its command scope");return result;}
+  async queryPersonalUsage(input:PersonalUsageQuery){const parsed=PersonalUsageQuerySchema.parse(input),query=new URLSearchParams();for(const [key,value]of Object.entries(parsed))if(value!==undefined)query.set(key,String(value));const result=PersonalUsageSnapshotSchema.parse(await this.#requestUnknown(`/api/workbench/personal/usage?${query.toString()}`));if(result.from_day!==parsed.from_day||result.to_day!==parsed.to_day||result.days.some(day=>day.day<parsed.from_day||day.day>parsed.to_day)||new Set(result.days.map(day=>day.day)).size!==result.days.length)throw new Error("Usage snapshot is outside its requested UTC range");return result;}
+  async searchPublicSessions(input:PublicSessionSearchQuery){const parsed=PublicSessionSearchQuerySchema.parse(input),query=new URLSearchParams();for(const [key,value]of Object.entries(parsed))if(value!==undefined)query.set(key,String(value));const result=PublicSessionSearchResultSchema.parse(await this.#requestUnknown(`/api/workbench/personal/search?${query.toString()}`));if(result.query!==parsed.q||result.hits.length>parsed.limit||result.hits.some(hit=>parsed.project_id&&hit.project_id!==parsed.project_id||parsed.session_id&&hit.session_id!==parsed.session_id||parsed.status&&hit.status!==parsed.status||parsed.archive!=="all"&&(parsed.archive==="archived")!==hit.archived||parsed.from&&Date.parse(hit.occurred_at)<Date.parse(parsed.from)||parsed.to&&Date.parse(hit.occurred_at)>Date.parse(parsed.to)))throw new Error("Public search hit is outside its requested scope");return result;}
+  async getGoalBudget(id:string){return GoalBudgetSnapshotSchema.parse(await this.#requestUnknown(`/api/workbench/goals/${encodeURIComponent(id)}/budget`));}
+  async restoreWorkbenchSettings(input:RestoreWorkbenchSettingsRequest){return RestoreWorkbenchSettingsResultSchema.parse(await this.#command("/api/workbench/settings/restore",RestoreWorkbenchSettingsRequestSchema.parse(input)));}
+  async getProjectRunDefaults(id:string){return ProjectRunDefaultsSnapshotSchema.parse(await this.#requestUnknown(`/api/workbench/projects/${encodeURIComponent(id)}/defaults`));}
+  async updateProjectRunDefaults(id:string,input:ProjectRunDefaultsUpdateRequest){return ProjectRunDefaultsSnapshotSchema.parse(await this.#command(`/api/workbench/projects/${encodeURIComponent(id)}/defaults`,ProjectRunDefaultsUpdateRequestSchema.parse(input)));}
+  async resetSessionRunOptions(id:string,input:SessionRunOptionsResetRequest){return SessionRunOptionsSnapshotSchema.parse(await this.#command(`/api/workbench/sessions/${encodeURIComponent(id)}/options/reset`,SessionRunOptionsResetRequestSchema.parse(input)));}
+
   async getCapabilities(): Promise<HostCapabilities> {
     return HostCapabilitiesSchema.parse(await this.#requestUnknown("/api/workbench/capabilities"));
   }
@@ -479,6 +543,21 @@ export class TraceGraphClient {
       await this.#requestUnknown("/api/extensions"),
     );
   }
+
+  async listManagedSkills(scope:import("@tracegraph/contracts").ManagedSkillScope){
+    const {ManagedSkillScopeSchema,ManagedSkillsSnapshotSchema}=await import("@tracegraph/contracts");
+    const requested=ManagedSkillScopeSchema.parse(scope),result=ManagedSkillsSnapshotSchema.parse(await this.#command("/api/workbench/skills/list",requested));
+    if(JSON.stringify(result.scope)!==JSON.stringify(requested))throw new TypeError("Skill response has a different scope");return result;
+  }
+  async readManagedSkill(input:import("@tracegraph/contracts").ManagedSkillSelector){
+    const {ManagedSkillSelectorSchema,ManagedSkillDocumentSchema}=await import("@tracegraph/contracts");const requested=ManagedSkillSelectorSchema.parse(input),result=ManagedSkillDocumentSchema.parse(await this.#command("/api/workbench/skills/read",requested));
+    if(result.name!==requested.name||JSON.stringify(result.scope)!==JSON.stringify(requested.scope))throw new TypeError("Skill document has a different scope");
+    const bytes=new TextEncoder().encode(result.content);const digest=await globalThis.crypto.subtle.digest("SHA-256",bytes);const sha256=`sha256:${Array.from(new Uint8Array(digest),byte=>byte.toString(16).padStart(2,"0")).join("")}`;
+    if(bytes.byteLength!==result.byte_length||sha256!==result.sha256)throw new TypeError("Skill document integrity could not be verified");return result;
+  }
+  async validateManagedSkill(input:import("@tracegraph/contracts").ValidateManagedSkillRequest){const {ValidateManagedSkillRequestSchema,ManagedSkillValidationSchema}=await import("@tracegraph/contracts");return ManagedSkillValidationSchema.parse(await this.#command("/api/workbench/skills/validate",ValidateManagedSkillRequestSchema.parse(input)));}
+  async managedSkillCommand(input:import("@tracegraph/contracts").ManagedSkillCommand){const {ManagedSkillCommandSchema,ManagedSkillCommandResultSchema}=await import("@tracegraph/contracts");const requested=ManagedSkillCommandSchema.parse(input),result=ManagedSkillCommandResultSchema.parse(await this.#command("/api/workbench/skills/commands",requested));if(result.command_id!==requested.command_id||result.name!==requested.name||JSON.stringify(result.scope)!==JSON.stringify(requested.scope))throw new TypeError("Skill command receipt has a different intent");return result;}
+  async getManagedSkillCommandReceipt(commandId:string){const {IdentifierSchema,ManagedSkillCommandReceiptSchema}=await import("@tracegraph/contracts");const id=IdentifierSchema.parse(commandId),result=ManagedSkillCommandReceiptSchema.parse(await this.#requestUnknown(`/api/workbench/skills/commands/${encodeURIComponent(id)}`));if(result.command_id!==id)throw new TypeError("Skill reconciliation has a different command");return result;}
 
   async listSkills(): Promise<readonly SkillProjectInspectionSnapshot[]> {
     return SkillProjectInspectionSchema.array().max(256).parse(
@@ -729,6 +808,9 @@ export class TraceGraphClient {
   async saveModelConnection(input:ModelConnectionSaveRequest){return ModelConnectionsSnapshotSchema.parse(await this.#command("/api/workbench/models",ModelConnectionSaveRequestSchema.parse(input)));}
   async removeModelConnection(id:string,input:ModelConnectionRemoveRequest){return ModelConnectionsSnapshotSchema.parse(await this.#command(`/api/workbench/models/${encodeURIComponent(id)}/remove`,ModelConnectionRemoveRequestSchema.parse(input)));}
   async testModelConnection(id:string,input:{command_id:string}){return ModelConnectionTestResultSchema.parse(await this.#command(`/api/workbench/models/${encodeURIComponent(id)}/test`,ModelConnectionTestRequestSchema.parse(input)));}
+  async discoverModelCatalog(id:string,input:ModelCatalogDiscoveryRequest){return ModelCatalogDiscoveryResultSchema.parse(await this.#command(`/api/workbench/models/${encodeURIComponent(id)}/discover`,ModelCatalogDiscoveryRequestSchema.parse(input)));}
+  async testModelCapabilities(id:string,input:ModelCapabilityTestRequest){const body=ModelCapabilityTestRequestSchema.parse(input),result=ModelCapabilityTestResultSchema.parse(await this.#command(`/api/workbench/models/${encodeURIComponent(id)}/capability-tests`,body));if(result.command_id!==body.command_id||result.connection_id!==id||result.connection_revision!==body.expected_revision||result.model!==body.model||JSON.stringify(result.results.map(item=>item.feature))!==JSON.stringify(body.features))throw new Error("Model capability receipt differs from the selected test intent");return result;}
+  async getModelCapabilityTestReceipt(commandId:string){const result=ModelCapabilityTestReceiptSchema.parse(await this.#requestUnknown(`/api/workbench/model-capability-tests/${encodeURIComponent(commandId)}`));if(result.command_id!==commandId||result.result&&result.result.command_id!==commandId)throw new Error("Model capability receipt refers to a different command");return result;}
   async getSessionRunOptions(id:string){return SessionRunOptionsSnapshotSchema.parse(await this.#requestUnknown(`/api/workbench/sessions/${encodeURIComponent(id)}/options`));}
   async updateSessionRunOptions(id:string,input:SessionRunOptionsUpdateRequest){return SessionRunOptionsSnapshotSchema.parse(await this.#command(`/api/workbench/sessions/${encodeURIComponent(id)}/options`,SessionRunOptionsUpdateRequestSchema.parse(input)));}
   async getPermissionGrant(){return PermissionGrantSchema.parse(await this.#requestUnknown("/api/workbench/permission-grant"));}
@@ -866,6 +948,12 @@ export class TraceGraphClient {
     return RunProjectionSchema.parse(
       await this.#requestUnknown(`/api/runs/${encodeURIComponent(runId)}`),
     );
+  }
+
+  /** Same read-only public projection used by Web/Desktop; no task dispatch. */
+  async getPublicChat(runId: string): Promise<{ run_id: string; status: RunProjection["status"]; blocks: readonly PublicChatBlock[] }> {
+    const run = await this.getRun(runId);
+    return { run_id: run.run_id, status: run.status, blocks: projectSessionPublicChat(run.timeline) };
   }
 
   /** Read the canonical child Run linked by a parent Run's subagent projection. */
@@ -1354,13 +1442,22 @@ export async function* parseSseData(
   const reader = stream.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
+  let cancellation: Promise<void> | undefined;
+  const cancel = (): void => {
+    // A pending read does not observe a flag until more bytes arrive. Cancel the
+    // actual response, including when a consumer returns after its last event.
+    cancellation ??= reader.cancel().catch(() => undefined);
+  };
+  signal?.addEventListener("abort", cancel, { once: true });
+  if (signal?.aborted) cancel();
   try {
     while (!signal?.aborted) {
       const { done, value } = await reader.read();
-      if (done) break;
+      if (done || signal?.aborted) break;
       buffer += decoder.decode(value, { stream: true }).replace(/\r\n/g, "\n");
       let boundary = buffer.indexOf("\n\n");
       while (boundary >= 0) {
+        if (signal?.aborted) return;
         const block = buffer.slice(0, boundary);
         buffer = buffer.slice(boundary + 2);
         const data = block
@@ -1373,6 +1470,9 @@ export async function* parseSseData(
       }
     }
   } finally {
+    signal?.removeEventListener("abort", cancel);
+    cancel();
+    await cancellation;
     reader.releaseLock();
   }
 }
@@ -1390,3 +1490,5 @@ const delay = async (milliseconds: number, signal?: AbortSignal): Promise<void> 
     );
   });
 };
+import {BrowserStatusSchema,BrowserGrantRequestSchema,BrowserGrantSchema,BrowserCommandSchema,BrowserCommandResultSchema,BrowserCommandReceiptSchema,BrowserObservationSchema,GoalCreateRequestSchema,GoalSnapshotSchema,GoalListResponseSchema,GoalCommandRequestSchema,GoalCommandReceiptSchema,GoalBudgetSnapshotSchema,type BrowserGrantRequest,type BrowserCommand,type GoalCreateRequest,type GoalCommandRequest} from "@tracegraph/contracts";
+import { ModelCapabilityTestRequestSchema, ModelCapabilityTestResultSchema, ModelCapabilityTestReceiptSchema, type ModelCapabilityTestRequest } from "@tracegraph/contracts";

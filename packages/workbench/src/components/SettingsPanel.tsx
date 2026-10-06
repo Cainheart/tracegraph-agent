@@ -49,26 +49,15 @@ const SETTINGS_SECTIONS: readonly { id: SettingsSection; label: string; descript
   { id: "usage", label: "Usage and costs", description: "Token and cost visibility", icon: "activity" },
 ];
 
-type ModelOption = { value: string; label: string };
-type ProviderPreset = { label: string; protocol: ModelProtocol; baseUrl: string; models: readonly ModelOption[] };
-
-const CUSTOM_MODEL = "__custom_model__";
+type ProviderPreset = { label: string; protocol: ModelProtocol; baseUrl: string; models: readonly string[] };
 
 export const MODEL_PROVIDER_PRESETS: Readonly<Record<ModelProvider, ProviderPreset>> = {
-  openai: { label: "OpenAI", protocol: "openai-chat-completions", baseUrl: "https://api.openai.com/v1", models: [{ value: "gpt-4.1-mini", label: "GPT-4.1 mini" }] },
-  deepseek: {
-    label: "DeepSeek",
-    protocol: "openai-chat-completions",
-    baseUrl: "https://api.deepseek.com",
-    models: [
-      { value: "deepseek-v4-flash", label: "DeepSeek V4 Flash（推荐）" },
-      { value: "deepseek-v4-pro", label: "DeepSeek V4 Pro" },
-    ],
-  },
-  glm: { label: "GLM (智谱)", protocol: "openai-chat-completions", baseUrl: "https://open.bigmodel.cn/api/paas/v4", models: [{ value: "glm-5.2", label: "GLM-5.2" }] },
-  qwen: { label: "Qwen / Qwen Code", protocol: "openai-chat-completions", baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1", models: [{ value: "qwen-plus", label: "Qwen Plus" }] },
-  minimax: { label: "MiniMax", protocol: "openai-chat-completions", baseUrl: "https://api.minimax.io/v1", models: [{ value: "MiniMax-M2.7", label: "MiniMax M2.7" }] },
-  anthropic: { label: "Claude (Anthropic)", protocol: "anthropic-messages", baseUrl: "https://api.anthropic.com/v1", models: [{ value: "claude-sonnet-4-6", label: "Claude Sonnet 4.6" }] },
+  openai: { label: "OpenAI", protocol: "openai-chat-completions", baseUrl: "https://api.openai.com/v1", models: [] },
+  deepseek: { label: "DeepSeek", protocol: "openai-chat-completions", baseUrl: "https://api.deepseek.com", models: [] },
+  glm: { label: "GLM (智谱)", protocol: "openai-chat-completions", baseUrl: "https://open.bigmodel.cn/api/paas/v4", models: [] },
+  qwen: { label: "Qwen / Qwen Code", protocol: "openai-chat-completions", baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1", models: [] },
+  minimax: { label: "MiniMax", protocol: "openai-chat-completions", baseUrl: "https://api.minimax.io/v1", models: [] },
+  anthropic: { label: "Claude (Anthropic)", protocol: "anthropic-messages", baseUrl: "https://api.anthropic.com/v1", models: [] },
   custom: { label: "Custom / 自定义", protocol: "openai-chat-completions", baseUrl: "", models: [] },
 };
 
@@ -171,7 +160,7 @@ export function PermissionSettingsSection({
     <section className="settings-section settings-permission-section">
       <div className="settings-section-copy">
         <strong>{t("Permission preset")}</strong>
-        <span>{t("The Host resolves sandbox and approval policy from one bounded preset.")}</span>
+        <span>{t("Outlive Agent limits file and command operations according to your permission preset.")}</span>
       </div>
       {snapshot ? (
         <>
@@ -207,14 +196,14 @@ export function PermissionSettingsSection({
               ? "Full write disables sandbox isolation and does not prompt before writes. Use it only for a trusted workspace."
               : "This preset disables sandbox isolation. Use it only for a trusted workspace.")}</small>
           )}
-          {snapshot.lock_reason && <small className="settings-readonly-message">{t("This setting is managed by the local Host.")}</small>}
+          {snapshot.lock_reason && <small className="settings-readonly-message">{t("This permission is controlled by its configuration source.")}</small>}
         </>
       ) : (
-        <small>{t(supported ? "Loading permission presets…" : "Permission configuration is unavailable on this Host.")}</small>
+        <small>{t(supported ? "Loading permission presets…" : "Permission settings are unavailable on this installation.")}</small>
       )}
       {message && <small className={`settings-message is-${message.tone}`} role={message.tone === "error" ? "alert" : "status"}>{t(message.text)}</small>}
-      <small>{t("The browser submits only a preset key; the Host owns rules, paths, sandboxing, and approvals.")}</small>
-      <small>{t("Changes apply only to new runs; active and historical runs keep their recorded policy.")}</small>
+      <details><summary>{t("Permission details")}</summary><small>{t("The browser submits only a preset key; the Host owns rules, paths, sandboxing, and approvals.")}</small></details>
+      <small>{t("Changes apply to future tasks. Current tasks keep their recorded permissions.")}</small>
     </section>
   );
 }
@@ -272,7 +261,6 @@ export function TelemetrySettingsSection({
         <small>{t(supported ? "Loading telemetry status…" : "Telemetry status is unavailable on this Host.")}</small>
       )}
       {message && <small className={`settings-message is-${message.tone}`} role={message.tone === "error" ? "alert" : "status"}>{t(message.text)}</small>}
-      <small>{t("Host restart required")}</small>
     </section>
   );
 }
@@ -487,7 +475,7 @@ export function SettingsPanel({
   const [provider, setProvider] = useState<ModelProvider>("openai");
   const [protocol, setProtocol] = useState<ModelProtocol>("openai-chat-completions");
   const [baseUrl, setBaseUrl] = useState("https://api.openai.com/v1");
-  const [model, setModel] = useState("gpt-4.1-mini");
+  const [model, setModel] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [permissionSnapshot, setPermissionSnapshot] = useState<PermissionConfigSnapshot | null>(null);
   const [permissionSaving, setPermissionSaving] = useState(false);
@@ -702,13 +690,10 @@ export function SettingsPanel({
     setProvider(next);
     setProtocol(preset.protocol);
     setBaseUrl(preset.baseUrl);
-    setModel(preset.models[0]?.value ?? "");
+    setModel(preset.models[0] ?? "");
     setApiKey("");
     setModelFeedback(null);
   };
-  const modelOptions = MODEL_PROVIDER_PRESETS[provider].models;
-  const selectedModel = modelOptions.some((option) => option.value === model) ? model : CUSTOM_MODEL;
-  const chooseModel = (value: string) => setModel(value === CUSTOM_MODEL ? "" : value);
 
   return (
     <>
@@ -790,14 +775,7 @@ export function SettingsPanel({
             <label><span>{t("Provider")}</span><select onChange={(event) => changeProvider(event.target.value as ModelProvider)} value={provider}>{Object.entries(MODEL_PROVIDER_PRESETS).map(([id, preset]) => <option key={id} value={id}>{preset.label}</option>)}</select></label>
             {provider === "custom" && <label><span>{t("API protocol")}</span><select onChange={(event) => setProtocol(event.target.value as ModelProtocol)} value={protocol}><option value="openai-chat-completions">OpenAI Chat Completions</option><option value="anthropic-messages">Anthropic Messages</option></select></label>}
             <label><span>{t("Base URL")}</span><input onChange={(event) => setBaseUrl(event.target.value)} value={baseUrl} /></label>
-            {provider === "custom" ? (
-              <label><span>{t("Model")}</span><input onChange={(event) => setModel(event.target.value)} placeholder={t("Enter model ID")} value={model} /></label>
-            ) : (
-              <>
-                <label><span>{t("Model")}</span><select onChange={(event) => chooseModel(event.target.value)} value={selectedModel}>{modelOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}<option value={CUSTOM_MODEL}>{t("Custom model")}</option></select></label>
-                {selectedModel === CUSTOM_MODEL && <label><span>{t("Custom model ID")}</span><input onChange={(event) => setModel(event.target.value)} placeholder={t("Enter model ID")} value={model} /></label>}
-              </>
-            )}
+            <label><span>{t("Model ID")}</span><input onChange={(event) => setModel(event.target.value)} placeholder={t("Enter model ID")} value={model} /></label>
             <label><span>{t("API Key")}</span><input autoComplete="new-password" disabled={credentialReadOnly} onChange={(event) => setApiKey(event.target.value)} placeholder={credentialStatus.hasKey ? t("Enter a new key to replace the current one") : "sk-…"} spellCheck={false} type="password" value={apiKey} /></label>
             <button className="button primary" disabled={credentialReadOnly || saving || (!credentialStatus.hasKey && !apiKey.trim()) || !baseUrl.trim() || !model.trim()} onClick={() => void save()} type="button">{t(saving ? "Saving…" : "Save model configuration")}</button>
             {modelFeedback && <small className={`settings-message is-${modelFeedback.tone}`} role={modelFeedback.tone === "error" ? "alert" : "status"}>{t(modelFeedback.text)}</small>}

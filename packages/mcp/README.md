@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Host-side MCP stdio client and process-lifecycle manager. It validates MCP configuration and exposes bounded tool catalogs, results, status, and provider events. It does not register Core Tools or decide policy and approval.
+Host-side MCP STDIO and Streamable HTTP client with managed lifecycle. It validates MCP configuration and exposes bounded tool catalogs, results, status, and provider events. It does not register Core Tools or decide policy and approval.
 
 ## Public API
 
@@ -26,8 +26,10 @@ This package has no model client or prompt policy. MCP tools become model-callab
 
 ## Verification
 
-Run `pnpm --filter @tracegraph/mcp build`, `pnpm --filter @tracegraph/mcp typecheck`, and `pnpm --filter @tracegraph/mcp test:unit`. Tests import the package root barrel and use fixture subprocesses for protocol behavior.
+Run `pnpm --filter @tracegraph/mcp build`, `pnpm --filter @tracegraph/mcp typecheck`, and `pnpm --filter @tracegraph/mcp test:unit`. Tests use fixture subprocesses and real loopback HTTP/SSE servers, including externally observable writes, cancellation, lost receipts and isolated startup failures.
 
 ## Known limitations
 
-Only stdio transport is implemented. HTTP/SSE, resources, prompts, instructions, and PTC are deferred. This package does not grant workspace access or tool-policy authority.
+Remote connections use HTTPS or loopback HTTP and credential-store bearer references. Authenticated redirects are rejected. POST JSON/SSE responses and session DELETE are supported; remote tool annotations do not grant read-only authority. Cancellation sends an explicit notification and retains an unknown effect after dispatch. No tool writes are retried. Shared product composition isolates a failed service; generic manager consumers retain strict required-server behavior by default.
+
+OAuth management, standalone GET event subscriptions, paginated catalogs, legacy HTTP+SSE fallback, resources, prompts, instructions and PTC remain pending. This package does not grant workspace access or tool-policy authority. See the [current module](../../docs/modules/18-MCP客户端.md) and [delivery evidence](../../docs/validation/product-workbench-2026-10-05/README.md).

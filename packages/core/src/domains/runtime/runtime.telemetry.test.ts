@@ -51,8 +51,8 @@ describe("runtime telemetry", () => {
       retry_scope: "model_provider",
       attempt: 1,
       next_attempt: 2,
-      max_attempts: 3,
-      delay_ms: 250,
+      max_attempts: 6,
+      delay_ms: 500,
       reason_code: "http_503",
     }, {
       model_call_id: "model-call:retry",
@@ -74,8 +74,8 @@ describe("runtime telemetry", () => {
         reason_code: "http_503",
         attempt: 1,
         next_attempt: 2,
-        max_attempts: 3,
-        delay_ms: 250,
+        max_attempts: 6,
+        delay_ms: 500,
       }),
     }));
     expect(JSON.stringify(sink.events)).not.toContain("PRIVATE_EVENT_SUMMARY_MARKER");

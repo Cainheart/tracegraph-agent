@@ -1,0 +1,45 @@
+$ tsc -p tsconfig.test.json --noEmit
+src/desktop-sdk.ts(114,5): error TS2353: Object literal may only specify known properties, and 'getPersonalProfile' does not exist in type 'TraceGraphSdkPort & Pick<DesktopBridgeApi, "commitMigration" | "copyText" | "getAnswerFeedback" | "getConnectionStatus" | "getMigrationResult" | ... 14 more ... | "updateSessionRunOptions">'.
+src/desktop-sdk.ts(114,44): error TS2344: Type 'unknown' does not satisfy the constraint '(...args: any) => any'.
+src/desktop-sdk.ts(114,86): error TS18046: 'bridge.getPersonalProfile' is of type 'unknown'.
+src/desktop-sdk.ts(114,115): error TS2488: Type 'never' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/desktop-sdk.ts(115,47): error TS2344: Type 'unknown' does not satisfy the constraint '(...args: any) => any'.
+src/desktop-sdk.ts(115,92): error TS18046: 'bridge.updatePersonalProfile' is of type 'unknown'.
+src/desktop-sdk.ts(115,124): error TS2488: Type 'never' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/desktop-sdk.ts(116,58): error TS2344: Type 'unknown' does not satisfy the constraint '(...args: any) => any'.
+src/desktop-sdk.ts(116,114): error TS18046: 'bridge.getPersonalProfileCommandReceipt' is of type 'unknown'.
+src/desktop-sdk.ts(116,157): error TS2488: Type 'never' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/desktop-sdk.ts(117,44): error TS2344: Type 'unknown' does not satisfy the constraint '(...args: any) => any'.
+src/desktop-sdk.ts(117,86): error TS18046: 'bridge.queryPersonalUsage' is of type 'unknown'.
+src/desktop-sdk.ts(117,115): error TS2488: Type 'never' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/desktop-sdk.ts(118,46): error TS2344: Type 'unknown' does not satisfy the constraint '(...args: any) => any'.
+src/desktop-sdk.ts(118,90): error TS18046: 'bridge.searchPublicSessions' is of type 'unknown'.
+src/desktop-sdk.ts(118,121): error TS2488: Type 'never' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/direct-routes.ts(122,66): error TS2344: Type '"acquireComputerLease" | "browserCommand" | "claimTeamMailbox" | "clearImageProvider" | "computerAction" | "configureImageProvider" | "configurePermissionPreset" | "createGoal" | ... 75 more ... | "writeTeamTask"' does not satisfy the constraint 'keyof TraceGraphClient'.
+  Type '"getPersonalProfile"' is not assignable to type 'keyof TraceGraphClient'.
+src/direct-routes.ts(131,18): error TS7053: Element implicitly has an 'any' type because expression of type '"acquireComputerLease" | "browserCommand" | "claimTeamMailbox" | "clearImageProvider" | "computerAction" | "configureImageProvider" | "configurePermissionPreset" | "createGoal" | ... 75 more ... | "writeTeamTask"' can't be used to index type 'TraceGraphClient'.
+  Property 'getPersonalProfile' does not exist on type 'TraceGraphClient'.
+src/main.ts(68,49): error TS2339: Property 'getPersonalProfile' does not exist on type '{ readonly nativeRunRequested: "tracegraph:native-run-requested"; readonly listProjectFiles: "tracegraph:listProjectFiles"; readonly readProjectFile: "tracegraph:readProjectFile"; ... 120 more ...; readonly closeStream: "tracegraph:closeStream"; }'.
+src/main.ts(68,80): error TS2339: Property 'getPersonalProfileCommandReceipt' does not exist on type '{ readonly nativeRunRequested: "tracegraph:native-run-requested"; readonly listProjectFiles: "tracegraph:listProjectFiles"; readonly readProjectFile: "tracegraph:readProjectFile"; ... 120 more ...; readonly closeStream: "tracegraph:closeStream"; }'.
+src/main.ts(68,125): error TS2339: Property 'queryPersonalUsage' does not exist on type '{ readonly nativeRunRequested: "tracegraph:native-run-requested"; readonly listProjectFiles: "tracegraph:listProjectFiles"; readonly readProjectFile: "tracegraph:readProjectFile"; ... 120 more ...; readonly closeStream: "tracegraph:closeStream"; }'.
+src/main.ts(68,156): error TS2339: Property 'searchPublicSessions' does not exist on type '{ readonly nativeRunRequested: "tracegraph:native-run-requested"; readonly listProjectFiles: "tracegraph:listProjectFiles"; readonly readProjectFile: "tracegraph:readProjectFile"; ... 120 more ...; readonly closeStream: "tracegraph:closeStream"; }'.
+src/main.ts(314,21): error TS7053: Element implicitly has an 'any' type because expression of type '"acquireComputerLease" | "browserCommand" | "claimTeamMailbox" | "clearImageProvider" | "computerAction" | "configureImageProvider" | "configurePermissionPreset" | "createGoal" | ... 75 more ... | "writeTeamTask"' can't be used to index type '{ readonly nativeRunRequested: "tracegraph:native-run-requested"; readonly listProjectFiles: "tracegraph:listProjectFiles"; readonly readProjectFile: "tracegraph:readProjectFile"; ... 120 more ...; readonly closeStream: "tracegraph:closeStream"; }'.
+  Property 'getPersonalProfile' does not exist on type '{ readonly nativeRunRequested: "tracegraph:native-run-requested"; readonly listProjectFiles: "tracegraph:listProjectFiles"; readonly readProjectFile: "tracegraph:readProjectFile"; ... 120 more ...; readonly closeStream: "tracegraph:closeStream"; }'.
+src/preload.cts(300,44): error TS2344: Type 'unknown' does not satisfy the constraint '(...args: any) => any'.
+src/preload.cts(300,130): error TS2488: Type 'never' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/preload.cts(300,150): error TS2344: Type 'unknown' does not satisfy the constraint '(...args: any) => any'.
+src/preload.cts(301,47): error TS2344: Type 'unknown' does not satisfy the constraint '(...args: any) => any'.
+src/preload.cts(301,139): error TS2488: Type 'never' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/preload.cts(301,159): error TS2344: Type 'unknown' does not satisfy the constraint '(...args: any) => any'.
+src/preload.cts(302,58): error TS2344: Type 'unknown' does not satisfy the constraint '(...args: any) => any'.
+src/preload.cts(302,172): error TS2488: Type 'never' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/preload.cts(302,192): error TS2344: Type 'unknown' does not satisfy the constraint '(...args: any) => any'.
+src/preload.cts(303,44): error TS2344: Type 'unknown' does not satisfy the constraint '(...args: any) => any'.
+src/preload.cts(303,130): error TS2488: Type 'never' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/preload.cts(303,150): error TS2344: Type 'unknown' does not satisfy the constraint '(...args: any) => any'.
+src/preload.cts(304,46): error TS2344: Type 'unknown' does not satisfy the constraint '(...args: any) => any'.
+src/preload.cts(304,136): error TS2488: Type 'never' must have a '[Symbol.iterator]()' method that returns an iterator.
+src/preload.cts(304,156): error TS2344: Type 'unknown' does not satisfy the constraint '(...args: any) => any'.
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/desktop:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @tracegraph/desktop@0.1.0-alpha.0 typecheck: `tsc -p tsconfig.test.json --noEmit`
+Exit status 1

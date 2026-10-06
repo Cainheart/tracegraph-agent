@@ -1,5 +1,6 @@
-import { chmod, lstat, mkdir, readFile, unlink, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { chmod, lstat, mkdir, readFile, unlink, writeFile, open, realpath } from "node:fs/promises";
+import { constants } from "node:fs";
+import { join, resolve } from "node:path";
 import {
   AttachmentMediaTypeSchema,
   MediaMimeTypeSchema,
@@ -190,6 +191,46 @@ export class ArtifactStore {
       }
       throw error;
     }
+  }
+
+  /** Trusted retention boundary. Caller must establish capture provenance first.
+   * Keeps metadata and all Ledger facts; never deletes directories or text. */
+  async deleteBytesInternal(expected: ArtifactRef): Promise<{status:"deleted"|"already_absent";byteLength:number}> {
+    const ref=ArtifactRefSchema.parse(expected);
+    if(ref.mime_type!=="image/png"||ref.kind!=="image/png"||ref.byte_length>16*1024*1024)throw new TypeError("Only bounded registered PNG evidence can expire");
+    if(await realpath(this.#root)!==resolve(this.#root))throw new TypeError("Artifact root cannot contain symbolic links");
+    const root=await lstat(this.#root);
+    if(!root.isDirectory()||root.isSymbolicLink()||(typeof process.getuid==="function"&&root.uid!==process.getuid()))throw new TypeError("Artifact root is not private");
+    const metadata=await this.#safeBytes(this.#metadataPath(ref.artifact_id),16_384);
+    if(JSON.stringify(ArtifactRefSchema.parse(JSON.parse(metadata.bytes.toString("utf8"))))!==JSON.stringify(ref))throw new TypeError("Artifact retention scope or metadata changed");
+    let content;
+    try{content=await this.#safeBytes(this.#contentPath(ref.artifact_id),16*1024*1024);}catch(error){if(isNotFound(error))return {status:"already_absent",byteLength:0};throw error;}
+    if(content.bytes.byteLength!==ref.byte_length||this.#primitives.sha256(content.bytes)!==ref.content_hash)throw new TypeError("Artifact retention bytes changed");
+    const current=await lstat(this.#contentPath(ref.artifact_id));
+    if(current.dev!==content.dev||current.ino!==content.ino||!current.isFile()||current.isSymbolicLink()||current.nlink!==1)throw new TypeError("Artifact retention file changed");
+    await unlink(this.#contentPath(ref.artifact_id));
+    return {status:"deleted",byteLength:ref.byte_length};
+  }
+
+  /** Non-mutating retention reconciliation; never follows replacement links. */
+  async inspectBytesInternal(expected:ArtifactRef):Promise<"available"|"absent"|"unverifiable"> {
+    try{const ref=ArtifactRefSchema.parse(expected);
+      if(ref.kind!=="image/png"||ref.mime_type!=="image/png"||await realpath(this.#root)!==resolve(this.#root))return "unverifiable";
+      const metadata=await this.#safeBytes(this.#metadataPath(ref.artifact_id),16_384);
+      if(JSON.stringify(ArtifactRefSchema.parse(JSON.parse(metadata.bytes.toString("utf8"))))!==JSON.stringify(ref))return "unverifiable";
+      let content;try{content=await this.#safeBytes(this.#contentPath(ref.artifact_id),16*1024*1024);}catch(error){if(isNotFound(error))return "absent";throw error;}
+      return content.bytes.byteLength===ref.byte_length&&this.#primitives.sha256(content.bytes)===ref.content_hash?"available":"unverifiable";
+    }catch{return "unverifiable";}
+  }
+
+  async #safeBytes(path:string,maximum:number):Promise<{bytes:Buffer;dev:number;ino:number}> {
+    const before=await lstat(path);
+    if(!before.isFile()||before.isSymbolicLink()||before.nlink!==1||before.size>maximum||(typeof process.getuid==="function"&&before.uid!==process.getuid()))throw new TypeError("Artifact retention requires a bounded private regular file");
+    const handle=await open(path,constants.O_RDONLY|(constants.O_NOFOLLOW??0));
+    try{const info=await handle.stat();if(info.dev!==before.dev||info.ino!==before.ino||info.nlink!==1||!info.isFile()||info.size>maximum)throw new TypeError("Artifact retention identity changed");
+      const bytes=Buffer.alloc(maximum+1);let offset=0;while(offset<bytes.length){const part=await handle.read(bytes,offset,bytes.length-offset,offset);if(!part.bytesRead)break;offset+=part.bytesRead;}
+      if(offset>maximum)throw new TypeError("Artifact retention bytes exceed bounds");return {bytes:bytes.subarray(0,offset),dev:info.dev,ino:info.ino};
+    }finally{await handle.close();}
   }
 
   async #getVerified(input: {

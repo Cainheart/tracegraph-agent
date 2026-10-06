@@ -12,7 +12,7 @@ import type {
   MemoryRevokeRequest,
   ExperienceLifecycleReviewRequest,
 } from "@tracegraph/contracts";
-import { HostConnectionSnapshotSchema, HostConnectionError, MigrationPreviewSnapshotSchema, MigrationCommitReceiptSchema } from "@tracegraph/contracts";
+import { NativeRunNavigationSchema, HostConnectionSnapshotSchema, HostConnectionError, MigrationPreviewSnapshotSchema, MigrationCommitReceiptSchema } from "@tracegraph/contracts";
 import type { HostCapabilities } from "@tracegraph/contracts";
 import type { DesktopBridgeApi } from "./bridge-contract.js";
 import { DesktopStreamPacketSchema, type DesktopStreamOpenInput } from "./stream-contract.js";
@@ -32,8 +32,9 @@ export class DesktopHostOperationUnavailableError extends Error {
 }
 
 /** Adapts fixed private Host methods into the shared Workbench port. */
-export function createDesktopSdkPort(bridge: DesktopBridgeApi): TraceGraphSdkPort & Pick<DesktopBridgeApi, "previewMigration" | "commitMigration" | "startHost" | "getMigrationResult" | "getConnectionStatus" | "copyText" | "listProjectFiles" | "readProjectFile" | "saveProjectFile" | "reconcileProjectFileSave" | "getAnswerFeedback" | "setAnswerFeedback" | "getModelConnections" | "saveModelConnection" | "removeModelConnection" | "testModelConnection" | "getSessionRunOptions" | "updateSessionRunOptions" | "getPermissionGrant" | "setPermissionGrant"> {
+export function createDesktopSdkPort(bridge: DesktopBridgeApi): TraceGraphSdkPort & Pick<DesktopBridgeApi, "previewMigration" | "commitMigration" | "startHost" | "getMigrationResult" | "getConnectionStatus" | "copyText" | "listProjectFiles" | "readProjectFile" | "saveProjectFile" | "reconcileProjectFileSave" | "getAnswerFeedback" | "setAnswerFeedback" | "getModelConnections" | "saveModelConnection" | "removeModelConnection" | "testModelConnection" | "testModelCapabilities" | "getModelCapabilityTestReceipt" | "getSessionRunOptions" | "updateSessionRunOptions" | "getPermissionGrant" | "setPermissionGrant" | "listManagedSkills" | "readManagedSkill" | "validateManagedSkill" | "managedSkillCommand" | "getManagedSkillCommandReceipt" | "getVisualRetentionSettings" | "updateVisualRetentionSettings" | "listVisualEvidence" | "pinVisualEvidence" | "cleanupVisualEvidence" | "getVisualEvidenceCommandReceipt"> {
   return {
+    ...(bridge.onNativeRunRequested ? {onNativeRunRequested: (listener: Parameters<NonNullable<DesktopBridgeApi["onNativeRunRequested"]>>[0]) => bridge.onNativeRunRequested!(navigation=>listener(NativeRunNavigationSchema.parse(navigation)))} : {}),
     listProjectFiles:(...args:Parameters<DesktopBridgeApi["listProjectFiles"]>)=>bridge.listProjectFiles(...args),
     readProjectFile:(...args:Parameters<DesktopBridgeApi["readProjectFile"]>)=>bridge.readProjectFile(...args),
     saveProjectFile:(...args:Parameters<DesktopBridgeApi["saveProjectFile"]>)=>bridge.saveProjectFile(...args),
@@ -44,6 +45,8 @@ export function createDesktopSdkPort(bridge: DesktopBridgeApi): TraceGraphSdkPor
     saveModelConnection:(...args:Parameters<DesktopBridgeApi["saveModelConnection"]>)=>bridge.saveModelConnection(...args),
     removeModelConnection:(...args:Parameters<DesktopBridgeApi["removeModelConnection"]>)=>bridge.removeModelConnection(...args),
     testModelConnection:(...args:Parameters<DesktopBridgeApi["testModelConnection"]>)=>bridge.testModelConnection(...args),
+    testModelCapabilities:(...args:Parameters<DesktopBridgeApi["testModelCapabilities"]>)=>bridge.testModelCapabilities(...args),
+    getModelCapabilityTestReceipt:(...args:Parameters<DesktopBridgeApi["getModelCapabilityTestReceipt"]>)=>bridge.getModelCapabilityTestReceipt(...args),
     getSessionRunOptions:(...args:Parameters<DesktopBridgeApi["getSessionRunOptions"]>)=>bridge.getSessionRunOptions(...args),
     updateSessionRunOptions:(...args:Parameters<DesktopBridgeApi["updateSessionRunOptions"]>)=>bridge.updateSessionRunOptions(...args),
     getPermissionGrant:(...args:Parameters<DesktopBridgeApi["getPermissionGrant"]>)=>bridge.getPermissionGrant(...args),
@@ -98,6 +101,51 @@ export function createDesktopSdkPort(bridge: DesktopBridgeApi): TraceGraphSdkPor
     getMcpStatus() { return bridge.getMcpStatus(); },
     restartMcpServer(name, input) { return bridge.restartMcpServer(name, input); },
     getLspStatus() { return bridge.getLspStatus(); },
+    getBrowserCommandReceipt:(...args:Parameters<DesktopBridgeApi["getBrowserCommandReceipt"]>)=>bridge.getBrowserCommandReceipt(...args),
+    getComputerStatus:(...args:Parameters<DesktopBridgeApi["getComputerStatus"]>)=>bridge.getComputerStatus(...args),
+    listComputerTargets:(...args:Parameters<DesktopBridgeApi["listComputerTargets"]>)=>bridge.listComputerTargets(...args),
+    requestComputerGrant:(...args:Parameters<DesktopBridgeApi["requestComputerGrant"]>)=>bridge.requestComputerGrant(...args),
+    revokeComputerGrant:(...args:Parameters<DesktopBridgeApi["revokeComputerGrant"]>)=>bridge.revokeComputerGrant(...args),
+    acquireComputerLease:(...args:Parameters<DesktopBridgeApi["acquireComputerLease"]>)=>bridge.acquireComputerLease(...args),
+    resumeComputerLease:(...args:Parameters<DesktopBridgeApi["resumeComputerLease"]>)=>bridge.resumeComputerLease(...args),
+    releaseComputerLease:(...args:Parameters<DesktopBridgeApi["releaseComputerLease"]>)=>bridge.releaseComputerLease(...args),
+    observeComputer:(...args:Parameters<DesktopBridgeApi["observeComputer"]>)=>bridge.observeComputer(...args),
+    computerAction:(...args:Parameters<DesktopBridgeApi["computerAction"]>)=>bridge.computerAction(...args),
+    getComputerCommandReceipt:(...args:Parameters<DesktopBridgeApi["getComputerCommandReceipt"]>)=>bridge.getComputerCommandReceipt(...args),
+    getComputerCapture:(...args:Parameters<DesktopBridgeApi["getComputerCapture"]>)=>bridge.getComputerCapture(...args),
+    listManagedSkills:(...args:Parameters<DesktopBridgeApi["listManagedSkills"]>)=>bridge.listManagedSkills(...args),
+    readManagedSkill:(...args:Parameters<DesktopBridgeApi["readManagedSkill"]>)=>bridge.readManagedSkill(...args),
+    validateManagedSkill:(...args:Parameters<DesktopBridgeApi["validateManagedSkill"]>)=>bridge.validateManagedSkill(...args),
+    managedSkillCommand:(...args:Parameters<DesktopBridgeApi["managedSkillCommand"]>)=>bridge.managedSkillCommand(...args),
+    getManagedSkillCommandReceipt:(...args:Parameters<DesktopBridgeApi["getManagedSkillCommandReceipt"]>)=>bridge.getManagedSkillCommandReceipt(...args),
+    getVisualRetentionSettings:(...args:Parameters<DesktopBridgeApi["getVisualRetentionSettings"]>)=>bridge.getVisualRetentionSettings(...args),
+    updateVisualRetentionSettings:(...args:Parameters<DesktopBridgeApi["updateVisualRetentionSettings"]>)=>bridge.updateVisualRetentionSettings(...args),
+    listVisualEvidence:(...args:Parameters<DesktopBridgeApi["listVisualEvidence"]>)=>bridge.listVisualEvidence(...args),
+    pinVisualEvidence:(...args:Parameters<DesktopBridgeApi["pinVisualEvidence"]>)=>bridge.pinVisualEvidence(...args),
+    cleanupVisualEvidence:(...args:Parameters<DesktopBridgeApi["cleanupVisualEvidence"]>)=>bridge.cleanupVisualEvidence(...args),
+    getVisualEvidenceCommandReceipt:(...args:Parameters<DesktopBridgeApi["getVisualEvidenceCommandReceipt"]>)=>bridge.getVisualEvidenceCommandReceipt(...args),
+    getPersonalProfile:(...args:Parameters<DesktopBridgeApi["getPersonalProfile"]>)=>bridge.getPersonalProfile(...args),
+    updatePersonalProfile:(...args:Parameters<DesktopBridgeApi["updatePersonalProfile"]>)=>bridge.updatePersonalProfile(...args),
+    getPersonalProfileCommandReceipt:(...args:Parameters<DesktopBridgeApi["getPersonalProfileCommandReceipt"]>)=>bridge.getPersonalProfileCommandReceipt(...args),
+    queryPersonalUsage:(...args:Parameters<DesktopBridgeApi["queryPersonalUsage"]>)=>bridge.queryPersonalUsage(...args),
+    searchPublicSessions:(...args:Parameters<DesktopBridgeApi["searchPublicSessions"]>)=>bridge.searchPublicSessions(...args),
+    getBrowserStatus:(...args:Parameters<DesktopBridgeApi["getBrowserStatus"]>)=>bridge.getBrowserStatus(...args),
+    requestBrowserGrant:(...args:Parameters<DesktopBridgeApi["requestBrowserGrant"]>)=>bridge.requestBrowserGrant(...args),
+    browserCommand:(...args:Parameters<DesktopBridgeApi["browserCommand"]>)=>bridge.browserCommand(...args),
+    observeBrowser:(...args:Parameters<DesktopBridgeApi["observeBrowser"]>)=>bridge.observeBrowser(...args),
+    getBrowserEvidence:(...args:Parameters<DesktopBridgeApi["getBrowserEvidence"]>)=>bridge.getBrowserEvidence(...args),
+    listGoals:(...args:Parameters<DesktopBridgeApi["listGoals"]>)=>bridge.listGoals(...args),
+    createGoal:(...args:Parameters<DesktopBridgeApi["createGoal"]>)=>bridge.createGoal(...args),
+    getGoal:(...args:Parameters<DesktopBridgeApi["getGoal"]>)=>bridge.getGoal(...args),
+    goalCommand:(...args:Parameters<DesktopBridgeApi["goalCommand"]>)=>bridge.goalCommand(...args),
+    getGoalCreationReceipt:(...args:Parameters<DesktopBridgeApi["getGoalCreationReceipt"]>)=>bridge.getGoalCreationReceipt(...args),
+    getGoalCommandReceipt:(...args:Parameters<DesktopBridgeApi["getGoalCommandReceipt"]>)=>bridge.getGoalCommandReceipt(...args),
+    getGoalBudget:(...args:Parameters<DesktopBridgeApi["getGoalBudget"]>)=>bridge.getGoalBudget(...args),
+    getWorkbenchSettingsHistory:(...args:Parameters<DesktopBridgeApi["getWorkbenchSettingsHistory"]>)=>bridge.getWorkbenchSettingsHistory(...args),
+    restoreWorkbenchSettings:(...args:Parameters<DesktopBridgeApi["restoreWorkbenchSettings"]>)=>bridge.restoreWorkbenchSettings(...args),
+    getProjectRunDefaults:(...args:Parameters<DesktopBridgeApi["getProjectRunDefaults"]>)=>bridge.getProjectRunDefaults(...args),
+    updateProjectRunDefaults:(...args:Parameters<DesktopBridgeApi["updateProjectRunDefaults"]>)=>bridge.updateProjectRunDefaults(...args),
+    resetSessionRunOptions:(...args:Parameters<DesktopBridgeApi["resetSessionRunOptions"]>)=>bridge.resetSessionRunOptions(...args),
     getWorkbenchSettings() { return bridge.getWorkbenchSettings(); },
     updateWorkbenchSettings(input) { return bridge.updateWorkbenchSettings(input); },
     async getCapabilities() {

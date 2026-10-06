@@ -1,0 +1,16 @@
+$ tsc -p tsconfig.test.json --noEmit
+src/components/ModelConnectionsSettings.tsx(36,2393): error TS2375: Type '{ client: WorkbenchClient; connection: { connection_id: string; label: string; revision: number; provider: "anthropic" | "custom" | "deepseek" | "glm" | "minimax" | "openai" | "qwen"; ... 11 more ...; capability_test?: { ...; } | undefined; }; capabilities: { ...; } | null; online: boolean; generation: number | unde...' is not assignable to type '{ client: WorkbenchClient; connection: { connection_id: string; label: string; revision: number; provider: "anthropic" | "custom" | "deepseek" | "glm" | "minimax" | "openai" | "qwen"; ... 11 more ...; capability_test?: { ...; } | undefined; }; capabilities: { ...; } | null; online: boolean; generation?: number; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'generation' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+src/components/UnifiedSettings.tsx(254,98): error TS2375: Type '{ client: import("/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench/src/client").WorkbenchClient; capabilities: { profile_id: string; protocol_version: string; capabilities: { ...; }[]; } | null; online: boolean; generation: number | undefined; }' is not assignable to type '{ client: import("/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench/src/client").WorkbenchClient; capabilities: { profile_id: string; protocol_version: string; capabilities: { ...; }[]; } | null; online: boolean; generation?: number; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'generation' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+src/model-capability-tests.test.tsx(18,210): error TS2375: Type '{ client: WorkbenchClient; connection: { connection_id: string; label: string; revision: number; provider: "anthropic" | "custom" | "deepseek" | "glm" | "minimax" | "openai" | "qwen"; ... 11 more ...; capability_test?: { ...; } | undefined; }; capabilities: { ...; }; online: boolean; generation: number | undefined; }' is not assignable to type '{ client: WorkbenchClient; connection: { connection_id: string; label: string; revision: number; provider: "anthropic" | "custom" | "deepseek" | "glm" | "minimax" | "openai" | "qwen"; ... 11 more ...; capability_test?: { ...; } | undefined; }; capabilities: { ...; } | null; online: boolean; generation?: number; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+  Types of property 'generation' are incompatible.
+    Type 'number | undefined' is not assignable to type 'number'.
+      Type 'undefined' is not assignable to type 'number'.
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @tracegraph/workbench@0.1.0-alpha.0 typecheck: `tsc -p tsconfig.test.json --noEmit`
+Exit status 1

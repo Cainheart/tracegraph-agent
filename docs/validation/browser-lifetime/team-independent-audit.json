@@ -1,0 +1,115 @@
+{
+  "scope": "Read-only independent source review of the TEAM-100 isolated child-workspace slice",
+  "date": "2026-10-05",
+  "task_completion_claim": false,
+  "tests_run_by_this_audit": false,
+  "default_profile_or_native_ui_actions": false,
+  "findings": [
+    {
+      "id": "team-sensitive-baseline",
+      "status": "owner_fix_and_focused_real_regression_receipts_read_verified",
+      "severity": "blocking_authority_difference",
+      "fact": "Baseline copying used raw filesystem reads after PolicyEngine evaluation and a smaller case-sensitive denylist, bypassing read_file's hard sensitive-path check.",
+      "examples": [
+        ".ssh/id_rsa",
+        ".npmrc",
+        "credentials.json",
+        "credential.pem",
+        ".ENV"
+      ],
+      "sources": [
+        "packages/host/src/subagent-worktrees.ts:18",
+        "packages/host/src/subagent-worktrees.ts:77",
+        "packages/core/src/domains/tools/registry.ts:1748"
+      ],
+      "requested_oracle": "Use the shared sensitive-path boundary; real temporary sensitive regular files must produce no child tree and leave source HEAD/index/bytes unchanged.",
+      "observed_fix": "Owner now uses the public Core isSensitiveWorkspacePath helper plus case-insensitive private repository components. Five actual-file negative cases are present; their final result is not inferred from source.",
+      "receipts": [
+        "docs/validation/team-100/checks/host-focused.log"
+      ]
+    },
+    {
+      "id": "team-execute-tool-classification",
+      "status": "owner_fix_and_focused_real_regression_receipts_read_verified",
+      "severity": "trusted_seam_gap_not_exposed_by_current_closed_catalog",
+      "fact": "The writable-child classification only identified commit_patch and run_test. A trusted custom profile selecting run_project_command could otherwise use the parent workspace without the isolated resolver.",
+      "sources": [
+        "packages/core/src/domains/subagent/workspace.ts:8",
+        "packages/core/src/domains/runtime/runtime.ts:4152",
+        "packages/core/src/domains/tools/project-commands.ts:68"
+      ],
+      "requested_oracle": "Classify the actual execute/write tools or explicitly reject unsupported trusted profiles; command disk effects must not use the source workspace. The current compiled isolated-coder catalog only exposes patch and run_test.",
+      "observed_fix": "Owner's writable classification now includes run_project_command; the parent guard also uses that classification. Final focused negative results remain pending.",
+      "receipts": [
+        "docs/validation/team-100/checks/core-focused.log",
+        "docs/validation/team-100/checks/host-runtime.log"
+      ]
+    },
+    {
+      "id": "team-independent-model-leases",
+      "status": "owner_fix_and_focused_real_regression_receipts_read_verified",
+      "severity": "blocking_active_run_binding_lifetime",
+      "fact": "The Host immutable ConfigurableModelAdapter snapshot had releaseRun but no forRun fork. A child inheriting parent.model reused that exact object, and child terminal released the parent's sole credential lease. Rotation could then delete the old credential while the parent or another child still needed it.",
+      "sources": [
+        "packages/host/src/composition/leased-model.ts:14",
+        "packages/core/src/domains/runtime/runtime.ts:4439",
+        "packages/core/src/domains/runtime/runtime.ts:8049"
+      ],
+      "requested_oracle": "Fork independently released immutable configuration/capability leases. With an isolated local provider, held parent and two children, rotate the configured key: ending one child must not retire the key; remaining requests retain the old admitted binding until every owning Run ends.",
+      "observed_fix": "Snapshot forRun forks an independently released lease with captured immutable configuration/capabilities; an already released snapshot cannot fork. The same actual local-provider parent/two-child/key-rotation fixture failed before and passes after the fix.",
+      "receipts": [
+        "docs/validation/team-100/checks/model-lease-before-fix.log",
+        "docs/validation/team-100/checks/model-lease-after-fix.log",
+        "docs/validation/team-100/checks/host-focused.log"
+      ]
+    }
+  ],
+  "verified_source_paths": [
+    {
+      "claim": "Child mode cannot exceed workspace-write or the parent mode; policy rules/path scopes/capabilities are checked against the parent and effective tools are intersected with admitted parent tools.",
+      "sources": [
+        "packages/core/src/domains/subagent/workspace.ts:14",
+        "packages/core/src/domains/runtime/runtime.ts:4148",
+        "packages/core/src/domains/runtime/runtime.ts:4172"
+      ]
+    },
+    {
+      "claim": "Worktree creation uses --no-checkout with hooks/fsmonitor disabled; source HEAD/index/tree are snapshotted before and after; side-effect failures remain retained unknown without automatic retry or merge.",
+      "sources": [
+        "packages/host/src/subagent-worktrees.ts:47",
+        "packages/host/src/subagent-worktrees.ts:51",
+        "packages/host/src/subagent-worktrees.ts:58"
+      ]
+    },
+    {
+      "claim": "A child workspace lease is scoped to its disjoint root and kind subagent, so it does not consume the max_parallel_runs root-run slot held by the parent.",
+      "sources": [
+        "packages/host/src/subagent-worktrees.ts:62",
+        "packages/host/src/workspace-coordinator.ts:40"
+      ]
+    },
+    {
+      "claim": "The child receives the same parent requestBudget and model dispatch enforces that trusted budget; unknown writable child recovery is rejected rather than resumed into the parent workspace.",
+      "sources": [
+        "packages/core/src/domains/runtime/runtime.ts:4439",
+        "packages/core/src/domains/runtime/runtime.ts:7324",
+        "packages/core/src/domains/runtime/runtime.ts:8039"
+      ]
+    }
+  ],
+  "integration_followups": [
+    {
+      "id": "host-aggregate-owned-cleanup",
+      "status": "owner_fix_and_actual_local_owner_test_read_verified",
+      "fact": "Host composition now attempts every owned shutdown boundary and aggregates failures. The actual temporary local-owner test injects a Browser-close failure while a local-provider Run is held; Computer/MCP/LSP cleanup runs, the Run becomes cancelled, HTTP closes and the exclusive writer lease prevents another owner.",
+      "source": "packages/host/src/local-host.test.ts:76",
+      "receipt": "docs/validation/product-workbench-2026-10-05/checks/owned-cleanup-local-host.log",
+      "receipt_scope": "One file, nine tests including this newly added failure case; executed by the root owner, independently read by this audit."
+    }
+  ],
+  "limits": [
+    "Source review does not establish complete TEAM-100 product or installed client acceptance.",
+    "Focused owner receipts independently read: Host five files/22 tests, Core four files/31 tests, Contracts two files/20 tests. Actual credential fixture before/after evidence retained; no tests or provider requests were dispatched by this audit.",
+    "Current compiled child roles do not prove arbitrary project-command execution, dependency installation, model-role configuration, merge workflows, or Windows sandbox operation."
+  ]
+}

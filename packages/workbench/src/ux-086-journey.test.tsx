@@ -3,7 +3,8 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
-import { DemoTraceGraphClient } from "./client";
+import { HostCapabilitiesSchema } from "@tracegraph/contracts";
+import { DemoTraceGraphClient, type WorkbenchClient } from "./client";
 import { createDemoSnapshot } from "./demo";
 import type { WorkbenchSnapshot } from "./model";
 
@@ -13,7 +14,9 @@ let root: Root;
 function journeyClient(initial: WorkbenchSnapshot) {
   let current = initial;
   const listeners = new Set<(snapshot: WorkbenchSnapshot) => void>();
-  const client = new DemoTraceGraphClient();
+  const client: WorkbenchClient = new DemoTraceGraphClient();
+  client.getCapabilities = vi.fn(async () => HostCapabilitiesSchema.parse({ profile_id: "test", protocol_version: "test", capabilities: [{ operation: "project.defaults.read", state: "available", scope: "project" }] }));
+  client.getProjectRunDefaults = vi.fn<NonNullable<WorkbenchClient["getProjectRunDefaults"]>>(async (projectId) => ({ project_id: projectId, revision: 0, overrides: {}, options: { mode: "execute", reasoning_effort: "default", permission_preset: "workspace-write" }, fields: [] }));
   const publish = (snapshot: WorkbenchSnapshot) => {
     current = snapshot;
     for (const listener of listeners) listener(snapshot);
@@ -69,25 +72,21 @@ describe("UX-086 shared Workbench journeys", () => {
   it("submits a plain conversation, queues guidance, cancels, and exposes a failed follow-up for retry", async () => {
     const { client } = journeyClient({ ...createDemoSnapshot("empty"), dataSource: "live" });
     await act(async () => root.render(<App client={client} />));
-    expect(container.textContent).toContain("What would you like to work on?");
-    expect(container.textContent).toContain("No project filesystem or command access; media tools can create scoped Artifacts");
+    expect(container.textContent).toContain("Start using Outlive");
+    expect(container.textContent).not.toContain("No project filesystem or command access");
+    expect(container.querySelector(".entry-suggestions")).toBeNull();
     expect(container.textContent).not.toContain("effort.low");
     await click(button("Choose model"));
-    await key(button("Reasoning effort"), { key: "ArrowDown" });
-    await act(async () => { await new Promise((resolve) => window.setTimeout(resolve, 5)); });
-    expect(document.activeElement?.textContent).toBe("Default");
-    await key(document.activeElement!, { key: "ArrowDown" });
-    expect(document.activeElement?.textContent).toBe("Default");
-    await key(document.activeElement!, { key: "Escape" });
-    expect(document.activeElement).toBe(button("Reasoning effort"));
-    expect(container.querySelector('[role="listbox"]')).toBeNull();
-    await click(button("Choose model"));
+    await click(button("Reasoning effort"));
+    expect([...container.querySelectorAll(".model-reasoning-levels button")].map((node) => node.textContent?.trim())).toContain("Default");
+    await key(container.querySelector(".composer-model-menu")!, { key: "Escape" });
+    expect(button("Choose model").getAttribute("aria-expanded")).toBe("false");
     const editor = await type("Plain chat message", "Explain safe retries");
     await key(editor, { key: "Enter", shiftKey: true });
     await key(editor, { key: "Enter", isComposing: true });
     expect(client.startChat).not.toHaveBeenCalled();
     await key(editor, { key: "Enter" });
-    expect(client.startChat).toHaveBeenCalledWith("Explain safe retries", "default", [], { mode: "execute", permission_preset: "workspace-write", reasoning_effort: "default" });
+    expect(client.startChat).toHaveBeenCalledWith("Explain safe retries", undefined, [], {});
     expect(container.querySelector(".chat-view")).not.toBeNull();
     expect(container.querySelector('[aria-label="Workbench views"]')).toBeNull();
     const guidance = await type("Steer this run", "Inspect cancellation next");
@@ -100,7 +99,7 @@ describe("UX-086 shared Workbench journeys", () => {
     client.startChat = vi.fn(async () => { throw new Error("Provider unavailable; configure a model"); });
     const followup = await type("New task", "Try the task again");
     await key(followup, { key: "Enter" });
-    expect(container.querySelector('[role="alert"]')?.textContent).toContain("Provider unavailable");
+    expect([...container.querySelectorAll('[role="alert"]')].map(node => node.textContent).join(" ")).toContain("Provider unavailable");
     expect(followup.value).toBe("Try the task again");
     expect(button("Send message").disabled).toBe(false);
   });
@@ -114,13 +113,18 @@ describe("UX-086 shared Workbench journeys", () => {
     const selected = container.querySelector<HTMLButtonElement>(".session-list .session-card")!;
     await click(selected);
     expect(client.openSession).toHaveBeenCalledWith("session-one");
-    expect(container.textContent).toContain("Recovered session view");
+    expect(container.textContent).not.toContain("Recovered session view");
     expect(container.querySelector(".chat-view")).not.toBeNull();
     expect(container.querySelector('[aria-label="Workbench views"]')).toBeNull();
-    const details = container.querySelector<HTMLDetailsElement>(".inline-activity-details")!;
-    expect(details.open).toBe(false);
+    const process = container.querySelector<HTMLButtonElement>(".chat-process-toggle")!;
+    expect(process.getAttribute("aria-expanded")).toBe("false");
     const enterReplay = vi.spyOn(client, "enterReplay");
-    await click(container.querySelector<HTMLButtonElement>(".activity-evidence-actions button")!);
+    await click(process);
+    const groupSummary = container.querySelector<HTMLElement>(".chat-operation-group > summary")!;
+    await click(groupSummary);
+    const activity = container.querySelector<HTMLElement>(".chat-operation")!;
+    await click(activity.querySelector<HTMLButtonElement>(".chat-operation-toggle")!);
+    await click(button("Open event details"));
     expect(enterReplay).not.toHaveBeenCalled();
     expect(container.querySelector('[aria-label="Event inspector"]')).not.toBeNull();
     await key(window, { key: "Escape" });
@@ -135,10 +139,10 @@ describe("UX-086 shared Workbench journeys", () => {
     expect(container.querySelector('[aria-label="Settings"]')).not.toBeNull();
     await key(window, { key: "Escape" });
     await act(async () => publish({ ...createDemoSnapshot("ready"), dataSource: "live" }));
-    expect(container.textContent).toContain("Let's build something");
+    expect(container.textContent).toContain("Start using Outlive");
     const task = await type("Task", "Inspect the imports");
     await key(task, { key: "Enter" });
-    expect(client.startRun).toHaveBeenCalledWith("Inspect the imports", "execute", "default", [], { mode: "execute", permission_preset: "workspace-write", reasoning_effort: "default" });
+    expect(client.startRun).toHaveBeenCalledWith("Inspect the imports", "execute", undefined, [], { mode: "execute" });
   });
 
   it("lets a keyboard user select any changed file and inspect its linked diff and architecture evidence", async () => {

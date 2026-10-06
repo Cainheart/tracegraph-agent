@@ -1,0 +1,158 @@
+$ pnpm run clean:dist && pnpm -r --if-present build
+$ node scripts/clean-dist.mjs
+[clean-dist] removed 12 generated directories
+Scope: 22 of 23 workspace projects
+packages/contracts build$ tsc -p tsconfig.json
+packages/retrieval build$ tsc -p tsconfig.json
+packages/telemetry build$ tsc -p tsconfig.json
+packages/retrieval build: Done
+packages/telemetry build: Done
+packages/contracts build: Done
+apps/retrieval-service build$ tsc -p tsconfig.json
+packages/codegraph build$ tsc -p tsconfig.json
+packages/evidence build$ tsc -p tsconfig.json
+packages/api build$ tsc -p tsconfig.json
+packages/codegraph build: Done
+packages/lsp build$ tsc -p tsconfig.json
+packages/api build: Done
+packages/mcp build$ tsc -p tsconfig.json
+packages/evidence build: Done
+packages/sdk build$ tsc -p tsconfig.json
+packages/lsp build: Done
+packages/session build$ tsc -p tsconfig.json
+packages/mcp build: Done
+packages/tool build$ tsc -p tsconfig.json
+apps/retrieval-service build: Done
+packages/session build: Done
+packages/tool build: Done
+packages/sdk build: Done
+packages/workbench build$ tsc -p tsconfig.json && node scripts/copy-assets.mjs
+packages/context build$ tsc -p tsconfig.json
+packages/context build: Done
+packages/workbench build: Done
+packages/core build$ tsc -p tsconfig.json
+apps/web build$ tsc --noEmit && vite build
+apps/web build: vite v8.3.0 building client environment for production...
+apps/web build: transforming...
+apps/web build: ✓ 2376 modules transformed.
+packages/core build: Done
+apps/web build: rendering chunks...
+apps/web build: computing gzip size...
+apps/web build: dist/index.html                                           1.98 kB │ gzip:   0.69 kB
+apps/web build: dist/assets/index-DY1oSETK.css                          245.87 kB │ gzip:  40.09 kB
+apps/web build: dist/assets/array-BifhSqXX.js                             0.10 kB │ gzip:   0.11 kB
+apps/web build: dist/assets/channel-aUdBGjkS.js                           0.11 kB │ gzip:   0.12 kB
+apps/web build: dist/assets/pie-WAS4IAKB-DdOgZ5mO.js                      0.12 kB │ gzip:   0.12 kB
+apps/web build: dist/assets/info-A6RAGUB7-B6tVbi_3.js                     0.12 kB │ gzip:   0.12 kB
+apps/web build: dist/assets/radar-RG4KPBEZ-CF8MNvNY.js                    0.12 kB │ gzip:   0.12 kB
+apps/web build: dist/assets/packet-AYTQ26CC-FUUjnM8c.js                   0.12 kB │ gzip:   0.12 kB
+apps/web build: dist/assets/cynefin-OW5HDTMX-DeFcfz2-.js                  0.12 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/treemap-WGGIJYW6-CIcGoXhg.js                  0.12 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/wardley-WFR3VGLG-DF4qEqCQ.js                  0.12 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/gitGraph-4MIJSDKK-BdDNODvl.js                 0.12 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/railroad-74A4TZTK-CMxXxWmB.js                 0.12 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/treeView-Q6P3EWNA-i_rQmWXw.js                 0.12 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/railroad-peg-WCYAUIDC-CwNw4kzf.js             0.13 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/architecture-7GRP2DOG-BSTrt663.js             0.13 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/railroad-abnf-HS5TGJTU-D-k2xCHG.js            0.13 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/railroad-ebnf-LZEXJU2U-C5l_tyWW.js            0.13 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/eventmodeling-NTZA5JFV-DEq3Xa1a.js            0.13 kB │ gzip:   0.13 kB
+apps/web build: dist/assets/init-C-OQMol4.js                              0.14 kB │ gzip:   0.12 kB
+apps/web build: dist/assets/chunk-Y2CYZVJY-DsF7k-Jl.js                    0.15 kB │ gzip:   0.14 kB
+apps/web build: dist/assets/chunk-2Q5K7J3B-C1jixKkw.js                    0.19 kB │ gzip:   0.16 kB
+apps/web build: dist/assets/chunk-JWPE2WC7-DVXcaiue.js                    0.22 kB │ gzip:   0.17 kB
+apps/web build: dist/assets/chunk-XXDRQBXY-C1_eEj17.js                    0.26 kB │ gzip:   0.22 kB
+apps/web build: dist/assets/chunk-5VM5RSS4-ZNzvKenW.js                    0.36 kB │ gzip:   0.27 kB
+apps/web build: dist/assets/flowDiagram-KWPJA3E3-C5f4L5IQ.js              0.49 kB │ gzip:   0.28 kB
+apps/web build: dist/assets/chunk-WEXAMYUT-CyxciMnw.js                    0.57 kB │ gzip:   0.40 kB
+apps/web build: dist/assets/chunk-J5ZVWO5B-oDCd-gWO.js                    0.63 kB │ gzip:   0.43 kB
+apps/web build: dist/assets/infoDiagram-VRGFBTTK-BLBzHirQ.js              0.64 kB │ gzip:   0.42 kB
+apps/web build: dist/assets/swimlanesDiagram-TC7HE7FX-mkbZ7_b7.js         0.74 kB │ gzip:   0.44 kB
+apps/web build: dist/assets/sizeCapture-INFHLROL-B0uUizjq.js              0.87 kB │ gzip:   0.51 kB
+apps/web build: dist/assets/line-DRI3L1yY.js                              0.94 kB │ gzip:   0.47 kB
+apps/web build: dist/assets/ordinal-BDEzSJ7C.js                           1.17 kB │ gzip:   0.56 kB
+apps/web build: dist/assets/addon-fit-DIOBYJe3.js                         1.20 kB │ gzip:   0.49 kB
+apps/web build: dist/assets/chunk-5DYCD2WN-YT1WiPLW.js                    1.41 kB │ gzip:   0.78 kB
+apps/web build: dist/assets/railroadDiagram-XR7U4H2S-CUA4_lY_.js          1.66 kB │ gzip:   0.77 kB
+apps/web build: dist/assets/abnfDiagram-O67JEVCF-Q6_7U3Rs.js              1.84 kB │ gzip:   0.89 kB
+apps/web build: dist/assets/chunk-7PRAP22T-BtP57Hn2.js                    1.95 kB │ gzip:   0.95 kB
+apps/web build: dist/assets/chunk-GWA4HPMP-Dq_rajen.js                    1.97 kB │ gzip:   0.88 kB
+apps/web build: dist/assets/pegDiagram-GJSIUBJH-ByanU5qC.js               2.00 kB │ gzip:   0.94 kB
+apps/web build: dist/assets/ebnfDiagram-ZINNZB2B-BKbxVQuF.js              2.06 kB │ gzip:   0.89 kB
+apps/web build: dist/assets/dist-Bfr8PhAA.js                              2.16 kB │ gzip:   0.96 kB
+apps/web build: dist/assets/path-fybaL0A-.js                              2.27 kB │ gzip:   0.98 kB
+apps/web build: dist/assets/arc-BJA87daU.js                               3.47 kB │ gzip:   1.46 kB
+apps/web build: dist/assets/diagram-MLGK6HIB-D_vw4bbB.js                  4.27 kB │ gzip:   1.84 kB
+apps/web build: dist/assets/defaultLocale-BFoDCU3G.js                     4.63 kB │ gzip:   2.12 kB
+apps/web build: dist/assets/chunk-NETBCI7D-BX45-mRC.js                    5.43 kB │ gzip:   2.49 kB
+apps/web build: dist/assets/linear-ZUqVn2xB.js                            5.51 kB │ gzip:   2.25 kB
+apps/web build: dist/assets/chunk-742MDFTN-4AGjCSe5.js                    5.83 kB │ gzip:   2.68 kB
+apps/web build: dist/assets/graphlib-C9Tl7QrK.js                          5.85 kB │ gzip:   1.82 kB
+apps/web build: dist/assets/diagram-MPIPVDR6-W7XjJaU2.js                  6.06 kB │ gzip:   2.56 kB
+apps/web build: dist/assets/pieDiagram-5QR66LMP-Dc02DpKU.js               6.20 kB │ gzip:   2.59 kB
+apps/web build: dist/assets/_basePickBy-QJXUw_pr.js                       7.58 kB │ gzip:   3.15 kB
+apps/web build: dist/assets/diagram-CDSNMT55-VYdDJGtF.js                  8.19 kB │ gzip:   3.65 kB
+apps/web build: dist/assets/cynefinDiagram-VND7K2PF-C6f2noDe.js           9.93 kB │ gzip:   3.51 kB
+apps/web build: dist/assets/chunk-3FUC2YCW-DTHlUx3K.js                   10.63 kB │ gzip:   4.27 kB
+apps/web build: dist/assets/diagram-ATOU4E4O-Bz9fDKqN.js                 10.65 kB │ gzip:   4.12 kB
+apps/web build: dist/assets/chunk-GTNCS2PH-CudNtZ-N.js                   15.63 kB │ gzip:   4.36 kB
+apps/web build: dist/assets/diagram-3UASUU5V-Rxu_bjdg.js                 15.73 kB │ gzip:   5.52 kB
+apps/web build: dist/assets/mermaid-parser.core-DWUpNDDd.js              16.59 kB │ gzip:   3.93 kB
+apps/web build: dist/assets/ishikawaDiagram-OU5B5YK6-D3no1YHa.js         17.30 kB │ gzip:   6.53 kB
+apps/web build: dist/assets/_baseUniq-DR4vVjyC.js                        18.23 kB │ gzip:   6.72 kB
+apps/web build: dist/assets/kanban-definition-PNTS6WVX-CJcjjN5q.js       20.21 kB │ gzip:   7.12 kB
+apps/web build: dist/assets/sankeyDiagram-IPEJSGJF-sCqF_aWQ.js           22.78 kB │ gzip:   8.25 kB
+apps/web build: dist/assets/journeyDiagram-ZHPQQLJL-tBinfehp.js          23.16 kB │ gzip:   8.15 kB
+apps/web build: dist/assets/mindmap-definition-NLK3R4M7-C22CeRGq.js      23.36 kB │ gzip:   7.95 kB
+apps/web build: dist/assets/wardleyDiagram-VNRHLVJA-DpdBYEwR.js          25.19 kB │ gzip:   6.54 kB
+apps/web build: dist/assets/rough.esm-Dy-Kn_BL.js                        27.10 kB │ gzip:   8.85 kB
+apps/web build: dist/assets/gitGraphDiagram-X574FWY7-B5EPTvh-.js         29.00 kB │ gzip:   8.55 kB
+apps/web build: dist/assets/timeline-definition-EJHVYXUP-CRh5jgd3.js     30.44 kB │ gzip:  10.02 kB
+apps/web build: dist/assets/erDiagram-OPXOYQCR-DqO8W0ir.js               30.56 kB │ gzip:  10.51 kB
+apps/web build: dist/assets/chunk-ZIGJFQKS-BziNNspq.js                   30.74 kB │ gzip:   8.51 kB
+apps/web build: dist/assets/requirementDiagram-PLB6GJNP-B4xfIh2f.js      30.98 kB │ gzip:   9.78 kB
+apps/web build: dist/assets/quadrantDiagram-O4NWA36T-BAktWGVE.js         33.51 kB │ gzip:   9.73 kB
+apps/web build: dist/assets/dagre-6A5THRUB-Dp9NVK3s.js                   40.71 kB │ gzip:  14.53 kB
+apps/web build: dist/assets/vennDiagram-UO4OBE2U-D3nHZBs1.js             41.17 kB │ gzip:  15.12 kB
+apps/web build: dist/assets/stateDiagram-v2-GCMORJYK-Jcv_ExDD.js         41.45 kB │ gzip:  13.84 kB
+apps/web build: dist/assets/blockDiagram-BEXU5L5S-DEl1KOl0.js            42.40 kB │ gzip:  13.85 kB
+apps/web build: dist/assets/xychartDiagram-PMCCYNJV-BQ_CAfVJ.js          44.14 kB │ gzip:  12.21 kB
+apps/web build: dist/assets/src-D_iIdUkB.js                              46.60 kB │ gzip:  16.42 kB
+apps/web build: dist/assets/classDiagram-v2-NBCMYWYE-7VCQXpgQ.js         49.61 kB │ gzip:  16.10 kB
+apps/web build: dist/assets/chunk-MBY4JIJT-Cwey68e3.js                   51.28 kB │ gzip:  16.45 kB
+apps/web build: dist/assets/chunk-7M6MHVWA-BCy30Jn1.js                   62.71 kB │ gzip:  20.34 kB
+apps/web build: dist/assets/c4Diagram-YGBWAQC7-fvtQFhms.js               65.07 kB │ gzip:  18.60 kB
+apps/web build: dist/assets/ganttDiagram-FUAMR5RP-ABjKC9Zv.js            69.31 kB │ gzip:  22.73 kB
+apps/web build: dist/assets/diagram-22UHCM2B-CUwFj-TN.js                 80.40 kB │ gzip:  25.14 kB
+apps/web build: dist/assets/cose-bilkent-JH36ORCC-Bm2Bhb7n.js            81.21 kB │ gzip:  21.51 kB
+apps/web build: dist/assets/swimlanes-2SLR337P-DFPEKGPs.js              106.19 kB │ gzip:  36.10 kB
+apps/web build: dist/assets/chunk-7INBJB4K-B0XxbvXt.js                  115.48 kB │ gzip:  29.21 kB
+apps/web build: dist/assets/sequenceDiagram-PO4LG4MO-VWHAgeHY.js        117.30 kB │ gzip:  31.24 kB
+apps/web build: dist/assets/architectureDiagram-NJMV4G6O-Dwr40v-R.js    148.86 kB │ gzip:  41.10 kB
+apps/web build: dist/assets/usecaseDiagram-POWQR4AR-BJuVmC49.js         186.59 kB │ gzip:  50.11 kB
+apps/web build: dist/assets/chunk-O7XYJQB3-BD-OMbAq.js                  239.48 kB │ gzip:  39.69 kB
+apps/web build: dist/assets/katex-ZlcWpGUi.js                           258.68 kB │ gzip:  77.43 kB
+apps/web build: dist/assets/xterm-ScmBfeDI.js                           331.17 kB │ gzip:  83.03 kB
+apps/web build: dist/assets/cytoscape.esm-Yq6u8L66.js                   434.85 kB │ gzip: 137.78 kB
+apps/web build: dist/assets/chunk-FOHPRMQF-DzxwRta7.js                  662.10 kB │ gzip: 143.16 kB
+apps/web build: dist/assets/elk-276RUBZZ-DRwp25UC.js                  1,456.33 kB │ gzip: 453.19 kB
+apps/web build: dist/assets/index-CO5tPhBM.js                         1,766.38 kB │ gzip: 525.75 kB
+apps/web build: ✓ built in 440ms
+apps/web build: [plugin builtin:vite-reporter] 
+apps/web build: (!) Some chunks are larger than 500 kB after minification. Consider:
+apps/web build: - Using dynamic import() to code-split the application
+apps/web build: - Use build.rolldownOptions.output.codeSplitting to improve chunking: https://rolldown.rs/reference/OutputOptions.codeSplitting
+apps/web build: - Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+apps/web build: Done
+packages/host build$ tsc -p tsconfig.json
+packages/test-support build$ tsc -p tsconfig.json
+packages/test-support build: Done
+packages/host build: src/personal-data-control.ts(27,1429): error TS2379: Argument of type '{ provider: string; model: string; input_tokens: number; output_tokens: number; cached_input_tokens?: number | undefined; reasoning_output_tokens?: number | undefined; total_tokens: number; request_kind: "initial" | ... 1 more ... | "summary"; request_sequence: number; provider_reported_cost?: { ...; } | undefined; }' is not assignable to parameter of type '{ input_tokens: number; output_tokens: number; total_tokens: number; cached_input_tokens?: number; reasoning_output_tokens?: number; }' with 'exactOptionalPropertyTypes: true'. Consider adding 'undefined' to the types of the target's properties.
+packages/host build:   Types of property 'cached_input_tokens' are incompatible.
+packages/host build:     Type 'number | undefined' is not assignable to type 'number'.
+packages/host build:       Type 'undefined' is not assignable to type 'number'.
+packages/host build: Failed
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @tracegraph/host@0.1.0-alpha.0 build: `tsc -p tsconfig.json`
+Exit status 2
+[ELIFECYCLE] Command failed with exit code 2.

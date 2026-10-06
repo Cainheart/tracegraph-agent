@@ -12,12 +12,20 @@ export class LeasedModelAdapter extends ConfigurableModelAdapter {
     return this.forConfiguration(this.#configuration);
   }
   forConfiguration(configuration:ModelProviderConfig|undefined,capabilities?:ModelCapabilities):ModelAdapter & ConfigurableModelAdapter {
-    const snapshot=new ConfigurableModelAdapter({...this.#options,...(capabilities?{capabilities}:{})});
-    if(configuration)snapshot.configure(configuration);
-    const reference=configuration?.credentialRef;
+    const capturedConfiguration=configuration===undefined?undefined:Object.freeze({...configuration});
+    const capturedCapabilities=Object.freeze({...capabilities??this.#options.capabilities??{image_input:false}});
+    const snapshot=new ConfigurableModelAdapter({...this.#options,capabilities:capturedCapabilities});
+    if(capturedConfiguration)snapshot.configure(capturedConfiguration);
+    const reference=capturedConfiguration?.credentialRef;
     if(reference)this.#leases.set(reference,(this.#leases.get(reference)??0)+1);
     let released=false;
-    return Object.assign(snapshot,{releaseRun:()=>{if(released)return;released=true;if(reference){const count=(this.#leases.get(reference)??1)-1;if(count===0)this.#leases.delete(reference);else this.#leases.set(reference,count);this.#settle(reference);}}});
+    return Object.assign(snapshot,{
+      // Children inherit the admitted model, but must never share the parent's
+      // idempotent release function. Each fork owns one reference to the same
+      // frozen config/capabilities, independent of later settings changes.
+      forRun:()=>{if(released)throw new Error("The admitted model lease has already settled");return this.forConfiguration(capturedConfiguration,capturedCapabilities);},
+      releaseRun:()=>{if(released)return;released=true;if(reference){const count=(this.#leases.get(reference)??1)-1;if(count===0)this.#leases.delete(reference);else this.#leases.set(reference,count);this.#settle(reference);}},
+    });
   }
   readonly #leases = new Map<string, number>();
   readonly #retired = new Map<string, () => Promise<void>>();
@@ -56,6 +64,9 @@ export class LeasedModelAdapter extends ConfigurableModelAdapter {
   }
   override testConnection(...args: Parameters<ConfigurableModelAdapter["testConnection"]>): ReturnType<ConfigurableModelAdapter["testConnection"]> {
     return this.#request(() => super.testConnection(...args));
+  }
+  override testCapability(...args: Parameters<ConfigurableModelAdapter["testCapability"]>): ReturnType<ConfigurableModelAdapter["testCapability"]> {
+    return this.#request(() => super.testCapability(...args));
   }
   override summarizeContext(...args: Parameters<ConfigurableModelAdapter["summarizeContext"]>): ReturnType<ConfigurableModelAdapter["summarizeContext"]> {
     return this.#request(() => super.summarizeContext(...args));

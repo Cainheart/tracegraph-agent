@@ -26,7 +26,7 @@ process.once("message", async (message) => {
             decision_id: "decision:todo", kind: "tool_call", public_reason: "Create a reviewable plan", evidence_refs: [], risk: "low", expected_effect: "Plan Todo",
             tool_call: { action_id: "action:todo", tool_name: "todo_write", arguments: { operation: "create", todo_id: "todo:plan", title: "Inspect before executing" } },
           } : {
-            decision_id: "decision:plan-finish", kind: "finish", public_reason: "Plan ready", evidence_refs: [], risk: "none", final_answer: "Plan is ready for approval.",
+            decision_id: "decision:plan-finish", kind: "finish", finish_intent: "submit_plan", public_reason: "Plan ready", evidence_refs: [], risk: "none", final_answer: "Plan is ready for approval.",
           });
         },
       } } : {}),

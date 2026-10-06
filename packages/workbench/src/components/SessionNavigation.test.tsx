@@ -42,7 +42,7 @@ describe("durable session navigation", () => {
     expect(html).toContain('aria-label="Delete session: Recover checkout investigation"');
   });
 
-  it("makes interruption and restored-view state explicit without claiming a tool rerun", () => {
+  it("keeps completed history compact and preserves real recovery and failure states", () => {
     const interrupted = renderToStaticMarkup(<LanguageProvider><StateNotice
       connectionMessage="connected"
       currentStep="Recovered after restart"
@@ -71,8 +71,22 @@ describe("durable session navigation", () => {
       sessionViewState="restored"
       status="completed"
     /></LanguageProvider>);
-    expect(restored).toContain("Recovered session view");
-    expect(restored).toContain("Opening it did not execute tools");
+    expect(restored).toBe("");
+
+    const failed = renderToStaticMarkup(<LanguageProvider><StateNotice
+      connectionMessage="connected"
+      currentStep="Provider authentication failed"
+      indexedFiles={undefined}
+      lastSequence={9}
+      onRefresh={vi.fn()}
+      onResumeSession={vi.fn()}
+      onReview={vi.fn()}
+      scanScope={undefined}
+      sessionViewState="restored"
+      status="failed"
+    /></LanguageProvider>);
+    expect(failed).toBe(""); // Errors are rendered inside the corresponding chat turn.
+    expect(failed).not.toContain("Recovered session view");
 
     const diverged = renderToStaticMarkup(<LanguageProvider><StateNotice
       connectionMessage="connected"

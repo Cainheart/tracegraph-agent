@@ -77,7 +77,7 @@ export interface ResolvedCliProfile {
     readonly mcp_servers: readonly {
       readonly name: string;
       readonly required: boolean;
-      readonly transport: "stdio";
+      readonly transport: McpConfig["servers"][number]["transport"];
       readonly tool_policy: {
         readonly allow?: readonly string[];
         readonly deny?: readonly string[];

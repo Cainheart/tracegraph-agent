@@ -12,7 +12,8 @@ describe("Fixed Desktop typed SDK routes", () => {
       expect(preload, operation).toContain(`  ${operation}: (...args: Parameters<DesktopBridgeApi["${operation}"]>)`);
     }
     expect(preload).not.toMatch(/contextBridge[^\n]*\binvoke\b/u);
-    expect(preload).not.toMatch(/ipcRenderer\.(?:send|on|sendSync)\(/u);
+    expect(preload).not.toMatch(/ipcRenderer\.(?:send|sendSync|once)\(/u);
+    expect([...preload.matchAll(/ipcRenderer\.on\(([^,]+)/gu)].map(match => match[1])).toEqual(['"tracegraph:native-run-requested"']);
   });
 
   it("rejects privileged or malformed input before calling the shared client", async () => {

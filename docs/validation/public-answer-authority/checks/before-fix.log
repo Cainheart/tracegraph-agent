@@ -1,0 +1,217 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench
+
+ ❯ src/components/public-answer-authority.test.tsx (15 tests | 15 failed) 61ms
+   ❯ Public answer authority (15)
+     × renders durable completed output instead of a conflicting volatile answer 15ms
+     × renders durable historical output instead of a conflicting volatile answer 3ms
+     × renders durable ready_for_review output instead of a conflicting volatile answer 2ms
+     × keeps the durable failed error instead of an earlier success candidate 2ms
+     × keeps the durable cancelled error instead of an earlier success candidate 2ms
+     × keeps the durable interrupted error instead of an earlier success candidate 2ms
+     × keeps the durable needs_manual_review error instead of an earlier success candidate 2ms
+     × hides the first finish candidate while its canonical decision is followed by blocked delivery review 3ms
+     × does not reuse a delayed earlier surface after a newer canonical model request 3ms
+     × discards a candidate whose own call has model.output_invalid 4ms
+     × discards a candidate whose own call has model.request_failed 3ms
+     × keeps an ordinary knowledge stream clearly provisional and uses its durable result on completion 2ms
+     × allows explicitly labelled compatibility drafts without model-operation history but never private thinking 2ms
+     × does not revive a failed surface or place a stale answer over an exact approval gate 2ms
+     × replaces a mounted progressive draft immediately on review and terminal changes without copying or rating it 11ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 15 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/components/public-answer-authority.test.tsx > Public answer authority > renders durable completed output instead of a conflicting volatile answer
+ FAIL  src/components/public-answer-authority.test.tsx > Public answer authority > renders durable historical output instead of a conflicting volatile answer
+ FAIL  src/components/public-answer-authority.test.tsx > Public answer authority > renders durable ready_for_review output instead of a conflicting volatile answer
+AssertionError: expected 'Everything is implemented and verifie…' to be 'Durable verified answer' // Object.is equality
+
+Expected: "Durable verified answer"
+Received: "Everything is implemented and verified."
+
+ ❯ src/components/public-answer-authority.test.tsx:42:61
+     40|   it.each(["completed", "historical", "ready_for_review"] as const)("r…
+     41|     const html = markup(status, { outcome: "Durable verified answer", …
+     42|     expect(html.querySelector(".chat-answer")?.textContent).toBe("Dura…
+       |                                                             ^
+     43|     expect(html.textContent).not.toContain(candidate().text);
+     44|     expect(html.querySelector(".chat-live-answer")).toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/15]⎯
+
+ FAIL  src/components/public-answer-authority.test.tsx > Public answer authority > keeps the durable failed error instead of an earlier success candidate
+ FAIL  src/components/public-answer-authority.test.tsx > Public answer authority > keeps the durable cancelled error instead of an earlier success candidate
+ FAIL  src/components/public-answer-authority.test.tsx > Public answer authority > keeps the durable interrupted error instead of an earlier success candidate
+ FAIL  src/components/public-answer-authority.test.tsx > Public answer authority > keeps the durable needs_manual_review error instead of an earlier success candidate
+AssertionError: expected 'Everything is implemented and verifie…' to be 'Verification failed; human continuati…' // Object.is equality
+
+Expected: "Verification failed; human continuation is required."
+Received: "Everything is implemented and verified."
+
+ ❯ src/components/public-answer-authority.test.tsx:48:61
+     46|   it.each(["failed", "cancelled", "interrupted", "needs_manual_review"…
+     47|     const html = markup(status, { outcome: "Verification failed; human…
+     48|     expect(html.querySelector(".chat-answer")?.textContent).toBe("Veri…
+       |                                                             ^
+     49|     expect(html.textContent).not.toContain(candidate().text);
+     50|     expect(html.querySelector('[aria-label="Helpful answer"]')).toBeNu…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/15]⎯
+
+ FAIL  src/components/public-answer-authority.test.tsx > Public answer authority > hides the first finish candidate while its canonical decision is followed by blocked delivery review
+AssertionError: expected 'TodayCYourecordedExplain the resultOu…' not to contain 'Everything is implemented and verifie…'
+
+Expected: "Everything is implemented and verified."
+Received: "TodayCYourecordedExplain the resultOutliveliveWaiting for the next updateResponse receivedCompletedModel decision01:00:00Public operation recordedRun01:00:00Independent readonly delivery review requestedEverything is implemented and verified.▍Graph not_presentrunning"
+
+ ❯ src/components/public-answer-authority.test.tsx:55:34
+     53|     const html = markup("running", { events: [event(1, "model.request_…
+     54|     expect(html.textContent).toContain("Independent readonly delivery …
+     55|     expect(html.textContent).not.toContain(candidate().text);
+       |                                  ^
+     56|     expect(html.querySelector(".agent-message .message-actions")).toBe…
+     57|     expect(html.querySelector(".chat-live-answer")).toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/15]⎯
+
+ FAIL  src/components/public-answer-authority.test.tsx > Public answer authority > does not reuse a delayed earlier surface after a newer canonical model request
+AssertionError: expected 'TodayCYourecordedExplain the resultOu…' not to contain 'Everything is implemented and verifie…'
+
+Expected: "Everything is implemented and verified."
+Received: "TodayCYourecordedExplain the resultOutliveliveWaiting for the next updateRequest sentStartedModel request01:00:00Public operation recorded▍Model request01:00:00Public operation recorded▍Everything is implemented and verified.▍Graph not_presentrunning"
+
+ ❯ src/components/public-answer-authority.test.tsx:61:34
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/15]⎯
+
+ FAIL  src/components/public-answer-authority.test.tsx > Public answer authority > discards a candidate whose own call has model.output_invalid
+ FAIL  src/components/public-answer-authority.test.tsx > Public answer authority > discards a candidate whose own call has model.request_failed
+AssertionError: expected <div aria-live="polite" …(1)>…(2)</div> to be null
+
+- Expected:
+null
+
++ Received:
+<div
+  aria-live="polite"
+  class="chat-live-answer"
+>
+  <div
+    class="markdown-content"
+  >
+    <p>
+      Everything is implemented and verified.
+    </p>
+  </div>
+  <span
+    aria-hidden="true"
+    class="public-model-caret"
+  >
+    ▍
+  </span>
+</div>
+
+ ❯ src/components/public-answer-authority.test.tsx:69:53
+     67|   it.each(["model.output_invalid", "model.request_failed"])("discards …
+     68|     const html = markup("running", { events: [event(1, "model.request_…
+     69|     expect(html.querySelector(".chat-live-answer")).toBeNull();
+       |                                                     ^
+     70|     expect(html.textContent).not.toContain(candidate().text);
+     71|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/15]⎯
+
+ FAIL  src/components/public-answer-authority.test.tsx > Public answer authority > keeps an ordinary knowledge stream clearly provisional and uses its durable result on completion
+AssertionError: expected 'A bounded context contains only selec…' to contain 'Answer draft — not verified'
+
+Expected: "Answer draft — not verified"
+Received: "A bounded context contains only selected inputs.▍"
+
+ ❯ src/components/public-answer-authority.test.tsx:76:66
+     74|     const html = markup("running", { events: [event(1, "model.request_…
+     75|     expect(html.querySelector(".chat-live-answer")?.textContent).toCon…
+     76|     expect(html.querySelector(".chat-live-answer")?.textContent).toCon…
+       |                                                                  ^
+     77|     expect(html.querySelector(".agent-message .message-actions")).toBe…
+     78|     expect(markup("completed", { outcome: answer }).querySelector(".ch…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/15]⎯
+
+ FAIL  src/components/public-answer-authority.test.tsx > Public answer authority > allows explicitly labelled compatibility drafts without model-operation history but never private thinking
+AssertionError: expected 'TodayCYourecordedExplain the resultOu…' to contain 'Answer draft — not verified'
+
+Expected: "Answer draft — not verified"
+Received: "TodayCYourecordedExplain the resultOutliveliveWaiting for the next updateWaiting for a public updateWaiting for the next public model update…Everything is implemented and verified.▍Graph not_presentrunning"
+
+ ❯ src/components/public-answer-authority.test.tsx:83:30
+     81|     const html = markup("running", { modelSurface: [{ ...candidate(), …
+     82|     expect(html.querySelector(".chat-live-answer")?.textContent).toCon…
+     83|     expect(html.textContent).toContain("Answer draft — not verified");
+       |                              ^
+     84|     expect(html.textContent).not.toContain("PRIVATE_REASONING_SENTINEL…
+     85|     expect(html.querySelector(".agent-message .message-actions")).toBe…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/15]⎯
+
+ FAIL  src/components/public-answer-authority.test.tsx > Public answer authority > does not revive a failed surface or place a stale answer over an exact approval gate
+AssertionError: expected <div aria-live="polite" …(1)>…(2)</div> to be null
+
+- Expected:
+null
+
++ Received:
+<div
+  aria-live="polite"
+  class="chat-live-answer"
+>
+  <div
+    class="markdown-content"
+  >
+    <p>
+      Everything is implemented and verified.
+    </p>
+  </div>
+  <span
+    aria-hidden="true"
+    class="public-model-caret"
+  >
+    ▍
+  </span>
+</div>
+
+ ❯ src/components/public-answer-authority.test.tsx:88:124
+     86|   });
+     87|   it("does not revive a failed surface or place a stale answer over an…
+     88|     expect(markup("running", { modelSurface: [{ ...candidate(), status…
+       |                                                                                                                            ^
+     89|     const html = markup("needs_approval");
+     90|     expect(html.textContent).toContain("A scoped patch preview is wait…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/15]⎯
+
+ FAIL  src/components/public-answer-authority.test.tsx > Public answer authority > replaces a mounted progressive draft immediately on review and terminal changes without copying or rating it
+AssertionError: expected 'Ev▍' to contain 'Answer draft — not verified'
+
+Expected: "Answer draft — not verified"
+Received: "Ev▍"
+
+ ❯ src/components/public-answer-authority.test.tsx:99:66
+     97|     await act(async () => root!.render(view("running", { progressive: …
+     98|     await act(async () => { await vi.advanceTimersByTimeAsync(280); });
+     99|     expect(node.querySelector(".chat-live-answer")?.textContent).toCon…
+       |                                                                  ^
+    100|     expect(node.querySelector(".agent-message .message-actions")).toBe…
+    101|     await act(async () => root!.render(view("running", { progressive: …
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/15]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  15 failed (15)
+   Start at  03:31:30
+   Duration  812ms (transform 40%, import 33%, environment 19%, tests 8%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/components/public-answer-authority.test.tsx

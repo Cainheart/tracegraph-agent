@@ -18,6 +18,11 @@ describe("Run/Turn/Step state machine", () => {
       expected: { kind: "start_turn", turn: 12 },
     },
     {
+      name: "continues ordinary runs beyond the former twelve turn default",
+      input: { completedTurns: 12, orchestrationDepth: 0 },
+      expected: { kind: "start_turn", turn: 13 },
+    },
+    {
       name: "fails an exhausted root turn budget",
       input: { completedTurns: 12, maxTurns: 12, orchestrationDepth: 0 },
       expected: { kind: "budget_exhausted", failureCode: "turn_budget_exhausted" },
@@ -54,19 +59,23 @@ describe("Run/Turn/Step state machine", () => {
     },
     {
       name: "defers Todo projection for a plan with no pending input",
-      input: { mode: "plan" as const, pendingInputCount: 0 },
+      input: { mode: "plan" as const, finishIntent: "submit_plan" as const, pendingInputCount: 0 },
       expected: { kind: "inspect_plan_todos" },
     },
     {
       name: "fails a plan with no Todos",
-      input: { mode: "plan" as const, pendingInputCount: 0, todoCount: 0 },
+      input: { mode: "plan" as const, finishIntent: "submit_plan" as const, pendingInputCount: 0, todoCount: 0 },
       expected: { kind: "plan_missing_todos" },
     },
     {
       name: "makes a nonempty plan ready",
-      input: { mode: "plan" as const, pendingInputCount: 0, todoCount: 2 },
+      input: { mode: "plan" as const, finishIntent: "submit_plan" as const, pendingInputCount: 0, todoCount: 2 },
       expected: { kind: "plan_ready" },
     },
+    { name: "completes a legacy ordinary Plan answer without Todos", input: { mode: "plan" as const, pendingInputCount: 0 }, expected: { kind: "complete_run" } },
+    { name: "completes an explicit Plan answer with legacy Todos without executing them", input: { mode: "plan" as const, finishIntent: "answer" as const, pendingInputCount: 0, todoCount: 2 }, expected: { kind: "complete_run" } },
+    { name: "rejects a plan submission in execute mode", input: { mode: "execute" as const, finishIntent: "submit_plan" as const, pendingInputCount: 0 }, expected: { kind: "plan_submission_wrong_mode" } },
+    { name: "lets queued input win over an invalid plan submission", input: { mode: "execute" as const, finishIntent: "submit_plan" as const, pendingInputCount: 1 }, expected: { kind: "continue_for_input" } },
   ])("$name", ({ input, expected }) => {
     expect(transitionAfterFinish(input)).toEqual(expected);
   });

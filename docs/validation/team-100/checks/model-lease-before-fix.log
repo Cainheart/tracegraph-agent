@@ -1,0 +1,32 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+ ❯ src/subagent-model-leases.test.ts (1 test | 1 failed) 1617ms
+   ❯ Actual parent/child model snapshot credential lifetime (1)
+     × keeps independent immutable leases through two real children and rotation until the parent also settles 1616ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/subagent-model-leases.test.ts > Actual parent/child model snapshot credential lifetime > keeps independent immutable leases through two real children and rotation until the parent also settles
+Error: Sibling lost admitted model credential: {"failure":"model_request_failed","wire":[{"oldCredential":true,"model":"admitted-old-model","child":null},{"oldCredential":true,"model":"admitted-old-model","child":"A"},{"oldCredential":true,"model":"admitted-old-model","child":"B"}],"deletedCount":1}
+ ❯ src/subagent-model-leases.test.ts:51:550
+
+ ❯ until src/subagent-model-leases.test.ts:13:114
+ ❯ src/subagent-model-leases.test.ts:51:21
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  02:25:01
+   Duration  2.63s (tests 63%, transform 25%, import 12%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/subagent-model-leases.test.ts '--maxWorkers=1'

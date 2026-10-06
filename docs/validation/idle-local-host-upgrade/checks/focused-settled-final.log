@@ -1,0 +1,28 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+ ❯ src/local-host-upgrade-owner.e2e.test.ts (3 tests | 1 failed) 13816ms
+   ❯ actual private owner build handoff (3)
+     × replaces an idle child PID atomically, deduplicates first-launch clients, and preserves model/settings/completed Run without resubmission 11624ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/local-host-upgrade-owner.e2e.test.ts > actual private owner build handoff > replaces an idle child PID atomically, deduplicates first-launch clients, and preserves model/settings/completed Run without resubmission
+Error: Owned upgrade fixture did not settle
+ ❯ until src/local-host-upgrade-owner.e2e.test.ts:15:245
+
+ ❯ src/local-host-upgrade-owner.e2e.test.ts:28:1213
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 4 passed (5)
+      Tests  1 failed | 27 passed (28)
+   Start at  05:16:16
+   Duration  17.40s (tests 88%, import 6%, transform 6%)
+

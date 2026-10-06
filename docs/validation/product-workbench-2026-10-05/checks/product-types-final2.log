@@ -1,0 +1,37 @@
+Scope: 22 of 23 workspace projects
+packages/contracts typecheck$ tsc -p tsconfig.test.json --noEmit
+packages/retrieval typecheck$ tsc -p tsconfig.test.json --noEmit
+packages/telemetry typecheck$ tsc -p tsconfig.test.json --noEmit
+packages/retrieval typecheck: Done
+packages/telemetry typecheck: Done
+packages/contracts typecheck: Done
+packages/codegraph typecheck$ tsc -p tsconfig.test.json --noEmit
+packages/api typecheck$ tsc -p tsconfig.test.json --noEmit
+packages/evidence typecheck$ tsc -p tsconfig.test.json --noEmit
+apps/retrieval-service typecheck$ tsc -p tsconfig.test.json --noEmit
+packages/api typecheck: Done
+packages/lsp typecheck$ tsc -p tsconfig.test.json --noEmit
+packages/codegraph typecheck: Done
+packages/mcp typecheck$ tsc -p tsconfig.test.json --noEmit
+packages/evidence typecheck: Done
+packages/sdk typecheck$ tsc -p tsconfig.json --noEmit
+packages/mcp typecheck: Done
+packages/session typecheck$ tsc -p tsconfig.test.json --noEmit
+packages/lsp typecheck: Done
+packages/tool typecheck$ tsc -p tsconfig.test.json --noEmit
+packages/session typecheck: Done
+apps/retrieval-service typecheck: Done
+packages/tool typecheck: Done
+packages/sdk typecheck: Done
+packages/context typecheck$ tsc -p tsconfig.test.json --noEmit
+packages/workbench typecheck$ tsc -p tsconfig.test.json --noEmit
+packages/context typecheck: Done
+packages/workbench typecheck: Done
+apps/web typecheck$ tsc --noEmit
+packages/core typecheck$ tsc -p tsconfig.test.json --noEmit
+apps/web typecheck: Done
+packages/core typecheck: src/domains/runtime/runtime.delivery-continuation.test.ts(76,528): error TS18046: 'runEvents' is of type 'unknown'.
+packages/core typecheck: Failed
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/core:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @tracegraph/core@0.1.0-alpha.0 typecheck: `tsc -p tsconfig.test.json --noEmit`
+Exit status 1

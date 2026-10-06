@@ -43,7 +43,7 @@ Desktop 经固定、schema 校验的 Main/preload/私有 Host 协议提供普通
 
 ## 最终归档与已启动入口
 
-冻结归档 SHA-256：`41622f1719467850475d583115357d21ba0aa69e8469f27ab8b1e6cf0140298a`。当前 [归档](../../../_tmp_release/2026-10-03-ux086-final-preview/outlive-agent-0.1.0-alpha.0-preview.tar.gz)仍保留在工作树，安装与失败/重跑见[发布回执](release/attempts/final-archive/report.json)。先前两个摘要分别保留在 release/attempts，不能用于证明最终字节。
+冻结归档 SHA-256：`41622f1719467850475d583115357d21ba0aa69e8469f27ab8b1e6cf0140298a`。归档构建包已于 2026-10-06 清理；安装与失败/重跑见[发布回执](release/attempts/final-archive/report.json)。先前两个摘要分别保留在 release/attempts，不能用于证明最终字节。
 
 macOS 最终归档实际 Main 启动了独立 Node worker；workspace-write Seatbelt 下真实测试写出外部文件 oracle，原始日志为 2/2 assertions passed。原生 Preview 经 CUA 实际窗口观察，持续展示 Preview 与 deterministic example data；之后安装测试的 Main/Host/test/Preview PID 全部消失，唯一合成凭据删除，所有验证容器移除。Linux 首次 DEMO-080 在 crash 注入之前触发 fail-closed SessionPathSafetyError；一次全新容器重跑安装、smoke 与三条证明均通过。该原因仍未定位，Core 没有为该错误修改；记录保留并列为残余验证限制。
 

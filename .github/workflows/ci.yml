@@ -68,6 +68,8 @@ jobs:
       - run: node scripts/verify-lockfile.mjs --skip-frozen
       - run: pnpm install --frozen-lockfile
       - run: pnpm supply-chain:check
+      - name: Install the pinned browser for real browser tests
+        run: pnpm --filter @tracegraph/host exec playwright-core install --with-deps chromium
       - run: pnpm test
       - run: pnpm test:e2e
       - run: pnpm coverage

@@ -9,6 +9,7 @@ function FileStatus({ status }: { status: ChangedFile["status"] }) {
 
 function EvidencePlaceholder({ slot, label }: { slot: EvidenceSlot; label: string }) {
   const { t } = useI18n();
+  if (slot.status === "not_present" && (label === "Changed files" || label === "Diff")) return <div className="evidence-placeholder evidence-not_present"><Icon name="file" size={17} /><strong>{t("This task did not record file changes.")}</strong>{slot.artifactId && <code>{slot.artifactId}</code>}</div>;
   return <div className={`evidence-placeholder evidence-${slot.status}`}><Icon name={slot.status === "loading" ? "refresh" : "alert"} size={17} /><strong>{t(label)} {t(slot.status.replace("_", " "))}</strong><span>{t(slot.message)}</span>{slot.artifactId && <code>{slot.artifactId}</code>}</div>;
 }
 
@@ -267,7 +268,7 @@ export function ChangesView({ requestedPath,
           <span><Icon name={verified ? "check" : "clock"} size={15} /></span>
           <div>
             <strong>{verified ? t("Test evidence available") : evidence.test.status === "not_present" ? t("No test evidence recorded") : language === "zh-CN" ? `测试证据：${evidence.test.status}` : `Test evidence ${evidence.test.status}`}</strong>
-            <small>{t(evidence.test.message)}</small>
+            <small>{t(evidence.test.status === "not_present" ? "This task did not record test results." : evidence.test.message)}</small>
           </div>
         </div>
         <div className="verification-links">{patchId && <button onClick={onJumpToPatch} type="button"><Icon name="route" size={13} /> {patchId}</button>}{evidence.graph.artifactId && <code>{evidence.graph.artifactId}</code>}{evidence.test.artifactId && <code>{evidence.test.artifactId}</code>}</div>

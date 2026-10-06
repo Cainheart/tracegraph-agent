@@ -1,0 +1,29 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench
+
+ ❯ src/model-capability-tests.test.tsx (6 tests | 1 failed) 42ms
+   ❯ explicit model capability controls (6)
+     × reopens a saved current-revision receipt without a provider request or a fictitious zero cost 16ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/model-capability-tests.test.tsx > explicit model capability controls > reopens a saved current-revision receipt without a provider request or a fictitious zero cost
+AssertionError: expected 'Test model capabilitiesThese small pr…' to contain 'Model test results'
+
+Expected: "Model test results"
+Received: "Test model capabilitiesThese small probes check one exact model and configuration. A passing fixture does not guarantee general quality or grant tool permissions. Image declarations remain unchanged.Model to testmodel-amodel-bSelect small testsText responseNative tool callingImage inputSchema-constrained outputRun selected testsInspect previous testmodel-b · Revision 3 · 4 msThis receipt describes an earlier model or configuration. It does not verify the current selection.Native tool calling · passedThe dedicated fixture matched the expected result.4 ms · Provider usage: Unknown · Cost: UnknownTest receipt detailsprobe:saved · openai-chat-completions · 2026-10-05T00:00:00Ztools · model_probe_passed · native_tool_call · Request sent"
+
+ ❯ src/model-capability-tests.test.tsx:19:291
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 10 passed (11)
+   Start at  05:06:10
+   Duration  1.15s (transform 35%, environment 34%, import 22%, tests 9%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/model-capability-tests.test.tsx src/current-workbench-ui.test.tsx src/help-topics.test.tsx '--maxWorkers=1'

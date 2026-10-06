@@ -10,6 +10,7 @@ const doubles = vi.hoisted(() => ({
   capabilities: vi.fn(), bootstrap: vi.fn(), registerProject: vi.fn(), dialog: vi.fn(),
   packaged: false,
   connect: vi.fn(), migrationPreview: vi.fn(), migrationCommit: vi.fn(), migrationResult: vi.fn(),
+  confirmUnload: vi.fn(), hide: vi.fn(),
 }));
 vi.mock("@tracegraph/desktop-host",async()=>{
   const {HostConnectionError}=await import("@tracegraph/contracts");
@@ -35,14 +36,19 @@ vi.mock("@tracegraph/desktop-host",async()=>{
 vi.mock("electron", () => ({
   app: { get isPackaged(){return doubles.packaged;}, whenReady: () => Promise.resolve(), on: (name: string, handler: (...args: unknown[]) => unknown) => doubles.appEvents.set(name, handler), quit: doubles.quit },
   BrowserWindow: class {
+    private bounds = { x: 80, y: 60, width: 1440, height: 920 };
     static getAllWindows() { return []; }
     webContents = { id: 42, setWindowOpenHandler: vi.fn(), on: (name: string, handler: (...args: unknown[]) => unknown) => doubles.webContentsEvents.set(name, handler) };
     once = vi.fn();
     on(name: string, handler: (...args: unknown[]) => unknown) { doubles.windowEvents.set(name, handler); }
-    show = vi.fn(); isDestroyed = () => false; loadFile = doubles.loadFile;
+    getBounds() { return { ...this.bounds }; }
+    setBounds(bounds: { x: number; y: number; width: number; height: number }) { this.bounds = { ...bounds }; }
+    setMinimumSize = vi.fn(); setAlwaysOnTop = vi.fn();
+    show = vi.fn(); hide = doubles.hide; focus = vi.fn(); isDestroyed = () => false; loadFile = doubles.loadFile;
   },
+  screen: { getDisplayMatching: () => ({ workArea: { x: 0, y: 0, width: 1920, height: 1080 } }) },
   ipcMain: { handle: (channel: string, handler: (...args: unknown[]) => unknown) => doubles.handlers.set(channel, handler) },
-  dialog: { showOpenDialog: doubles.dialog }, shell: {},
+  dialog: { showOpenDialog: doubles.dialog, showMessageBoxSync: doubles.confirmUnload }, shell: {},
   clipboard:{writeText:vi.fn(),readText:vi.fn()},
   session: { defaultSession: { setPermissionRequestHandler: vi.fn() } },
 }));
@@ -56,6 +62,7 @@ beforeEach(() => {
   process.argv = [process.execPath, "synthetic-main"];
   doubles.detach.mockResolvedValue(undefined);doubles.probe.mockResolvedValue(undefined);
   doubles.dialog.mockResolvedValue({ canceled: true, filePaths: [] });
+  doubles.confirmUnload.mockReturnValue(0);
   doubles.bootstrap.mockResolvedValue({ token: "PRIVATE_MAIN_BEARER_DO_NOT_EXPOSE", expiresAt: "2026-10-03T00:00:00Z" });
   const connection={
     status: { protocol_version: "outlive.local-host.v1", boot_nonce: "00000000-0000-4000-8000-000000000002", profile_id:"00000000-0000-4000-8000-000000000001", profile_root: "/synthetic-profile-only", http_address: "http://127.0.0.1:12345" },
@@ -182,9 +189,55 @@ describe("Desktop unified Host connection lifetime", () => {
     expect(doubles.stop).not.toHaveBeenCalled();
     const preventDefault = vi.fn();
     doubles.appEvents.get("before-quit")?.({ preventDefault });
+    expect(doubles.detach).not.toHaveBeenCalled();
+    expect(preventDefault).not.toHaveBeenCalled();
+    doubles.appEvents.get("will-quit")?.({ preventDefault });
     await vi.waitFor(() => expect(doubles.detach).toHaveBeenCalledOnce());
     await vi.waitFor(() => expect(doubles.quit).toHaveBeenCalledOnce());
     expect(preventDefault).toHaveBeenCalledOnce();
+    expect(doubles.stop).not.toHaveBeenCalled();
+  });
+
+  it("keeps the authenticated client when a human cancels an unsaved-edit quit", async () => {
+    await import("./main.js");
+    await vi.waitFor(() => expect(doubles.loadFile).toHaveBeenCalledOnce());
+    doubles.appEvents.get("before-quit")?.();
+    const discard = vi.fn();
+    doubles.webContentsEvents.get("will-prevent-unload")?.({ preventDefault: discard });
+    expect(doubles.confirmUnload).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ defaultId: 0, cancelId: 0 }));
+    expect(discard).not.toHaveBeenCalled();
+    expect(doubles.detach).not.toHaveBeenCalled();
+    expect(await doubles.handlers.get(DESKTOP_IPC.hostStatus)?.(rendererEvent())).toMatchObject({ state: "ready" });
+    expect(doubles.stop).not.toHaveBeenCalled();
+    doubles.confirmUnload.mockReturnValue(1);
+    doubles.appEvents.get("before-quit")?.();
+    doubles.webContentsEvents.get("will-prevent-unload")?.({ preventDefault: discard });
+    expect(discard).toHaveBeenCalledOnce();
+    doubles.appEvents.get("will-quit")?.({ preventDefault: vi.fn() });
+    await vi.waitFor(() => expect(doubles.detach).toHaveBeenCalledOnce());
+    expect(doubles.stop).not.toHaveBeenCalled();
+  });
+
+  it("single-flights accepted departure and cannot recreate a window while detaching", async () => {
+    await import("./main.js");
+    await vi.waitFor(() => expect(doubles.loadFile).toHaveBeenCalledOnce());
+    let finish!: () => void;
+    doubles.detach.mockReturnValueOnce(new Promise<void>(resolve => { finish = resolve; }));
+    doubles.appEvents.get("before-quit")?.();
+    const preventDefault = vi.fn();
+    doubles.appEvents.get("will-quit")?.({ preventDefault });
+    doubles.appEvents.get("will-quit")?.({ preventDefault });
+    await vi.waitFor(() => expect(doubles.detach).toHaveBeenCalledOnce());
+    doubles.appEvents.get("activate")?.();
+    expect(doubles.loadFile).toHaveBeenCalledOnce();
+    expect(preventDefault).toHaveBeenCalledTimes(2);
+    expect(doubles.quit).not.toHaveBeenCalled();
+    finish();
+    await vi.waitFor(() => expect(doubles.quit).toHaveBeenCalledOnce());
+    const finalized = vi.fn();
+    doubles.appEvents.get("will-quit")?.({ preventDefault: finalized });
+    expect(finalized).not.toHaveBeenCalled();
+    expect(doubles.detach).toHaveBeenCalledOnce();
     expect(doubles.stop).not.toHaveBeenCalled();
   });
 

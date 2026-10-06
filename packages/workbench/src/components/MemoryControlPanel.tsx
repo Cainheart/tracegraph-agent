@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import type {
   MemoryCandidateCreateRequest,
   MemoryControlItem,
@@ -15,6 +15,10 @@ import { ExperienceControlSection } from "./ExperienceControlSection";
 import { MemoryBackgroundJobs } from "./MemoryBackgroundJobs";
 
 const kinds: readonly Exclude<MemoryKindV2, "legacy_unclassified">[] = ["preference", "fact", "decision", "procedure", "lesson", "relationship", "declared_identity"];
+const safeDiagnostic = (value: string) => value.slice(0, 500)
+  .replace(/(bearer\s+)[^\s]+/giu, "$1[redacted]")
+  .replace(/\bsk-[A-Za-z0-9_-]{12,}\b/gu, "[redacted]")
+  .replace(/((?:api[_-]?key|token|secret)\s*[:=]\s*)[^\s,;]+/giu, "$1[redacted]");
 
 export function MemoryControlPanel({
   onClose,
@@ -31,6 +35,10 @@ export function MemoryControlPanel({
   onDelete,
   onListExperiences,
   onReviewExperience,
+  initialDraft,
+  memoryRecall,
+  experienceRecall,
+  onSettings,
 }: {
   onClose: () => void;
   page?: boolean;
@@ -46,6 +54,10 @@ export function MemoryControlPanel({
   onDelete: (memoryId: string) => Promise<{ deletedMemoryIds: readonly string[] }>;
   onListExperiences: () => Promise<ExperienceControlListResponse>;
   onReviewExperience: (caseId: string, input: { expected_sequence: number; action: ExperienceLifecycleAction }) => Promise<ExperienceLifecycleReviewResponse>;
+  initialDraft?: { claim: string; sourceDescription: string } | null;
+  memoryRecall?: boolean | null;
+  experienceRecall?: boolean | null;
+  onSettings?: () => void;
 }) {
   const { language, t: title } = useI18n();
   const zh = language === "zh-CN";
@@ -55,10 +67,14 @@ export function MemoryControlPanel({
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState("");
-  const [tab, setTab] = useState<"memory" | "experience" | "jobs">("memory");
+  const [tab, setTab] = useState<"overview" | "memory" | "experience" | "jobs">("overview");
   const [scopeFilter, setScopeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [claim, setClaim] = useState("");
+  const [sourceDescription, setSourceDescription] = useState("");
+  const [experienceSummary, setExperienceSummary] = useState<{ items: ExperienceControlListResponse["items"]; loading: boolean; loaded: boolean; error: string | null }>({ items: [], loading: false, loaded: false, error: null });
+  const experienceLoader = useRef(onListExperiences);
+  experienceLoader.current = onListExperiences;
   const [kind, setKind] = useState<Exclude<MemoryKindV2, "legacy_unclassified">>("fact");
   const [normalizedKey, setNormalizedKey] = useState("");
   const [allowModelUse, setAllowModelUse] = useState(false);
@@ -79,6 +95,29 @@ export function MemoryControlPanel({
   };
 
   useEffect(() => { void refresh(); }, [online, readable]);
+
+  useEffect(() => {
+    if (!initialDraft) return;
+    setTab("memory"); setClaim(initialDraft.claim); setSourceDescription(initialDraft.sourceDescription);
+    setKind("fact"); setNormalizedKey(""); setAllowModelUse(false); setAllowExport(false);
+  }, [initialDraft]);
+
+  useEffect(() => {
+    if (tab !== "overview" || !online || !readable || !loaded) return;
+    let current = true;
+    setExperienceSummary((prior) => ({ ...prior, loading: true, error: null }));
+    const request = experienceLoader.current();
+    if (!request || typeof request.then !== "function") {
+      setExperienceSummary((prior) => ({ ...prior, loading: false, error: "Experience cases are unavailable from this connection." }));
+      return () => { current = false; };
+    }
+    void request.then((result) => {
+      if (current) setExperienceSummary({ items: result.items, loading: false, loaded: true, error: null });
+    }).catch((caught: unknown) => {
+      if (current) setExperienceSummary((prior) => ({ ...prior, loading: false, error: caught instanceof Error ? caught.message : String(caught) }));
+    });
+    return () => { current = false; };
+  }, [tab, online, readable, loaded]);
 
   const runMutation = async (key: string, operation: () => Promise<unknown>): Promise<boolean> => {
     setBusy(key);
@@ -106,10 +145,11 @@ export function MemoryControlPanel({
       ...(projectId === undefined ? {} : { project_id: projectId }),
       allow_model_use: allowModelUse,
       allow_export: allowExport,
-      source_description: zh ? "由用户在 Memory 控制面录入" : "Entered by the user in Memory controls",
+      ...(sourceDescription.trim() ? { source_description: sourceDescription.trim() } : {}),
     };
     if (await runMutation("create", async () => { await onCreate(input); })) {
       setClaim("");
+      setSourceDescription("");
       setNormalizedKey("");
       setAllowModelUse(false);
       setAllowExport(false);
@@ -133,15 +173,30 @@ export function MemoryControlPanel({
           <div><span className="eyebrow">{title("Long-term memory")}</span><h2>{title("Memory controls")}</h2></div>
           <IconButton icon="close" label={title("Close")} onClick={onClose} />
         </header>
-        <nav className="memory-page-tabs" aria-label={title("Memory sections")}>{(["memory", "experience", "jobs"] as const).map((id) => <button aria-current={tab === id ? "page" : undefined} className={tab === id ? "active" : ""} onClick={() => setTab(id)} type="button" key={id}>{title(id === "memory" ? "Memory" : id === "experience" ? "Experience cases" : "Background consolidation")}</button>)}</nav>
+        <nav className="memory-page-tabs" aria-label={title("Memory sections")}>{(["overview", "memory", "experience", "jobs"] as const).map((id) => <button aria-current={tab === id ? "page" : undefined} className={tab === id ? "active" : ""} onClick={() => setTab(id)} type="button" key={id}>{title(id === "overview" ? "Overview" : id === "memory" ? "Saved memories" : id === "experience" ? "Experience cases" : "Background jobs")}</button>)}</nav>
         <div className="memory-control-body">
           {!online && <div className="memory-control-error" role="status"><p>{title(loaded ? "Showing the last loaded records. Reconnect to confirm current values." : "Reconnect to load your memories.")}</p>{onReconnect && <button className="button subtle" disabled={loading} onClick={() => { setLoading(true); void onReconnect().catch((caught) => setError(caught instanceof Error ? caught.message : String(caught))).finally(() => setLoading(false)); }} type="button">{title("Repair connection")}</button>}</div>}
           {online && !readable && <p>{title(readable === null ? "Memory availability has not been confirmed. Try refreshing." : "Memory access is unavailable with the current permissions.")}</p>}
-          {error && <div className="memory-control-error" role="alert">{error}{loaded && <p>{title("Showing the last loaded records. Refresh to confirm current values.")}</p>}<button className="button subtle" disabled={loading || !online} onClick={() => void refresh()} type="button">{title("Try again")}</button></div>}
+          {error && <div className="memory-control-error" role="alert"><p>{title("Your memories could not be loaded. Try again.")}</p><details><summary>{title("Diagnostic details")}</summary><code>{safeDiagnostic(error)}</code></details>{loaded && <p>{title("Showing the last loaded records. Refresh to confirm current values.")}</p>}<button className="button subtle" disabled={loading || !online} onClick={() => void refresh()} type="button">{title("Try again")}</button></div>}
+          {tab === "overview" && <section className="memory-overview" aria-label={title("Memory overview")}>
+            <p className="memory-overview-intro">{title("Memory stores reviewed information for future tasks. Candidates need your review, and recall remains off until you enable it in Settings.")}</p>
+            <div className="memory-overview-grid">
+              <button className="memory-overview-card" onClick={() => setTab("memory")} type="button"><span>{title("Saved memories")}</span><strong>{loading || !loaded ? "—" : snapshot.items.filter((item) => item.record.status === "active").length}</strong><small>{title("Reviewed and active")}</small></button>
+              <button className="memory-overview-card" onClick={() => { setTab("memory"); setStatusFilter("candidate"); }} type="button"><span>{title("Pending candidates")}</span><strong>{loading || !loaded ? "—" : snapshot.items.filter((item) => item.record.status === "candidate").length}</strong><small>{title("Review before activation")}</small></button>
+              <button className="memory-overview-card" onClick={() => setTab("experience")} type="button"><span>{title("Experience cases")}</span><strong>{experienceSummary.loading || !experienceSummary.loaded ? "—" : experienceSummary.items.length}</strong><small>{title("Evidence-backed work patterns")}</small></button>
+              <button className="memory-overview-card" onClick={() => setTab("jobs")} type="button"><span>{title("Background jobs")}</span><strong>{loading || !loaded ? "—" : (snapshot.backgroundJobs ?? []).filter((job) => job.status === "waiting" || job.status === "running" || job.status === "retry").length}</strong><small>{title("Waiting, running or retrying")}</small></button>
+            </div>
+            <section className="memory-recall-status"><h3>{title("Recall consent")}</h3><p>{title("Memory recall")}: <strong>{memoryRecall === null || memoryRecall === undefined ? title("Not loaded") : title(memoryRecall ? "On" : "Off")}</strong></p><p>{title("Experience recall")}: <strong>{experienceRecall === null || experienceRecall === undefined ? title("Not loaded") : title(experienceRecall ? "On" : "Off")}</strong></p>{onSettings && <button className="button subtle" onClick={onSettings} type="button">{title("Manage recall in Settings")}</button>}<small>{title("Creating a candidate does not approve it or turn recall on.")}</small></section>
+            {(!online || !readable) && <p role="status">{title("Counts require a live connection and Memory read permission.")}</p>}
+            {experienceSummary.error && <p role="alert">{experienceSummary.error}</p>}
+          </section>}
           {tab === "memory" && <>{!writable && <p>{title(disabledReason ?? "Memory mutations are unavailable on this Host.")}</p>}<form className="memory-candidate-form" onSubmit={(event) => void create(event)}>
             <fieldset disabled={!online || !writable || busy !== null}><legend>{title("Add a candidate")}</legend>
             <label>{title("Claim")}
               <textarea maxLength={8_000} onChange={(event) => setClaim(event.target.value)} required value={claim} />
+            </label>
+            <label>{title("Source reference")}
+              <textarea maxLength={500} onChange={(event) => setSourceDescription(event.target.value)} value={sourceDescription} />
             </label>
             <div className="memory-form-row">
               <label>{title("Kind")}

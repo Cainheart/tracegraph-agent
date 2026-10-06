@@ -1,0 +1,37 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+ ❯ src/local-fetch.test.ts (2 tests | 1 failed) 321ms
+   ❯ real private HTTP SSE client lifetime (2)
+     × releases the private response when an SSE consumer returns after a public event 308ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/local-fetch.test.ts > real private HTTP SSE client lifetime > releases the private response when an SSE consumer returns after a public event
+AssertionError: Returning an SSE iterator must close its private response: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/local-fetch.test.ts:63:105
+     61|       expect(await pending).toEqual({ done: false, value: "public fixt…
+     62|       await iterator.return();
+     63|       expect(await closed(serverResponse), "Returning an SSE iterator …
+       |                                                                                                         ^
+     64|     } finally { await f.close(); }
+     65|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  03:17:45
+   Duration  629ms (tests 56%, transform 29%, import 14%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/local-fetch.test.ts '--maxWorkers=1'

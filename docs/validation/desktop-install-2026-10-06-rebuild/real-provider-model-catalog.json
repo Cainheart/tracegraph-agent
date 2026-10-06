@@ -1,0 +1,37 @@
+{
+  "schema_version": "outlive.real-model-catalog-check.v1",
+  "provider": "deepseek",
+  "endpoint_origin": "https://api.deepseek.com",
+  "request": "Host-owned authenticated model catalog discovery",
+  "credential_handling": "The saved credential was used by the Host and is not included in this record.",
+  "http_status": 200,
+  "status": "succeeded",
+  "discovered_at": "2026-10-05T19:59:34.314Z",
+  "models": [
+    {
+      "id": "deepseek-flash",
+      "capability_status": "confirmed",
+      "source": "provider_response",
+      "context_window_tokens": 1048576,
+      "max_output_tokens": 393216,
+      "input_modalities": ["text", "image"],
+      "output_modalities": ["text"],
+      "reasoning_efforts": ["low", "high", "max"],
+      "reasoning_default": "high"
+    },
+    {
+      "id": "deepseek-v4-pro",
+      "capability_status": "confirmed",
+      "source": "provider_response",
+      "context_window_tokens": 1048576,
+      "max_output_tokens": 393216,
+      "input_modalities": ["text"],
+      "output_modalities": ["text"],
+      "reasoning_efforts": ["low", "high", "max"],
+      "reasoning_default": "high"
+    }
+  ],
+  "selected_model_at_check": "deepseek-v4-flash",
+  "selected_model_in_catalog": false,
+  "generative_request_sent": false
+}

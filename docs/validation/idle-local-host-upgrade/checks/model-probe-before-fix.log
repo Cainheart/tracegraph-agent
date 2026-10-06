@@ -1,0 +1,46 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+ ❯ src/local-upgrade-model-probe.test.ts (2 tests | 2 failed) 185ms
+   ❯ readonly model probe settlement and owner upgrade (2)
+     × blocks a real held request and its receipt projection, then upgrades after a successful response without usage 117ms
+     × preserves the actual aborted readonly probe's unknown result without replay or a permanent file-effect lock 67ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/local-upgrade-model-probe.test.ts > readonly model probe settlement and owner upgrade > blocks a real held request and its receipt projection, then upgrades after a successful response without usage
+Error: An unresolved command or external effect requires inspection. The old Host is preserved.
+ ❯ workbenchError src/workbench-journal.ts:6:24
+      4|
+      5| export function workbenchError(code:string,message:string,statusCode=4…
+      6|   return Object.assign(new Error(message),{code,statusCode});
+       |                        ^
+      7| }
+      8| /** Canonical SessionEvent ledger, not a second event protocol. Unknow…
+ ❯ assertSettledEventStream src/local-host-upgrade.ts:128:25
+ ❯ assertSettledLocalFacts src/local-host-upgrade.ts:99:9
+ ❯ src/local-upgrade-model-probe.test.ts:24:861
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/local-upgrade-model-probe.test.ts > readonly model probe settlement and owner upgrade > preserves the actual aborted readonly probe's unknown result without replay or a permanent file-effect lock
+Error: An unresolved command or external effect requires inspection. The old Host is preserved.
+ ❯ workbenchError src/workbench-journal.ts:6:24
+      4|
+      5| export function workbenchError(code:string,message:string,statusCode=4…
+      6|   return Object.assign(new Error(message),{code,statusCode});
+       |                        ^
+      7| }
+      8| /** Canonical SessionEvent ledger, not a second event protocol. Unknow…
+ ❯ assertSettledEventStream src/local-host-upgrade.ts:128:25
+ ❯ assertSettledLocalFacts src/local-host-upgrade.ts:99:9
+ ❯ src/local-upgrade-model-probe.test.ts:29:399
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed (2)
+   Start at  05:07:06
+   Duration  872ms (transform 58%, tests 23%, import 19%)
+

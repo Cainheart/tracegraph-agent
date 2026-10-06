@@ -1,0 +1,6 @@
+$ tsc -p tsconfig.json --noEmit
+src/interactive-chat.ts(222,104): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/cli:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @tracegraph/cli@0.1.0-alpha.0 typecheck: `tsc -p tsconfig.json --noEmit`
+Exit status 1

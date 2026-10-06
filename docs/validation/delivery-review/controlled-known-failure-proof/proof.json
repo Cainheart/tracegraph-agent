@@ -1,0 +1,109 @@
+{
+  "status": "passed",
+  "scope": "controlled-real-disk-runtime-protocol",
+  "provider": "local deterministic HTTP fixture, not a paid model",
+  "project_id": "project:delivery",
+  "run_id": "run:efb448c8-2d06-44d9-b3e8-ca02001ddc56",
+  "child_run_ids": [
+    "run:3eed820a-8f66-488a-84f0-ecb8241e1860",
+    "run:4ae180a3-0a56-440c-9d1b-e04ae9f3f540"
+  ],
+  "request_count": 15,
+  "original_internal_phase_limit": 3,
+  "phase_checkpoints": [
+    3,
+    6,
+    9
+  ],
+  "review_verdicts": [
+    "blocked",
+    "passed"
+  ],
+  "independent_external_edge_regression_before_repair": {
+    "exit_code": 1,
+    "expected_error": "Missing expected exception (RangeError)",
+    "stderr_path": "edge-before-repair.stderr.txt",
+    "stderr_sha256": "sha256:7c06df61af42cf100ad90ad4525b3fc31e418c189633df148a0c53968565e180",
+    "outside_agent_authority": true
+  },
+  "files": {
+    "src/clamp.mjs": "sha256:74894bb0e2cdd58ddfeee4da4f5fe6a2b205572631dcacee67dbd3f3b4575725",
+    "dist/clamp.mjs": "sha256:74894bb0e2cdd58ddfeee4da4f5fe6a2b205572631dcacee67dbd3f3b4575725",
+    "test/clamp.test.mjs": "sha256:ec39d5920510d58dec872acc29cc45d9c7362f7d4ecc799aa9a7fac3175a9a06",
+    "outlive.commands.json": "sha256:29737d435aff734fe9e66dc8fa456dd3b45dd921e2b3559795b7b1146f117b78",
+    "build.mjs": "sha256:304307d0bfa363cc22dcdd65d438310590f914c5a253876127fc8628a841e657",
+    "verify.mjs": "sha256:5defb7d431651d810c58838e2a2667c95d81f3a5dad47171e61492cfa46b6f56"
+  },
+  "outputs": [
+    {
+      "path": "command-1.json",
+      "sha256": "sha256:3ec800b0ce0f2aa4da6a2c866ceff8418b6bd5c407c2c7c96a9c7ba855c2da0c",
+      "artifact_ref": {
+        "artifact_id": "artifact:caae0bd4-6852-4a06-a1bf-67d062a7cb37",
+        "kind": "tool_output",
+        "content_hash": "sha256:3ec800b0ce0f2aa4da6a2c866ceff8418b6bd5c407c2c7c96a9c7ba855c2da0c",
+        "mime_type": "application/json",
+        "byte_length": 80,
+        "project_id": "project:delivery",
+        "run_id": "run:efb448c8-2d06-44d9-b3e8-ca02001ddc56",
+        "created_at": "2026-10-04T19:31:36.729Z"
+      },
+      "event_id": "event:6e9df2f5-5542-411d-ac68-7774305dfbe8",
+      "event_type": "tool.completed",
+      "business_status": "success"
+    },
+    {
+      "path": "command-2.json",
+      "sha256": "sha256:c94b49189b1eea6711879819cf433c78853375e6f69e61196a35b6176a126e42",
+      "artifact_ref": {
+        "artifact_id": "artifact:2bd5b72f-d1a6-440d-aaa1-947a5133097c",
+        "kind": "tool_output",
+        "content_hash": "sha256:c94b49189b1eea6711879819cf433c78853375e6f69e61196a35b6176a126e42",
+        "mime_type": "application/json",
+        "byte_length": 751,
+        "project_id": "project:delivery",
+        "run_id": "run:efb448c8-2d06-44d9-b3e8-ca02001ddc56",
+        "created_at": "2026-10-04T19:31:38.179Z"
+      },
+      "event_id": "event:3aaba617-12e7-4dbf-b4be-98e7dca65f59",
+      "event_type": "tool.failed",
+      "business_status": "failure"
+    },
+    {
+      "path": "command-3.json",
+      "sha256": "sha256:23f9fe2a4ae88ce9eab73b6270fe8527c9795a7b18749fbe8068f9b083a6b58d",
+      "artifact_ref": {
+        "artifact_id": "artifact:c89a5f4c-bf67-42d5-99f7-22c85019b5dc",
+        "kind": "tool_output",
+        "content_hash": "sha256:23f9fe2a4ae88ce9eab73b6270fe8527c9795a7b18749fbe8068f9b083a6b58d",
+        "mime_type": "application/json",
+        "byte_length": 119,
+        "project_id": "project:delivery",
+        "run_id": "run:efb448c8-2d06-44d9-b3e8-ca02001ddc56",
+        "created_at": "2026-10-04T19:31:39.407Z"
+      },
+      "event_id": "event:2e436188-d1c3-4779-9d7d-c7e37f1b10b1",
+      "event_type": "tool.completed",
+      "business_status": "success"
+    }
+  ],
+  "budget": {
+    "limits": {
+      "max_tokens": 200000,
+      "max_time_ms": 900000
+    },
+    "charged_tokens": 225,
+    "held_tokens": 0,
+    "held_request_count": 0,
+    "reported_input_tokens": 150,
+    "reported_output_tokens": 75,
+    "elapsed_ms": 4570,
+    "request_count": 15,
+    "unknown_request_count": 0,
+    "stop_reason": null
+  },
+  "no_default_profile": true,
+  "no_paid_requests": true,
+  "no_git_commit_merge_or_push": true,
+  "full_software_quality_claim": false
+}

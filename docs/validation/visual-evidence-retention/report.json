@@ -1,0 +1,113 @@
+{
+  "schema_version": "outlive.validation.visual-retention.v1",
+  "date": "2026-10-05",
+  "scope": "new registered Browser/Computer screenshots, backend and real authenticated HTTP/SDK/CLI slice",
+  "status": "passed",
+  "whole_data104_completed": false,
+  "source_frozen": true,
+  "checks": {
+    "host": {
+      "files": 3,
+      "tests": 17
+    },
+    "cli": {
+      "files": 2,
+      "tests": 29
+    },
+    "sdk": {
+      "files": 1,
+      "tests": 2
+    },
+    "contracts": {
+      "files": 1,
+      "tests": 1
+    },
+    "evidence": {
+      "files": 1,
+      "tests": 7
+    },
+    "types": {
+      "packages": 5,
+      "exit_code": 0
+    },
+    "boundaries": {
+      "packages": 22,
+      "exit_code": 0
+    }
+  },
+  "oracles": [
+    "actual Browser Chromium screenshot bytes plus registered Run copy expire",
+    "deterministic Computer native boundary actual capture and Run bytes expire, AX text retained",
+    "pin/unexpired/generated-image/project-file/metadata/Ledger preservation",
+    "canonical inventory checkpoint rejects pre-pin/pre-TTL backup projection",
+    "checkpoint/receipt loss and partial-link deletion remain unknown, read-only reconciliation",
+    "scoped shared Run copies do not delete across Run",
+    "actual authenticated HTTP/SDK/CLI disk effects, replay rejected before receipt",
+    "actual isolated shared LocalHost retention failure does not prevent direct Plan answer"
+  ],
+  "cleanup": {
+    "temporary_profile_resources_closed": true,
+    "default_profile_touched": false,
+    "paid_provider_calls": 0,
+    "real_credentials_used": false
+  },
+  "limits": [
+    "no whole DATA-104 closure",
+    "Computer OS capture permissions/input not validated by deterministic native fixture",
+    "no installed GUI/Windows native claim",
+    "legacy captures without registered provenance retained",
+    "private same-user final lstat/unlink race not atomic conditional deletion",
+    "bounded checkpoint/projection capacity requires maintenance; no automatic compaction",
+    "stale/corrupt inventory disables service, no automatic rollback/repair"
+  ],
+  "raw_logs": {
+    "sdk-final.log": {
+      "sha256": "e74664850d1441d6aeb8548c18719953c857ce852ff2e31f0ce28a5aad082cd1",
+      "bytes": 232
+    },
+    "contracts-final.log": {
+      "sha256": "297d3382054b8c0bf0ceefd77cfa85ffcef6bfa6000ea5d8c684344644f7a24a",
+      "bytes": 238
+    },
+    "types-final.log": {
+      "sha256": "418090b6d19b11d8cca915be3b20f8184e9a714cb789b3fdb3e23417b297212a",
+      "bytes": 333
+    },
+    "sdk-typecheck-final.log": {
+      "sha256": "38ac890c60e7f38d59ddfb410325cdfb5fca83c9411765c5481754e01c021630",
+      "bytes": 32
+    },
+    "contracts-typecheck-final.log": {
+      "sha256": "5eebbf753614eaec8608dbf1c7b4b8e0e54b485cc54a669a86b0ebef491da5a7",
+      "bytes": 37
+    },
+    "cli-typecheck-final.log": {
+      "sha256": "38ac890c60e7f38d59ddfb410325cdfb5fca83c9411765c5481754e01c021630",
+      "bytes": 32
+    },
+    "evidence-typecheck-final.log": {
+      "sha256": "5eebbf753614eaec8608dbf1c7b4b8e0e54b485cc54a669a86b0ebef491da5a7",
+      "bytes": 37
+    },
+    "host-final.log": {
+      "sha256": "b794f2ca5426b6dc48582a7c8a588419f617fd805f9f2949cf1d4a2d471d448f",
+      "bytes": 1223
+    },
+    "host-typecheck-final.log": {
+      "sha256": "38ac890c60e7f38d59ddfb410325cdfb5fca83c9411765c5481754e01c021630",
+      "bytes": 32
+    },
+    "boundaries-final.log": {
+      "sha256": "4929a14abe7a1f2119086d7bb96ee15957c466172dd6c572843fcbf4833cd33a",
+      "bytes": 163
+    },
+    "cli-final.log": {
+      "sha256": "afb2f97c7b3ad8099a0520dd0e23dd5b9c22fc261026a35dcd10926d9797cb97",
+      "bytes": 475
+    },
+    "evidence-final.log": {
+      "sha256": "7fbe243d60df71203172ff159d6ac83ae86ab49ebf99cec48aad1aed6f28236e",
+      "bytes": 227
+    }
+  }
+}

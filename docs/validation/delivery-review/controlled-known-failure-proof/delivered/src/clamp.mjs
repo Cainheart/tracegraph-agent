@@ -1,0 +1,1 @@
+export function clamp(value, min, max) { if (![value,min,max].every(Number.isFinite)) throw new TypeError('finite required'); if (min > max) throw new RangeError('reversed range'); return Math.max(min, Math.min(max, value)); }

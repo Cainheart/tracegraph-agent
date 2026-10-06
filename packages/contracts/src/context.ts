@@ -103,8 +103,8 @@ export type ContextCompactionPolicy = z.infer<typeof ContextCompactionPolicySche
  * policy value that is emitted with every manifest for inspection.
  */
 export const ContextPolicySchema = z.object({
-  window_tokens: z.number().int().min(1_024).max(1_000_000),
-  reserved_output_tokens: z.number().int().min(256).max(262_144),
+  window_tokens: z.number().int().min(1_024).max(2_000_000),
+  reserved_output_tokens: z.number().int().min(256).max(1_000_000),
   warning_ratio: z.number().min(0.5).max(0.95),
   compression_ratio: z.number().min(0.55).max(0.98),
   recent_history_messages: z.number().int().min(1).max(256),

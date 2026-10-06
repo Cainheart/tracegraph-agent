@@ -1,0 +1,6 @@
+import { describe, expect, it } from "vitest";
+import { ModelCapabilityTestRequestSchema, ModelProbeResultSchema } from "./model-capability-tests.js";
+describe("bounded capability-test authority",()=>{
+ it("requires explicit confirmation and unique closed test kinds without arbitrary prompts or project content",()=>{const base={command_id:"probe:one",expected_revision:0,model:"configured",features:["tools"],confirmed:true};expect(ModelCapabilityTestRequestSchema.parse(base)).toEqual(base);for(const patch of [{confirmed:false},{features:["tools","tools"]},{features:["invented"]},{prompt:"private"},{project_id:"project:private"}])expect(()=>ModelCapabilityTestRequestSchema.parse({...base,...patch})).toThrow();});
+ it("passing needs actual matching evidence while missing/invalid usage cannot pretend to be reported",()=>{const base={feature:"tools",status:"passed",code:"model_probe_passed",dispatched:true,evidence:"native_tool_call",duration_ms:1,usage_status:"unknown"};expect(ModelProbeResultSchema.parse(base)).toEqual(base);for(const patch of [{dispatched:false},{evidence:"exact_text"},{usage_status:"reported"},{usage_status:"reported",usage:{input_tokens:10,output_tokens:5,total_tokens:0}},{status:"unsupported",dispatched:true}])expect(()=>ModelProbeResultSchema.parse({...base,...patch})).toThrow();});
+});

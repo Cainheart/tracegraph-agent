@@ -249,7 +249,7 @@ Desktop 技术选择必须先有 Note；当前倾向 Electron，不在任务里�
 | `CLI-089` | **本机增量已验收：**实际 CLI 外部重启、模型/会话/文件/反馈读取与 `run start --context` 对账；结构化错误、冲突非零退出、未知结果 reconcile 与停止状态不复活有窄回归。随包 CLI 使用固定 Node，不要求用户 Node/pnpm。 | CLI 是命令与真实 JSON/JSONL 进度入口，不是完整 TUI；停止订阅不取消 Run。 |
 | `SET-090` | **本机增量已验收：**模型保存与显式小请求测试分开，多服务/会话配置持久化；模型、版本化 Key、图片声明和权限在 admission 冻结。完全访问资格明确确认并等空闲 owner 替换后真实生效；设置 CAS、失效恢复和模型未配置首次入口实际可见。 | 管理员上限不可越过；保存成功、连接测试和 Run 完成是三个结果。loopback 测试不证明真实付费服务质量、成本或图片理解质量。 |
 | `DEV-091` | **本机增量已验收：**真实编辑/CAS 冲突/审批写入与独立文件回执；后台任务和重连保留未保存缓冲；PTY 键盘输入产生实际文件，预览服务与隔离视图、Artifact 预览/下载使用真实受限资源。此前 Git/worktree、job-control/guardian 窄证据保持原范围。 | 文本读写有界、未知写入不自动重写；原生受限执行与 PTY 实际证明限 macOS，不能推广到 Windows/Linux。 |
-| `UX-086` | **本机增量已验收：**新对话/项目/历史共用 Composer；左侧 Add/权限/Plan、右侧模型/发送；三种尺寸、明暗、公开说明/实际活动、按需面板、复制/反馈、图片与项目文件上下文均连接真实后端。外部重启和真实恢复保留草稿/编辑意图，主动 Retry 不自动派发。 | 本轮截图与事实只证明 final8 受控 macOS/Web 流程；不声称复制 Codex 品牌或纳入云账号/多人能力。 |
+| `UX-086` | **本机增量已验收：**新对话/项目/历史共用 Composer；左侧 Add/权限/Plan、右侧模型/发送；三种尺寸、明暗、公开说明/实际活动、按需面板、复制/反馈、图片与项目文件上下文均连接真实后端。外部重启和真实恢复保留草稿/编辑意图，主动 Retry 不自动派发。10-06 r2 又修复 UTF-8 Artifact 页游标恢复和回答正文布局，真实 DeepSeek 项目只读 Run 完成。[r2 验收](../../validation/chat-cursor-recovery-2026-10-06/README.md)。 | r2 只补充定向回归与一个默认 Profile Run；不替代 final8 全矩阵，不声称完成 UX-086 全范围、签名发行或 Windows 原生验收。 |
 | `BRAND-093` | **生产资源与本机应用/Finder 显示已验收：**用户确认的 B Current 是唯一源，透明标志及完整 ICNS/ICO 来自同一派生图；final8 实际安装资源清单与图标像素已核验；[默认安装观察](../../validation/current-workbench-recovery/native-default/report.json)与 [Finder 应用简介](../../validation/current-workbench-recovery/native-default/finder-app-info.png)证明完整居中标志。 | Dock 无启用的 CUA 可观察界面，未完成实际显示验收；Windows 原生显示未验收。技术 scope/schema 与历史 Ledger 保持兼容。 |
 
 final7 的 [attempt 021](../../validation/current-workbench-recovery/attempt021-final-installed-desktop/report.json)
@@ -309,3 +309,18 @@ P0 状态已按当前源码与可执行检查对齐；旧的“下一轮先做 G
 本轮交付记录、运行环境、验证回执和预览包定位见 [收口报告](../../validation/2026-10-03-roadmap-closure.md)。
 
 `EVAL-074` 与 `REL-084` 的用户授权本地范围及边界见各自验收报告。公开基准不能证明线上真实分布质量，维护者模拟也不能证明非维护者独立安装；若要作出这两类更强的对外主张，仍需分别补充授权真实分布研究和真实独立用户回执。人工审校未完成的译文不进入本地站点；对外发布需另行评审。
+
+
+## 15. 真实开发与电脑操作增量（2026-10-05）
+
+用户已授权完整计划，但接受设计不代表能力已交付。新增 UXD-096、FLOW-097、CFG-098、GOAL-099、TEAM-100、BROW-101、COMP-102、CAP-103、DATA-104、APP-105、HELP-106；状态和本轮证据见[增量实施报告](../../validation/product-workbench-2026-10-05/README.md)。旧 UX-086/HOST-087 等验收保留原范围，UX-086 和发行验收依赖新范围闭环。
+
+逐页设计已获用户明确确认，共用界面已实施并逐项复验；后端按配置→真实任务→目标/Agent→浏览器/电脑→管理/数据/原生入口纵向实施。有限开发审阅、Skills 生命周期、截图保留和后台入口已有新增操作证据，完整计划仍未完成。页面稿不能算后端完成，外部测试工具不能算 Outlive 内置电脑操作；macOS 与 Windows 需要各自原生证据。Office、语音、草图、技能录制、宠物、专用连接器和云端任务继续延后。
+
+### Codex 聊天替换与剩余任务（2026-10-05）
+
+本次授权替换旧聊天设计，UX-086 / UXD-096 综合验收仍待完成。[增量实现与证据](../../validation/codex-chat-2026-10-05/README.md)只覆盖共享公开投影、逐轮失败及 Web 历史三尺寸明暗检查；原生客户端、完整交互矩阵、真实服务和安装产物尚未闭环。历史“完成”记录仅保留原验收范围，不能用于关闭本次新增范围。
+
+2026-10-05 macOS 增量：final2 arm64 DMG（build `d8b6f625…`）校验有效，隔离安装冒烟 13 项通过，CLI 从相同隔离 Ledger 只读得到公开回答；图像 Provider 未配置时真实 Run 失败且没有 Artifact。真实 DeepSeek 小请求有隔离 Profile 连接回执，但不代表 final2 Desktop 在默认用户安装中发起了新对话。[包级操作与边界证据](../../validation/codex-chat-2026-10-05/macos-packaged-smoke.md)及[窄检查记录](../../validation/codex-chat-2026-10-05/README.md)。实际打开 final2 UI 时，默认 Profile 已保存 DeepSeek 配置，但仍由旧 Host build `871f507b…` 所有，新包显示等待已验证安全升级；只读检查确认当时没有活动 Run、终端、预览或定时任务。[冲突回执](../../validation/codex-chat-2026-10-05/checks/macos-default-profile-owner-blocker.json)。final2 仅 ad-hoc 签名且 `spctl` 拒绝，当前环境未配置 Developer ID/公证身份，不能作为正常安装发行版。故默认 macOS 安装升级、系统电脑操作权限、多尺寸完整矩阵及签名发行仍未完成；Windows 原生验收由用户后续进行。相关任务继续保持开放。
+
+2026-10-06 macOS r2 增量：已按同一 Artifact 的 Ledger 成功回执串行分页，纠正小幅 UTF-8 游标偏差并对远距离跳跃返回可恢复游标；Core 5 项、Workbench 379 项及全工作区构建通过。默认 Profile 上真实 DeepSeek 项目只读 Run 读取 17 页并正常完成，安装版回答布局也已检查。[r2 验收与安装包身份](../../validation/chat-cursor-recovery-2026-10-06/README.md)。该证据不替代全尺寸/主题矩阵；未签名/公证与 `spctl` 拒绝、Windows 和独立用户验收仍待处理。

@@ -1,0 +1,26 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench
+
+ ❯ src/model-capability-tests.test.tsx (0 test)
+
+⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/model-capability-tests.test.tsx [ src/model-capability-tests.test.tsx ]
+Error: Cannot find package '@testing-library/react' imported from /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench/src/model-capability-tests.test.tsx
+ ❯ src/model-capability-tests.test.tsx:1:1
+      1| import { cleanup, fireEvent, render, screen, waitFor } from "@testing-…
+       | ^
+      2| import { afterEach, beforeEach, describe, expect, it, vi } from "vites…
+      3| import type { HostCapabilities, ModelConnection, ModelCapabilityTestRe…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  no tests
+   Start at  04:56:32
+   Duration  75ms (worker 96%, environment 4%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/model-capability-tests.test.tsx '--maxWorkers=1'

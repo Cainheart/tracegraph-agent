@@ -10,12 +10,12 @@ const availableEvidence: EvidenceSnapshot = {
   test: { status: "not_present", message: "No test" },
 };
 
-function render(nodes: readonly GraphNode[], codeIntel?: CodeIntelSnapshot): string {
+function render(nodes: readonly GraphNode[], codeIntel?: CodeIntelSnapshot, evidence: EvidenceSnapshot = availableEvidence): string {
   return renderToStaticMarkup(
     <ChangesView
       diffs={{}}
       edges={[]}
-      evidence={availableEvidence}
+      evidence={evidence}
       files={[]}
       nodes={nodes}
       onJumpToPatch={vi.fn()}
@@ -27,6 +27,28 @@ function render(nodes: readonly GraphNode[], codeIntel?: CodeIntelSnapshot): str
 }
 
 describe("ChangesView architecture versions", () => {
+  it("shows ordinary absence without exposing internal projection terminology", () => {
+    const html = render([], undefined, {
+      ...availableEvidence,
+      diff: { status: "not_present", message: "No Diff Artifact was referenced by this RunProjection." },
+      test: { status: "not_present", message: "No Test Log Artifact was referenced by this RunProjection." },
+    });
+    expect(html).toContain("This task did not record file changes.");
+    expect(html).toContain("This task did not record test results.");
+    expect(html).not.toContain("RunProjection");
+  });
+  it("does not turn corrupt or unavailable evidence into an ordinary empty result", () => {
+    const html = render([], undefined, {
+      ...availableEvidence,
+      diff: { status: "corrupt", artifactId: "artifact:corrupt-diff", message: "Diff hash mismatch" },
+      test: { status: "unavailable", artifactId: "artifact:unreadable-test", message: "Test receipt could not be verified" },
+    });
+    expect(html).toContain("Diff hash mismatch");
+    expect(html).toContain("Test receipt could not be verified");
+    expect(html).toContain("artifact:corrupt-diff");
+    expect(html).toContain("artifact:unreadable-test");
+    expect(html).not.toContain("This task did not record");
+  });
   it("renders the recorded after value for a changed node instead of reusing before", () => {
     const html = render([{
       id: "node_changed",

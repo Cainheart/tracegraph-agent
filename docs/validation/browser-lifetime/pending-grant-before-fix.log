@@ -1,0 +1,52 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+ ❯ src/browser-control.test.ts (3 tests | 1 failed | 2 skipped) 58ms
+   ❯ Outlive's real isolated browser (3)
+     × fences pending human confirmation and queued grants when closing 57ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/browser-control.test.ts > Outlive's real isolated browser > fences pending human confirmation and queued grants when closing
+AssertionError: expected { value: { …(8) } } to match object { error: { code: 'browser_closed' } }
+(9 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "error": {
+-     "code": "browser_closed",
++   "value": {
++     "created_at": "2026-10-04T17:56:43.307Z",
++     "duration": "always",
++     "grant_id": "browser-grant:cbf3f0d7-b71e-4802-b1f3-8a2d13003427",
++     "label": "test",
++     "origins": [
++       "https://example.test",
++     ],
++     "project_id": "project",
++     "revision": 0,
++     "state": "active",
+    },
+  }
+
+ ❯ src/browser-control.test.ts:110:29
+    108|       await control.close();
+    109|       confirmation.resolve(true);
+    110|       expect(await pending).toMatchObject({ error: { code: "browser_cl…
+       |                             ^
+    111|       expect(await queued).toMatchObject({ error: { code: "browser_clo…
+    112|       expect(confirmationSignal?.aborted).toBe(true);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 skipped (3)
+   Start at  01:56:42
+   Duration  844ms (transform 60%, import 32%, tests 7%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/browser-control.test.ts -t 'fences pending human'

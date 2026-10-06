@@ -1,3 +1,8 @@
+import {ManagedSkillScopeSchema,ManagedSkillsSnapshotSchema,ManagedSkillSelectorSchema,ManagedSkillDocumentSchema,ValidateManagedSkillRequestSchema,ManagedSkillValidationSchema,ManagedSkillCommandSchema,ManagedSkillCommandResultSchema,ManagedSkillCommandReceiptSchema,VisualRetentionSettingsSchema,VisualRetentionUpdateSchema,VisualEvidenceQuerySchema,VisualEvidenceInventorySchema,VisualEvidencePinSchema,VisualEvidenceEntrySchema,VisualEvidenceCleanupRequestSchema,VisualEvidenceCleanupResultSchema,VisualEvidenceCommandReceiptSchema} from "@tracegraph/contracts";
+import {PersonalProfileSnapshotSchema,PersonalProfileUpdateRequestSchema,PersonalProfileCommandReceiptSchema,PersonalUsageQuerySchema,PersonalUsageSnapshotSchema,PublicSessionSearchQuerySchema,PublicSessionSearchResultSchema} from "@tracegraph/contracts";
+import {GoalCreationReceiptSchema} from "@tracegraph/contracts";
+import {ComputerActionRequestSchema,ComputerActionResultSchema,ComputerCaptureContentRequestSchema,ComputerCommandReceiptSchema,ComputerGrantRequestSchema,ComputerGrantSchema,ComputerLeaseReleaseRequestSchema,ComputerLeaseRequestSchema,ComputerLeaseResumeRequestSchema,ComputerLeaseSchema,ComputerObservationSchema,ComputerObserveRequestSchema,ComputerRevokeGrantRequestSchema,ComputerStatusSchema,ComputerTargetSchema} from "@tracegraph/contracts";
+import {WorkbenchSettingsHistorySchema,RestoreWorkbenchSettingsRequestSchema,RestoreWorkbenchSettingsResultSchema,ProjectRunDefaultsSnapshotSchema,ProjectRunDefaultsUpdateRequestSchema,SessionRunOptionsResetRequestSchema} from "@tracegraph/contracts";
 import {
   ProjectFileListRequestSchema,ProjectFileReadRequestSchema,ProjectFileSaveRequestSchema,ProjectFileReconcileRequestSchema,ProjectFileListSchema,ProjectFileSnapshotSchema,ProjectFileSaveResultSchema,AnswerFeedbackSnapshotSchema,AnswerFeedbackRequestSchema,
   ModelConnectionsSnapshotSchema,ModelConnectionSaveRequestSchema,ModelConnectionSchema,ModelConnectionRemoveRequestSchema,SessionRunOptionsSnapshotSchema,SessionRunOptionsUpdateRequestSchema,PermissionGrantSchema,PermissionGrantUpdateRequestSchema,
@@ -27,6 +32,48 @@ export const DesktopArtifactContentSchema = z.object({ artifactId: IdentifierSch
 
 /** Each entry binds one fixed renderer method to one public typed SDK method. */
 export const DIRECT_DESKTOP_ROUTES = {
+  listManagedSkills:{input:z.tuple([ManagedSkillScopeSchema]),output:ManagedSkillsSnapshotSchema},
+  readManagedSkill:{input:z.tuple([ManagedSkillSelectorSchema]),output:ManagedSkillDocumentSchema},
+  validateManagedSkill:{input:z.tuple([ValidateManagedSkillRequestSchema]),output:ManagedSkillValidationSchema},
+  managedSkillCommand:{input:z.tuple([ManagedSkillCommandSchema]),output:ManagedSkillCommandResultSchema},
+  getManagedSkillCommandReceipt:{input:z.tuple([IdentifierSchema]),output:ManagedSkillCommandReceiptSchema},
+  getVisualRetentionSettings:{input:z.tuple([]),output:VisualRetentionSettingsSchema},
+  updateVisualRetentionSettings:{input:z.tuple([VisualRetentionUpdateSchema]),output:VisualRetentionSettingsSchema},
+  listVisualEvidence:{input:z.tuple([VisualEvidenceQuerySchema]),output:VisualEvidenceInventorySchema},
+  pinVisualEvidence:{input:z.tuple([IdentifierSchema,VisualEvidencePinSchema]),output:VisualEvidenceEntrySchema},
+  cleanupVisualEvidence:{input:z.tuple([VisualEvidenceCleanupRequestSchema]),output:VisualEvidenceCleanupResultSchema},
+  getVisualEvidenceCommandReceipt:{input:z.tuple([IdentifierSchema]),output:VisualEvidenceCommandReceiptSchema},
+
+  getPersonalProfile:{input:z.tuple([]),output:PersonalProfileSnapshotSchema},
+  updatePersonalProfile:{input:z.tuple([PersonalProfileUpdateRequestSchema]),output:PersonalProfileSnapshotSchema},
+  getPersonalProfileCommandReceipt:{input:z.tuple([IdentifierSchema]),output:PersonalProfileCommandReceiptSchema},
+  queryPersonalUsage:{input:z.tuple([PersonalUsageQuerySchema]),output:PersonalUsageSnapshotSchema},
+  searchPublicSessions:{input:z.tuple([PublicSessionSearchQuerySchema]),output:PublicSessionSearchResultSchema},
+
+  getBrowserCommandReceipt:{input:z.tuple([IdentifierSchema]),output:BrowserCommandReceiptSchema},
+  getComputerStatus:{input:z.tuple([]),output:ComputerStatusSchema},
+  listComputerTargets:{input:z.tuple([]),output:ComputerTargetSchema.array().max(128)},
+  requestComputerGrant:{input:z.tuple([ComputerGrantRequestSchema]),output:ComputerGrantSchema},
+  revokeComputerGrant:{input:z.tuple([ComputerRevokeGrantRequestSchema]),output:ComputerGrantSchema},
+  acquireComputerLease:{input:z.tuple([ComputerLeaseRequestSchema]),output:ComputerLeaseSchema},
+  resumeComputerLease:{input:z.tuple([ComputerLeaseResumeRequestSchema]),output:ComputerLeaseSchema},
+  releaseComputerLease:{input:z.tuple([ComputerLeaseReleaseRequestSchema]),output:ComputerLeaseSchema},
+  observeComputer:{input:z.tuple([ComputerObserveRequestSchema]),output:ComputerObservationSchema},
+  computerAction:{input:z.tuple([ComputerActionRequestSchema]),output:ComputerActionResultSchema},
+  getComputerCommandReceipt:{input:z.tuple([IdentifierSchema]),output:ComputerCommandReceiptSchema},
+  getComputerCapture:{input:z.tuple([ComputerCaptureContentRequestSchema]),output:z.object({sha256:Sha256Schema,bytes:z.custom<Uint8Array>(value=>value instanceof Uint8Array&&value.byteLength>0&&value.byteLength<=16*1024*1024)}).strict()},
+  getBrowserStatus:{input:z.tuple([]),output:BrowserStatusSchema},
+  requestBrowserGrant:{input:z.tuple([BrowserGrantRequestSchema]),output:BrowserGrantSchema},
+  browserCommand:{input:z.tuple([BrowserCommandSchema]),output:BrowserCommandResultSchema},
+  observeBrowser:{input:z.tuple([IdentifierSchema]),output:BrowserObservationSchema},
+  getBrowserEvidence:{input:z.tuple([IdentifierSchema]),output:z.object({evidenceId:IdentifierSchema,sha256:Sha256Schema,bytes:z.custom<Uint8Array>(value=>value instanceof Uint8Array&&value.byteLength>0&&value.byteLength<=8*1024*1024)}).strict()},
+  listGoals:{input:z.tuple([]),output:GoalListResponseSchema},
+  createGoal:{input:z.tuple([GoalCreateRequestSchema]),output:GoalSnapshotSchema},
+  getGoal:{input:z.tuple([IdentifierSchema]),output:GoalSnapshotSchema},
+  goalCommand:{input:z.tuple([IdentifierSchema,GoalCommandRequestSchema]),output:GoalSnapshotSchema},
+  getGoalCreationReceipt:{input:z.tuple([IdentifierSchema]),output:GoalCreationReceiptSchema},
+  getGoalCommandReceipt:{input:z.tuple([IdentifierSchema,IdentifierSchema]),output:GoalCommandReceiptSchema},
+  getGoalBudget:{input:z.tuple([IdentifierSchema]),output:GoalBudgetSnapshotSchema},
   listProjectFiles:{input:z.tuple([IdentifierSchema,ProjectFileListRequestSchema.optional()]),output:ProjectFileListSchema},
   readProjectFile:{input:z.tuple([IdentifierSchema,ProjectFileReadRequestSchema]),output:ProjectFileSnapshotSchema},
   saveProjectFile:{input:z.tuple([IdentifierSchema,ProjectFileSaveRequestSchema]),output:ProjectFileSaveResultSchema},
@@ -37,6 +84,8 @@ export const DIRECT_DESKTOP_ROUTES = {
   saveModelConnection:{input:z.tuple([ModelConnectionSaveRequestSchema]),output:ModelConnectionsSnapshotSchema},
   removeModelConnection:{input:z.tuple([IdentifierSchema,ModelConnectionRemoveRequestSchema]),output:ModelConnectionsSnapshotSchema},
   testModelConnection:{input:z.tuple([IdentifierSchema,ModelConnectionTestRequestSchema]),output:ModelConnectionTestResultSchema},
+  testModelCapabilities:{input:z.tuple([IdentifierSchema,ModelCapabilityTestRequestSchema]),output:ModelCapabilityTestResultSchema},
+  getModelCapabilityTestReceipt:{input:z.tuple([IdentifierSchema]),output:ModelCapabilityTestReceiptSchema},
   getSessionRunOptions:{input:z.tuple([IdentifierSchema]),output:SessionRunOptionsSnapshotSchema},
   updateSessionRunOptions:{input:z.tuple([IdentifierSchema,SessionRunOptionsUpdateRequestSchema]),output:SessionRunOptionsSnapshotSchema},
   getPermissionGrant:{input:z.tuple([]),output:PermissionGrantSchema},
@@ -46,6 +95,11 @@ export const DIRECT_DESKTOP_ROUTES = {
   clearImageProvider: { input: z.tuple([]), output: ImageProviderConfigSnapshotSchema },
   startMediaRun: { input: z.tuple([StartMediaRunRequestSchema]), output: RunProjectionSchema },
   getArtifactContent: { input: z.tuple([IdentifierSchema,IdentifierSchema]), output: DesktopArtifactContentSchema },
+  getWorkbenchSettingsHistory: { input: z.tuple([]), output: WorkbenchSettingsHistorySchema },
+  restoreWorkbenchSettings: { input: z.tuple([RestoreWorkbenchSettingsRequestSchema]), output: RestoreWorkbenchSettingsResultSchema },
+  getProjectRunDefaults: { input: z.tuple([IdentifierSchema]), output: ProjectRunDefaultsSnapshotSchema },
+  updateProjectRunDefaults: { input: z.tuple([IdentifierSchema,ProjectRunDefaultsUpdateRequestSchema]), output: ProjectRunDefaultsSnapshotSchema },
+  resetSessionRunOptions: { input: z.tuple([IdentifierSchema,SessionRunOptionsResetRequestSchema]), output: SessionRunOptionsSnapshotSchema },
   getWorkbenchSettings: { input: z.tuple([]), output: WorkbenchSettingsSnapshotSchema },
   updateWorkbenchSettings: { input: z.tuple([UpdateWorkbenchSettingsRequestSchema]), output: WorkbenchSettingsSnapshotSchema },
   getCapabilities: { input: z.tuple([]), output: HostCapabilitiesSchema },
@@ -92,3 +146,5 @@ export async function invokeDirectDesktopRoute(client: TraceGraphClient, operati
   const method = client[operation] as (...input: unknown[]) => unknown;
   return route.output.parse(await method.apply(client, parsed));
 }
+import {BrowserStatusSchema,BrowserGrantRequestSchema,BrowserGrantSchema,BrowserCommandSchema,BrowserCommandResultSchema,BrowserCommandReceiptSchema,BrowserObservationSchema,GoalCreateRequestSchema,GoalSnapshotSchema,GoalListResponseSchema,GoalCommandRequestSchema,GoalCommandReceiptSchema,GoalBudgetSnapshotSchema} from "@tracegraph/contracts";
+import { ModelCapabilityTestRequestSchema, ModelCapabilityTestResultSchema, ModelCapabilityTestReceiptSchema } from "@tracegraph/contracts";

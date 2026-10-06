@@ -3,11 +3,11 @@ import type { WorkbenchSnapshot } from "../model";
 import { useI18n } from "../i18n";
 import { Icon } from "./Icon";
 
-export function CommandPalette({ snapshot, onClose, onSearch, onSession, onNewChat, onSettings, onMemory, onResources, onReview, onCreateMedia }: {
-  snapshot: WorkbenchSnapshot; onClose: () => void; onSearch: (query: string) => Promise<void>; onSession: (sessionId: string) => Promise<void>; onNewChat: () => Promise<void>; onSettings: () => void; onMemory: () => void; onResources: () => void; onReview: () => void; onCreateMedia?: () => void;
+export function CommandPalette({ snapshot, onClose, onSearch, onSession, onNewChat, onSettings, onMemory, onResources, onReview, onCreateMedia, onHistorySearch }: {
+  snapshot: WorkbenchSnapshot; onClose: () => void; onSearch: (query: string) => Promise<void>; onSession: (sessionId: string) => Promise<void>; onNewChat: () => Promise<void>; onSettings: () => void; onMemory: () => void; onResources: () => void; onReview: () => void; onCreateMedia?: () => void; onHistorySearch?: () => void;
 }) {
   const { t } = useI18n(); const [query, setQuery] = useState(""); const [error, setError] = useState<string | null>(null); const [selected, setSelected] = useState(0); const input = useRef<HTMLInputElement>(null);
-  const actions = [["New chat", onNewChat], ["Settings", onSettings], ["Memory", onMemory], ["Workspace tools", onResources], ["Review changes", onReview], ...(onCreateMedia ? [["Create media", onCreateMedia] as const] : [])] as const;
+  const actions = [...(onHistorySearch ? [["Search public history", onHistorySearch] as const] : []), ["New chat", onNewChat], ["Settings", onSettings], ["Memory", onMemory], ["Workspace tools", onResources], ["Review changes", onReview], ...(onCreateMedia ? [["Create media", onCreateMedia] as const] : [])] as const;
   const commands = [...actions.filter(([label]) => t(label).toLocaleLowerCase().includes(query.toLocaleLowerCase())).map(([label, run]) => ({ id: label, title: t(label), run })), ...snapshot.sessions.filter((session) => (session.title ?? session.session_id).toLocaleLowerCase().includes(query.toLocaleLowerCase())).map((session) => ({ id: session.session_id, title: session.title ?? session.session_id, run: () => onSession(session.session_id) }))];
   useEffect(() => { input.current?.focus(); }, []);
   useEffect(() => { setSelected(0); const timer = window.setTimeout(() => { void onSearch(query).catch((caught) => setError(caught instanceof Error ? caught.message : String(caught))); }, 200); return () => window.clearTimeout(timer); }, [query]);

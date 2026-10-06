@@ -1,0 +1,22 @@
+$ node scripts/verify-boundaries.mjs
+Architecture boundaries verified: 22 packages, 58 workspace dependencies, 3920 import references; 0 legacy findings reported.
+$ node scripts/verify-invariants.mjs
+Architecture invariants verified across 421 source files.
+$ node scripts/verify-lockfile.mjs --skip-frozen
+[supply-chain] PASS: 23 manifests, pnpm 11.19.0, lockfile 9.0
+$ node scripts/verify-v2-docs.mjs
+V2 docs verified: 11 manifest documents, 85 roadmap tasks.
+$ node scripts/gen-module-graph.mjs --check
+Module graph is current.
+$ node scripts/gen-current-baseline.mjs --check
+Deterministic structural data matches.
+$ node scripts/gen-reference-catalogs.mjs --check
+Stale generated catalogs:
+- docs/generated/events.md
+- docs/generated/tools.md
+- docs/generated/modules.md
+- docs/generated/profiles.md
+- docs/generated/README.md
+- docs/generated/catalog-manifest.json
+Run node scripts/gen-reference-catalogs.mjs --write.
+[ELIFECYCLE] Command failed with exit code 1.

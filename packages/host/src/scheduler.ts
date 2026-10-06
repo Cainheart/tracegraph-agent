@@ -19,7 +19,7 @@ export function nextScheduleTime(input:ScheduleInput,after:Date):string|null {
 }
 export class WorkbenchScheduler {
   readonly #context:ScheduleContext;readonly #schedules=new Map<string,ScheduleSnapshot>();readonly #occurrences=new Map<string,ScheduleOccurrence>();
-  readonly #inflight=new Set<string>();readonly #activeOccurrence=new Map<string,string>();readonly #now:()=>Date;#timer:ReturnType<typeof setInterval>|undefined;#queue:Promise<unknown>=Promise.resolve();#closed=false;
+  readonly #inflight=new Set<string>();readonly #activeOccurrence=new Map<string,string>();readonly #now:()=>Date;#timer:ReturnType<typeof setInterval>|undefined;#queue:Promise<unknown>=Promise.resolve();#closed=false;#ownerUpgradePauses=0;#ticks=0;
   constructor(context:ScheduleContext){this.#context=context;this.#now=context.now??(()=>new Date());}
   async initialize(){
     try{const value=JSON.parse(await readFile(join(this.#context.profileRoot,"schedules.json"),"utf8"));for(const item of value.schedules??[]){const s=ScheduleSnapshotSchema.parse(item);this.#schedules.set(s.schedule_id,s);}for(const item of value.occurrences??[]){const event=ScheduleOccurrenceSchema.parse(item);this.#occurrences.set(event.occurrence_id,event);}}
@@ -34,6 +34,7 @@ export class WorkbenchScheduler {
     if(this.#context.automaticTimer!==false){this.#timer=setInterval(()=>{void this.tick().catch(()=>undefined);},1000);this.#timer.unref();}
   }
   list(){return [...this.#schedules.values()].map(s=>({...s}));}
+  pauseForOwnerUpgrade(){this.#ownerUpgradePauses++;let resumed=false;return {busy:this.#inflight.size>0||this.#ticks>0,resume:()=>{if(!resumed){resumed=true;this.#ownerUpgradePauses--;}}};}
   history(id:string){return [...this.#occurrences.values()].filter(x=>x.schedule_id===id).sort((a,b)=>a.scheduled_at.localeCompare(b.scheduled_at)).slice(-1000);}
   async close(){this.#closed=true;if(this.#timer)clearInterval(this.#timer);await this.#queue;await this.#persist();}
   async command(input:WorkbenchCommandRequest):Promise<WorkbenchCommandResult>{
@@ -56,7 +57,8 @@ export class WorkbenchScheduler {
     };
     const result=this.#queue.then(execute,execute);this.#queue=result.catch(()=>undefined);return result;
   }
-  async tick(){if(this.#closed)return;
+  async tick(){if(this.#closed||this.#ownerUpgradePauses)return;this.#ticks++;try{await this.#tick();}finally{this.#ticks--;}}
+  async #tick(){if(this.#closed||this.#ownerUpgradePauses)return;
     for(const schedule of this.#schedules.values()){
       if(schedule.running_run_id){const projection=await this.#context.runtime.getProjection(schedule.running_run_id);if(projection.pending_approval!=null||projection.status==="awaiting_approval"||projection.status==="awaiting_plan_approval"){schedule.enabled=false;schedule.last_status="awaiting-approval";await this.#record(schedule,this.#activeOccurrence.get(schedule.schedule_id)??this.history(schedule.schedule_id).find(item=>item.run_id===schedule.running_run_id)?.scheduled_at??this.#now().toISOString(),"awaiting-approval",schedule.running_run_id);}
         else if(["completed","failed","cancelled"].includes(projection.status)){schedule.last_status=projection.status==="completed"?"completed":"failed";await this.#record(schedule,this.#activeOccurrence.get(schedule.schedule_id)??this.history(schedule.schedule_id).find(item=>item.run_id===schedule.running_run_id)?.scheduled_at??this.#now().toISOString(),schedule.last_status,schedule.running_run_id);schedule.running_run_id=null;this.#activeOccurrence.delete(schedule.schedule_id);}
@@ -71,6 +73,7 @@ export class WorkbenchScheduler {
   }
   #get(id:string){const s=this.#schedules.get(id);if(!s)throw workbenchError("schedule_not_found","Schedule is unavailable",404);return s;}
   async #launch(schedule:ScheduleSnapshot,at:string){
+    if(this.#closed||this.#ownerUpgradePauses)throw workbenchError("host_upgrade_in_progress","The scheduler is paused for an owner upgrade");
     if(schedule.running_run_id||this.#inflight.has(schedule.schedule_id)){await this.#record(schedule,at,"overlap-skipped");return;}
     const identifier=`occurrence:${createHash("sha256").update(`${schedule.schedule_id}:${at}`).digest("hex")}`;
     if(this.#occurrences.has(identifier))return;

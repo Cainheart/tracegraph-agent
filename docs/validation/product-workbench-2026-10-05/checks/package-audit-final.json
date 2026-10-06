@@ -1,0 +1,966 @@
+{
+  "schema_version": "outlive.independent-package-audit.v1",
+  "audited_at": "2026-10-04T20:16:15.300761+00:00",
+  "operation_scope": "read-only artifact/source hashing and dependency inspection; writes only this audit receipt; no app execution, install, Profile, runtime command, tests, or service mutation",
+  "release_root": "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/product-workbench-2026-10-05-mac-final",
+  "build_id": "c1144883e205de7fb1f9fa342ec29abfa1347536db233f0e6f740b4f10081907",
+  "identity": {
+    "recomputed_stage_build_id": "c1144883e205de7fb1f9fa342ec29abfa1347536db233f0e6f740b4f10081907",
+    "stage_receipt_match": true,
+    "stage_inventory_match": true,
+    "packaged_inventory_match": true,
+    "product_release_match": true
+  },
+  "stage_checks": {
+    "app_files": {
+      "files": 16432,
+      "hash_size_mismatches": [],
+      "missing": [],
+      "extra": [],
+      "unsupported": [],
+      "inventory_sha256": "d82a18173a48999bfd0013c3d0cec03175289ae01c88ba5ffd450eff11ebc78e"
+    },
+    "runtime_files": {
+      "files": 906,
+      "hash_size_mismatches": [],
+      "missing": [],
+      "extra": [],
+      "unsupported": [],
+      "inventory_sha256": "3f756b3b47115d39a125c292f40bfdc300c6a03b65f4c380dd2528af35cd584c"
+    },
+    "launcher_files": {
+      "files": 1,
+      "hash_size_mismatches": [],
+      "missing": [],
+      "extra": [],
+      "unsupported": [],
+      "inventory_sha256": "622b31f6b677aca53816a5297c49d7882627e35fe31215ce839583399410ae9e"
+    }
+  },
+  "packaged_checks": {
+    "application_files": {
+      "files": 11801,
+      "hash_size_mismatches": [],
+      "missing": [],
+      "extra": [],
+      "unsupported": [],
+      "inventory_sha256": "0c016ce3934e30bfa550e60a644a5878d24819c87ce4bd03db3d712cc32f5b7c"
+    },
+    "runtime_files": {
+      "files": 906,
+      "hash_size_mismatches": [],
+      "missing": [],
+      "extra": [],
+      "unsupported": [],
+      "inventory_sha256": "3f756b3b47115d39a125c292f40bfdc300c6a03b65f4c380dd2528af35cd584c"
+    },
+    "launcher_files": {
+      "files": 1,
+      "hash_size_mismatches": [],
+      "missing": [],
+      "extra": [],
+      "unsupported": [],
+      "inventory_sha256": "622b31f6b677aca53816a5297c49d7882627e35fe31215ce839583399410ae9e"
+    }
+  },
+  "current_dist_and_examples": {
+    "files_compared": 2042,
+    "mismatches": [],
+    "missing": []
+  },
+  "dependency_graph": {
+    "packages": 226,
+    "edges": 608,
+    "errors": [],
+    "matches_inventory": true
+  },
+  "artifacts": [
+    {
+      "file": "Outlive-Agent-0.1.0-alpha.0-mac-arm64.dmg.blockmap",
+      "byte_length": 809076,
+      "sha256": "9e3dd0ca06183e9fa35f18af44cd06efd8b8ec55a1e342239822b0d599233f06",
+      "size_matches": true,
+      "sha256_matches": true
+    },
+    {
+      "file": "Outlive-Agent-0.1.0-alpha.0-mac-arm64.dmg",
+      "byte_length": 769728881,
+      "sha256": "0ad01e4e56aedbe28d610574e492036353f45c05806b4fae978206fa6e05a419",
+      "size_matches": true,
+      "sha256_matches": true
+    },
+    {
+      "file": "Outlive-Agent-0.1.0-alpha.0-mac-arm64.zip.blockmap",
+      "byte_length": 779246,
+      "sha256": "29416dae5269f1b48fd5c168ae7c96eb8900de21da92a950095a947f6e6ec239",
+      "size_matches": true,
+      "sha256_matches": true
+    },
+    {
+      "file": "Outlive-Agent-0.1.0-alpha.0-mac-arm64.zip",
+      "byte_length": 753119312,
+      "sha256": "f71c9f4680e47fa30311f9f6dcc70d69990e8d68e907097055494e2163620537",
+      "size_matches": true,
+      "sha256_matches": true
+    }
+  ],
+  "critical_resources": [
+    {
+      "label": "Bundled Node",
+      "path": "runtime/bin/node",
+      "byte_length": 122129232,
+      "sha256": "e4b5a3af0e05c75de2eae013904145f40fe7fc2a6e6f17510128bf45cca4e79b",
+      "mode": "0o755",
+      "matches_expected": true,
+      "mach_o_cpu": "0x100000c"
+    },
+    {
+      "label": "Pinned Chromium",
+      "path": "runtime/browser/chromium/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
+      "byte_length": 52112,
+      "sha256": "8319963f6625accf51c0dd4f55091ceaf9f09ed39e7a52fed4fae12b2a6b668a",
+      "mode": "0o755",
+      "matches_expected": true,
+      "mach_o_cpu": "0x100000c"
+    },
+    {
+      "label": "Native computer helper",
+      "path": "runtime/computer/outlive-computer",
+      "byte_length": 191200,
+      "sha256": "f3af0d185e6f8cebd8c877e13b37fea94c74b4931fe6cbca0572d5c35b714d1d",
+      "mode": "0o755",
+      "matches_expected": true,
+      "mach_o_cpu": "0x100000c"
+    },
+    {
+      "label": "CLI launcher",
+      "path": "bin/outlive",
+      "byte_length": 381,
+      "sha256": "136ecf66a0c64bf09680cbfd203bae476285bf8c2ca1a89f344f5ca76e69a24a",
+      "mode": "0o755",
+      "matches_expected": true
+    },
+    {
+      "label": "B icon",
+      "path": "icon.icns",
+      "byte_length": 97845,
+      "sha256": "bc59efedb9292c9235f75c594dab406daf5dd15bad34c729e5e4a36a765de8d2",
+      "mode": "0o644",
+      "matches_expected": true
+    },
+    {
+      "label": "PTY native addon",
+      "path": "app/node_modules/node-pty/prebuilds/darwin-arm64/pty.node",
+      "byte_length": 85496,
+      "sha256": "e6457d66f45af3facd02920a5b212164e80fe0bb758afe6e6eab1eceeba3fc9a",
+      "mode": "0o644",
+      "mach_o_cpu": "0x100000c"
+    },
+    {
+      "label": "PTY spawn helper",
+      "path": "app/node_modules/node-pty/prebuilds/darwin-arm64/spawn-helper",
+      "byte_length": 50480,
+      "sha256": "21c589109bca43e287df884f3c34ab888033a83927ea7d273949ac5030583f26",
+      "mode": "0o755",
+      "mach_o_cpu": "0x100000c"
+    },
+    {
+      "label": "TypeScript native compiler",
+      "path": "app/node_modules/@typescript/typescript-darwin-arm64/lib/tsc",
+      "byte_length": 23653616,
+      "sha256": "a82f731365ad69d5c4c15f5e18fba4584bf3b7b839960172a76c3462b5114bf2",
+      "mode": "0o755",
+      "mach_o_cpu": "0x100000c"
+    },
+    {
+      "label": "TypeScript standard library",
+      "path": "app/node_modules/@typescript/typescript-darwin-arm64/lib/lib.d.ts",
+      "byte_length": 953,
+      "sha256": "0e6477e5049e579cc5de741a70ac91235252edc0468b2e569f22de9db3357786",
+      "mode": "0o644"
+    }
+  ],
+  "main_executable_matches_inventory": true,
+  "runtime_manifest": {
+    "schema_version": "outlive.bundled-runtime.v1",
+    "node_version": "24.21.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "executable": "bin/node",
+    "sha256": "e4b5a3af0e05c75de2eae013904145f40fe7fc2a6e6f17510128bf45cca4e79b",
+    "product_build_id": "c1144883e205de7fb1f9fa342ec29abfa1347536db233f0e6f740b4f10081907"
+  },
+  "browser_manifest": {
+    "schema_version": "outlive.browser-runtime.v1",
+    "platform": "darwin",
+    "arch": "arm64",
+    "playwright_version": "1.63.0",
+    "executable": "chromium/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
+    "sha256": "8319963f6625accf51c0dd4f55091ceaf9f09ed39e7a52fed4fae12b2a6b668a"
+  },
+  "computer_manifest": {
+    "schema_version": "outlive.native-computer.v1",
+    "platform": "darwin",
+    "arch": "arm64",
+    "available": true,
+    "executable": "outlive-computer",
+    "sha256": "f3af0d185e6f8cebd8c877e13b37fea94c74b4931fe6cbca0572d5c35b714d1d",
+    "source_sha256": "5e66235ee7309e6c1c7fd9ab118a668ef9b6538246dcc9ce930ed3c07a60b75a"
+  },
+  "native_helper_source_matches": true,
+  "typescript_standard_library_count": 108,
+  "builder_transformation": {
+    "removed_files": 4683,
+    "changed_files": 194,
+    "changed_non_package_manifests": [],
+    "added_files": [
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/.babelrc",
+        "same_bytes_stage_paths": [
+          "node_modules/cose-base/.babelrc",
+          "node_modules/cytoscape-cose-bilkent/.babelrc",
+          "node_modules/cytoscape-fcose/.babelrc",
+          "node_modules/cytoscape-fcose/node_modules/cose-base/.babelrc",
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/.babelrc",
+          "node_modules/layout-base/.babelrc"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/LICENSE",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/LICENSE",
+          "node_modules/layout-base/LICENSE"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/bower.json",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/bower.json",
+          "node_modules/layout-base/bower.json"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/index.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/index.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/layout-base.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/layout-base.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/layout-schema.png",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/layout-schema.png"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/nbproject/private/private.properties",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-cose-bilkent/nbproject/private/private.properties",
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/nbproject/private/private.properties",
+          "node_modules/layout-base/nbproject/private/private.properties"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/nbproject/private/private.xml",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/nbproject/private/private.xml"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/nbproject/project.properties",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-cose-bilkent/nbproject/project.properties",
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/nbproject/project.properties",
+          "node_modules/layout-base/nbproject/project.properties"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/nbproject/project.xml",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/nbproject/project.xml",
+          "node_modules/layout-base/nbproject/project.xml"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/package.json",
+        "same_bytes_stage_paths": []
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/LEdge.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/LEdge.js",
+          "node_modules/layout-base/src/LEdge.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/LGraph.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/LGraph.js",
+          "node_modules/layout-base/src/LGraph.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/LGraphManager.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/LGraphManager.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/LGraphObject.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/LGraphObject.js",
+          "node_modules/layout-base/src/LGraphObject.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/LNode.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/LNode.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/Layout.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/Layout.js",
+          "node_modules/layout-base/src/Layout.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/LayoutConstants.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/LayoutConstants.js",
+          "node_modules/layout-base/src/LayoutConstants.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/fd/FDLayout.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/fd/FDLayout.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/fd/FDLayoutConstants.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/fd/FDLayoutConstants.js",
+          "node_modules/layout-base/src/fd/FDLayoutConstants.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/fd/FDLayoutEdge.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/fd/FDLayoutEdge.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/fd/FDLayoutNode.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/fd/FDLayoutNode.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/DimensionD.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/DimensionD.js",
+          "node_modules/layout-base/src/util/DimensionD.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/Emitter.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/Emitter.js",
+          "node_modules/layout-base/src/util/Emitter.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/HashMap.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/HashMap.js",
+          "node_modules/layout-base/src/util/HashMap.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/HashSet.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/HashSet.js",
+          "node_modules/layout-base/src/util/HashSet.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/IGeometry.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/IGeometry.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/IMath.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/IMath.js",
+          "node_modules/layout-base/src/util/IMath.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/Integer.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/Integer.js",
+          "node_modules/layout-base/src/util/Integer.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/LinkedList.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/LinkedList.js",
+          "node_modules/layout-base/src/util/LinkedList.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/Matrix.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/Matrix.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/Point.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/Point.js",
+          "node_modules/layout-base/src/util/Point.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/PointD.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/PointD.js",
+          "node_modules/layout-base/src/util/PointD.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/Quicksort.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/Quicksort.js",
+          "node_modules/layout-base/src/util/Quicksort.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/RandomSeed.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/RandomSeed.js",
+          "node_modules/layout-base/src/util/RandomSeed.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/RectangleD.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/RectangleD.js",
+          "node_modules/layout-base/src/util/RectangleD.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/SVD.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/SVD.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/Transform.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/Transform.js",
+          "node_modules/layout-base/src/util/Transform.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/UniqueIDGeneretor.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/UniqueIDGeneretor.js",
+          "node_modules/layout-base/src/util/UniqueIDGeneretor.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/alignment/NeedlemanWunsch.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/alignment/NeedlemanWunsch.js",
+          "node_modules/layout-base/src/util/alignment/NeedlemanWunsch.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/webpack.config.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/webpack.config.js",
+          "node_modules/layout-base/webpack.config.js"
+        ]
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/d3-path/LICENSE",
+        "same_bytes_stage_paths": [
+          "node_modules/d3-sankey/node_modules/d3-shape/node_modules/d3-path/LICENSE"
+        ]
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/d3-path/dist/d3-path.js",
+        "same_bytes_stage_paths": [
+          "node_modules/d3-sankey/node_modules/d3-shape/node_modules/d3-path/dist/d3-path.js"
+        ]
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/d3-path/dist/d3-path.min.js",
+        "same_bytes_stage_paths": [
+          "node_modules/d3-sankey/node_modules/d3-shape/node_modules/d3-path/dist/d3-path.min.js"
+        ]
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/d3-path/package.json",
+        "same_bytes_stage_paths": []
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/d3-path/src/index.js",
+        "same_bytes_stage_paths": [
+          "node_modules/d3-sankey/node_modules/d3-shape/node_modules/d3-path/src/index.js"
+        ]
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/d3-path/src/path.js",
+        "same_bytes_stage_paths": [
+          "node_modules/d3-sankey/node_modules/d3-shape/node_modules/d3-path/src/path.js"
+        ]
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/internmap/LICENSE",
+        "same_bytes_stage_paths": [
+          "node_modules/d3-sankey/node_modules/d3-array/node_modules/internmap/LICENSE",
+          "node_modules/internmap/LICENSE"
+        ]
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/internmap/dist/internmap.js",
+        "same_bytes_stage_paths": [
+          "node_modules/d3-sankey/node_modules/d3-array/node_modules/internmap/dist/internmap.js"
+        ]
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/internmap/dist/internmap.min.js",
+        "same_bytes_stage_paths": [
+          "node_modules/d3-sankey/node_modules/d3-array/node_modules/internmap/dist/internmap.min.js"
+        ]
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/internmap/package.json",
+        "same_bytes_stage_paths": [
+          "node_modules/d3-sankey/node_modules/d3-array/node_modules/internmap/package.json"
+        ]
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/internmap/src/index.js",
+        "same_bytes_stage_paths": [
+          "node_modules/d3-sankey/node_modules/d3-array/node_modules/internmap/src/index.js"
+        ]
+      }
+    ],
+    "unexplained_added_files": [],
+    "metadata_normalization": [
+      {
+        "packaged_path": "node_modules/cytoscape-fcose/node_modules/layout-base/package.json",
+        "matching_stage_metadata": [
+          {
+            "stage_path": "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/package.json",
+            "removed_description_fields": [
+              "bugs"
+            ],
+            "name": "layout-base",
+            "version": "2.0.1"
+          }
+        ]
+      },
+      {
+        "packaged_path": "node_modules/d3-sankey/node_modules/d3-path/package.json",
+        "matching_stage_metadata": [
+          {
+            "stage_path": "node_modules/d3-sankey/node_modules/d3-shape/node_modules/d3-path/package.json",
+            "removed_description_fields": [
+              "keywords"
+            ],
+            "name": "d3-path",
+            "version": "1.0.9"
+          }
+        ]
+      }
+    ]
+  },
+  "zip_critical_entries": [
+    {
+      "path": "Contents/Resources/runtime/runtime-manifest.json",
+      "unique": true,
+      "matches_unpacked_app": true
+    },
+    {
+      "path": "Contents/Resources/runtime/browser/browser-manifest.json",
+      "unique": true,
+      "matches_unpacked_app": true
+    },
+    {
+      "path": "Contents/Resources/runtime/computer/computer-manifest.json",
+      "unique": true,
+      "matches_unpacked_app": true
+    },
+    {
+      "path": "Contents/Resources/runtime/computer/outlive-computer",
+      "unique": true,
+      "matches_unpacked_app": true
+    },
+    {
+      "path": "Contents/Resources/icon.icns",
+      "unique": true,
+      "matches_unpacked_app": true
+    },
+    {
+      "path": "Contents/Resources/bin/outlive",
+      "unique": true,
+      "matches_unpacked_app": true
+    },
+    {
+      "path": "Contents/Resources/app/apps/desktop/dist/main.js",
+      "unique": true,
+      "matches_unpacked_app": true
+    },
+    {
+      "path": "Contents/Resources/app/apps/desktop/dist/preload.cjs",
+      "unique": true,
+      "matches_unpacked_app": true
+    },
+    {
+      "path": "Contents/Resources/app/node_modules/@typescript/typescript-darwin-arm64/lib/lib.d.ts",
+      "unique": true,
+      "matches_unpacked_app": true
+    }
+  ],
+  "application_metadata": {
+    "CFBundleIdentifier": "com.outlive.agent",
+    "CFBundleName": "Outlive Agent",
+    "CFBundleShortVersionString": "0.1.0-alpha.0",
+    "CFBundleVersion": "0.1.0-alpha.0",
+    "CFBundleIconFile": "icon.icns"
+  },
+  "formal_signing": {
+    "signed": false,
+    "signature_status": "not-requested",
+    "notarization_requested": false
+  },
+  "historical_first_package": {
+    "build_id": "c3d948403041ddb92b5a801c334ced78598d392cc871f8ebefade9a316046e05",
+    "artifacts": [
+      {
+        "file": "Outlive-Agent-0.1.0-alpha.0-mac-arm64.dmg.blockmap",
+        "byte_length": 803781,
+        "sha256": "5d2bb8d94127673e2368fe9c30deacc361475080953551eb5a139c407edf4bf8"
+      },
+      {
+        "file": "Outlive-Agent-0.1.0-alpha.0-mac-arm64.dmg",
+        "byte_length": 769759508,
+        "sha256": "963ad32724a8929d994fda2a9923bff7e6d748078291b4d08da929980e90eebe"
+      },
+      {
+        "file": "Outlive-Agent-0.1.0-alpha.0-mac-arm64.zip.blockmap",
+        "byte_length": 779083,
+        "sha256": "fb4739aaa829ef4e3a1d9a47cabfb67deb5ca629fc785591b2464f7b00a51529"
+      },
+      {
+        "file": "Outlive-Agent-0.1.0-alpha.0-mac-arm64.zip",
+        "byte_length": 753115847,
+        "sha256": "e246e78522c6d08991ad10fce2c15c0ae0497e75b34902b47b8e32efda75f991"
+      }
+    ],
+    "scope": "Prior source/package audit and root GUI evidence remain historical, not final-byte acceptance."
+  },
+  "limitations": [
+    "No GUI/provider/native computer/window/tray/notification validation performed in this audit.",
+    "No DMG mount/install, OS Gatekeeper, Developer ID/notarization, clean upgrade, Windows native execution, or independent user acceptance inferred.",
+    "Packaged inventory names Resources/app, Resources/runtime, Resources/bin and main executable; outer Electron Frameworks/plist/icon are not all included in that inventory. Icon and plist were separately checked; archive hashes bind delivered containers.",
+    "Chromium deep strict code-signature check fails identically for packaged browser and the original pinned Playwright cache. This is an observed vendor-resource seal boundary, not evidence of formal signed/notarized distribution or a newly introduced copy defect."
+  ],
+  "status": "passed",
+  "audit_refinement": "Initial byte-exact relocation classifier identified two moved package manifests; structural follow-up found exact package identity/version with only bugs/keywords removed by builder normalization. No production artifact changed.",
+  "native_helper_source_sha256": "5e66235ee7309e6c1c7fd9ab118a668ef9b6538246dcc9ce930ed3c07a60b75a",
+  "pinned_node_archive": {
+    "path": "_tmp_release/runtime-cache/node-v24.21.0-darwin-arm64.tar.gz",
+    "sha256": "bed7eea5325e1108f32ce5228ddd6a5f0f08a499ee42aa7442aea583702f6057",
+    "matches_official_pin": true
+  },
+  "brand_manifest": {
+    "schema_version": "outlive.brand-assets.v1",
+    "selection": "B Current",
+    "source": "docs/brand/current.svg",
+    "source_sha256": "ab8e6dd910f9a9d993889d0448ace70773c7cd12d3d4afa636854996fc0805f8",
+    "renderer": "@resvg/resvg-js@2.6.2",
+    "frame": {
+      "width": 1024,
+      "height": 1024,
+      "background_rect": {
+        "x": 24,
+        "y": 24,
+        "width": 976,
+        "height": 976,
+        "radius": 220,
+        "fill": "#F6F4ED"
+      },
+      "symbol_transform": "translate(112 112) scale(8)"
+    },
+    "files": [
+      {
+        "path": "docs/brand/app-icon.svg",
+        "byte_length": 528,
+        "sha256": "33413df6f67c604c1aa44ee0867cacf8c61931cc9adbfc5ddbd4ef532f242db9"
+      },
+      {
+        "path": "apps/desktop/build/icon.png",
+        "byte_length": 38103,
+        "sha256": "b93d6eac2cd75630e04d3e75ae5e189f8491a9179f20ec358a84a0b45f6f8ebb"
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_16x16.png",
+        "byte_length": 524,
+        "sha256": "8a0e30466ad3e553ca635fed50d9a53cc45bb231837995aa3b3a4a6f44ca4a8d"
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_16x16@2x.png",
+        "byte_length": 1071,
+        "sha256": "3518bf68d6820ea3d02fa35f915f4417882dc294c1859b829ed977807a0a4b93"
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_32x32.png",
+        "byte_length": 1071,
+        "sha256": "3518bf68d6820ea3d02fa35f915f4417882dc294c1859b829ed977807a0a4b93"
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_32x32@2x.png",
+        "byte_length": 2067,
+        "sha256": "01d90848f3f9ef8b4fc1bb16897123495c0c1874cd78574312b19b85ad7c7aea"
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_128x128.png",
+        "byte_length": 4106,
+        "sha256": "3ae10a9c14070c74f85a62971370d20c31def5ad9afcac1dcce6d0d61448ca82"
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_128x128@2x.png",
+        "byte_length": 7940,
+        "sha256": "d5da1b76c1c66f6aef6df71297883ce0770b6a3bc25359c3875256a1efa26285"
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_256x256.png",
+        "byte_length": 7940,
+        "sha256": "d5da1b76c1c66f6aef6df71297883ce0770b6a3bc25359c3875256a1efa26285"
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_256x256@2x.png",
+        "byte_length": 16430,
+        "sha256": "2ccc186fc91dbb3ba733597516830ceab68e8eb0f11b4c1a71f72828faa137ca"
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_512x512.png",
+        "byte_length": 16430,
+        "sha256": "2ccc186fc91dbb3ba733597516830ceab68e8eb0f11b4c1a71f72828faa137ca"
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_512x512@2x.png",
+        "byte_length": 38103,
+        "sha256": "b93d6eac2cd75630e04d3e75ae5e189f8491a9179f20ec358a84a0b45f6f8ebb"
+      },
+      {
+        "path": "apps/desktop/build/icon.icns",
+        "byte_length": 97845,
+        "sha256": "bc59efedb9292c9235f75c594dab406daf5dd15bad34c729e5e4a36a765de8d2"
+      },
+      {
+        "path": "apps/desktop/build/icon.ico",
+        "byte_length": 18229,
+        "sha256": "94b7022fcc7d0023ab00b0c2a70823ef386ba2a1ee7d2c961f562083de717348"
+      },
+      {
+        "path": "apps/web/public/brand-current.svg",
+        "byte_length": 489,
+        "sha256": "ab8e6dd910f9a9d993889d0448ace70773c7cd12d3d4afa636854996fc0805f8"
+      },
+      {
+        "path": "apps/web/public/favicon.ico",
+        "byte_length": 18229,
+        "sha256": "94b7022fcc7d0023ab00b0c2a70823ef386ba2a1ee7d2c961f562083de717348"
+      },
+      {
+        "path": "apps/desktop/renderer/public/brand-current.svg",
+        "byte_length": 489,
+        "sha256": "ab8e6dd910f9a9d993889d0448ace70773c7cd12d3d4afa636854996fc0805f8"
+      },
+      {
+        "path": "apps/desktop/renderer/public/favicon.ico",
+        "byte_length": 18229,
+        "sha256": "94b7022fcc7d0023ab00b0c2a70823ef386ba2a1ee7d2c961f562083de717348"
+      },
+      {
+        "path": "docs/public/brand-current.svg",
+        "byte_length": 489,
+        "sha256": "ab8e6dd910f9a9d993889d0448ace70773c7cd12d3d4afa636854996fc0805f8"
+      },
+      {
+        "path": "docs/public/favicon.ico",
+        "byte_length": 18229,
+        "sha256": "94b7022fcc7d0023ab00b0c2a70823ef386ba2a1ee7d2c961f562083de717348"
+      },
+      {
+        "path": "packages/workbench/src/brand-current.generated.ts",
+        "byte_length": 544,
+        "sha256": "4a1560ab161dc4325fd4e304645135011257ec6b097bed5044183de36fd6fea9"
+      }
+    ]
+  },
+  "signature_readonly_probes": [
+    {
+      "label": "native_computer_helper",
+      "argv": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--strict",
+        "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/product-workbench-2026-10-05-mac-final/artifacts/mac-arm64/Outlive Agent.app/Contents/Resources/runtime/computer/outlive-computer"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "label": "packaged_chromium",
+      "argv": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/product-workbench-2026-10-05-mac-final/artifacts/mac-arm64/Outlive Agent.app/Contents/Resources/runtime/browser/chromium/Google Chrome for Testing.app"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/product-workbench-2026-10-05-mac-final/artifacts/mac-arm64/Outlive Agent.app/Contents/Resources/runtime/browser/chromium/Google Chrome for Testing.app: code has no resources but signature indicates they must be present\n"
+    },
+    {
+      "label": "original_pinned_chromium",
+      "argv": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/Users/cain/Library/Caches/ms-playwright/chromium-1243/chrome-mac-arm64/Google Chrome for Testing.app"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "/Users/cain/Library/Caches/ms-playwright/chromium-1243/chrome-mac-arm64/Google Chrome for Testing.app: code has no resources but signature indicates they must be present\n"
+    }
+  ],
+  "status_scope": "Artifact identity, inventory/dependency completeness and current source-dist byte agreement only. Formal signature/vendor-seal and GUI acceptance are separate.",
+  "audit_probe_corrections": {
+    "preload_path": {
+      "initial_assumption": [
+        {
+          "path": "Contents/Resources/app/apps/desktop/dist/preload.js",
+          "unique": false,
+          "matches_unpacked_app": false
+        }
+      ],
+      "actual_main_declared_path": "preload.cjs",
+      "source": "apps/desktop/dist/main.js:23",
+      "corrected_probe": {
+        "path": "Contents/Resources/app/apps/desktop/dist/preload.cjs",
+        "unique": true,
+        "matches_unpacked_app": true
+      },
+      "explanation": "Auditor initially assumed an ESM preload.js filename. Actual Main explicitly resolves preload.cjs, which is present and byte-identical in ZIP; no artifact modification."
+    }
+  },
+  "brand_source_and_assets": {
+    "files": [
+      {
+        "path": "docs/brand/app-icon.svg",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/icon.png",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_16x16.png",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_16x16@2x.png",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_32x32.png",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_32x32@2x.png",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_128x128.png",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_128x128@2x.png",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_256x256.png",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_256x256@2x.png",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_512x512.png",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_512x512@2x.png",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/icon.icns",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/icon.ico",
+        "matches": true
+      },
+      {
+        "path": "apps/web/public/brand-current.svg",
+        "matches": true
+      },
+      {
+        "path": "apps/web/public/favicon.ico",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/renderer/public/brand-current.svg",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/renderer/public/favicon.ico",
+        "matches": true
+      },
+      {
+        "path": "docs/public/brand-current.svg",
+        "matches": true
+      },
+      {
+        "path": "docs/public/favicon.ico",
+        "matches": true
+      },
+      {
+        "path": "packages/workbench/src/brand-current.generated.ts",
+        "matches": true
+      }
+    ],
+    "source_matches": true
+  }
+}

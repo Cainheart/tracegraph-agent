@@ -13,7 +13,7 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.test.json --noEmit",
-    "test:unit": "vitest run src",
+    "test:unit": "vitest run src --maxWorkers=1 --no-file-parallelism",
     "test:watch": "vitest"
   },
   "dependencies": {

@@ -1,0 +1,115 @@
+import {fork,execFile} from "node:child_process";
+import {promisify} from "node:util";
+import {createServer,type Server} from "node:http";
+import {mkdir,mkdtemp,readFile,rm,symlink,writeFile} from "node:fs/promises";
+import {tmpdir} from "node:os";
+import {join} from "node:path";
+import {fileURLToPath} from "node:url";
+import {afterEach,describe,expect,it} from "vitest";
+import {BUILTIN_PERMISSION_PRESETS,type RunProjection,type SessionEvent} from "@tracegraph/contracts";
+import {createAgentRuntime,type AgentRuntime} from "./runtime.js";
+import {ConfigurableModelAdapter} from "../model/model-provider.js";
+import {createEffectivePermissionPolicy} from "../tools/policy-engine.js";
+import {createManagedWorkspaceHandle} from "../../kernel/workspace.js";
+import {sha256} from "../../kernel/crypto.js";
+import {JsonlEventLedger} from "../evidence/event-ledger.js";
+import {JsonlSessionStore} from "../session/session-store.js";
+import {SharedRunBudget} from "./shared-run-budget.js";
+import {NativeSandboxRunner} from "../../seams/sandbox/runner.js";
+const roots:string[]=[],runtimes:AgentRuntime[]=[],servers:Server[]=[],budgets:SharedRunBudget[]=[];
+afterEach(async()=>{for(const runtime of runtimes.splice(0)){await runtime.shutdownRuns?.();await runtime.shutdownBackgroundWork?.();}for(const budget of budgets.splice(0))budget.dispose();for(const server of servers.splice(0)){server.closeAllConnections();await new Promise<void>(resolve=>server.close(()=>resolve()));}for(const root of roots.splice(0))await rm(root,{recursive:true,force:true});});
+const before="export function clamp(value, min, max) { return value; }\n";
+const buggy="export function clamp(value, min, max) { if (![value,min,max].every(Number.isFinite)) throw new TypeError('finite required'); return Math.max(min, Math.min(max, value)); }\n";
+const fixed="export function clamp(value, min, max) { if (![value,min,max].every(Number.isFinite)) throw new TypeError('finite required'); if (min > max) throw new RangeError('reversed range'); return Math.max(min, Math.min(max, value)); }\n";
+const tests="import assert from 'node:assert/strict'; import {clamp} from '../dist/clamp.mjs'; assert.equal(clamp(12,0,10),10); assert.equal(clamp(-1,0,10),0); assert.equal(clamp(4,0,10),4); assert.throws(()=>clamp(NaN,0,10),TypeError); console.log('ACTUAL_CLAMP_TESTS_PASS');\n";
+const repairedTests=tests+"assert.throws(()=>clamp(4,10,0),RangeError); console.log('ACTUAL_REVERSED_RANGE_REGRESSION_PASS');\n";
+function answer(review_result?:unknown){return{decision_id:"decision:finish",kind:"finish",finish_intent:"answer",public_reason:"Recorded software result",evidence_refs:[],risk:"none",final_answer:"Controlled implementation and real verification recorded; final user acceptance remains separate",...(review_result===undefined?{}:{review_result})};}
+let operation=0;
+function call(name:string,args:Record<string,unknown>){return{decision_id:`decision:${name}`,kind:"tool_call",public_reason:"Perform the scoped software check",evidence_refs:[],risk:"low",tool_call:{action_id:`action:${name}:${++operation}`,tool_name:name,arguments:args}};}
+async function fixture(){const root=await mkdtemp(join(tmpdir(),"outlive-human-continuation-"));roots.push(root);const project=join(root,"project");for(const dir of ["src","test"])await mkdir(join(project,dir),{recursive:true});await writeFile(join(project,"src/clamp.mjs"),before);await writeFile(join(project,"test/clamp.test.mjs"),tests);await writeFile(join(project,"build.mjs"),"import {mkdirSync,copyFileSync} from 'node:fs';mkdirSync('dist',{recursive:true});copyFileSync('src/clamp.mjs','dist/clamp.mjs');console.log('ACTUAL_BUILD_OUTPUT');\n");const manifest=JSON.stringify({version:1,commands:{verify:{executable:"node",args:["verify.mjs"]}}});await writeFile(join(project,"outlive.commands.json"),manifest);await writeFile(join(project,"verify.mjs"),"import {spawnSync} from 'node:child_process';for(const file of ['build.mjs','test/clamp.test.mjs']){const result=spawnSync(process.execPath,[file],{stdio:'inherit'});if(result.status!==0)process.exit(result.status??1);}\n");return{root,project,manifestHash:sha256(manifest),workspace:await createManagedWorkspaceHandle({projectId:"project:delivery",root:project})};}
+async function modelFixture(respond:(input:{body:Record<string,unknown>;serialized:string;child:boolean})=>unknown){let calls=0,childCalls=0;const requests:Array<{child:boolean;body:Record<string,unknown>}>=[];const server=createServer(async(req,res)=>{const chunks:Buffer[]=[];for await(const part of req)chunks.push(Buffer.from(part));const body=JSON.parse(Buffer.concat(chunks).toString()) as Record<string,unknown>,serialized=JSON.stringify(body),child=serialized.includes("You are the independent readonly delivery reviewer");calls++;if(child)childCalls++;requests.push({child,body});let decision;try{decision=await respond({body,serialized,child});}catch(error){res.writeHead(500,{"content-type":"application/json"});res.end(JSON.stringify({error:String(error)}));return;}res.writeHead(200,{"content-type":"application/json"});res.end(JSON.stringify({choices:[{message:{content:JSON.stringify(decision)}}],usage:{prompt_tokens:1000,completion_tokens:5,total_tokens:1005}}));});servers.push(server);await new Promise<void>(resolve=>server.listen(0,"127.0.0.1",resolve));const address=server.address();if(!address||typeof address==="string")throw new Error("Fixture address missing");const model=new ConfigurableModelAdapter({resolveCredential:async()=>"controlled-review-key-not-live"});model.configure({provider:"custom",protocol:"openai-chat-completions",baseUrl:`http://127.0.0.1:${address.port}/v1`,model:"delivery-protocol-fixture",credentialRef:"${secret:CONTROLLED_REVIEW_KEY}"});return{model,config:{provider:"custom" as const,protocol:"openai-chat-completions" as const,baseUrl:`http://127.0.0.1:${address.port}/v1`,model:"delivery-protocol-fixture",credentialRef:"${secret:CONTROLLED_REVIEW_KEY}"},requests,calls:()=>calls,childCalls:()=>childCalls};}
+async function wait(runtime:AgentRuntime,id:string){const deadline=Date.now()+15_000;while(Date.now()<deadline){const value=await runtime.getProjection(id);if(["completed","failed","cancelled"].includes(value.status))return value;await new Promise(resolve=>setTimeout(resolve,10));}throw new Error(`No terminal: ${JSON.stringify((await runtime.getProjection(id)).timeline.slice(-2))}`);}
+// These recovery fixtures intentionally exercise historical finite delivery
+// leases. Production ordinary Runs no longer receive an aggregate lease.
+async function runtimeFixture(f:Awaited<ReturnType<typeof fixture>>,model:NonNullable<Parameters<typeof createAgentRuntime>[0]["model"]>,options:Partial<Parameters<typeof createAgentRuntime>[0]>={}){const runtime=await createAgentRuntime({dataDir:join(f.root,"data"),model,permissionPolicy:createEffectivePermissionPolicy({preset:BUILTIN_PERMISSION_PRESETS["full-write"]}),deliveryReview:{maxRounds:2,ordinaryBudget:{max_tokens:200000,max_time_ms:900000}},...options});runtimes.push(runtime);return runtime;}
+const input=(f:Awaited<ReturnType<typeof fixture>>)=>({command_id:"command:delivery",project_id:f.workspace.project_id,workspace:f.workspace,mode:"execute" as const,task:"Implement a finite-number clamp library. Bounds must be ordered; reversed bounds must throw RangeError. Build the delivered module and test normal, non-finite and reversed-range behavior."});
+function reviewReads(body:Record<string,unknown>){
+ const strings:string[]=[];const collect=(value:unknown):void=>{if(typeof value==="string"){strings.push(value);try{collect(JSON.parse(value));}catch{}}else if(Array.isArray(value))value.forEach(collect);else if(value&&typeof value==="object")Object.values(value).forEach(collect);};collect(body);const text=strings.join("\n");
+ const match=/"kind"\s*:\s*"delivery_requirements"[\s\S]*?"locator"\s*:\s*"([^"]+)"/.exec(text);
+ if(!match)throw new Error("Actual scoped delivery packet observation missing");
+ return{decision_id:"decision:review-reads",kind:"tool_call",public_reason:"Read complete public requirements and source independently",evidence_refs:[],risk:"none",tool_calls:[...Array.from({length:Math.ceil(Number(/"kind"\s*:\s*"delivery_requirements"[\s\S]*?"total_bytes"\s*:\s*(\d+)/.exec(text)?.[1]??4000)/3500)},(_,index)=>({action_id:`review:requirements:${index}`,tool_name:"read_artifact",arguments:{locator:match[1],offset:index*3500,limit:3500}})),...["src/clamp.mjs","outlive.commands.json","test/clamp.test.mjs"].map((path,index)=>({action_id:`review:read:${index}`,tool_name:"read_file",arguments:{path}}))]};
+}
+const passed={verdict:"passed",reviewed_paths:["src/clamp.mjs","outlive.commands.json","test/clamp.test.mjs"],findings:[]};
+
+const askPatch=createEffectivePermissionPolicy({preset:BUILTIN_PERMISSION_PRESETS["full-write"],rules:[{rule_id:"human:patch",priority:100,when:{tool:"commit_patch"},then:"ask",explanation:"Explicit human patch approval required"}]});
+async function waiting(runtime:AgentRuntime,id:string){const deadline=Date.now()+8000;while(Date.now()<deadline){const value=await runtime.getProjection(id);if(value.status==="awaiting_approval")return value;if(["failed","cancelled","completed"].includes(value.status))throw new Error(JSON.stringify(value.timeline.slice(-2)));await new Promise(resolve=>setTimeout(resolve,10));}throw new Error("Actual approval was not reached");}
+async function interrupted(options:Partial<Parameters<typeof createAgentRuntime>[0]>={},owner:{indexFalse?:boolean;multiPatch?:boolean;missingFresh?:boolean;guidance?:boolean}={}){
+ const f=await fixture();let rootStep=0,reviewStep=0;
+ const provider=await modelFixture(({child,body})=>{if(child)return ++reviewStep===1?reviewReads(body):answer(passed);const step=++rootStep;if(step===1)return call("preview_patch",{path:"src/clamp.mjs",expected:before,replacement:fixed});if(step===2||owner.multiPatch&&step===5&&!owner.missingFresh)return call("run_project_command",{path:"outlive.commands.json",command:"verify",expected_manifest_sha256:f.manifestHash});if(owner.multiPatch&&step===3)return call("preview_patch",{path:"src/clamp.mjs",expected:fixed,replacement:fixed+"// SECOND_VERIFIED_PATCH\n"});if(owner.multiPatch&&step===4)return call("preview_patch",{path:"src/clamp.mjs",expected:fixed+"// SECOND_VERIFIED_PATCH\n",replacement:fixed+"// SECOND_VERIFIED_PATCH\n// RESUMED_THIRD_PATCH\n"});return answer();});
+ if(owner.indexFalse)f.workspace.capabilities.index=false;
+ const sessions=join(f.root,"sessions"),metadata=join(f.root,"owner.json");await writeFile(metadata,JSON.stringify({root:f.root,project:f.project,config:provider.config,...owner}));
+ const env={...process.env};delete env.NODE_OPTIONS;
+ const child=fork(fileURLToPath(new URL("../../../test-support/delivery-continuation-worker.ts",import.meta.url)),[metadata],{execArgv:["--import","tsx"],env,stdio:["ignore","ignore","pipe","ipc"]});let stderr="";child.stderr?.on("data",chunk=>{stderr+=String(chunk);});
+ let pending:RunProjection;
+ try{pending=await new Promise<RunProjection>((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error(`Controlled actual owner readiness timeout: ${stderr}`)),10000);child.once("message",message=>{clearTimeout(timer);resolve((message as {pending:RunProjection}).pending);});child.once("exit",code=>{clearTimeout(timer);reject(new Error(`Controlled owner exited ${code}: ${stderr}`));});});}
+ finally{if(child.exitCode===null&&child.signalCode===null){const exit=new Promise<void>(resolve=>child.once("exit",()=>resolve()));child.kill("SIGKILL");await exit;}}
+ expect(()=>process.kill(child.pid!,0)).toThrow();
+ const fresh=await runtimeFixture(f,provider.model,{sessionStore:new JsonlSessionStore(sessions),permissionPolicy:askPatch,...options});
+ const locator={runId:pending.run_id,sessionId:pending.session_id!,projectId:pending.project_id};
+ await fresh.markRunInterrupted(locator);
+ return{f,provider,fresh,pending,locator,exited_owner_pid:child.pid};
+}
+describe("explicit finite software continuation",{timeout:15000},()=>{
+ it("retains original budget and model identity, renews approval without writes, then builds/tests and independently reads complete requirements",async()=>{
+  const f=await interrupted({},{guidance:true});
+  const resumed=await f.fresh.resumeRun({...f.locator,workspace:f.f.workspace,commandId:"human:continue"});
+  expect(resumed.status).toBe("awaiting_approval");expect(f.provider.calls()).toBe(1);expect(await readFile(join(f.f.project,"src/clamp.mjs"),"utf8")).toBe(before);
+  expect(resumed.pending_approval?.approval_id).not.toBe(f.pending.pending_approval?.approval_id);
+  const restored=resumed.timeline.find(event=>event.data.operation==="delivery.budget_restored");expect(restored?.data).toMatchObject({budget_id:`delivery:${resumed.run_id}`,new_budget:false,budget_snapshot:{charged_tokens:1005,request_count:1,limits:{max_tokens:200000,max_time_ms:900000}}});
+  const approval=resumed.pending_approval!;await f.fresh.approve({type:"approve",command_id:"human:approve-after-resume",project_id:resumed.project_id,run_id:resumed.run_id,approval_id:approval.approval_id,action_id:approval.action_id});
+  const completed=await wait(f.fresh,resumed.run_id);expect(completed.status,JSON.stringify(completed.timeline.slice(-3))).toBe("completed");
+  expect(await readFile(join(f.f.project,"src/clamp.mjs"),"utf8")).toBe(fixed);expect(await readFile(join(f.f.project,"dist/clamp.mjs"),"utf8")).toBe(fixed);
+  expect(completed.timeline.filter(event=>event.type==="patch.applied")).toHaveLength(1);expect(completed.timeline.filter(event=>event.data.operation==="delivery.budget_admitted")).toHaveLength(1);
+  expect(completed.timeline.at(-1)?.data.delivery_budget).toMatchObject({charged_tokens:5025,request_count:5,limits:{max_tokens:200000,max_time_ms:900000}});
+  const child=await f.fresh.getProjection(completed.subagents.items[0]!.link.child_run_id),terminal=child.timeline.find(event=>event.type==="run.completed")!,ref=terminal.data.requirement_packet as {artifact_id:string};
+  const packet=await f.fresh.getArtifact({artifactId:ref.artifact_id,projectId:completed.project_id,runId:child.run_id});expect(packet).toMatchObject({status:"available",content:expect.stringContaining("REQUIRED_AFTER_4000")});expect(packet).toMatchObject({status:"available",content:expect.stringContaining("PUBLIC_REQUIRED_GUIDANCE")});expect(completed.timeline.filter(event=>event.type==="user.input_consumed")).toHaveLength(1);expect(JSON.stringify(f.provider.requests[1]?.body)).toContain("PUBLIC_REQUIRED_GUIDANCE");
+  expect(child.timeline.filter(event=>event.type==="tool.completed"&&(event.data.receipt as {tool_name?:unknown})?.tool_name==="read_artifact").length).toBeGreaterThan(1);
+  const calls=f.provider.calls(),retry=await f.fresh.resumeRun({...f.locator,workspace:f.f.workspace,commandId:"human:continue"});expect(retry.status).toBe("completed");expect(f.provider.calls()).toBe(calls);
+  const output=process.env.OUTLIVE_CONTINUATION_EVIDENCE_ROOT;if(output){await mkdir(output,{recursive:true});const ledger=new JsonlEventLedger(join(f.f.root,"data/events"));await ledger.initialize();const events:Record<string,SessionEvent[]>=Object.fromEntries(await Promise.all([completed.run_id,child.run_id].map(async id=>[id,await ledger.list(id)])));await writeFile(join(output,"events.json"),JSON.stringify(events,null,2));const artifacts:Record<string,{ref:unknown;content:string}>={};for(const runEvents of Object.values(events))for(const event of runEvents)for(const artifact of event.artifact_refs){if(!["context_manifest","tool_output","test_log"].includes(artifact.kind))continue;const result=await f.fresh.getArtifact({artifactId:artifact.artifact_id,projectId:artifact.project_id,runId:artifact.run_id});if(result.status==="available")artifacts[artifact.artifact_id]={ref:artifact,content:result.content};}await writeFile(join(output,"artifacts.json"),JSON.stringify(artifacts,null,2));await writeFile(join(output,"requirements.json"),packet.status==="available"?packet.content:"");const delivered:Record<string,string>={};for(const path of ["src/clamp.mjs","dist/clamp.mjs","test/clamp.test.mjs","outlive.commands.json"]){const content=await readFile(join(f.f.project,path),"utf8");delivered[path]=content;}await writeFile(join(output,"delivered.json"),JSON.stringify(delivered,null,2));await writeFile(join(output,"report.json"),JSON.stringify({status:"passed",boundary:"deterministic local HTTP protocol; no paid model quality claim",run_id:completed.run_id,child_run_id:child.run_id,provider_requests:f.provider.calls(),exited_owner_pid:f.exited_owner_pid,owner_exited_before_resume:true,first_resumed_request_guidance:true,provider_usage_per_request:{input_tokens:1000,output_tokens:5},resume_command_id:"human:continue",budget_restored:restored?.data,terminal:completed.timeline.at(-1)?.data,artifact_ref:terminal.data.requirement_packet},null,2));}
+ });
+ it.each(["model","policy","source"] as const)("rejects changed %s before new dispatch or write",async kind=>{
+  const f=await interrupted();let options:Partial<Parameters<typeof createAgentRuntime>[0]>={};
+  if(kind==="model")f.provider.model.clearConfiguration();
+  if(kind==="policy")options.permissionPolicy=createEffectivePermissionPolicy({preset:BUILTIN_PERMISSION_PRESETS["read-only"]});
+  if(kind==="source")await writeFile(join(f.f.project,"src/clamp.mjs"),"HUMAN_EXTERNAL_CHANGE");
+  const runtime=kind==="policy"?await runtimeFixture(f.f,f.provider.model,{sessionStore:new JsonlSessionStore(join(f.f.root,"sessions")),...options}):f.fresh;
+  await expect(runtime.resumeRun({...f.locator,workspace:f.f.workspace,commandId:`human:reject:${kind}`})).rejects.toMatchObject({code:kind==="model"?"delivery_model_binding_changed":kind==="policy"?"resume_policy_changed":"delivery_verification_stale"});
+  expect(f.provider.calls()).toBe(1);expect(await readFile(join(f.f.project,"src/clamp.mjs"),"utf8")).toBe(kind==="source"?"HUMAN_EXTERNAL_CHANGE":before);
+ });
+ it.each(["alternateRoot","expandedCapability","alias"] as const)("refuses a changed trusted workspace binding %s before any new request",async kind=>{
+  const f=await interrupted({},kind==="expandedCapability"?{indexFalse:true}:{});let workspace=f.f.workspace;
+  if(kind==="alternateRoot"){const other=join(f.f.root,"other");await mkdir(join(other,"src"),{recursive:true});await writeFile(join(other,"src/clamp.mjs"),before);workspace=await createManagedWorkspaceHandle({projectId:workspace.project_id,root:other});}
+  else if(kind==="alias"){const alias=join(f.f.root,"alias");await symlink(f.f.workspace.real_root,alias);workspace={...workspace,real_root:alias};}
+  else workspace={...workspace,capabilities:{...workspace.capabilities,index:true}};
+  await expect(f.fresh.resumeRun({...f.locator,workspace,commandId:`human:reject:${kind}`})).rejects.toMatchObject({code:"delivery_workspace_binding_changed"});expect(f.provider.calls()).toBe(1);expect(await readFile(join(f.f.project,"src/clamp.mjs"),"utf8")).toBe(before);
+ });
+ it.each(["held-model","unknown-model","unknown-tool"] as const)("requires explicit reconciliation for %s and never retries it",async kind=>{
+  const f=await interrupted(),ledger=new JsonlEventLedger(join(f.f.root,"data/events"));await ledger.initialize();
+  const events=await ledger.list(f.pending.run_id),latest=[...events].reverse().find(event=>event.data.operation==="delivery.budget_settled")!,snapshot=(latest.data.budget_checkpoint as {snapshot:Record<string,unknown>}).snapshot;
+  const data=kind==="unknown-tool"?{receipt:{tool_name:"run_project_command",business_status:"unknown"},observation:{facts:{started:true,exit_code:null}}}:{operation:"delivery.budget_settled",budget_id:`delivery:${f.pending.run_id}`,budget_checkpoint:{snapshot:{...snapshot,...(kind==="held-model"?{held_tokens:100,held_request_count:1,request_count:2}:{unknown_request_count:1,stop_reason:"usage_unknown"})}}};
+  await ledger.append({project_id:f.pending.project_id,session_id:f.pending.session_id!,run_id:f.pending.run_id,type:kind==="unknown-tool"?"tool.unknown":"workbench.command_completed",attempt:0,summary:"Controlled unresolved canonical boundary",artifact_refs:[],...(kind==="unknown-tool"?{action_id:"action:unknown"}:{}),data});
+  await expect(f.fresh.resumeRun({...f.locator,workspace:f.f.workspace,commandId:`human:reject:${kind}`})).rejects.toMatchObject({code:kind==="unknown-tool"?"delivery_action_reconciliation_required":"delivery_budget_reconciliation_required"});expect(f.provider.calls()).toBe(1);expect(await readFile(join(f.f.project,"src/clamp.mjs"),"utf8")).toBe(before);
+ });
+
+ it.each([false,true])("invalidates an old verification after later exact verified patches and fresh command missing=%s",async missingFresh=>{
+  const f=await interrupted({},{multiPatch:true,missingFresh}),resumed=await f.fresh.resumeRun({...f.locator,workspace:f.f.workspace,commandId:"human:continue-multi"});
+  expect(resumed.status).toBe("awaiting_approval");expect(f.provider.calls()).toBe(4);expect(resumed.timeline.filter(event=>event.type==="patch.applied")).toHaveLength(2);expect(resumed.timeline.find(event=>event.data.operation==="delivery.verification_invalidated")?.data).toMatchObject({fresh_verification_required:true,reused_as_delivery_evidence:false});
+  const approval=resumed.pending_approval!;await f.fresh.approve({type:"approve",command_id:"human:approve-third",project_id:resumed.project_id,run_id:resumed.run_id,approval_id:approval.approval_id,action_id:approval.action_id});const terminal=await wait(f.fresh,resumed.run_id);expect(terminal.status,JSON.stringify(terminal.timeline.slice(-3))).toBe(missingFresh?"failed":"completed");
+  expect(await readFile(join(f.f.project,"src/clamp.mjs"),"utf8")).toBe(fixed+"// SECOND_VERIFIED_PATCH\n// RESUMED_THIRD_PATCH\n");
+  const patch=terminal.timeline.filter(event=>event.type==="patch.applied").at(-1)!;const fresh=terminal.timeline.filter(event=>event.sequence>patch.sequence&&event.type==="tool.completed"&&(event.data.receipt as {tool_name?:unknown})?.tool_name==="run_project_command");expect(fresh).toHaveLength(missingFresh?0:1);if(missingFresh){expect(terminal.failure_code).toBe("delivery_verification_missing");expect(terminal.subagents.items).toEqual([]);}else expect(await readFile(join(f.f.project,"dist/clamp.mjs"),"utf8")).toContain("RESUMED_THIRD_PATCH");
+ });
+ it("rejects an external change to a validation source even when later known patches supersede an earlier verification",async()=>{
+  const f=await interrupted({},{multiPatch:true});await writeFile(join(f.f.project,"outlive.commands.json"),"HUMAN_EXTERNAL_MANIFEST");await expect(f.fresh.resumeRun({...f.locator,workspace:f.f.workspace,commandId:"human:stale-command-source"})).rejects.toMatchObject({code:"delivery_verification_stale"});expect(f.provider.calls()).toBe(4);expect(await readFile(join(f.f.project,"src/clamp.mjs"),"utf8")).toBe(fixed+"// SECOND_VERIFIED_PATCH\n");expect(await readFile(join(f.f.project,"outlive.commands.json"),"utf8")).toBe("HUMAN_EXTERNAL_MANIFEST");
+ });
+
+});

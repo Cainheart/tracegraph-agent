@@ -1,0 +1,227 @@
+$ vitest run --config vitest.config.ts
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/desktop
+
+ ❯ src/preview-startup.test.ts (2 tests | 2 failed) 2409ms
+   ❯ Desktop preview startup authority (2)
+     × loads the fixture renderer without a Host process or user-data access 1372ms
+     × connects to the shared Host for normal startup without a separate Desktop data owner 1036ms
+ ❯ src/main-connection.test.ts (16 tests | 16 failed) 16729ms
+   ❯ Desktop unified Host connection lifetime (16)
+     × treats a fresh user application launch as one explicit start after a persisted stop 1342ms
+     × keeps a stop issued while Main is running across activation and window recreation 1035ms
+     × does not reinterpret initial host_profile_invalid as a stopped owner or implicitly repair it 1023ms
+     × does not reinterpret initial host_upgrade_required as a stopped owner or implicitly repair it 1026ms
+     × does not reinterpret initial host_replay_stale as a stopped owner or implicitly repair it 1022ms
+     × preserves retained replay authority during activation and does not upgrade it through Start 1025ms
+     × preserves only closed Host admission rejection metadata across Electron IPC 1026ms
+     × probes the current owner on application activation without restarting or stopping it 1029ms
+     × selects fixed bundled runtime and Web resources for the installed application 1019ms
+     × selects the explicit shared profile and keeps all authentication in Main 1032ms
+     × probes actual Host readiness and starts only through the explicit native action 1029ms
+     × queries only Main's profile-bound unknown migration and blocks duplicate imports until a terminal receipt 1020ms
+     × keeps the authenticated profile and gateway target for a retry after an owner startup failure 1020ms
+     × closes only renderer streams and detaches on app quit without stopping the background owner 1029ms
+     × releases stale feed handles on main-frame reload or renderer crash without stopping the Host 1020ms
+     × rejects another origin and canceled native selection before a privileged operation 1030ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 18 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/main-connection.test.ts > Desktop unified Host connection lifetime > treats a fresh user application launch as one explicit start after a persisted stop
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+ ❯ src/main-connection.test.ts:76:77
+     74|   it("treats a fresh user application launch as one explicit start aft…
+     75|     doubles.ensure.mockRejectedValueOnce(Object.assign(new Error("Synt…
+     76|     await import("./main.js");await vi.waitFor(()=>expect(doubles.load…
+       |                                                                             ^
+     77|     expect(doubles.ensure).toHaveBeenCalledTimes(2);
+     78|     expect(doubles.ensure.mock.calls.map(([input])=>input.recoveryMode…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/18]⎯
+
+ FAIL  src/main-connection.test.ts > Desktop unified Host connection lifetime > keeps a stop issued while Main is running across activation and window recreation
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+ ❯ src/main-connection.test.ts:85:77
+     83|   });
+     84|   it("keeps a stop issued while Main is running across activation and …
+     85|     await import("./main.js");await vi.waitFor(()=>expect(doubles.load…
+       |                                                                             ^
+     86|     doubles.probe.mockRejectedValue(Object.assign(new Error("Synthetic…
+     87|     expect(await doubles.handlers.get(DESKTOP_IPC.getConnectionStatus)…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/18]⎯
+
+ FAIL  src/main-connection.test.ts > Desktop unified Host connection lifetime > does not reinterpret initial host_profile_invalid as a stopped owner or implicitly repair it
+ FAIL  src/main-connection.test.ts > Desktop unified Host connection lifetime > does not reinterpret initial host_upgrade_required as a stopped owner or implicitly repair it
+ FAIL  src/main-connection.test.ts > Desktop unified Host connection lifetime > does not reinterpret initial host_replay_stale as a stopped owner or implicitly repair it
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+ ❯ src/main-connection.test.ts:96:77
+     94|   it.each(["host_profile_invalid","host_upgrade_required","host_replay…
+     95|     doubles.ensure.mockRejectedValueOnce(Object.assign(new Error("Synt…
+     96|     await import("./main.js");await vi.waitFor(()=>expect(doubles.load…
+       |                                                                             ^
+     97|     expect(doubles.ensure).toHaveBeenCalledOnce();
+     98|     expect(doubles.ensure).toHaveBeenCalledWith(expect.objectContainin…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/18]⎯
+
+ FAIL  src/main-connection.test.ts > Desktop unified Host connection lifetime > preserves retained replay authority during activation and does not upgrade it through Start
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+ ❯ src/main-connection.test.ts:105:77
+    103|     const connection=await doubles.ensure.getMockImplementation()?.();
+    104|     connection.client.replayActive=true;
+    105|     await import("./main.js");await vi.waitFor(()=>expect(doubles.load…
+       |                                                                             ^
+    106|     doubles.probe.mockRejectedValue(Object.assign(new Error("Synthetic…
+    107|     doubles.appEvents.get("activate")?.();await vi.waitFor(()=>expect(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/18]⎯
+
+ FAIL  src/main-connection.test.ts > Desktop unified Host connection lifetime > preserves only closed Host admission rejection metadata across Electron IPC
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+ ❯ src/main-connection.test.ts:113:77
+    111|   });
+    112|   it("preserves only closed Host admission rejection metadata across E…
+    113|     await import("./main.js");await vi.waitFor(()=>expect(doubles.load…
+       |                                                                             ^
+    114|     const {TraceGraphHttpError}=await import("@tracegraph/sdk");
+    115|     doubles.capabilities.mockRejectedValueOnce(new TraceGraphHttpError…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/18]⎯
+
+ FAIL  src/main-connection.test.ts > Desktop unified Host connection lifetime > probes the current owner on application activation without restarting or stopping it
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+ ❯ src/main-connection.test.ts:120:77
+    118|   });
+    119|   it("probes the current owner on application activation without resta…
+    120|     await import("./main.js");await vi.waitFor(()=>expect(doubles.load…
+       |                                                                             ^
+    121|     const before=doubles.probe.mock.calls.length;doubles.appEvents.get…
+    122|     await vi.waitFor(()=>expect(doubles.probe.mock.calls.length).toBeG…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/18]⎯
+
+ FAIL  src/main-connection.test.ts > Desktop unified Host connection lifetime > selects fixed bundled runtime and Web resources for the installed application
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+ ❯ src/main-connection.test.ts:127:81
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/18]⎯
+
+ FAIL  src/main-connection.test.ts > Desktop unified Host connection lifetime > selects the explicit shared profile and keeps all authentication in Main
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+ ❯ src/main-connection.test.ts:132:53
+    130|   it("selects the explicit shared profile and keeps all authentication…
+    131|     await import("./main.js");
+    132|     await vi.waitFor(() => expect(doubles.loadFile).toHaveBeenCalledOn…
+       |                                                     ^
+    133|     expect(doubles.ensure).toHaveBeenCalledWith(expect.objectContainin…
+    134|     const status = await doubles.handlers.get(DESKTOP_IPC.hostStatus)?…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[8/18]⎯
+
+ FAIL  src/main-connection.test.ts > Desktop unified Host connection lifetime > probes actual Host readiness and starts only through the explicit native action
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+ ❯ src/main-connection.test.ts:140:79
+    138|   });
+    139|   it("probes actual Host readiness and starts only through the explici…
+    140|     await import("./main.js");await vi.waitFor(() => expect(doubles.lo…
+       |                                                                               ^
+    141|     doubles.probe.mockRejectedValueOnce(new Error("Synthetic stopped s…
+    142|     expect(await doubles.handlers.get(DESKTOP_IPC.hostStatus)?.(render…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/18]⎯
+
+ FAIL  src/main-connection.test.ts > Desktop unified Host connection lifetime > queries only Main's profile-bound unknown migration and blocks duplicate imports until a terminal receipt
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+ ❯ src/main-connection.test.ts:151:77
+    149|   });
+    150|   it("queries only Main's profile-bound unknown migration and blocks d…
+    151|     await import("./main.js");await vi.waitFor(()=>expect(doubles.load…
+       |                                                                             ^
+    152|     doubles.dialog.mockResolvedValue({canceled:false,filePaths:["/synt…
+    153|     doubles.migrationPreview.mockResolvedValue({selected_source_id:"le…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[10/18]⎯
+
+ FAIL  src/main-connection.test.ts > Desktop unified Host connection lifetime > keeps the authenticated profile and gateway target for a retry after an owner startup failure
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+ ❯ src/main-connection.test.ts:168:79
+    166|
+    167|   it("keeps the authenticated profile and gateway target for a retry a…
+    168|     await import("./main.js");await vi.waitFor(() => expect(doubles.lo…
+       |                                                                               ^
+    169|     doubles.ensure.mockRejectedValueOnce(new Error("Synthetic transien…
+    170|     expect(await doubles.handlers.get(DESKTOP_IPC.startHost)?.(rendere…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[11/18]⎯
+
+ FAIL  src/main-connection.test.ts > Desktop unified Host connection lifetime > closes only renderer streams and detaches on app quit without stopping the background owner
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+ ❯ src/main-connection.test.ts:179:53
+    177|   it("closes only renderer streams and detaches on app quit without st…
+    178|     await import("./main.js");
+    179|     await vi.waitFor(() => expect(doubles.loadFile).toHaveBeenCalledOn…
+       |                                                     ^
+    180|     doubles.windowEvents.get("closed")?.();
+    181|     expect(doubles.detach).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[12/18]⎯
+
+ FAIL  src/main-connection.test.ts > Desktop unified Host connection lifetime > releases stale feed handles on main-frame reload or renderer crash without stopping the Host
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+ ❯ src/main-connection.test.ts:193:53
+    191|   it("releases stale feed handles on main-frame reload or renderer cra…
+    192|     await import("./main.js");
+    193|     await vi.waitFor(() => expect(doubles.loadFile).toHaveBeenCalledOn…
+       |                                                     ^
+    194|     const open = () => doubles.handlers.get(DESKTOP_IPC.openStream)?.(…
+    195|     const ids = await Promise.all(Array.from({ length: 12 }, open));
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[13/18]⎯
+
+ FAIL  src/main-connection.test.ts > Desktop unified Host connection lifetime > rejects another origin and canceled native selection before a privileged operation
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+ ❯ src/main-connection.test.ts:214:53
+    212|   it("rejects another origin and canceled native selection before a pr…
+    213|     await import("./main.js");
+    214|     await vi.waitFor(() => expect(doubles.loadFile).toHaveBeenCalledOn…
+       |                                                     ^
+    215|     await expect(doubles.handlers.get(DESKTOP_IPC.getCapabilities)?.(r…
+    216|     expect(doubles.capabilities).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[14/18]⎯
+
+ FAIL  src/preview-startup.test.ts > Desktop preview startup authority > loads the fixture renderer without a Host process or user-data access
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+ ❯ src/preview-startup.test.ts:50:53
+     48|     process.argv = [process.execPath, "synthetic-main", "--preview"];
+     49|     await import("./main.js");
+     50|     await vi.waitFor(() => expect(doubles.loadFile).toHaveBeenCalledOn…
+       |                                                     ^
+     51|     expect(doubles.loadFile).toHaveBeenCalledWith(expect.stringContain…
+     52|     expect(doubles.getPath).not.toHaveBeenCalled();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[15/18]⎯
+
+ FAIL  src/preview-startup.test.ts > Desktop preview startup authority > connects to the shared Host for normal startup without a separate Desktop data owner
+AssertionError: expected "vi.fn()" to be called once, but got 0 times
+ ❯ src/preview-startup.test.ts:61:53
+     59|     process.argv = [process.execPath, "synthetic-main"];
+     60|     await import("./main.js");
+     61|     await vi.waitFor(() => expect(doubles.loadFile).toHaveBeenCalledOn…
+       |                                                     ^
+     62|     expect(doubles.getPath).not.toHaveBeenCalled();
+     63|     expect(doubles.launchHost).toHaveBeenCalledWith(expect.objectConta…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[16/18]⎯
+
+
+ Test Files  2 failed | 11 passed (13)
+      Tests  18 failed | 51 passed (69)
+   Start at  02:38:01
+   Duration  16.95s (tests 84%, transform 11%, import 5%)
+
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/desktop:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @tracegraph/desktop@0.1.0-alpha.0 test:unit: `vitest run --config vitest.config.ts`
+Exit status 1

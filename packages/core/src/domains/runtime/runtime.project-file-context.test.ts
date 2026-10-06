@@ -39,7 +39,48 @@ describe("trusted project file context admission and provenance",()=>{
   expect(inputs[0]!.context).toContain("untrusted");expect(page).toContain("admitted-context");expect(completed.timeline.filter(item=>item.type==="context.spill_refetched")).toEqual([]);
   expect(await runtime.getArtifact({artifactId:ref.artifact_id,runId:started.run_id,projectId:"project:foreign"})).toMatchObject({status:"unavailable",reason:"out_of_scope"});
  });
- it("restores a pending plan from immutable redacted artifacts after the original file changes, without automatic dispatch",async()=>{const f=await fixture(),inputs:ModelInput[]=[];let plans=0;const model:ModelAdapter={name:"context-plan",async decide(input){inputs.push(input);if(input.mode==="plan"&&plans++===0)return tool("context-plan-todo","todo_write",{operation:"create",todo_id:"todo:context",title:"Inspect the selected context"});return finish(`decision:context:${inputs.length}`);}};
+ it("serializes Artifact pages, corrects UTF-8 cursor drift, and recovers a far cursor from successful receipts",async()=>{
+  const f=await fixture(),inputs:ModelInput[]=[];let stage=0;
+  const model:ModelAdapter={name:"artifact-cursor-recovery",async decide(input){
+   inputs.push(input);
+   const context=input.observations.find(item=>item.facts.kind==="project_file_context");
+   const locator=String(context?.facts.locator??"");
+   const readPages=input.observations.filter(item=>item.facts.tool_name==="read_artifact"&&item.status==="success");
+   const last=readPages.at(-1);
+   const cursor=last?.facts.truncated===true?Number(last.facts.next_offset):Number(last?.facts.total_bytes??0);
+   if(stage===0){
+    stage=1;
+    return {decision_id:"decision:cursor-pages",kind:"tool_call",public_reason:"Read the selected context in ordered pages",risk:"low",expected_effect:"Read bounded Artifact pages",tool_calls:[
+     {action_id:"action:cursor-page-1",tool_name:"read_artifact",arguments:{locator,offset:0,limit:4000}},
+     // This deliberately assumes a full 4000-byte first page. Chinese and
+     // emoji at its boundary require the Ledger's actual next_offset instead.
+     {action_id:"action:cursor-page-2",tool_name:"read_artifact",arguments:{locator,offset:4000,limit:4000}},
+    ]};
+   }
+   if(stage===1){stage=2;return tool("cursor-far-jump","read_artifact",{locator,offset:cursor+128,limit:4000});}
+   if(stage===2){
+    stage=3;
+    const mismatch=input.observations.find(item=>item.facts.code==="artifact_cursor_mismatch");
+    expect(mismatch?.facts).toMatchObject({recoverable:true,expected_offset:cursor});
+    return tool("cursor-resume","read_artifact",{locator,offset:Number(mismatch!.facts.expected_offset),limit:4000});
+   }
+   if(last?.facts.truncated===true)return tool(`cursor-page-${stage}`,"read_artifact",{locator,offset:cursor,limit:4000});
+   return finish(`decision:cursor-finished:${inputs.length}`);
+  }};
+  const runtime=await f.create({model});
+  const started=await runtime.startRun(f.input,{model,projectFileContexts:[f.snapshot]});
+  const completed=await status(runtime,started.run_id,"completed");
+  const ledger=await new JsonlEventLedger(join(f.dataDir,"events")).list(started.run_id);
+  const reads=ledger.filter(event=>event.type==="tool.completed"&&(event.data.receipt as {tool_name?:unknown}|undefined)?.tool_name==="read_artifact").map(event=>(event.data.observation as {facts:Record<string,unknown>}).facts);
+  expect(reads.length).toBeGreaterThan(2);
+  expect(reads[1]).toMatchObject({offset:reads[0]!.next_offset});
+  for(let index=1;index<reads.length;index++)expect(reads[index]!.offset).toBe(reads[index-1]!.next_offset);
+  const mismatch=ledger.find(event=>event.type==="tool.failed"&&(event.data.observation as {facts:Record<string,unknown>}|undefined)?.facts.code==="artifact_cursor_mismatch");
+  expect(mismatch?.data).toMatchObject({business_code:"artifact_cursor_mismatch"});
+  expect(ledger.some(event=>event.type==="workbench.command_completed"&&event.data.operation==="artifact.read_cursor_recovery")).toBe(true);
+  expect(completed.status).toBe("completed");
+ });
+ it("restores a pending plan from immutable redacted artifacts after the original file changes, without automatic dispatch",async()=>{const f=await fixture(),inputs:ModelInput[]=[];let plans=0;const model:ModelAdapter={name:"context-plan",async decide(input){inputs.push(input);if(input.mode==="plan"&&plans++===0)return tool("context-plan-todo","todo_write",{operation:"create",todo_id:"todo:context",title:"Inspect the selected context"});return {...finish(`decision:context:${inputs.length}`),...(input.mode==="plan"?{finish_intent:"submit_plan"}:{})};}};
   const sessions=join(f.root,"sessions");const first=await f.create({model,sessionStore:new JsonlSessionStore(sessions,{pid:2147483646})});const created=await first.startRun({...f.input,mode:"plan"},{model,projectFileContexts:[f.snapshot]});const waiting=await status(first,created.run_id,"awaiting_plan_approval");
   await writeFile(join(f.directory,"context.txt"),"external changed workspace; never reread\n");
   const recovered=await f.create({model,sessionStore:new JsonlSessionStore(sessions)});const locator={sessionId:waiting.session_id!,runId:waiting.run_id,projectId:waiting.project_id};const count=inputs.length;

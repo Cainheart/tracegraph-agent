@@ -1,0 +1,5 @@
+$ tsc -p tsconfig.test.json --noEmit
+src/desktop-sdk.ts(102,5): error TS2353: Object literal may only specify known properties, and 'getBrowserCommandReceipt' does not exist in type 'TraceGraphSdkPort & Pick<DesktopBridgeApi, "commitMigration" | "copyText" | "getAnswerFeedback" | "getConnectionStatus" | "getMigrationResult" | ... 14 more ... | "updateSessionRunOptions">'.
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/desktop:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @tracegraph/desktop@0.1.0-alpha.0 typecheck: `tsc -p tsconfig.test.json --noEmit`
+Exit status 1

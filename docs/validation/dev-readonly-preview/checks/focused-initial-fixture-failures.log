@@ -1,0 +1,81 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+ ❯ src/readonly-preview.test.ts (7 tests | 2 failed) 1907ms
+   ❯ DEV-091 owned read-only preview actual processes (7)
+     × fails closed when native enforcement is unavailable even with a full-access Host 201ms
+     × lets a real admitted Run commit a scoped patch while the same workspace preview stays alive 967ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/readonly-preview.test.ts > DEV-091 owned read-only preview actual processes > fails closed when native enforcement is unavailable even with a full-access Host
+AssertionError: promise resolved "{ result: { …(5) }, body: { …(7) } }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "body": {
++     "cacheSeparate": true,
++     "cacheWritten": true,
++     "ownerPID": 48179,
++     "pid": 48180,
++     "profileDenied": true,
++     "sourceDenied": true,
++     "tempSeparate": true,
++   },
++   "result": {
++     "code": "ok",
++     "command_id": "preview:one",
++     "message": "Operation completed",
++     "preview": {
++       "cache_writable": true,
++       "message": "Waiting for the local service",
++       "owned_process": true,
++       "preview_id": "preview:36627fc4-3365-40d3-b1ef-24e2725f8ac3",
++       "project_id": "project:preview",
++       "source_access": "read-only",
++       "state": "starting",
++       "url": "http://127.0.0.1:62565/",
++     },
++     "status": "succeeded",
++   },
+  }
+
+ ❯ src/readonly-preview.test.ts:44:279
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/readonly-preview.test.ts > DEV-091 owned read-only preview actual processes > lets a real admitted Run commit a scoped patch while the same workspace preview stays alive
+AssertionError: expected [ 'preview', 'run' ] to deeply equal [ 'preview' ]
+
+- Expected
++ Received
+
+  [
+    "preview",
++   "run",
+  ]
+
+ ❯ src/readonly-preview.test.ts:56:247
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  2 failed | 29 passed (31)
+   Start at  02:53:11
+   Duration  7.20s (tests 81%, transform 10%, import 9%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/readonly-preview.test.ts src/workbench-control.test.ts src/workspace-coordinator.test.ts '--maxWorkers=1'

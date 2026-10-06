@@ -1,6 +1,13 @@
-import type { ProjectFileContextRef, SessionRunOptions, SessionRunOptionsSnapshot, SessionRunOptionsUpdateRequest, ModelConnectionsSnapshot, ModelConnection, ModelConnectionSaveRequest, ModelConnectionRemoveRequest, PermissionGrant, PermissionGrantUpdateRequest } from "@tracegraph/contracts";
+import type {PersonalProfileSnapshot,PersonalProfileUpdateRequest,PersonalProfileCommandReceipt,PersonalUsageQuery,PersonalUsageSnapshot,PublicSessionSearchQuery,PublicSessionSearchResult} from "@tracegraph/contracts";
+import { NativeRunNavigationSchema, type NativeRunNavigation } from "@tracegraph/contracts";
+import type {GoalCreationReceipt} from "@tracegraph/contracts";
+import type {ComputerActionRequest,ComputerActionResult,ComputerCaptureContentRequest,ComputerCommandReceipt,ComputerGrant,ComputerGrantRequest,ComputerLease,ComputerLeaseReleaseRequest,ComputerLeaseRequest,ComputerLeaseResumeRequest,ComputerObservation,ComputerObserveRequest,ComputerRevokeGrantRequest,ComputerStatus,ComputerTarget} from "@tracegraph/contracts";
+import type {BrowserStatus,BrowserGrantRequest,BrowserGrant,BrowserCommand,BrowserCommandResult,BrowserCommandReceipt,BrowserObservation,GoalListResponse,GoalCreateRequest,GoalSnapshot,GoalCommandRequest,GoalBudgetSnapshot,GoalCommandReceipt} from "@tracegraph/contracts";
+import type {SessionRunOptionsOverride} from "@tracegraph/contracts";
+import type {WorkbenchSettingsHistory,RestoreWorkbenchSettingsRequest,RestoreWorkbenchSettingsResult,ProjectRunDefaultsSnapshot,ProjectRunDefaultsUpdateRequest,SessionRunOptionsResetRequest} from "@tracegraph/contracts";
+import type { ProjectFileContextRef, SessionRunOptions, SessionRunOptionsSnapshot, SessionRunOptionsUpdateRequest, ModelConnectionsSnapshot, ModelConnection, ModelConnectionSaveRequest, ModelConnectionRemoveRequest, ModelCatalogDiscoveryRequest, ModelCatalogDiscoveryResult, PermissionGrant, PermissionGrantUpdateRequest } from "@tracegraph/contracts";
 import type { HostConnectionSnapshot, ProjectFileListRequest, ProjectFileReadRequest, ProjectFileList, ProjectFileSnapshot, ProjectFileSaveRequest, ProjectFileSaveResult, ProjectFileReconcileRequest, AnswerFeedbackRequest, AnswerFeedbackSnapshot } from "@tracegraph/contracts";
-import { ImageProviderConfigSnapshotSchema, ImageProviderConfigUpdateSchema, StartMediaRunRequestSchema, WorkbenchSettingsSnapshotSchema, HostCapabilitiesSchema, WorkbenchResourcesSchema, WorkbenchCommandRequestSchema, WorkbenchCommandResultSchema, ModelConnectionTestResultSchema, UpdateWorkbenchSettingsRequestSchema, MigrationPreviewSnapshotSchema, MigrationCommitReceiptSchema } from "@tracegraph/contracts";
+import { ImageProviderConfigSnapshotSchema, ImageProviderConfigUpdateSchema, StartMediaRunRequestSchema, WorkbenchSettingsSnapshotSchema, HostCapabilitiesSchema, WorkbenchResourcesSchema, WorkbenchCommandRequestSchema, WorkbenchCommandResultSchema, ModelConnectionTestResultSchema, ModelCatalogDiscoveryRequestSchema, ModelCatalogDiscoveryResultSchema, UpdateWorkbenchSettingsRequestSchema, MigrationPreviewSnapshotSchema, MigrationCommitReceiptSchema } from "@tracegraph/contracts";
 import type { WorkbenchSettingsSnapshot, UpdateWorkbenchSettingsRequest, HostCapabilities, WorkbenchResources, WorkbenchCommandRequest, WorkbenchCommandResult, ModelConnectionTestResult, MigrationPreviewSnapshot, MigrationCommitReceipt, ImageProviderConfigSnapshot, ImageProviderConfigUpdate, StartMediaRunRequest } from "@tracegraph/contracts";
 import {
   ContextManifestSchema,
@@ -139,10 +146,61 @@ import { adjacentReplaySequence, emptyEventEvidence } from "./model";
 import { appliedPatchActions, rollbackReceipt } from "./rollback";
 
 export interface TraceGraphSdkPort {
+  getVisualRetentionSettings?():ReturnType<import("@tracegraph/sdk").TraceGraphClient["getVisualRetentionSettings"]>;
+  updateVisualRetentionSettings?(input:import("@tracegraph/contracts").VisualRetentionUpdate):ReturnType<import("@tracegraph/sdk").TraceGraphClient["updateVisualRetentionSettings"]>;
+  listVisualEvidence?(input:import("@tracegraph/contracts").VisualEvidenceQuery):ReturnType<import("@tracegraph/sdk").TraceGraphClient["listVisualEvidence"]>;
+  pinVisualEvidence?(id:string,input:import("@tracegraph/contracts").VisualEvidencePin):ReturnType<import("@tracegraph/sdk").TraceGraphClient["pinVisualEvidence"]>;
+  cleanupVisualEvidence?(input:import("@tracegraph/contracts").VisualEvidenceCleanupRequest):ReturnType<import("@tracegraph/sdk").TraceGraphClient["cleanupVisualEvidence"]>;
+  getVisualEvidenceCommandReceipt?(id:string):ReturnType<import("@tracegraph/sdk").TraceGraphClient["getVisualEvidenceCommandReceipt"]>;
+  listManagedSkills?(scope:import("@tracegraph/contracts").ManagedSkillScope):Promise<import("@tracegraph/contracts").ManagedSkillsSnapshot>;
+  readManagedSkill?(input:import("@tracegraph/contracts").ManagedSkillSelector):Promise<import("@tracegraph/contracts").ManagedSkillDocument>;
+  validateManagedSkill?(input:import("@tracegraph/contracts").ValidateManagedSkillRequest):Promise<import("@tracegraph/contracts").ManagedSkillValidation>;
+  managedSkillCommand?(input:import("@tracegraph/contracts").ManagedSkillCommand):Promise<import("@tracegraph/contracts").ManagedSkillCommandResult>;
+  getManagedSkillCommandReceipt?(commandId:string):Promise<import("@tracegraph/contracts").ManagedSkillCommandReceipt>;
+  getPersonalProfile?():Promise<PersonalProfileSnapshot>;
+  updatePersonalProfile?(input:PersonalProfileUpdateRequest):Promise<PersonalProfileSnapshot>;
+  getPersonalProfileCommandReceipt?(id:string):Promise<PersonalProfileCommandReceipt>;
+  queryPersonalUsage?(input:PersonalUsageQuery):Promise<PersonalUsageSnapshot>;
+  searchPublicSessions?(input:PublicSessionSearchQuery):Promise<PublicSessionSearchResult>;
+
+  onNativeRunRequested?(listener: (navigation: NativeRunNavigation) => void): () => void;
+  getBrowserCommandReceipt?(id:string):Promise<BrowserCommandReceipt>;
+  getComputerStatus?():Promise<ComputerStatus>;
+  listComputerTargets?():Promise<ComputerTarget[]>;
+  requestComputerGrant?(input:ComputerGrantRequest):Promise<ComputerGrant>;
+  revokeComputerGrant?(input:ComputerRevokeGrantRequest):Promise<ComputerGrant>;
+  acquireComputerLease?(input:ComputerLeaseRequest):Promise<ComputerLease>;
+  resumeComputerLease?(input:ComputerLeaseResumeRequest):Promise<ComputerLease>;
+  releaseComputerLease?(input:ComputerLeaseReleaseRequest):Promise<ComputerLease>;
+  observeComputer?(input:ComputerObserveRequest):Promise<ComputerObservation>;
+  computerAction?(input:ComputerActionRequest):Promise<ComputerActionResult>;
+  getComputerCommandReceipt?(id:string):Promise<ComputerCommandReceipt>;
+  getComputerCapture?(input:ComputerCaptureContentRequest):Promise<{sha256:string;bytes:Uint8Array}>;
+  getBrowserStatus?():Promise<BrowserStatus>;
+  requestBrowserGrant?(input:BrowserGrantRequest):Promise<BrowserGrant>;
+  browserCommand?(input:BrowserCommand):Promise<BrowserCommandResult>;
+  observeBrowser?(id:string):Promise<BrowserObservation>;
+  getBrowserEvidence?(id:string):Promise<{evidenceId:string;sha256:string;bytes:Uint8Array}>;
+  listGoals?():Promise<GoalListResponse>;
+  createGoal?(input:GoalCreateRequest):Promise<GoalSnapshot>;
+  getGoal?(id:string):Promise<GoalSnapshot>;
+  goalCommand?(id:string,input:GoalCommandRequest):Promise<GoalSnapshot>;
+  getGoalCreationReceipt?(id:string):Promise<GoalCreationReceipt>;
+  getGoalCommandReceipt?(id:string,commandId:string):Promise<GoalCommandReceipt>;
+  getGoalBudget?(id:string):Promise<GoalBudgetSnapshot>;
+  getWorkbenchSettingsHistory?(): Promise<WorkbenchSettingsHistory>;
+  restoreWorkbenchSettings?(input: RestoreWorkbenchSettingsRequest): Promise<RestoreWorkbenchSettingsResult>;
+  getProjectRunDefaults?(id: string): Promise<ProjectRunDefaultsSnapshot>;
+  updateProjectRunDefaults?(id: string, input: ProjectRunDefaultsUpdateRequest): Promise<ProjectRunDefaultsSnapshot>;
+  resetSessionRunOptions?(id: string, input: SessionRunOptionsResetRequest): Promise<SessionRunOptionsSnapshot>;
+
   getModelConnections?(): Promise<ModelConnectionsSnapshot>;
   saveModelConnection?(input: ModelConnectionSaveRequest): Promise<ModelConnectionsSnapshot>;
   removeModelConnection?(id: string, input: ModelConnectionRemoveRequest): Promise<ModelConnectionsSnapshot>;
   testModelConnection?(id: string, input: { command_id: string }): Promise<ModelConnectionTestResult>;
+  discoverModelCatalog?(id: string, input: ModelCatalogDiscoveryRequest): Promise<ModelCatalogDiscoveryResult>;
+  testModelCapabilities?(id: string, input: ModelCapabilityTestRequest): Promise<ModelCapabilityTestResult>;
+  getModelCapabilityTestReceipt?(commandId: string): Promise<ModelCapabilityTestReceipt>;
   getSessionRunOptions?(id: string): Promise<SessionRunOptionsSnapshot>;
   updateSessionRunOptions?(id: string, input: SessionRunOptionsUpdateRequest): Promise<SessionRunOptionsSnapshot>;
   getPermissionGrant?(): Promise<PermissionGrant>;
@@ -221,8 +279,8 @@ export interface TraceGraphSdkPort {
     sha256: `sha256:${string}`;
     bytes: Uint8Array;
   }>;
-  startRun(input: { file_contexts?: ProjectFileContextRef[]; run_options?: SessionRunOptions; command_id: string; project_id: string; session_id?: string; task: string; mode: RunMode; reasoning_effort?: ReasoningEffort; conversation_history?: { role: "user" | "assistant"; content: string }[]; attachment_upload_ids?: string[] }): Promise<RunProjection>;
-  startChat?(input: { mode?: RunMode; run_options?: SessionRunOptions; command_id: string; session_id?: string; task: string; reasoning_effort?: ReasoningEffort; conversation_history?: { role: "user" | "assistant"; content: string }[]; attachment_upload_ids?: string[] }): Promise<RunProjection>;
+  startRun(input: { file_contexts?: ProjectFileContextRef[]; run_options?: SessionRunOptionsOverride; command_id: string; project_id: string; session_id?: string; task: string; mode: RunMode; reasoning_effort?: ReasoningEffort; conversation_history?: { role: "user" | "assistant"; content: string }[]; attachment_upload_ids?: string[] }): Promise<RunProjection>;
+  startChat?(input: { mode?: RunMode; run_options?: SessionRunOptionsOverride; command_id: string; session_id?: string; task: string; reasoning_effort?: ReasoningEffort; conversation_history?: { role: "user" | "assistant"; content: string }[]; attachment_upload_ids?: string[] }): Promise<RunProjection>;
   approve(runId: string, command: {
     type: "approve";
     command_id: string;
@@ -411,6 +469,19 @@ export class LiveTraceGraphClient implements WorkbenchClient {
 
   getSnapshot(): WorkbenchSnapshot {
     return this.snapshot;
+  }
+
+  onNativeRunRequested(listener: (navigation: NativeRunNavigation) => void): () => void {
+    let active = true;
+    const unsubscribe = this.sdk.onNativeRunRequested?.((input) => {
+      const parsed = NativeRunNavigationSchema.safeParse(input);
+      if (!parsed.success || this.snapshot.replay !== undefined) return;
+      void this.getConnectionStatus().then((connection) => {
+        if (!active || this.snapshot.replay !== undefined || connection.state !== "connected" || connection.generation !== parsed.data.connection_generation) return;
+        listener(parsed.data);
+      }).catch(() => undefined);
+    });
+    return () => { active = false; unsubscribe?.(); };
   }
 
   subscribe(listener: (snapshot: WorkbenchSnapshot) => void): () => void {
@@ -634,20 +705,44 @@ export class LiveTraceGraphClient implements WorkbenchClient {
   async openSession(sessionId: string): Promise<void> {
     await this.initialize();
     const generation = ++this.viewGeneration;
+    await this.openSessionRun(sessionId, generation);
+  }
+
+  async openRun(runId: string): Promise<void> {
+    await this.initialize();
+    this.assertLiveWritable("Run navigation");
+    const generation = ++this.viewGeneration;
+    const projection = await this.sdk.getRun(runId);
+    if (projection.run_id !== runId) throw new Error("Run navigation returned an out-of-scope Run");
+    if (generation !== this.viewGeneration) return;
+    if (projection.session_id) { await this.openSessionRun(projection.session_id, generation, runId); return; }
+    this.stopStream();
+    this.artifactCache.clear();
+    this.clearSubagentDetails();
+    this.selectedSessionId = null;
+    this.sessionViewState = null;
+    await this.acceptProjection(projection, { state: "live", message: "Historical run", lastSequence: projection.last_sequence });
+    if (generation === this.viewGeneration && !isStreamSettled(projection)) this.startStream(runId);
+  }
+
+  private async openSessionRun(sessionId: string, generation: number, targetRunId?: string): Promise<void> {
     this.assertLiveWritable("Session navigation");
     if (!this.sdk.getSession) throw new Error("This Host does not support durable sessions");
     const detail = await this.sdk.getSession(sessionId);
-    const runId = detail.header.run_ids.at(-1);
+    if (detail.header.session_id !== sessionId) throw new Error("Session navigation returned an out-of-scope Session");
+    const runId = targetRunId ?? detail.header.run_ids.at(-1);
     if (!runId) throw new Error("This session has no Run to restore");
+    const runIndex = detail.header.run_ids.indexOf(runId);
+    if (runIndex < 0) throw new Error("Selected Run is not part of this Session");
     const projection = await this.sdk.getRun(runId);
     if (projection.run_id !== runId || projection.project_id !== detail.header.project_id || projection.session_id !== undefined && projection.session_id !== sessionId) throw new Error("Session returned an out-of-scope Run");
-    const historical = await Promise.all(detail.header.run_ids.slice(-80, -1).map(async (id): Promise<ConversationTurn> => {
+    const historical = await Promise.all(detail.header.run_ids.slice(Math.max(0, runIndex - 79), runIndex).map(async (id): Promise<ConversationTurn> => {
       const previous = await this.sdk.getRun(id);
       if (previous.run_id !== id || previous.project_id !== detail.header.project_id || previous.session_id !== undefined && previous.session_id !== sessionId) throw new Error("Session history returned an out-of-scope Run");
       const mapped = mapProjection(previous, this.projects.find((project) => project.project_id === previous.project_id), this.snapshot.connection, TodoListSchema.parse(previous.todos));
       const hydrated = await hydrateProjection(this.sdk, previous, mapped, new Map());
       const run = hydrated.run!;
-      return { runId: id, task: run.task, status: run.status, response: run.outcome ?? run.currentStep, events: run.events, changedFiles: run.editedFiles ?? [], ...(run.generatedArtifacts ? { generatedArtifacts: run.generatedArtifacts } : {}) };
+      return { runId: id, task: run.task, status: run.status, response: run.outcome ?? run.currentStep, events: run.events, ...(run.elapsed === undefined ? {} : { elapsed: run.elapsed }), changedFiles: run.editedFiles ?? [], ...(run.generatedArtifacts ? { generatedArtifacts: run.generatedArtifacts } : {}) };
     }));
     if (generation !== this.viewGeneration) return;
     this.conversations.set(sessionId, historical);
@@ -661,7 +756,7 @@ export class LiveTraceGraphClient implements WorkbenchClient {
       message: detail.truncated ? "Recovered session view after truncating an incomplete tail" : "Durable session view restored",
       lastSequence: projection.last_sequence,
     });
-    if (!isStreamSettled(projection)) this.startStream(projection.run_id);
+    if (generation === this.viewGeneration && !isStreamSettled(projection)) this.startStream(projection.run_id);
   }
 
   async renameSession(sessionId: string, title: string): Promise<void> {
@@ -746,9 +841,9 @@ export class LiveTraceGraphClient implements WorkbenchClient {
   async startRun(
     task: string,
     mode: RunMode,
-    reasoningEffort: ReasoningEffort = "default",
+    reasoningEffort?: ReasoningEffort,
     attachments: readonly PendingAttachment[] = [],
-    options?: SessionRunOptions,
+    options?: SessionRunOptionsOverride,
     fileContexts: readonly ProjectFileContextRef[] = [],
   ): Promise<void> {
     await this.initialize();
@@ -772,7 +867,7 @@ export class LiveTraceGraphClient implements WorkbenchClient {
       task,
       mode,
       ...(this.selectedSessionId === null ? {} : { session_id: this.selectedSessionId }),
-      reasoning_effort: reasoningEffort,
+      ...(reasoningEffort === undefined ? {} : { reasoning_effort: reasoningEffort }),
       conversation_history: conversation.flatMap((turn) => [
         { role: "user" as const, content: turn.task },
         { role: "assistant" as const, content: turn.response },
@@ -786,9 +881,9 @@ export class LiveTraceGraphClient implements WorkbenchClient {
 
   async startChat(
     task: string,
-    reasoningEffort: ReasoningEffort = "default",
+    reasoningEffort?: ReasoningEffort,
     attachments: readonly PendingAttachment[] = [],
-    options?: SessionRunOptions,
+    options?: SessionRunOptionsOverride,
   ): Promise<void> {
     await this.initialize();
     this.assertLiveWritable("Starting a chat Run");
@@ -803,10 +898,10 @@ export class LiveTraceGraphClient implements WorkbenchClient {
     const attachmentUploadIds = await this.stageAttachments(attachments, { target: "chat" });
     const projection = await this.sdk.startChat({
       command_id: commandId(),
-      ...(options ? { run_options: options, mode: options.mode } : {}),
+      ...(options ? { run_options: options, ...(options.mode === undefined ? {} : { mode: options.mode }) } : {}),
       task,
       ...(this.selectedSessionId === null ? {} : { session_id: this.selectedSessionId }),
-      reasoning_effort: reasoningEffort,
+      ...(reasoningEffort === undefined ? {} : { reasoning_effort: reasoningEffort }),
       conversation_history: conversation.flatMap((turn) => [
         { role: "user" as const, content: turn.task },
         { role: "assistant" as const, content: turn.response },
@@ -874,6 +969,9 @@ export class LiveTraceGraphClient implements WorkbenchClient {
   async saveModelConnection(input: ModelConnectionSaveRequest): Promise<ModelConnectionsSnapshot> { await this.initialize(); this.assertLiveWritable("Saving a model connection"); if (!this.sdk.saveModelConnection) throw new Error("Saved model connections are unavailable on this installation."); return this.sdk.saveModelConnection(input); }
   async removeModelConnection(id: string, input: ModelConnectionRemoveRequest): Promise<ModelConnectionsSnapshot> { await this.initialize(); this.assertLiveWritable("Removing a model connection"); if (!this.sdk.removeModelConnection) throw new Error("Saved model connections are unavailable on this installation."); return this.sdk.removeModelConnection(id, input); }
   async testModelConnection(id: string, input: { command_id: string }): Promise<ModelConnectionTestResult> { await this.initialize(); this.assertLiveWritable("Testing a model connection"); if (!this.sdk.testModelConnection) throw new Error("Saved model connections are unavailable on this installation."); return this.sdk.testModelConnection(id, input); }
+  async discoverModelCatalog(id: string, input: ModelCatalogDiscoveryRequest): Promise<ModelCatalogDiscoveryResult> { await this.initialize(); this.assertLiveWritable("Discovering provider models"); if (!this.sdk.discoverModelCatalog) throw new Error("Model discovery is unavailable on this installation."); return ModelCatalogDiscoveryResultSchema.parse(await this.sdk.discoverModelCatalog(id, ModelCatalogDiscoveryRequestSchema.parse(input))); }
+  async testModelCapabilities(id: string, input: ModelCapabilityTestRequest): Promise<ModelCapabilityTestResult> { await this.initialize(); this.assertLiveWritable("Testing model capabilities"); if (!this.sdk.testModelCapabilities) throw new Error("Model capability tests are unavailable on this installation."); return this.sdk.testModelCapabilities(id, input); }
+  async getModelCapabilityTestReceipt(commandId: string): Promise<ModelCapabilityTestReceipt> { await this.initialize(); this.assertLiveWritable("Inspecting model capability tests"); if (!this.sdk.getModelCapabilityTestReceipt) throw new Error("Model capability tests are unavailable on this installation."); return this.sdk.getModelCapabilityTestReceipt(commandId); }
   async getSessionRunOptions(id: string): Promise<SessionRunOptionsSnapshot> { await this.initialize(); if (!this.sdk.getSessionRunOptions) throw new Error("Conversation options are unavailable on this installation."); return this.sdk.getSessionRunOptions(id); }
   async updateSessionRunOptions(id: string, input: SessionRunOptionsUpdateRequest): Promise<SessionRunOptionsSnapshot> { await this.initialize(); this.assertLiveWritable("Updating conversation options"); if (!this.sdk.updateSessionRunOptions) throw new Error("Conversation options are unavailable on this installation."); return this.sdk.updateSessionRunOptions(id, input); }
   async getPermissionGrant(): Promise<PermissionGrant> { await this.initialize(); if (!this.sdk.getPermissionGrant) throw new Error("Permission grants are unavailable on this installation."); return this.sdk.getPermissionGrant(); }
@@ -938,6 +1036,96 @@ export class LiveTraceGraphClient implements WorkbenchClient {
     return result;
   }
 
+  async loadCommandOutput(runId: string, eventId: string, artifactId: string) {
+    await this.initialize();
+    const visibleEvents = [
+      ...(this.snapshot.run?.id === runId ? this.snapshot.run.events : []),
+      ...this.snapshot.conversation.filter((turn) => turn.runId === runId).flatMap((turn) => turn.events),
+    ];
+    const event = visibleEvents.find((candidate) => candidate.id === eventId);
+    if (!event || !["tool.completed", "tool.failed", "tool.unknown"].includes(event.sourceType ?? "")
+      || !["run_project_command", "run_test"].includes(event.toolName ?? "")
+      || !event.outputArtifactIds?.includes(artifactId)) {
+      throw new Error("This command output is not referenced by a visible command receipt.");
+    }
+    if (!this.sdk.getArtifact) throw new Error("Command output is unavailable on this installation.");
+    const generation = this.viewGeneration;
+    const result = await this.sdk.getArtifact(runId, artifactId);
+    if (generation !== this.viewGeneration || this.snapshot.replay !== undefined) throw new Error("This output no longer belongs to the current view.");
+    if (result.status !== "available" || result.artifact.run_id !== runId || result.artifact.kind !== "tool_output" && result.artifact.kind !== "test_log") {
+      throw new Error("The command output is unavailable or outside this Run.");
+    }
+    if (result.artifact.byte_length > 1_048_576) throw new Error("The command output exceeds the display limit.");
+    const maximumCharacters = 16_000;
+    return {
+      content: result.content.slice(0, maximumCharacters),
+      sha256: result.artifact.content_hash,
+      byteLength: result.artifact.byte_length,
+      truncated: result.content.length > maximumCharacters,
+    };
+  }
+
+  async getBrowserCommandReceipt(id:string):Promise<BrowserCommandReceipt>{await this.initialize(); if(!this.sdk.getBrowserCommandReceipt)throw new Error("This operation is unavailable on the current Host"); return this.sdk.getBrowserCommandReceipt(id);}
+  async getComputerStatus():Promise<ComputerStatus>{await this.initialize(); if(!this.sdk.getComputerStatus)throw new Error("This operation is unavailable on the current Host"); return this.sdk.getComputerStatus();}
+  async listComputerTargets():Promise<ComputerTarget[]>{await this.initialize(); if(!this.sdk.listComputerTargets)throw new Error("This operation is unavailable on the current Host"); return this.sdk.listComputerTargets();}
+  async requestComputerGrant(input:ComputerGrantRequest):Promise<ComputerGrant>{await this.initialize(); this.assertLiveWritable("requestComputerGrant"); if(!this.sdk.requestComputerGrant)throw new Error("This operation is unavailable on the current Host"); return this.sdk.requestComputerGrant(input);}
+  async revokeComputerGrant(input:ComputerRevokeGrantRequest):Promise<ComputerGrant>{await this.initialize(); this.assertLiveWritable("revokeComputerGrant"); if(!this.sdk.revokeComputerGrant)throw new Error("This operation is unavailable on the current Host"); return this.sdk.revokeComputerGrant(input);}
+  async acquireComputerLease(input:ComputerLeaseRequest):Promise<ComputerLease>{await this.initialize(); this.assertLiveWritable("acquireComputerLease"); if(!this.sdk.acquireComputerLease)throw new Error("This operation is unavailable on the current Host"); return this.sdk.acquireComputerLease(input);}
+  async resumeComputerLease(input:ComputerLeaseResumeRequest):Promise<ComputerLease>{await this.initialize(); this.assertLiveWritable("resumeComputerLease"); if(!this.sdk.resumeComputerLease)throw new Error("This operation is unavailable on the current Host"); return this.sdk.resumeComputerLease(input);}
+  async releaseComputerLease(input:ComputerLeaseReleaseRequest):Promise<ComputerLease>{await this.initialize(); this.assertLiveWritable("releaseComputerLease"); if(!this.sdk.releaseComputerLease)throw new Error("This operation is unavailable on the current Host"); return this.sdk.releaseComputerLease(input);}
+  async observeComputer(input:ComputerObserveRequest):Promise<ComputerObservation>{await this.initialize(); this.assertLiveWritable("observeComputer"); if(!this.sdk.observeComputer)throw new Error("This operation is unavailable on the current Host"); return this.sdk.observeComputer(input);}
+  async computerAction(input:ComputerActionRequest):Promise<ComputerActionResult>{await this.initialize(); this.assertLiveWritable("computerAction"); if(!this.sdk.computerAction)throw new Error("This operation is unavailable on the current Host"); return this.sdk.computerAction(input);}
+  async getComputerCommandReceipt(id:string):Promise<ComputerCommandReceipt>{await this.initialize();if(!this.sdk.getComputerCommandReceipt)throw new Error("This operation is unavailable on the current Host");return this.sdk.getComputerCommandReceipt(id);}
+  async getComputerCapture(input:ComputerCaptureContentRequest):Promise<{sha256:string;bytes:Uint8Array}>{await this.initialize();this.assertLiveWritable("getComputerCapture");if(!this.sdk.getComputerCapture)throw new Error("This operation is unavailable on the current Host");return this.sdk.getComputerCapture(input);}
+  async getVisualRetentionSettings(){await this.initialize();this.assertLiveWritable("Visual evidence");if(!this.sdk.getVisualRetentionSettings)throw new Error("Visual evidence management is unavailable on this installation");return this.sdk.getVisualRetentionSettings();}
+  async updateVisualRetentionSettings(input:import("@tracegraph/contracts").VisualRetentionUpdate){await this.initialize();this.assertLiveWritable("Visual evidence");if(!this.sdk.updateVisualRetentionSettings)throw new Error("Visual evidence management is unavailable on this installation");return this.sdk.updateVisualRetentionSettings(input);}
+  async listVisualEvidence(input:import("@tracegraph/contracts").VisualEvidenceQuery){await this.initialize();this.assertLiveWritable("Visual evidence");if(!this.sdk.listVisualEvidence)throw new Error("Visual evidence management is unavailable on this installation");return this.sdk.listVisualEvidence(input);}
+  async pinVisualEvidence(id:string,input:import("@tracegraph/contracts").VisualEvidencePin){await this.initialize();this.assertLiveWritable("Visual evidence");if(!this.sdk.pinVisualEvidence)throw new Error("Visual evidence management is unavailable on this installation");return this.sdk.pinVisualEvidence(id,input);}
+  async cleanupVisualEvidence(input:import("@tracegraph/contracts").VisualEvidenceCleanupRequest){await this.initialize();this.assertLiveWritable("Visual evidence");if(!this.sdk.cleanupVisualEvidence)throw new Error("Visual evidence management is unavailable on this installation");return this.sdk.cleanupVisualEvidence(input);}
+  async getVisualEvidenceCommandReceipt(id:string){await this.initialize();this.assertLiveWritable("Visual evidence");if(!this.sdk.getVisualEvidenceCommandReceipt)throw new Error("Visual evidence management is unavailable on this installation");return this.sdk.getVisualEvidenceCommandReceipt(id);}
+  async listManagedSkills(scope:import("@tracegraph/contracts").ManagedSkillScope){await this.initialize();this.assertLiveWritable("Skill management");if(!this.sdk.listManagedSkills)throw new Error("Skill management is unavailable on this installation");return this.sdk.listManagedSkills(scope);}
+  async readManagedSkill(input:import("@tracegraph/contracts").ManagedSkillSelector){await this.initialize();this.assertLiveWritable("Skill management");if(!this.sdk.readManagedSkill)throw new Error("Skill management is unavailable on this installation");return this.sdk.readManagedSkill(input);}
+  async validateManagedSkill(input:import("@tracegraph/contracts").ValidateManagedSkillRequest){await this.initialize();this.assertLiveWritable("Skill management");if(!this.sdk.validateManagedSkill)throw new Error("Skill management is unavailable on this installation");return this.sdk.validateManagedSkill(input);}
+  async managedSkillCommand(input:import("@tracegraph/contracts").ManagedSkillCommand){await this.initialize();this.assertLiveWritable("Skill management");if(!this.sdk.managedSkillCommand)throw new Error("Skill management is unavailable on this installation");return this.sdk.managedSkillCommand(input);}
+  async getManagedSkillCommandReceipt(id:string){await this.initialize();this.assertLiveWritable("Skill management");if(!this.sdk.getManagedSkillCommandReceipt)throw new Error("Skill management is unavailable on this installation");return this.sdk.getManagedSkillCommandReceipt(id);}
+  async getPersonalProfile():Promise<PersonalProfileSnapshot>{await this.initialize();this.assertLiveWritable("Personal data");if(!this.sdk.getPersonalProfile)throw new Error("This operation is unavailable on the current Host");return this.sdk.getPersonalProfile();}
+  async updatePersonalProfile(input:PersonalProfileUpdateRequest):Promise<PersonalProfileSnapshot>{await this.initialize();this.assertLiveWritable("Personal data");if(!this.sdk.updatePersonalProfile)throw new Error("This operation is unavailable on the current Host");return this.sdk.updatePersonalProfile(input);}
+  async getPersonalProfileCommandReceipt(id:string):Promise<PersonalProfileCommandReceipt>{await this.initialize();this.assertLiveWritable("Personal data");if(!this.sdk.getPersonalProfileCommandReceipt)throw new Error("This operation is unavailable on the current Host");return this.sdk.getPersonalProfileCommandReceipt(id);}
+  async queryPersonalUsage(input:PersonalUsageQuery):Promise<PersonalUsageSnapshot>{await this.initialize();this.assertLiveWritable("Personal data");if(!this.sdk.queryPersonalUsage)throw new Error("This operation is unavailable on the current Host");return this.sdk.queryPersonalUsage(input);}
+  async searchPublicSessions(input:PublicSessionSearchQuery):Promise<PublicSessionSearchResult>{await this.initialize();this.assertLiveWritable("Personal data");if(!this.sdk.searchPublicSessions)throw new Error("This operation is unavailable on the current Host");return this.sdk.searchPublicSessions(input);}
+
+  async getBrowserStatus():Promise<BrowserStatus>{await this.initialize(); if(!this.sdk.getBrowserStatus)throw new Error("This operation is unavailable on the current Host"); return this.sdk.getBrowserStatus();}
+  async requestBrowserGrant(input:BrowserGrantRequest):Promise<BrowserGrant>{await this.initialize(); this.assertLiveWritable("requestBrowserGrant"); if(!this.sdk.requestBrowserGrant)throw new Error("This operation is unavailable on the current Host"); return this.sdk.requestBrowserGrant(input);}
+  async browserCommand(input:BrowserCommand):Promise<BrowserCommandResult>{await this.initialize(); this.assertLiveWritable("browserCommand"); if(!this.sdk.browserCommand)throw new Error("This operation is unavailable on the current Host"); return this.sdk.browserCommand(input);}
+  async observeBrowser(id:string):Promise<BrowserObservation>{await this.initialize(); this.assertLiveWritable("observeBrowser"); if(!this.sdk.observeBrowser)throw new Error("This operation is unavailable on the current Host"); return this.sdk.observeBrowser(id);}
+  async getBrowserEvidence(id:string):Promise<{evidenceId:string;sha256:string;bytes:Uint8Array}>{await this.initialize(); if(!this.sdk.getBrowserEvidence)throw new Error("This operation is unavailable on the current Host"); return this.sdk.getBrowserEvidence(id);}
+  async listGoals():Promise<GoalListResponse>{await this.initialize(); if(!this.sdk.listGoals)throw new Error("This operation is unavailable on the current Host"); return this.sdk.listGoals();}
+  async createGoal(input:GoalCreateRequest):Promise<GoalSnapshot>{await this.initialize(); this.assertLiveWritable("createGoal"); if(!this.sdk.createGoal)throw new Error("This operation is unavailable on the current Host"); return this.sdk.createGoal(input);}
+  async getGoal(id:string):Promise<GoalSnapshot>{await this.initialize(); if(!this.sdk.getGoal)throw new Error("This operation is unavailable on the current Host"); return this.sdk.getGoal(id);}
+  async goalCommand(id:string,input:GoalCommandRequest):Promise<GoalSnapshot>{await this.initialize(); this.assertLiveWritable("goalCommand"); if(!this.sdk.goalCommand)throw new Error("This operation is unavailable on the current Host"); return this.sdk.goalCommand(id,input);}
+  async getGoalCreationReceipt(id:string):Promise<GoalCreationReceipt>{await this.initialize();if(!this.sdk.getGoalCreationReceipt)throw new Error("This operation is unavailable on the current Host");return this.sdk.getGoalCreationReceipt(id);}
+  async getGoalCommandReceipt(id:string,commandId:string):Promise<GoalCommandReceipt>{await this.initialize(); if(!this.sdk.getGoalCommandReceipt)throw new Error("This operation is unavailable on the current Host"); return this.sdk.getGoalCommandReceipt(id,commandId);}
+  async getGoalBudget(id:string):Promise<GoalBudgetSnapshot>{await this.initialize(); if(!this.sdk.getGoalBudget)throw new Error("This operation is unavailable on the current Host"); return this.sdk.getGoalBudget(id);}
+  async getWorkbenchSettingsHistory(): Promise<WorkbenchSettingsHistory> {
+    await this.initialize(); if (!this.sdk.getWorkbenchSettingsHistory) throw new Error("Settings history is unavailable on this Host");
+    return this.sdk.getWorkbenchSettingsHistory();
+  }
+  async restoreWorkbenchSettings(input: RestoreWorkbenchSettingsRequest): Promise<RestoreWorkbenchSettingsResult> {
+    await this.initialize(); this.assertLiveWritable("Restoring settings"); if (!this.sdk.restoreWorkbenchSettings) throw new Error("Settings restore is unavailable on this Host");
+    return this.sdk.restoreWorkbenchSettings(input);
+  }
+  async getProjectRunDefaults(id: string): Promise<ProjectRunDefaultsSnapshot> {
+    await this.initialize(); if (!this.sdk.getProjectRunDefaults) throw new Error("Project settings are unavailable on this Host");
+    return this.sdk.getProjectRunDefaults(id);
+  }
+  async updateProjectRunDefaults(id: string, input: ProjectRunDefaultsUpdateRequest): Promise<ProjectRunDefaultsSnapshot> {
+    await this.initialize(); this.assertLiveWritable("Updating project settings"); if (!this.sdk.updateProjectRunDefaults) throw new Error("Project settings are unavailable on this Host");
+    return this.sdk.updateProjectRunDefaults(id,input);
+  }
+  async resetSessionRunOptions(id: string, input: SessionRunOptionsResetRequest): Promise<SessionRunOptionsSnapshot> {
+    await this.initialize(); this.assertLiveWritable("Resetting session options"); if (!this.sdk.resetSessionRunOptions) throw new Error("Session settings reset is unavailable on this Host");
+    return this.sdk.resetSessionRunOptions(id,input);
+  }
   async getWorkbenchSettings(): Promise<WorkbenchSettingsSnapshot> {
     await this.initialize();
     if (!this.sdk.getWorkbenchSettings) throw new Error("Shared settings are unavailable on this Host");
@@ -1688,7 +1876,7 @@ export class LiveTraceGraphClient implements WorkbenchClient {
     const response = await this.sdk.listSessions({
       limit: 50,
       view: "roots",
-      ...(this.selectedProjectId === null ? {} : { project_id: this.selectedProjectId }),
+      // Recents is global; the sidebar separately groups these real root sessions by project.
       ...(this.sessionQuery ? { q: this.sessionQuery } : {}),
     });
     this.sessions = response.sessions;
@@ -2248,6 +2436,9 @@ function mapProjection(
   const artifacts = latestArtifacts(projection.artifact_refs);
   const elapsedValue = elapsed(projection.timeline);
   const project = projectSummary ? mapProject(projectSummary) : null;
+  const publicOutcome = projection.outcome === undefined
+    ? undefined
+    : projection.status === "cancelled" ? publicTerminalSummary(projection.timeline) ?? projection.outcome : projection.outcome;
   const sandboxReport = projection.sandbox_report
     ?? [...events].reverse().find((event) => event.sandboxReport !== undefined)?.sandboxReport;
   const permission = projection.permission
@@ -2258,7 +2449,7 @@ function mapProjection(
     mode: projection.mode,
     task: projection.task,
     ...(elapsedValue === undefined ? {} : { elapsed: elapsedValue }),
-    currentStep: projection.timeline.at(-1)?.summary ?? "Run created",
+    currentStep: publicTerminalSummary(projection.timeline) ?? "Run created",
     lastSequence: projection.last_sequence,
     ...(inputTokens === undefined ? {} : { inputTokens }),
     ...(tokenLimit === undefined ? {} : { tokenLimit }),
@@ -2343,7 +2534,7 @@ function mapProjection(
       },
     }),
     ...(pending ? { approval: mapApproval(pending) } : {}),
-    ...(projection.outcome === undefined ? {} : { outcome: projection.outcome }),
+    ...(publicOutcome === undefined ? {} : { outcome: publicOutcome }),
   };
   return {
     dataSource: "live",
@@ -2374,6 +2565,29 @@ function mapProjection(
       emptyEventEvidence("Linked evidence is still loading."),
     ])),
   };
+}
+
+/** Older shared-budget terminal records used a Goal label even when the
+ * durable owner was an ordinary delivery Run. Reconstruct the truthful
+ * public summary from the terminal code and the already-recorded owner ID. */
+function publicTerminalSummary(events: RunProjection["timeline"]): string | undefined {
+  const terminal = events.at(-1);
+  if (!terminal) return undefined;
+  if (terminal.type !== "run.cancelled" || terminal.summary !== "Goal budget stopped") return terminal.summary;
+  const created = events.find((event) => event.type === "run.created");
+  const identity = stringValue(terminal.data.delivery_budget)
+    ?? stringValue(terminal.data.goal_budget)
+    ?? stringValue(created?.data.delivery_budget)
+    ?? stringValue(created?.data.goal_budget);
+  const code = stringValue(terminal.data.code);
+  const delivery = identity?.startsWith("delivery:") ?? false;
+  if (delivery && code === "goal_token_limit") return "Run token budget cannot fit the next model request";
+  if (delivery && code === "goal_time_limit") return "Run time budget exhausted";
+  if (delivery && (code === "goal_usage_unknown" || code === "goal_usage_overrun")) return "Run usage requires review";
+  if (!delivery && identity?.startsWith("goal:") && code === "goal_token_limit") return "Goal request does not fit the remaining token budget";
+  if (!delivery && identity?.startsWith("goal:") && code === "goal_time_limit") return "Goal time budget exhausted";
+  if (!delivery && identity?.startsWith("goal:") && (code === "goal_usage_unknown" || code === "goal_usage_overrun")) return "Goal usage requires review";
+  return "Run budget stopped";
 }
 
 function mapSubagentChildRun(projection: RunProjection): SubagentChildRunSnapshot {
@@ -2838,6 +3052,10 @@ function mapWireEvent(event: WireSessionEvent, runStatus: RunProjection["status"
     toolArguments?.query,
     toolArguments?.suite,
   );
+  const commandName = stringValue(observationFacts?.command);
+  const exitCode = typeof observationFacts?.exit_code === "number" || observationFacts?.exit_code === null
+    ? observationFacts.exit_code as number | null : undefined;
+  const receiptCode = stringValue(receipt?.code);
   const durationMs = numberValue(receipt?.duration_ms);
   const sandboxReport = parseSandboxReport(event.data.sandbox_report)
     ?? parseSandboxReport(receiptMetadata?.sandbox_report)
@@ -2862,6 +3080,12 @@ function mapWireEvent(event: WireSessionEvent, runStatus: RunProjection["status"
     ...(operationId === undefined ? {} : { operationId }),
     ...(toolName === undefined ? {} : { toolName }),
     ...(target === undefined ? {} : { target }),
+    ...(commandName === undefined ? {} : { commandName }),
+    ...(exitCode === undefined ? {} : { exitCode }),
+    ...(receiptCode === undefined ? {} : { receiptCode }),
+    ...((event.type.startsWith("tool.") && event.artifact_refs.some((ref) => ref.kind === "tool_output" || ref.kind === "test_log"))
+      ? { outputArtifactIds: event.artifact_refs.filter((ref) => ref.kind === "tool_output" || ref.kind === "test_log").map((ref) => ref.artifact_id) }
+      : {}),
     ...(event.context_manifest_ref === undefined ? {} : { contextManifestRef: event.context_manifest_ref }),
     ...((event.type === "patch.preview_created" || event.type === "patch.applied") ? { patchRef: event.event_id } : event.patch_event_id ? { patchRef: event.patch_event_id } : {}),
     ...(event.graph_delta_id === undefined ? {} : { graphDeltaRef: event.graph_delta_id }),
@@ -3767,3 +3991,4 @@ async function delay(milliseconds: number, signal: AbortSignal): Promise<void> {
     }, { once: true });
   });
 }
+import type { ModelCapabilityTestRequest, ModelCapabilityTestResult, ModelCapabilityTestReceipt } from "@tracegraph/contracts";

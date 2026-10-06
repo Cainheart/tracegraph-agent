@@ -21,7 +21,7 @@ const HASH = `sha256:${"1".repeat(64)}`;
 describe("G17 extension contracts", () => {
   it("accepts bounded custom tool names while preserving the built-in catalog", () => {
     expect(ToolNameSchema.parse("acme.search:v2")).toBe("acme.search:v2");
-    expect(BUILTIN_TOOL_NAMES).toHaveLength(20);
+    expect(BUILTIN_TOOL_NAMES).toHaveLength(22);
     expect(() => ToolNameSchema.parse("bad tool")).toThrow();
     expect(() => ToolNameSchema.parse(`x${"y".repeat(160)}`)).toThrow();
   });

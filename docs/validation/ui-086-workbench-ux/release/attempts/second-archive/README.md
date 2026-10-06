@@ -1,5 +1,7 @@
 # UX-086 corrected immutable Preview acceptance
 
+该历史归档已于 2026-10-06 清理；本目录保留哈希和验收回执，原 `_tmp_release` 路径不再存在。
+
 Status: superseded after installed LIVE validation and before Preview observation. Fresh Linux/macOS installation, CLI/private Host smoke, DEMO-080/081/082 and the actual archived Main/Node worker/Seatbelt test oracle passed. Root subsequently found a Chinese placeholder locale omission and will freeze a third corrected archive; these second-hash receipts remain preserved, and do not close the final Preview acceptance.
 
 ## Artifact and participant

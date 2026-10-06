@@ -1,0 +1,6 @@
+{
+  "src/clamp.mjs": "export function clamp(value, min, max) { if (![value,min,max].every(Number.isFinite)) throw new TypeError('finite required'); if (min > max) throw new RangeError('reversed range'); return Math.max(min, Math.min(max, value)); }\n",
+  "dist/clamp.mjs": "export function clamp(value, min, max) { if (![value,min,max].every(Number.isFinite)) throw new TypeError('finite required'); if (min > max) throw new RangeError('reversed range'); return Math.max(min, Math.min(max, value)); }\n",
+  "test/clamp.test.mjs": "import assert from 'node:assert/strict'; import {clamp} from '../dist/clamp.mjs'; assert.equal(clamp(12,0,10),10); assert.equal(clamp(-1,0,10),0); assert.equal(clamp(4,0,10),4); assert.throws(()=>clamp(NaN,0,10),TypeError); console.log('ACTUAL_CLAMP_TESTS_PASS');\n",
+  "outlive.commands.json": "{\"version\":1,\"commands\":{\"verify\":{\"executable\":\"node\",\"args\":[\"verify.mjs\"]}}}"
+}

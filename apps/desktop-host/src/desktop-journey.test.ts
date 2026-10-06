@@ -9,8 +9,8 @@ import { createFailingTypescriptFixture, createTemporaryDataDir } from "@tracegr
 import { describe, expect, it } from "vitest";
 import { createDesktopHostRuntime, type DesktopHostRuntime } from "./desktop-host.js";
 
-function finish(answer: string) {
-  return DecisionSchema.parse({ decision_id: `decision:${crypto.randomUUID()}`, kind: "finish", public_reason: "Observed fixture result", evidence_refs: [], risk: "none", final_answer: answer });
+function finish(answer: string, finishIntent: "answer" | "submit_plan" = "answer") {
+  return DecisionSchema.parse({ decision_id: `decision:${crypto.randomUUID()}`, kind: "finish", finish_intent: finishIntent, public_reason: "Observed fixture result", evidence_refs: [], risk: "none", final_answer: answer });
 }
 
 function model(): ModelAdapter {
@@ -32,7 +32,7 @@ function model(): ModelAdapter {
         if (input.mode === "plan" && input.turn === 1) return DecisionSchema.parse({
           decision_id: "decision:todo", kind: "tool_call", public_reason: "Create a reviewable plan", evidence_refs: [], risk: "low", expected_effect: "Plan Todo", tool_call: { action_id: "action:todo", tool_name: "todo_write", arguments: { operation: "create", todo_id: "todo:plan", title: "Inspect before executing" } },
         });
-        return finish("Plan and steering were reviewed.");
+        return finish("Plan and steering were reviewed.", input.mode === "plan" ? "submit_plan" : "answer");
       }
       return fake.decide(input);
     },
@@ -157,6 +157,8 @@ describe("Desktop private RPC real Runtime journeys", { timeout: 45_000 }, () =>
       await expect(connection.client.command({ type: "session.resume", session_id: waiting.session_id!, input: { command_id: "command:resume" } })).resolves.toMatchObject({ resource: "session_resume", value: { run_id: waiting.run_id } });
       const restored = await getRun(connection.client, waiting.run_id);
       expect(restored.status).toBe("awaiting_plan_approval");
+      expect(restored.todos.items).toEqual(expect.arrayContaining([expect.objectContaining({ todo_id: "todo:plan", title: "Inspect before executing" })]));
+      expect(restored.timeline.find((event) => event.event_id === restored.pending_plan!.plan_event_id)).toMatchObject({ type: "plan.ready", data: { todo_ids: ["todo:plan"] } });
       await connection.client.command({ type: "run.input", run_id: waiting.run_id, input: { command_id: "command:plan-steer", input_id: "input:plan-steer", kind: "message", body: "Read evidence before finishing" } });
       await expect(connection.client.command({ type: "run.approve_plan", run_id: waiting.run_id, input: { command_id: "command:stale-plan", plan_event_id: "event:stale" } })).rejects.toMatchObject({ protocolError: { code: "conflict" } });
       await connection.client.command({ type: "run.approve_plan", run_id: waiting.run_id, input: { command_id: "command:approve-plan", plan_event_id: restored.pending_plan!.plan_event_id } });

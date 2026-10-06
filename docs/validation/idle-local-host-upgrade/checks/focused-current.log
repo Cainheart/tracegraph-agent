@@ -1,0 +1,52 @@
+Command: env -u NODE_OPTIONS pnpm --filter @tracegraph/host exec vitest run src/local-host-upgrade.test.ts src/local-upgrade-aborted-handler.test.ts src/local-connection-supervisor.test.ts src/local-host-upgrade-owner.e2e.test.ts --maxWorkers=1
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+ ❯ src/local-host-upgrade-owner.e2e.test.ts (3 tests | 1 failed) 3945ms
+   ❯ actual private owner build handoff (3)
+     × replaces an idle child PID atomically, deduplicates first-launch clients, and preserves model/settings without provider work 2178ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/local-host-upgrade-owner.e2e.test.ts > actual private owner build handoff > replaces an idle child PID atomically, deduplicates first-launch clients, and preserves model/settings without provider work
+AssertionError: expected { provider: 'custom', …(6) } to deeply equal { provider: 'custom', …(6) }
+
+- Expected
++ Received
+
+@@ -1,11 +1,11 @@
+  {
+    "base_url": "http://127.0.0.1:9/v1",
+    "configured": true,
+    "credential": {
+      "backend": "private_file",
+-     "last_updated_at": "2026-10-04T21:02:01.436Z",
++     "last_updated_at": "2026-10-04T21:02:01.435Z",
+      "name": "TRACEGRAPH_CUSTOM_KEY_1E4B55325593",
+      "writable": true,
+    },
+    "has_key": true,
+    "model": "preserved-offline-model",
+
+ ❯ src/local-host-upgrade-owner.e2e.test.ts:29:388
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 3 passed (4)
+      Tests  1 failed | 25 passed (26)
+   Start at  05:01:59
+   Duration  7.04s (tests 71%, import 15%, transform 14%)
+
+    Isolate  4 workers spawned · ~147ms startup each (spawn + environment, per file)
+             at least ~442ms faster with isolate: false — reuses workers across files instead of one per file
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/local-host-upgrade.test.ts src/local-upgrade-aborted-handler.test.ts src/local-connection-supervisor.test.ts src/local-host-upgrade-owner.e2e.test.ts '--maxWorkers=1'

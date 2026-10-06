@@ -1,0 +1,41 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+ ❯ src/skill-management-http.test.ts (2 tests | 1 failed) 1072ms
+   × freezes admitted Skill content while the next real Run resolves the edited registry 586ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/skill-management-http.test.ts > freezes admitted Skill content while the next real Run resolves the edited registry
+Error: Cannot write headers after they are sent to the client
+ ❯ send src/skill-management-http.test.ts:19:187
+
+ ❯ release src/skill-management-http.test.ts:19:508
+ ❯ src/skill-management-http.test.ts:22:11
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  02:49:55
+   Duration  2.32s (tests 48%, transform 36%, import 17%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/skill-management-http.test.ts

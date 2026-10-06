@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { act } from "react";
+import { createHash } from "node:crypto";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { HostCapabilitiesSchema, type ImageProviderConfigSnapshot } from "@tracegraph/contracts";
@@ -14,7 +15,7 @@ const caps = (...operations: string[]) => HostCapabilitiesSchema.parse({ profile
 const config: ImageProviderConfigSnapshot = { configured: false, has_key: false, protocol: "openai-images", base_url: "http://127.0.0.1:19001/v1", model: "synthetic-image" };
 let container: HTMLDivElement, root: Root;
 beforeEach(() => { Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true }); localStorage.clear(); localStorage.setItem("tracegraph.language", "en"); container = document.createElement("div"); document.body.append(container); root = createRoot(container); });
-afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks(); });
+afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks(); vi.unstubAllGlobals(); });
 function button(name: string) { const value = [...container.querySelectorAll<HTMLButtonElement>("button")].find((item) => item.textContent?.trim() === name); if (!value) throw new Error("Missing " + name); return value; }
 async function click(name: string) { await act(async () => button(name).click()); }
 async function input(label: string, value: string) { const element = container.querySelector<HTMLInputElement | HTMLTextAreaElement>(`[aria-label="${label}"]`)!; await act(async () => { Object.getOwnPropertyDescriptor(element.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype, "value")!.set!.call(element, value); element.dispatchEvent(new Event("input", { bubbles: true })); }); }
@@ -39,8 +40,9 @@ describe("real media product surfaces", () => {
     await act(async () => root.render(<LanguageProvider><ImageProviderSettings client={client} capabilities={caps("image.read", "image.configure", "image.clear")} /></LanguageProvider>)); await input("Image API Key", "disposable-image-key"); await click("Save image configuration"); expect(client.configureImageProvider).toHaveBeenCalledWith({ protocol: "openai-images", base_url: config.base_url, model: config.model, api_key: "disposable-image-key" }); expect(container.textContent).not.toContain("disposable-image-key"); expect(container.textContent).toContain("[redacted]"); expect(container.querySelector<HTMLInputElement>('[aria-label="Image API Key"]')!.value).toBe("disposable-image-key");
   });
   it("only previews explicit verified content and revokes it when entering Replay", async () => {
-    const artifact = { artifactId: "artifact_generated", runId: "run_generated", projectId: "project_generated", mediaType: "image/png" as const, bytes: 3, sha256: "sha256:" + "a".repeat(64), label: "Generated image" };
+    const artifact = { artifactId: "artifact_generated", runId: "run_generated", projectId: "project_generated", mediaType: "image/png" as const, bytes: 3, sha256: "sha256:039058c6f2c0cb492c533b0a4d14ef77cc0f78abccced5287d84a1a2011cfb81", label: "Generated image" };
     const load = vi.fn(async () => ({ artifactId: artifact.artifactId, mediaType: artifact.mediaType, sha256: artifact.sha256, bytes: new Uint8Array([1, 2, 3]) })); Object.assign(URL, { createObjectURL: vi.fn(() => "blob:verified-generated"), revokeObjectURL: vi.fn() });
+    vi.stubGlobal("crypto", { subtle: { digest: async (_algorithm: string, data: ArrayBuffer) => Uint8Array.from(createHash("sha256").update(Buffer.from(data)).digest()).buffer } });
     const render = async (disabled = false) => act(async () => root.render(<LanguageProvider><GeneratedGallery artifacts={[artifact]} onLoad={load} disabled={disabled} {...(disabled ? { disabledReason: "Return to now to preview generated artifacts." } : {})} /></LanguageProvider>));
     await render(); expect(load).not.toHaveBeenCalled(); await click("Preview generated artifact"); expect(load).toHaveBeenCalledWith("run_generated", "artifact_generated"); expect(container.querySelector("img")?.src).toBe("blob:verified-generated"); expect(container.querySelector("a")?.download).toBe("outlive-artifact_generated.png"); await render(true); expect(container.querySelector("img")).toBeNull(); expect(URL.revokeObjectURL).toHaveBeenCalledWith("blob:verified-generated"); expect(button("Preview generated artifact").disabled).toBe(true);
   });
@@ -48,6 +50,19 @@ describe("real media product surfaces", () => {
     const artifact = { artifactId: "artifact_generated", runId: "run_generated", projectId: "project_generated", mediaType: "image/png" as const, bytes: 1, sha256: "sha256:" + "a".repeat(64), label: "Generated image" };
     const load = vi.fn(async () => ({ artifactId: artifact.artifactId, mediaType: artifact.mediaType, sha256: "sha256:" + "b".repeat(64), bytes: new Uint8Array([1]) }));
     await act(async () => root.render(<LanguageProvider><GeneratedGallery artifacts={[artifact]} onLoad={load} /></LanguageProvider>)); await click("Preview generated artifact"); expect(container.querySelector("img")).toBeNull(); expect(container.querySelector('[role="alert"]')?.textContent).toContain("verification failed");
+  });
+  it("rejects image bytes whose computed SHA-256 differs even when the receipt metadata matches", async () => {
+    const artifact = { artifactId: "artifact_generated", runId: "run_generated", projectId: "project_generated", mediaType: "image/png" as const, bytes: 1, sha256: "sha256:4bf5122f344554c53bde2ebb8cd2b7e3d1600ad631c385a5d7cce23c7785459a", label: "Generated image" };
+    const load = vi.fn(async () => ({ artifactId: artifact.artifactId, mediaType: artifact.mediaType, sha256: artifact.sha256, bytes: new Uint8Array([9]) }));
+    vi.stubGlobal("crypto", { subtle: { digest: async (_algorithm: string, data: ArrayBuffer) => Uint8Array.from(createHash("sha256").update(Buffer.from(data)).digest()).buffer } });
+    await act(async () => root.render(<LanguageProvider><GeneratedGallery artifacts={[artifact]} onLoad={load} /></LanguageProvider>)); await click("Preview generated artifact");
+    expect(container.querySelector("img")).toBeNull(); expect(container.querySelector('[role="alert"]')?.textContent).toContain("byte digest verification failed");
+  });
+  it("keeps media generation in a stable placeholder until a verified Artifact is available", async () => {
+    await act(async () => root.render(<LanguageProvider><GeneratedGallery artifacts={[]} activity={{ state: "running" }} /></LanguageProvider>));
+    expect(container.querySelector('[role="status"]')?.textContent).toContain("Generating media"); expect(container.querySelector("img")).toBeNull();
+    await act(async () => root.render(<LanguageProvider><GeneratedGallery artifacts={[]} activity={{ state: "failed" }} /></LanguageProvider>));
+    expect(container.querySelector('[role="alert"]')?.textContent).toContain("verified artifact"); expect(container.querySelector("img")).toBeNull();
   });
   it("keeps offline, Replay and capability denial distinct without loading or downloading content", async () => {
     const artifact = { artifactId: "artifact_generated", runId: "run_generated", projectId: "project_generated", mediaType: "image/png" as const, bytes: 1, sha256: "sha256:" + "a".repeat(64), label: "Generated image" };

@@ -47,6 +47,8 @@ export type AttachmentRef = z.infer<typeof AttachmentRefSchema>;
 
 export const ModelCapabilitiesSchema = z.object({
   image_input: z.boolean(),
+  context_window_tokens: z.number().int().min(1_024).max(2_000_000).optional(),
+  max_output_tokens: z.number().int().positive().max(1_000_000).optional(),
 }).strict();
 export type ModelCapabilities = z.infer<typeof ModelCapabilitiesSchema>;
 

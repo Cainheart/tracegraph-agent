@@ -1,0 +1,127 @@
+{
+  "connections": [
+    {
+      "connection_id": "ui-verification",
+      "label": "受控验收服务",
+      "revision": 0,
+      "provider": "custom",
+      "protocol": "openai-chat-completions",
+      "base_url": "http://127.0.0.1:50827/v1",
+      "model": "fixture-ui",
+      "models": [
+        "fixture-ui"
+      ],
+      "image_input_models": [],
+      "reasoning_by_model": {
+        "fixture-ui": [
+          "default"
+        ]
+      },
+      "has_key": true,
+      "credential": {
+        "name": "TRACEGRAPH_CUSTOM_KEY_7C6110FB0C60",
+        "backend": "private_file",
+        "writable": true,
+        "last_updated_at": "2026-10-04T17:41:33.432Z"
+      },
+      "source": "profile",
+      "writable": true
+    },
+    {
+      "connection_id": "ui-capability-verification",
+      "label": "新安装包能力验收",
+      "revision": 0,
+      "provider": "custom",
+      "protocol": "openai-chat-completions",
+      "base_url": "http://127.0.0.1:52487/v1",
+      "model": "fixture-ui",
+      "models": [
+        "fixture-ui"
+      ],
+      "image_input_models": [],
+      "reasoning_by_model": {
+        "fixture-ui": [
+          "default"
+        ]
+      },
+      "has_key": true,
+      "credential": {
+        "name": "TRACEGRAPH_CUSTOM_KEY_473D1591A8E1",
+        "backend": "private_file",
+        "writable": true,
+        "last_updated_at": "2026-10-04T21:10:12.743Z"
+      },
+      "source": "profile",
+      "writable": true,
+      "capability_test": {
+        "command_id": "22a07d49-c562-43fe-bafa-beef5f285c97",
+        "connection_id": "ui-capability-verification",
+        "connection_revision": 0,
+        "model": "fixture-ui",
+        "provider": "custom",
+        "protocol": "openai-chat-completions",
+        "checked_at": "2026-10-04T21:35:03.338Z",
+        "duration_ms": 26,
+        "results": [
+          {
+            "feature": "text",
+            "status": "passed",
+            "code": "model_probe_passed",
+            "duration_ms": 16,
+            "dispatched": true,
+            "usage_status": "reported",
+            "usage": {
+              "input_tokens": 31,
+              "output_tokens": 7,
+              "total_tokens": 38
+            },
+            "evidence": "exact_text"
+          },
+          {
+            "feature": "tools",
+            "status": "passed",
+            "code": "model_probe_passed",
+            "duration_ms": 3,
+            "dispatched": true,
+            "usage_status": "reported",
+            "usage": {
+              "input_tokens": 31,
+              "output_tokens": 7,
+              "total_tokens": 38
+            },
+            "evidence": "native_tool_call"
+          },
+          {
+            "feature": "image",
+            "status": "passed",
+            "code": "model_probe_passed",
+            "duration_ms": 4,
+            "dispatched": true,
+            "usage_status": "reported",
+            "usage": {
+              "input_tokens": 31,
+              "output_tokens": 7,
+              "total_tokens": 38
+            },
+            "evidence": "image_fixture_answer"
+          },
+          {
+            "feature": "structured",
+            "status": "passed",
+            "code": "model_probe_passed",
+            "duration_ms": 1,
+            "dispatched": true,
+            "usage_status": "reported",
+            "usage": {
+              "input_tokens": 31,
+              "output_tokens": 7,
+              "total_tokens": 38
+            },
+            "evidence": "native_json_schema"
+          }
+        ]
+      }
+    }
+  ],
+  "default_connection_id": "ui-verification"
+}

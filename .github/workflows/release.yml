@@ -40,6 +40,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm -r --if-present build
       - run: node --test scripts/build-desktop-product.test.mjs
+      - name: Stage the matching browser on the native build runner
+        run: pnpm --filter @tracegraph/host exec playwright-core install chromium
       - name: Assemble native installer, bundled Node and CLI
         if: vars.OUTLIVE_SIGN_RELEASE != 'true'
         run: node scripts/build-desktop-product.mjs --output _tmp_release/desktop-product
@@ -94,6 +96,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm supply-chain:check
       - run: pnpm typecheck
+      - name: Install the pinned browser for real browser tests
+        run: pnpm --filter @tracegraph/host exec playwright-core install --with-deps chromium
       - run: pnpm test
       - run: pnpm test:e2e
       - run: pnpm coverage

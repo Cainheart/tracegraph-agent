@@ -1,0 +1,25 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench
+
+ ❯ src/personal-data-ui.test.tsx (9 tests | 1 failed) 131ms
+   ❯ Local personal data surfaces (9)
+     × shows one daily usage filter and reads legacy totals only as a compatibility fallback 21ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/personal-data-ui.test.tsx > Local personal data surfaces > shows one daily usage filter and reads legacy totals only as a compatibility fallback
+AssertionError: expected "getUsage" to be called once, but got 2 times
+ ❯ src/personal-data-ui.test.tsx:94:464
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 11 passed (12)
+   Start at  02:02:00
+   Duration  1.04s (transform 44%, import 24%, environment 17%, tests 15%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/personal-data-ui.test.tsx src/personal-identity.test.tsx

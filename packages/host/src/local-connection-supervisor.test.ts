@@ -56,6 +56,12 @@ describe("local owner connection authority",()=>{
     try{await supervisor.initialize();expect(supervisor.getSnapshot()).toMatchObject({state:"upgrade-required",code:"host_upgrade_required",generation:0});expect(ensure).not.toHaveBeenCalled();expect(owner.close).toHaveBeenCalledOnce();}
     finally{await supervisor.close();}
   });
+  it("does not reverse-upgrade a previously bound client, even if the foreign owner rotates its nonce",async()=>{
+    const build="a".repeat(64);let owner=fixture();Object.assign(owner.status,{product_build_id:build});const first=owner,ensure=vi.fn();
+    const supervisor=new LocalHostConnectionSupervisor({profileRoot:"/isolated-supervisor",productBuildId:build,identity:async()=>owner.status,connect:async()=>owner,ensure,stopped:async()=>false});
+    try{await supervisor.initialize();expect(supervisor.getSnapshot()).toMatchObject({state:"connected",generation:1});owner=fixture(first.status.profile_id);Object.assign(owner.status,{product_build_id:"b".repeat(64)});await supervisor.refresh();expect(supervisor.getSnapshot()).toMatchObject({state:"upgrade-required",generation:1});expect(ensure).not.toHaveBeenCalled();expect(supervisor.retainedConnection).toBe(first);Object.defineProperty(first.client,"replayActive",{value:true});await supervisor.refresh();expect(supervisor.getSnapshot()).toMatchObject({state:"offline",code:"host_replay_stale",generation:1});expect(ensure).not.toHaveBeenCalled();}
+    finally{await supervisor.close();}
+  });
   it("public connection schema rejects bearer, socket and filesystem fields",()=>{
     expect(HostConnectionSnapshotSchema.safeParse({state:"connected",generation:1,token:"forbidden"}).success).toBe(false);
     expect(HostConnectionSnapshotSchema.safeParse({state:"connected",generation:1,socket_path:"forbidden"}).success).toBe(false);

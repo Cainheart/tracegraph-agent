@@ -1,0 +1,102 @@
+import {createHash,randomUUID} from "node:crypto";
+import {readFile} from "node:fs/promises";
+import {join} from "node:path";
+import {z} from "zod";
+import {ArtifactStore,redactStructuredArtifactValue} from "@tracegraph/core";
+import {ComputerActionRequestSchema,ComputerCaptureContentRequestSchema,ComputerRevokeGrantRequestSchema,ComputerLeaseReleaseRequestSchema,ComputerCommandReceiptSchema,IdentifierSchema,ComputerGrantRequestSchema,ComputerGrantSchema,ComputerLeaseRequestSchema,ComputerLeaseResumeRequestSchema,ComputerObservationSchema,ComputerObserveRequestSchema,ComputerStatusSchema,type ArtifactRef,type ComputerAction,type ComputerActionRequest,type ComputerActionResult,type ComputerElement,type ComputerGrant,type ComputerGrantRequest,type ComputerLease,type ComputerLeaseRequest,type ComputerLeaseResumeRequest,type ComputerNativeStatus,type ComputerObserveRequest,type ComputerObservation,type ComputerTarget} from "@tracegraph/contracts";
+import {atomicPrivateJson} from "./local-profile.js";
+import {WorkbenchJournal,workbenchError} from "./workbench-journal.js";
+import type {VisualEvidenceRecorder} from "./visual-evidence-control.js";
+
+export interface NativeComputerBackend {
+ status():Promise<ComputerNativeStatus>;
+ targets():Promise<ComputerTarget[]>;
+ validateTarget(target:ComputerTarget,foreground:boolean):Promise<void>;
+ /** Trusted human composition only. Never exposed as a model/client operation. */
+ focusTarget(target:ComputerTarget):Promise<void>;
+ inspect(target:ComputerTarget):Promise<{elements:ComputerElement[];truncated:boolean}>;
+ capture(target:ComputerTarget):Promise<Uint8Array>;
+ watch(target:ComputerTarget,onEvent:(event:"user-input"|"locked"|"target-changed"|"monitor-unavailable")=>void):Promise<{close():Promise<void>}>;
+ act(target:ComputerTarget,action:ComputerAction,signal:AbortSignal):Promise<void>;
+ close():Promise<void>;
+}
+export interface ComputerControlContext {
+ profileRoot:string;backend:NativeComputerBackend;now?:()=>Date;
+ /** Trusted composition seam: native human UI, never a model-supplied confirmed flag. */
+ answerGrant?(input:{target:ComputerTarget;duration:"once"|"always"},signal:AbortSignal):Promise<"allow"|"deny">;
+ confirmInputLease?(input:{target:ComputerTarget;reason:"acquire"|"resume"},signal:AbortSignal):Promise<boolean>;
+ visualEvidence?:VisualEvidenceRecorder;
+}
+/** Independent app authority. No filesystem Full Access can create an input grant. */
+export class ComputerControl {
+ readonly #context:ComputerControlContext;readonly #journal:WorkbenchJournal;readonly #artifacts:ArtifactStore;
+ #grants:ComputerGrant[]=[];#lease:ComputerLease|null=null;#watch:{close():Promise<void>}|undefined;
+ #action:AbortController|undefined;#queue:Promise<unknown>=Promise.resolve();#closed=false;
+ readonly #lifetime=new AbortController();readonly #pending=new Set<Promise<unknown>>();
+ private constructor(context:ComputerControlContext){this.#context=context;this.#journal=new WorkbenchJournal(join(context.profileRoot,"computer-events"));this.#artifacts=new ArtifactStore(join(context.profileRoot,"computer-artifacts"));}
+ static async create(context:ComputerControlContext){const control=new ComputerControl(context);await control.#journal.initialize();await control.#artifacts.initialize();try{control.#grants=z.array(ComputerGrantSchema).max(128).parse(JSON.parse(await readFile(control.#grantFile(),"utf8")));}catch(error){if((error as NodeJS.ErrnoException).code!=="ENOENT")throw workbenchError("computer_grants_invalid","Saved computer grants could not be read",503);}return control;}
+ #grantFile(){return join(this.#context.profileRoot,"computer-grants.json");}
+ #now(){return (this.#context.now?.()??new Date()).toISOString();}
+ #serial<T>(fn:()=>Promise<T>):Promise<T>{const operation=this.#queue.then(fn,fn);this.#queue=operation.catch(()=>undefined);return operation;}
+ #track<T>(operation:Promise<T>):Promise<T>{this.#pending.add(operation);void operation.finally(()=>this.#pending.delete(operation)).catch(()=>undefined);return operation;}
+ #human<T>(execute:(signal:AbortSignal)=>Promise<T>):Promise<T>{this.#assertOpen();return new Promise((resolve,reject)=>{const signal=this.#lifetime.signal;const done=(error?:Error,value?:T)=>{clearTimeout(timer);signal.removeEventListener("abort",abort);error?reject(error):resolve(value!);};const abort=()=>done(workbenchError("computer_closed","Computer control was closed before confirmation",503));const timer=setTimeout(()=>done(workbenchError("computer_confirmation_timeout","Human confirmation expired; issue a new explicit request",409)),30_000);timer.unref();signal.addEventListener("abort",abort,{once:true});void execute(signal).then(value=>done(undefined,value),error=>done(error));if(signal.aborted)abort();});}
+ async #persist(){await atomicPrivateJson(this.#grantFile(),this.#grants.filter(grant=>grant.duration==="always"));}
+ #assertOpen(){if(this.#closed)throw workbenchError("computer_closed","Computer control is closed",503);}
+ async status(){this.#assertOpen();if(this.#lease&&Date.parse(this.#lease.expires_at)<=Date.parse(this.#now()))this.#pause("expired");return ComputerStatusSchema.parse({...await this.#context.backend.status(),grants:this.#grants,lease:this.#lease,human_grant_available:Boolean(this.#context.answerGrant&&this.#context.confirmInputLease)});}
+ /** Native status probes do not establish that an existing input lease was released. */
+ ownerUpgradeBusy(){return this.#pending.size>0||this.#action!==undefined||Boolean(this.#lease&&this.#lease.state!=="released");}
+ #protectedTarget(target:ComputerTarget){const id=target.application_id.toLowerCase();return id.startsWith("com.outlive.agent")||["com.apple.systempreferences","com.apple.scripteditor2","win:outlive agent.exe","win:systemsettings.exe","win:consent.exe","win:wscript.exe","win:cscript.exe"].includes(id);}
+ #assertTarget(target:ComputerTarget){if(this.#protectedTarget(target))throw workbenchError("computer_authority_target_denied","Authorization controls and system permissions require direct human interaction",403);}
+ async targets(){this.#assertOpen();return (await this.#context.backend.targets()).filter(target=>!this.#protectedTarget(target));}
+ async reconcile(commandId:string){this.#assertOpen();const receipt=await this.#journal.inspect(IdentifierSchema.parse(commandId));if(receipt.operation&&!['computer.grant','computer.revoke','computer.lease.acquire','computer.lease.resume','computer.lease.release','computer.observe','computer.input'].includes(receipt.operation))throw workbenchError("computer_receipt_scope","This receipt belongs to another operation",403);const {operation:_operation,...safe}=receipt;return ComputerCommandReceiptSchema.parse(safe);}
+ #grant(id:string,target:ComputerTarget){this.#assertTarget(target);const grant=this.#grants.find(item=>item.grant_id===id);if(!grant||grant.state!=="active"||grant.application_id!==target.application_id||grant.identity!==target.identity||grant.duration==="once"&&Date.parse(this.#now())-Date.parse(grant.granted_at)>600_000)throw workbenchError("computer_grant_required","Grant this application before observing or controlling it",403);return grant;}
+ async #nativeReady(capture=false,input=false){const status=await this.#context.backend.status();if(!status.backend_available)throw workbenchError("computer_backend_unavailable",status.reason??"Native computer helper is unavailable",503);if(status.locked)throw workbenchError("computer_locked","Unlock the computer before continuing",409);if(!status.accessibility)throw workbenchError("computer_accessibility_required","Allow Accessibility for the native helper in system settings",403);if(capture&&!status.screen_capture)throw workbenchError("computer_capture_required","Allow Screen Capture for the native helper in system settings",403);if(input&&!status.input_monitoring)throw workbenchError("computer_monitor_required","Input observation is unavailable; control remains paused",403);}
+ requestGrant(inputValue:ComputerGrantRequest){const input=ComputerGrantRequestSchema.parse(inputValue);return this.#serial(()=>this.#journal.once(input.command_id,"computer.grant",{target:input.target,duration:input.duration},async()=>{
+  this.#assertOpen();this.#assertTarget(input.target);if(!this.#context.answerGrant)throw workbenchError("computer_grant_ui_unavailable","Open the Desktop application to grant computer access",501);await this.#nativeReady();await this.#context.backend.validateTarget(input.target,false);
+  if(this.#grants.length>=128)throw workbenchError("computer_grant_limit","Remove an old grant before adding another",409);
+  if(await this.#human(signal=>this.#context.answerGrant!({target:input.target,duration:input.duration},signal))!=="allow")throw workbenchError("computer_grant_denied","Computer access was not approved",403);
+  await this.#context.backend.validateTarget(input.target,false);this.#assertOpen();
+  const grant:ComputerGrant={grant_id:randomUUID(),application_id:input.target.application_id,identity:input.target.identity,duration:input.duration,state:"active",granted_at:this.#now()};this.#grants.push(grant);try{await this.#persist();}catch(error){this.#grants=this.#grants.filter(item=>item!==grant);throw error;}return structuredClone(grant);
+ }));}
+ async revokeGrant(inputValue:{command_id:string;grant_id:string}){
+  const input=ComputerRevokeGrantRequestSchema.parse(inputValue);this.#assertOpen();const grant=this.#grants.find(item=>item.grant_id===input.grant_id);if(!grant)throw workbenchError("computer_grant_missing","Computer grant is unavailable",404);
+  // This is outside the action queue, but only after canonical command admission.
+  return this.#track(this.#journal.once(input.command_id,"computer.revoke",input,async()=>{grant.state="revoked";grant.revoked_at=this.#now();if(this.#lease?.grant_id===grant.grant_id)this.#pause("revoked");await this.#persist();return structuredClone(grant);}));
+ }
+ acquireLease(inputValue:ComputerLeaseRequest){const input=ComputerLeaseRequestSchema.parse(inputValue);return this.#serial(()=>this.#journal.once(input.command_id,"computer.lease.acquire",input,async()=>{
+  this.#assertOpen();this.#grant(input.grant_id,input.target);if(this.#lease&&this.#lease.state!=="released")throw workbenchError("computer_input_busy","Another input lease is active or paused",409);await this.#nativeReady(false,true);await this.#context.backend.validateTarget(input.target,false);
+  if(!this.#context.confirmInputLease||!await this.#human(signal=>this.#context.confirmInputLease!({target:input.target,reason:"acquire"},signal)))throw workbenchError("computer_input_not_confirmed","Input control requires explicit human confirmation",403);
+  this.#grant(input.grant_id,input.target);await this.#context.backend.validateTarget(input.target,true);
+  let earlyEvent:ComputerLease["pause_reason"]|undefined;const watch=await this.#context.backend.watch(input.target,event=>{earlyEvent=event;this.#pause(event);});
+  this.#assertOpen();const lease:ComputerLease={lease_id:randomUUID(),grant_id:input.grant_id,target:input.target,state:"active",generation:0,created_at:this.#now(),expires_at:new Date(Date.parse(this.#now())+input.seconds*1000).toISOString()};this.#watch=watch;this.#lease=lease;if(earlyEvent)this.#pause(earlyEvent);return structuredClone(lease);
+ }));}
+ #pause(reason:NonNullable<ComputerLease["pause_reason"]>){const lease=this.#lease;if(!lease||lease.state==="released")return;if(lease.state!=="paused"||lease.pause_reason!==reason){lease.state="paused";lease.pause_reason=reason;lease.generation++;this.#action?.abort();void this.#track(this.#journal.once(`computer-pause:${randomUUID()}`,"computer.lease.paused",{lease_id:lease.lease_id,generation:lease.generation,reason},async()=>({...lease}))).catch(()=>undefined);}}
+ resumeLease(inputValue:ComputerLeaseResumeRequest){const input=ComputerLeaseResumeRequestSchema.parse(inputValue);return this.#serial(()=>this.#journal.once(input.command_id,"computer.lease.resume",input,async()=>{
+  this.#assertOpen();const lease=this.#requireLease(input.lease_id,input.expected_generation,false);if(Date.parse(lease.expires_at)<=Date.parse(this.#now()))throw workbenchError("computer_lease_expired","Release the expired lease before acquiring another",409);if(lease.state!=="paused")throw workbenchError("computer_lease_not_paused","This lease does not need resuming",409);this.#grant(lease.grant_id,lease.target);await this.#nativeReady(false,true);await this.#context.backend.validateTarget(lease.target,false);
+  if(!this.#context.confirmInputLease||!await this.#human(signal=>this.#context.confirmInputLease!({target:lease.target,reason:"resume"},signal)))throw workbenchError("computer_input_not_confirmed","Input remains paused until the user resumes",403);
+  this.#requireLease(input.lease_id,input.expected_generation,false);this.#grant(lease.grant_id,lease.target);await this.#context.backend.validateTarget(lease.target,true);await this.#watch?.close();let earlyEvent:ComputerLease["pause_reason"];this.#watch=await this.#context.backend.watch(lease.target,event=>{earlyEvent=event;this.#pause(event);});lease.state="active";delete lease.pause_reason;lease.generation++;if(earlyEvent)this.#pause(earlyEvent);return structuredClone(lease);
+ }));}
+ #requireLease(id:string,generation:number,active=true){const lease=this.#lease;if(!lease||lease.lease_id!==id||lease.state==="released")throw workbenchError("computer_lease_missing","Input lease is unavailable",409);if(Date.parse(lease.expires_at)<=Date.parse(this.#now()))this.#pause("expired");if(lease.generation!==generation)throw workbenchError("computer_lease_conflict","Input state changed; read the current lease",409);if(active&&lease.state!=="active")throw workbenchError("computer_input_paused","Computer input is paused; the user must resume",409);return lease;}
+ async releaseLease(inputValue:{command_id:string;lease_id:string}){const input=ComputerLeaseReleaseRequestSchema.parse(inputValue);this.#assertOpen();const lease=this.#lease;if(!lease||lease.lease_id!==input.lease_id)throw workbenchError("computer_lease_missing","Input lease is unavailable",404);return this.#track(this.#journal.once(input.command_id,"computer.lease.release",input,async()=>{this.#pause("user-input");await this.#watch?.close();this.#watch=undefined;lease.state="released";lease.generation++;const grant=this.#grants.find(item=>item.grant_id===lease.grant_id);if(grant?.duration==="once"){grant.state="revoked";grant.revoked_at=this.#now();}return structuredClone(lease);}));}
+ observe(inputValue:ComputerObserveRequest):Promise<ComputerObservation>{const input=ComputerObserveRequestSchema.parse(inputValue);return this.#track(this.#journal.once(input.command_id,"computer.observe",input,async()=>{
+  this.#assertOpen();this.#grant(input.grant_id,input.target);await this.#nativeReady(input.capture);await this.#context.backend.validateTarget(input.target,false);
+  const inspected=await this.#context.backend.inspect(input.target);this.#grant(input.grant_id,input.target);const safe=redactStructuredArtifactValue(inspected) as typeof inspected;
+  const runId=`computer:${createHash("sha256").update(input.command_id).digest("hex")}`;const artifact=await this.#artifacts.put({projectId:"computer:profile",runId,kind:"tool_output",mimeType:"application/json",content:JSON.stringify({target:input.target,...safe})});
+  let capture_artifact:ArtifactRef|undefined;if(input.capture){const bytes=await this.#context.backend.capture(input.target);this.#grant(input.grant_id,input.target);if(bytes.byteLength>16*1024*1024||Buffer.from(bytes).subarray(0,8).toString("hex")!=="89504e470d0a1a0a")throw workbenchError("computer_capture_invalid","Native helper returned invalid window pixels",503);capture_artifact=await this.#artifacts.putBytes({projectId:"computer:profile",runId,kind:"image/png",mimeType:"image/png",content:bytes});await this.#context.visualEvidence?.registerComputer(capture_artifact);}
+  return ComputerObservationSchema.parse({target:input.target,source:"native-accessibility",...safe,captured_at:this.#now(),artifact,...(capture_artifact?{capture_artifact}:{})});
+ }));}
+ act(inputValue:ComputerActionRequest,context?:{mode:"plan"|"execute";signal?:AbortSignal}):Promise<ComputerActionResult>{if(context?.mode==="plan")return Promise.reject(workbenchError("computer_plan_readonly","Plan Mode can observe this application but cannot send input",403));if(context?.signal?.aborted)return Promise.reject(workbenchError("computer_input_cancelled","The task was cancelled before native input",409));const input=ComputerActionRequestSchema.parse(inputValue);return this.#serial(()=>this.#journal.once(input.command_id,"computer.input",input,async()=>{
+  this.#assertOpen();if(context?.signal?.aborted)throw workbenchError("computer_input_cancelled","The task was cancelled before native input",409);const lease=this.#requireLease(input.lease_id,input.expected_generation);this.#grant(lease.grant_id,lease.target);await this.#nativeReady(false,true);await this.#context.backend.validateTarget(lease.target,true);this.#requireLease(input.lease_id,input.expected_generation);if(context?.signal?.aborted){this.#pause("run-cancelled");throw workbenchError("computer_input_cancelled","The task was cancelled before native input",409);}
+  const abort=new AbortController();this.#action=abort;const cancelled=()=>this.#pause("run-cancelled");context?.signal?.addEventListener("abort",cancelled,{once:true});if(context?.signal?.aborted)cancelled();try{await this.#context.backend.act(lease.target,input.action,abort.signal);if(abort.signal.aborted||lease.state!=="active")return {command_id:input.command_id,status:"unknown",code:"computer_input_interrupted",target:lease.target,lease_generation:lease.generation,message:"Input may have been posted before handback. Inspect the window before a new action"};return {command_id:input.command_id,status:"posted",code:"native_input_posted_unverified",target:lease.target,lease_generation:lease.generation,message:"Native input was posted; observe the application to verify the business result"};}catch(error){if(lease.state==="active")this.#pause("monitor-unavailable");return {command_id:input.command_id,status:"unknown",code:"computer_input_outcome_unknown",target:lease.target,lease_generation:lease.generation,message:"Native input outcome is unknown. Observe external state before issuing another action"};}finally{context?.signal?.removeEventListener("abort",cancelled);this.#action=undefined;}
+ }));}
+ async captureContent(inputValue:{grant_id:string;target:ComputerTarget;artifact:ArtifactRef}):Promise<Uint8Array>{
+  const input=ComputerCaptureContentRequestSchema.parse(inputValue);this.#assertOpen();this.#grant(input.grant_id,input.target);const runHash=input.artifact.run_id.slice("computer:".length);
+  if(input.artifact.project_id!=="computer:profile"||!input.artifact.run_id.startsWith("computer:")||!/^[a-f0-9]{64}$/u.test(runHash))throw workbenchError("computer_capture_scope","Capture belongs to another operation",403);
+  let matched=false;for(const event of await this.#journal.ledger.list(`workbench:${runHash}`)){if(event.type!=="workbench.command_completed")continue;const parsed=ComputerObservationSchema.safeParse(event.data.result);if(parsed.success&&parsed.data.capture_artifact?.artifact_id===input.artifact.artifact_id&&JSON.stringify(parsed.data.target)===JSON.stringify(input.target)&&JSON.stringify(parsed.data.capture_artifact)===JSON.stringify(input.artifact))matched=true;}
+  if(!matched)throw workbenchError("computer_capture_scope","Capture is not linked to this granted window",403);
+  const result=await this.#artifacts.getBytesInternal({artifactId:input.artifact.artifact_id,projectId:input.artifact.project_id,runId:input.artifact.run_id,maximumBytes:16*1024*1024});
+  if(result.status!=="available"||JSON.stringify(result.artifact)!==JSON.stringify(input.artifact))throw workbenchError("computer_capture_corrupt","Stored window pixels could not be verified",409);return result.bytes;
+ }
+ async registerRunEvidenceCopy(source:ArtifactRef,artifact:ArtifactRef){await this.#context.visualEvidence?.registerRunCopy(`computer-evidence:${source.artifact_id}`,artifact);}
+ async close(){if(this.#closed)return;this.#closed=true;this.#lifetime.abort();this.#pause("owner-restarted");await this.#watch?.close();await this.#context.backend.close();await this.#queue;await Promise.allSettled([...this.#pending]);}
+}

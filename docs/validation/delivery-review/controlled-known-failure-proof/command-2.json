@@ -1,0 +1,4 @@
+{
+  "stdout": "ACTUAL_BUILD_OUTPUT\nACTUAL_CLAMP_TESTS_PASS\n",
+  "stderr": "node:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: Missing expected exception (RangeError).\n    at file:///private/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-delivery-review-HlobV9/project/test/clamp.test.mjs:2:8\n    at ModuleJob.run (node:internal/modules/esm/module_job:561:25)\n    at async node:internal/modules/esm/loader:647:26\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: undefined,\n  expected: [Function: RangeError],\n  operator: 'throws',\n  diff: 'simple'\n}\n\nNode.js v24.21.0\n"
+}

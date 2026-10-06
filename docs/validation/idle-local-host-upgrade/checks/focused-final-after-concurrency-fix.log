@@ -1,0 +1,36 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+ ❯ src/local-host-upgrade-owner.e2e.test.ts (3 tests | 1 failed) 3872ms
+   ❯ actual private owner build handoff (3)
+     × replaces an idle child PID atomically, deduplicates first-launch clients, and preserves model/settings/completed Run without resubmission 1693ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/local-host-upgrade-owner.e2e.test.ts > actual private owner build handoff > replaces an idle child PID atomically, deduplicates first-launch clients, and preserves model/settings/completed Run without resubmission
+LocalHostUpgradeRequiredError: Existing work is still settling. The old Host remains running; the application will wait for a safe idle point.
+ ❯ compatible src/local-host.ts:154:104
+    152|         else{await connection.close();throw new LocalHostUpgradeRequir…
+    153|       }else{
+    154|         if((error as {code?:string}).code?.startsWith("host_upgrade_")…
+       |                                                                                                        ^
+    155|         // An interrupted response is not permission to start another …
+    156|         const saved=await new WorkbenchJournal(join(target.profileRoot…
+ ❯ src/local-host-upgrade-owner.e2e.test.ts:29:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 4 passed (5)
+      Tests  1 failed | 27 passed (28)
+   Start at  05:14:55
+   Duration  7.44s (tests 70%, import 16%, transform 14%)
+
+    Isolate  5 workers spawned · ~123ms startup each (spawn + environment, per file)
+             at least ~494ms faster with isolate: false — reuses workers across files instead of one per file
+

@@ -29,6 +29,7 @@ export type IconName =
   | "shield"
   | "sidebar"
   | "spark"
+  | "spinner"
   | "stop"
   | "terminal"
   | "x";
@@ -62,6 +63,8 @@ const paths: Record<IconName, React.ReactNode> = {
   shield: <><path d="M12 3 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-3Z" /><path d="m9 12 2 2 4-4" /></>,
   sidebar: <><rect x="3" y="4" width="18" height="16" rx="2" /><path d="M9 4v16" /></>,
   spark: <path d="m12 2 1.5 6.5L20 10l-6.5 1.5L12 18l-1.5-6.5L4 10l6.5-1.5L12 2Z" />,
+  // Three-quarter arc; workbench.css rotates it while an operation runs.
+  spinner: <path d="M12 3a9 9 0 1 0 9 9" />,
   stop: <rect x="6" y="6" width="12" height="12" rx="1" />,
   terminal: <><path d="m5 7 5 5-5 5M12 17h7" /></>,
   x: <path d="m7 7 10 10M17 7 7 17" />,

@@ -8,7 +8,7 @@ The final8 built Web passed [126 matrix screenshots, four file-context observati
 
 ## Delivered application and installer identity
 
-The built final8 [macOS DMG](../../../_tmp_release/current-workbench-recovery-mac-final8/artifacts/Outlive-Agent-0.1.0-alpha.0-mac-arm64.dmg) and [Windows EXE](../../../_tmp_release/current-workbench-recovery-win-final8/artifacts/Outlive-Agent-0.1.0-alpha.0-win-x64.exe) contain the fixed Node 24.21.0 runtime, CLI and native dependencies. End users do not need Node or pnpm. Windows is a cross-build artifact with no native Windows launch or installation acceptance.
+The final8 macOS DMG and Windows EXE build outputs were removed during the 2026-10-06 storage cleanup; their hashes and acceptance reports remain in this directory. They contained the fixed Node 24.21.0 runtime, CLI and native dependencies. End users do not need Node or pnpm. The Windows build was cross-compiled and has no native Windows launch or installation acceptance. The current macOS installed app is recorded in [the latest local installation report](../desktop-install-2026-10-06/README.md).
 
 | Artifact | Build identity | SHA256 |
 | --- | --- | --- |
@@ -85,6 +85,10 @@ Each task may select at most five existing UTF-8 files, 64 KiB per file and 128 
 `ui-journey.mjs` runs new built Web and staged/installed Desktop against isolated profiles and a declared synthetic loopback provider. It must finish cleanup before another native app acceptance run starts. Exact screenshot states, external CLI owner restart, saved provider/model choices, real editor CAS/approval/feedback and native bundle/icon hashes are recorded by each attempt's report. No report is passed before resource cleanup succeeds. The final built Web and each actual packaged-native attempt are linked below, retaining external effects, failures and cleanup instead of promoting screenshots alone into acceptance.
 
 The current final8 receipts are [built Web 024](attempt024-final8-web/report.json) and [actual DMG-installed Desktop 025](attempt025-final8-installed-desktop/report.json). Each includes the complete 126-image viewport/theme matrix plus four selected-file-context observations. Web passed nine journeys and [4,314 independent checks](attempt024-final8-web/independent-verification.json); Desktop passed eleven journeys and [4,429 independent checks](attempt025-final8-installed-desktop/independent-verification.json). All owned resources exited and both temporary profiles were removed. Desktop used `/Users/cain/Applications/Outlive Agent.app/Contents/MacOS/Outlive Agent`, build `871f507b0b4cc01f59950715d542b2a40294cf38022a9aed49e2bcbf5832ed8f`, from DMG SHA256 `7538966e67dca660b4661c68f35ef4b22e9f735932bdda351cd626a4932d04e5`.
+
+## 2026-10-06 chat cursor recovery r2
+
+The installation was subsequently advanced to Product Build ID `d0f461a4e8c59d5466cfd4d6ed43c7d1f5b8d58e12809f8dd754fa7ba79530df` after a targeted Artifact pagination and chat layout correction. The actual default-profile Host was observed under `/Users/cain/Applications/Outlive Agent.app`, and a real DeepSeek project Run read 17 sequential Artifact pages through byte 65,536 and completed. This small regression receipt does not replace the final8 126-image GUI matrix or claim full UX-086 acceptance. See the [r2 chat cursor recovery record](../chat-cursor-recovery-2026-10-06/README.md) for tests, package hashes, the preserved mis-scoped free-chat attempt, and signing/Windows limits.
 
 Real paid-provider quality, native Windows display, signing/notarization and independent non-maintainer acceptance remain outside these fixtures.
 

@@ -1,0 +1,32 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+ ❯ src/native-computer.test.ts (6 tests | 1 failed) 1924ms
+   ❯ closed native computer helper boundary (6)
+     × uses the exact validated executable and keeps caller secrets and Node hooks out of its environment 478ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/native-computer.test.ts > closed native computer helper boundary > uses the exact validated executable and keeps caller secrets and Node hooks out of its environment
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/native-computer.test.ts:15:658
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 15 passed (16)
+   Start at  01:02:09
+   Duration  3.65s (tests 76%, transform 15%, import 8%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/computer-control.test.ts src/native-computer.test.ts '--maxWorkers=1'

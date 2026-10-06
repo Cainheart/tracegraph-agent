@@ -1,5 +1,7 @@
 # UX-086 refreshed Preview installation evidence
 
+该历史归档已于 2026-10-06 清理；本目录保留哈希和验收回执，原 `_tmp_release` 路径不再存在。
+
 Status: superseded before native archive GUI validation. CLI/Host installation and three Runtime proofs passed on Linux and macOS. A subsequent real source Desktop journey exposed a Node executable selection defect; the corrected product requires a second immutable archive and fresh installation evidence. The first archive GUI was held and never launched. These receipts do not close Preview acceptance.
 
 ## Frozen artifact and participant

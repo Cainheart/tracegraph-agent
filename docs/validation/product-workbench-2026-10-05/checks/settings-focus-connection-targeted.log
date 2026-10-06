@@ -1,0 +1,37 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench
+
+ ❯ src/settings-focus-connection.test.tsx (4 tests | 1 failed) 129ms
+   ❯ settings modal isolation (2)
+     × includes visible disclosure summaries in Tab order and restores an external opener 14ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/settings-focus-connection.test.tsx > settings modal isolation > includes visible disclosure summaries in Tab order and restores an external opener
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/settings-focus-connection.test.tsx:69:75
+     67|     await act(async () => root.render(draw(true)));
+     68|     const summary = node.querySelector<HTMLElement>(".installation-dia…
+     69|     const next = await key(summary, "Tab"); expect(next.defaultPrevent…
+       |                                                                           ^
+     70|     const previous = await key(document.activeElement!, "Tab", true); …
+     71|     await act(async () => root.render(draw(false))); expect(document.a…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  04:25:14
+   Duration  1.16s (transform 48%, import 28%, environment 13%, tests 12%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/settings-focus-connection.test.tsx

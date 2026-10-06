@@ -57,6 +57,10 @@ export const DEFAULT_MAX_TURNS = 12;
 
 `maxTurns` 是**循环次数**闸门，与 token 预算无关——两者是正交的两道防线。
 
+2026-10-05 的 GOAL-099 当前切片新增可信 `ModelRequestBudget`，由 Host GoalController 在现有项目/会话/权限准入之后绑定，客户端不能在 StartRun DTO 中自行授予。父子 Run 共用同一额度；initial、repair、summary 和传输重试均在真实 HTTP 前持久预留，供应商实际输出字段受剩余额度约束。用量未知消耗全部预留并暂停派发，只有可信传输证明未发送才能释放额度；真实期限中止活跃工作。普通 Context 窗口、`maxTurns` 和子 Agent profile 上限仍各自生效。预算 Run 禁用可选后台模型衍生；一般 Session resume 不得绕过 Goal 的剩余预算重新启动。
+
+Goal 的首 Run 将 canonical Session 绑定入快照，后续人为继续复用同一会话；历史仅包含已链接且 scope 一致的公开任务、已完成答复或真实未成功终态，不复制私有推理、Tool 原文或临时答案。Run 完成仍需用户接受全部 Goal 条件才能目标完成。当前已验证控制器与真实本地 HTTP、父子额度和未知磁盘效果，完整自主推进、客户端联合流程、原生安装与付费模型质量仍未闭环。具体源码及额度边界见[GOAL-099 验收记录](../validation/goal-099/README.zh.md)。
+
 RUN-050 在下一轮模型调用前检查最近成功的 Tool 轮次。只有窗口已满、连续至少三轮没有新规范化结果证据，且窗口内重复调用比例达到 policy 阈值时才以 `no_progress_detected` 失败；默认需要 4 轮窗口、3 轮无进展和至少 50% 重复调用。调用/结果以哈希比较，终态的 `no_progress_guard` 只保留调用与状态哈希、有界错误码、计数和 policy，不复制原始参数或输出。结果变化、workspace patch hash、LSP diagnostics 或 Todo 状态变化作为进展信号；用户消息会重置窗口，挂起的用户输入会先于 no-progress 终止被消费。硬 `maxTurns` 仍始终生效。
 
 ---
@@ -104,7 +108,7 @@ RUN-050 在下一轮模型调用前检查最近成功的 Tool 轮次。只有窗
 | `resumeMemoryExtraction()` | 重排 extractor 已可用、仍在 waiting 的已 settlement Run；已有完成 Job 不重跑 |
 | `shutdownBackgroundWork()` | 取消并等待 Runtime 自有的 Memory 后处理 Job 结清；等待态可由下次启动重建 |
 
-禁用能力的 Runtime API 统一抛出 `RuntimeCommandError(code: "feature_disabled")`，对应模型 Tool 从该 Run 的工具 schema 中移除。显式模型响应仍调用禁用 Tool 时，Runtime 在 dispatch 前写 `action.rejected` 并以 `feature_disabled` 收口。禁用 Memory/Attachment 时跳过对应 Store 初始化；禁用 Attachment 且 Run 指定 staged upload 时，在 `run.created` 前拒绝。Plan mode 依赖 Todo mutation，因此关闭 `todo` 后不能启动新的 plan Run。禁用配置不会删除 Ledger、Memory JSONL 或旧附件，也不改变历史 Run 的 Projection/replay。
+禁用能力的 Runtime API 统一抛出 `RuntimeCommandError(code: "feature_disabled")`，对应模型 Tool 从该 Run 的工具 schema 中移除。显式模型响应仍调用禁用 Tool 时，Runtime 在 dispatch 前写 `action.rejected` 并以 `feature_disabled` 收口。禁用 Memory/Attachment 时跳过对应 Store 初始化；禁用 Attachment 且 Run 指定 staged upload 时，在 `run.created` 前拒绝。关闭 `todo` 不妨碍 Plan 普通回答；显式执行计划仍须真实 Todo，无法绕过禁用能力与批准边界。禁用配置不会删除 Ledger、Memory JSONL 或旧附件，也不改变历史 Run 的 Projection/replay。
 
 `getProjection()`、`replay()`、`replayAt()` 与 `replayDiff()` 都直接读账本；后两者额外把 Session/Run/sequence 作为强制范围并验证 hash chain：
 
@@ -186,7 +190,7 @@ policy 必须落满整个窗口，并同时满足连续无新证据轮数与重�
 
 ### 3.3 G-09 Plan Mode 与 Todo Ledger
 
-`mode: "plan"` 现在是独立控制流，不再只是少开放几个工具。模型只能使用严格的只读规划白名单，以及声明 `side_effect: "none"`、`concurrency_safe: false` 的 `todo_write`；文件写入、测试执行、补丁预览与任何未知工具都会在策略层拒绝。模型结束规划前至少要建立一个 Todo，Runtime 随后追加 `plan.ready`，把 Run 置为 `awaiting_plan_approval`，而不是写入终态。
+`mode: "plan"` 是独立控制流。模型只能使用严格的只读规划白名单，以及声明 `side_effect: "none"`、`concurrency_safe: false` 的 `todo_write`；文件写入、命令/测试执行、补丁预览与任何未知工具仍在策略层拒绝。FLOW-097 的已验证窄修复增加 `Decision.finish_intent`：`answer`（缺字段的兼容默认）让普通知识回答直接写 `run.completed`，无需 Todo；`submit_plan` 才要求至少一条真实 Todo，追加 `plan.ready` 并等待批准。带 Todo 的旧回答不会获得执行授权，未执行 Todo 保持原状态。关闭 Todo capability 不妨碍普通 Plan 答复。执行计划、最终目标验收及总预算是不同边界，FLOW 整体仍未完成。
 
 批准命令必须同时绑定 `run_id` 与当前 `plan_event_id`。批准成功后追加 `plan.approved`，同一个 Run 切到 `execute` 并继续主循环；拒绝旧 revision、跨 Run revision，以及在该 `plan.ready` 后又发生 Todo 变更的陈旧批准。等待期间修改 Todo 会产生新的 `plan.ready` revision，因此批准方始终针对一份确定的计划快照。
 
@@ -268,7 +272,7 @@ Context contribution 被转成有界、untrusted 的 retrieval-style surface，�
       && state.pendingPlan === undefined
 ```
 
-即：未停止 **且** 无待批 Patch **且** 无待批 Plan **且** 未终态。Patch 遇到 `preview_patch` 会 `return`；Plan 的 `finish` 则写入 `plan.ready`、设置 `pendingPlan` 后 `return`。两条审批路径都让模型循环物理暂停，只有对应的 Host 命令可以继续。
+即：未停止 **且** 无待批 Patch **且** 无待批 Plan **且** 未终态。Patch 遇到 `preview_patch` 会 `return`；Plan 的显式 `finish_intent:submit_plan` 写入 `plan.ready`、设置 `pendingPlan` 后 `return`。两条审批路径都让模型循环物理暂停，只有对应的 Host 命令可以继续；普通 `answer` 不进入批准等待。
 
 每次进入循环后，Loop 先证明还剩一个模型 turn，再通过 Runtime port 运行 G-14 安全点：从 durable inbox 只消费 FIFO 头部一条普通输入。message/approve hint 在 `user.input_consumed` durable 后进入下一次模型请求的 history；若预算已耗尽，它会保持 pending 而不是产生“已消费但没有下一请求”的假事实。随后，已装配的 G-21 retriever 用原始 Run task 作有界 recall，成功命中作为带 provenance 的 Memory surface 交给 Context builder。cancel 由专用 durable finalizer 在工具/模型安全边界越过普通队列并直接收敛，不再发起模型调用。工具批次执行期间不会把新消息插进半轮 Decision，必须等当前安全波全部 settle；三条普通消息因此需要三个循环安全点，而不是一次清空。
 
@@ -302,7 +306,7 @@ CORE-026 为 Runtime 建立三个 curated、仅供 Core 内部使用的集成 fa
 | 18 | 动作身份修复 | `#repairActionIdentity()`（见 §6） |
 | 19 | 冲刷公开画面 | 标记 `completed`——**只有通过全部校验后才算完成** |
 | 20 | `model.decision` | 公开决策摘要；durable usage 已先写入 |
-| 21 | 完成分支 | `#transitionAfterFinish` 在 per-Run control gate 内先重读 pending inbox；有新输入就把 finish 视为陈旧并进入下一安全点，否则 execute 写 `run.completed`，plan 校验 Todo 后写 `plan.ready` |
+| 21 | 完成分支 | `#transitionAfterFinish` 在 per-Run control gate 内先重读 pending inbox；有新输入就把 finish 视为陈旧，否则 `answer` 写 `run.completed`；仅 Plan 的显式 `submit_plan` 校验 Todo 后写 `plan.ready`，execute 中提交计划以 `plan_submission_wrong_mode` 拒绝 |
 | 22 | 批决策展开、整批预校验与策略求值 | 旧 `tool_call` 归一为单元素；`tool_calls` 最多 16。逐项检查 action id、schema/注册表，再让 `PolicyEngine` 检查 capability/plan/preset/path hard constraint 与 Host/project rules；每项先写 `policy.evaluated`，deny 再写 `policy.denied`，任一失败时整批零 Tool 执行 |
 | 23 | ask 与批审计/调度 | 非 Patch `ask` 只能由可信 `approvalAnswerer` 回答并用 one-shot token 原子消费，任何 unavailable/throw/invalid 都失败；Patch ask 延后到 preview。显式 batch 在 control gate 内检查 cancel 后写 `tool.batch_started`；安全非写调用按连续 wave、最多 `maxToolConcurrency` 并行，write/ask/不安全调用串行；所有 started/completion durable 写入保持请求顺序 |
 | 24 | 记录观测 | 已完成成员按请求顺序进入 `state.observations`；显式 batch 追加 `tool.batch_completed`；archive 回读成功另写 `context.spill_refetched` |
@@ -567,7 +571,7 @@ user.input_queued  user.input_consumed
 20. 项目 policy 只能 ask/deny，Host allow 规则不能覆盖 hard constraint，project 高优先级条目也不能用 allow 遮挡后续收紧规则。
 21. 非 Patch ask 的 answerer unavailable/throw/invalid 必须 fail-closed；Patch ask 只由公开 approve/reject 命令继续。
 22. v5/v4/v3/v2 恢复必须保留原 policy digest 与 Host/project layers；设置变化不得改变已存在 Run 的权限。v3 起保存当前 `plan|execute` mode，v4 另保存 root/child orchestration 与冻结 delegation，v5 再保存冻结 extension snapshot；待批 Plan revision 与 Todo 不复制进 recovery Artifact，必须从 canonical Ledger 重放。
-23. Plan 的 `finish` 至少要有一条 Todo；它只产生 `plan.ready` 并暂停，同 Run 只有批准当前 revision 后才能转入 `execute`。
+23. Plan 的显式 `finish_intent:submit_plan` 至少要有一条 Todo；它只产生 `plan.ready` 并暂停，同 Run 只有批准当前 revision 后才能转入 `execute`。普通或兼容缺省 `answer` 可完成回答，但不执行或标记完成既有 Todo。
 24. Todo 写入按 Run 串行、依赖图必须无环且总数不超过 500；模型完成 Todo 必须引用同 Run、早于本次 mutation 的 eligible 独立成功执行 Event，且已有证据的 done Todo 在保持 done 时不能清空证据。该引用证明 durable execution fact，不承担 Todo 语义验收。
 24. Todo 在 `plan.ready` 后发生变化会使旧 Plan revision 失效；终态或人工复核状态禁止新写入，但相同 `command_id` 的已提交结果仍可幂等重放。
 25. `user.input_queued` 必须先于 cancel abort；普通输入只能在工具批次结束后、下一模型调用前的安全点按 FIFO 每次消费一条。cancel 是 control-lane 例外，可越过旧普通输入，但必须封锁后续模型/审批/Tool 派发，并等所有自有 job 结清；所有 consumed Event 的 `at_step` 在同 Run 内严格递增。
@@ -633,7 +637,19 @@ user.input_queued  user.input_consumed
 
 ---
 
-## 10. 相关文档
+## 10. FLOW/TEAM：同一总预算内续接与交付审阅
+
+标准 Host 当前显式准入有限交付策略：普通软件 execute 根 Run 总计 200,000 Token / 15 分钟、最多两轮独立只读审阅；Goal 复用原总额度。此模式要求实际适配器支持请求预留，不支持则在首次派发前拒绝。旧 Core 嵌入不传 `deliveryReview` 保留原行为。普通知识 Plan 回答仍直接成功；执行计划先 Todo/精确版本批准，批准后才启用有限交付策略。创建/批准的 durable fact 还禁止隐藏后台模型抽取。
+
+共享请求预算触发 Run 终止时，Runtime 按可信预算身份区分 `goal:` 与 `delivery:`：交付执行记录 `delivery_*` 终态代码、`budget_kind: "delivery"` 与 `delivery_budget`；持续目标仍记录 `goal_budget`。Token 终态会说明本轮剩余额度无法容纳下一次模型请求，不声称服务商已消费了全部预算；工作台按 Token、时间、用量未知等原因显示不同解释。旧版 `Goal budget stopped` 记录由只读投影器根据终态错误码和 `run.created` 中的预算身份重建准确摘要；缺少可靠身份时使用中性说明。预算上限与派发拦截不变。
+
+可信 execute 根 Run 到达内部 `maxTurns` 时，在同一有限额度内追加 canonical `delivery.turn_checkpoint` 继续已有循环，不重置无进展/权限/凭据/消耗。补丁后必须提出并获得新真实验证成功回执；两次 finish 未补齐会停止。POSIX 已确认进程组静止的非零 `run_test`/`run_project_command` 失败可以进入显式观察/修复阶段，第三次失败停止。必须为真实 started、非零整数退出、transport settled、无超时/取消/截断。没有新 canonical 读/verified 补丁时重复同命令拒绝；新成功回执逐条关联此前已知失败。Windows、子任务和旧嵌入不启用此失败续接，未知写入一律不重试。
+
+实际 reviewer 复用子 Agent 接缝，在父控制锁之外执行，只读且权限不高于父。结果必须关联实际子终态 id/hash 和真实读取回执；源 hash 变化、失败、取消、伪造或证据不足不能完成交付。阻断发现成为正常 Observation，由原循环经现有闸门修复；没有第二编排循环或平行日志。ordinary 交付中断不会通过 resume 制造新额度/自动再派发；原事实保留，需要明确新任务。
+
+[当前后端报告](../validation/delivery-review/README.zh.md)记录真实 pass→fail→pass 命令、独立问题发现/修复/再次审阅和共同预算。必读范围现为 verified 补丁路径与命令 manifest，不是任意脚本产物的完整变更清单；审阅公开需求 packet 限初始 task 4,000 字符与最近十条完成命令 ID，不代表完整 steering/Goal done 条件验收。通过回执不证明测试覆盖或付费模型质量，FLOW/TEAM 整体任务仍未完成。
+
+## 11. 相关文档
 
 - 模块 01（契约层）：`StartRunInput` / `RunCommandSchema` / `Decision` / `Receipt`
 - 模块 03（Context）：`#contextBuilder.buildWithStrategies()` 的策略链、archive 与预算行为

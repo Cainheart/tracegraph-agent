@@ -683,7 +683,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
               todo_id: "todo:cancel-race",
               title: "Race a user Todo edit with cancellation",
             })
-          : finishDecision("decision:todo-race:ready", "Plan ready for a race");
+          : finishDecision("decision:todo-race:ready", "Plan ready for a race", "submit_plan");
       },
     };
     const runtime = await createTrackedRuntime({ dataDir: harness.dataDir, model });
@@ -1017,7 +1017,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
               todo_id: "todo:recovery",
               title: "Resume with queued steering",
             })
-          : finishDecision("decision:plan", "Plan ready");
+          : finishDecision("decision:plan", "Plan ready", "submit_plan");
       },
     };
     const firstStore = new JsonlSessionStore(harness.sessionsRoot, {
@@ -1324,7 +1324,7 @@ describe("G14 Runtime steering and cancellation", { timeout: STEERING_TEST_TIMEO
               todo_id: "todo:cancel-recovery",
               title: "Wait for cancellation recovery",
             })
-          : finishDecision("decision:cancel-plan", "Plan ready");
+          : finishDecision("decision:cancel-plan", "Plan ready", "submit_plan");
       },
     };
     const firstStore = new JsonlSessionStore(harness.sessionsRoot, {
@@ -1457,7 +1457,7 @@ function toolDecision(
   };
 }
 
-function finishDecision(decisionId: string, answer: string) {
+function finishDecision(decisionId: string, answer: string, intent: "answer" | "submit_plan" = "answer") {
   return {
     decision_id: decisionId,
     kind: "finish",
@@ -1465,6 +1465,7 @@ function finishDecision(decisionId: string, answer: string) {
     evidence_refs: [],
     risk: "none",
     final_answer: answer,
+    finish_intent: intent,
   };
 }
 

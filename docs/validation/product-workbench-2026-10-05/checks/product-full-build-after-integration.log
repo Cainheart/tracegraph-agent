@@ -1,0 +1,33 @@
+$ pnpm run clean:dist && pnpm -r --if-present build
+$ node scripts/clean-dist.mjs
+[clean-dist] removed 21 generated directories
+Scope: 22 of 23 workspace projects
+packages/contracts build$ tsc -p tsconfig.json
+packages/retrieval build$ tsc -p tsconfig.json
+packages/telemetry build$ tsc -p tsconfig.json
+packages/telemetry build: Done
+packages/retrieval build: Done
+packages/contracts build: Done
+apps/retrieval-service build$ tsc -p tsconfig.json
+packages/api build$ tsc -p tsconfig.json
+packages/evidence build$ tsc -p tsconfig.json
+packages/codegraph build$ tsc -p tsconfig.json
+packages/codegraph build: Done
+packages/lsp build$ tsc -p tsconfig.json
+packages/api build: Done
+packages/mcp build$ tsc -p tsconfig.json
+packages/evidence build: Done
+packages/sdk build$ tsc -p tsconfig.json
+packages/lsp build: Done
+packages/mcp build: Done
+packages/session build$ tsc -p tsconfig.json
+packages/tool build$ tsc -p tsconfig.json
+apps/retrieval-service build: Done
+packages/tool build: Done
+packages/session build: Done
+packages/sdk build: src/index.ts(483,60): error TS2304: Cannot find name 'IdentifierSchema'.
+packages/sdk build: Failed
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/sdk:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @tracegraph/sdk@0.1.0-alpha.0 build: `tsc -p tsconfig.json`
+Exit status 2
+[ELIFECYCLE] Command failed with exit code 2.

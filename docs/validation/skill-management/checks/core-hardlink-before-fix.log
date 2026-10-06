@@ -1,0 +1,49 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/core
+
+ ❯ src/domains/skill/skill.test.ts (4 tests | 1 failed) 467ms
+   ❯ G10 Skill registry (4)
+     × does not load a private regular file linked into a Skill scope 12ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/domains/skill/skill.test.ts > G10 Skill registry > does not load a private regular file linked into a Skill scope
+AssertionError: expected [ { name: 'review', …(7) } ] to deeply equal []
+
+- Expected
++ Received
+
+- []
++ [
++   {
++     "allowed_tools": [],
++     "body": "PRIVATE_LINKED_BODY
++ ",
++     "bodyHash": "sha256:4639ef0a2b880bf2fb58d05302a2e432b348510cebe052bddb9a03bb5110775c",
++     "description": "Private linked data",
++     "filePath": "/var/folders/7b/stkwnxgj6mq3wv9s461kw92r0000gn/T/outlive-skill-hardlink-T465Nu/skills/review/SKILL.md",
++     "name": "review",
++     "source": "user",
++     "version": "1.0.0",
++   },
++ ]
+
+ ❯ src/domains/skill/skill.test.ts:38:50
+     36|     await link(privateFile,join(userRoot,"review","SKILL.md"));
+     37|     const registry=new SkillRegistry({userSkillsRoot:userRoot});
+     38|     expect((await registry.scanGlobal()).skills).toEqual([]);
+       |                                                  ^
+     39|     expect((await registry.scanGlobal()).diagnostics).toMatchObject([{…
+     40|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  02:54:03
+   Duration  1.09s (tests 45%, transform 42%, import 13%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/core:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/domains/skill/skill.test.ts

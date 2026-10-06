@@ -86,3 +86,18 @@ tracegraph skills validate --project-root <path> --user-root <path>
 | Evals/docs | `evals/docs/implementation-consistency.eval.ts` 核对 100 Event、20 Tool、G-10/G-11/G-12 文件、路由和 CLI 命令 |
 
 当前明确不支持：从网络/npm/任意路径动态安装 Skill、Skill 脚本执行、签名分发、跨 Host Skill registry、正文的长期 Memory 写入，以及完整 IDE 级 LSP platform。G-12 已接入 Host 管理的原生 stdio LSP seam，但完整 workspace indexing、自动 Context 注入、HTTP/SSE 与跨 Host session 仍未开放。MCP 已由 G-11 接入，但只支持 Host 管理的 stdio/native bridge，PTC、HTTP/SSE 和 resources/instructions 仍未开放。Skill 正文仍是本地受信数据，真正的外部副作用必须走独立的 Tool、Policy、Sandbox/WAL 与崩溃对账边界。
+
+
+## 7. 当前增量：本机 Skills 生命周期（2026-10-05）
+
+以上 G-10 说明保留其历史基线。当前共享后台服务在**所选本机配置**的 `<profileRoot>/skills/<name>/SKILL.md` 管理全局技能；无项目也可操作。项目覆盖仍是 `<workspace>/.tracegraph/skills/<name>/SKILL.md`。独立旧 CLI/嵌入式 `SkillRegistry` 的 `~/.tracegraph/skills` 默认来源仍保留兼容，并不会自动把旧目录或凭据迁入新配置。
+
+新增 [typed contract](../../packages/contracts/src/skill-management.ts)、[控制器](../../packages/host/src/skill-management.ts)、[认证路由](../../packages/host/src/skill-management-routes.ts) 和 [共享表单](../../packages/workbench/src/components/SkillsManager.tsx) 复用原 parser/scanner，提供 list/read/validate/command/receipt 五方法。通过界面或 `outlive skills ...` 可创建、编辑、明确导入本机 UTF-8 SKILL.md、校验、启停、移出和恢复。导入仅接收有界正文，不接受下载 URL、任意来源路径或可执行安装包。
+
+正文保存绑定原文件 SHA-256；启停、移出、恢复还绑定当前范围状态 SHA。`remove` 写入可恢复 tombstone，保留原文件，并持续到重启后；外部修改正文不会默默恢复。移出或停用项目覆盖后可继承有效全局技能。旧共享 `disabled_skills` 仍是额外限制。新任务采用当前有效版本，已经接受的任务继续使用冻结快照。
+
+每次变更以全局命令 ID 锁、范围锁和 canonical SessionEvent 记录意图、权限及回执；相同 ID 跨范围不同正文只能有首次效果。项目写入遵循原权限、精确审批和工作区协调。未知结果不能自动重发，只能按原命令核对；读到文件哈希不等于完成回执。技能声明不会扩大工具、模型、文件或原生应用权限。
+
+文件读取拒绝 symlink/hardlink、无效 UTF-8 和超限正文。Linux 用已固定父目录 FD；macOS 使用实际支持检测后的 Darwin `O_NOFOLLOW_ANY` 并核对目录/文件身份。macOS 真实最后 open 祖先 symlink 替换负例证明私有目标没有被创建文件（包括空文件）。这不是完整 openat/目录事务声明；同一用户恶意替换真实目录的剩余窗口按身份漂移返回未知，不再写入。Windows 管理写入目前明确不可用。
+
+实际源码验证包括控制器 11、真实 Host/SDK HTTP 2、Core 4、SDK 2、CLI 28，以及共享 Skills 表单 7 项测试；安装包图形工作流需要发行阶段另外验证。这只是 CAP-103 的有界本机单文件管理切片，远程市场、签名分发、多文件 Skill 包和 Windows 原生写入没有闭环。完整命令、负例和原始日志见 [验证记录](../validation/skill-management/README.zh.md)。

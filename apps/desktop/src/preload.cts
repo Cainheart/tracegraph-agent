@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from "electron";
 import type { DesktopBridgeApi, DesktopHostStatus } from "./bridge-contract.js";
 import type {
   HostConnectionSnapshot,
+  NativeRunNavigation,
   ModelConfigUpdateRequest,
   ProjectSummary,
   PublicModelConfigResponse,
@@ -25,6 +26,18 @@ import type {
 
 // Keep the sandboxed preload self-contained: its only runtime import is Electron.
 const DESKTOP_IPC = {
+  listManagedSkills: "tracegraph:listManagedSkills",
+  readManagedSkill: "tracegraph:readManagedSkill",
+  validateManagedSkill: "tracegraph:validateManagedSkill",
+  managedSkillCommand: "tracegraph:managedSkillCommand",
+  getManagedSkillCommandReceipt: "tracegraph:getManagedSkillCommandReceipt",
+  getVisualRetentionSettings: "tracegraph:getVisualRetentionSettings",
+  updateVisualRetentionSettings: "tracegraph:updateVisualRetentionSettings",
+  listVisualEvidence: "tracegraph:listVisualEvidence",
+  pinVisualEvidence: "tracegraph:pinVisualEvidence",
+  cleanupVisualEvidence: "tracegraph:cleanupVisualEvidence",
+  getVisualEvidenceCommandReceipt: "tracegraph:getVisualEvidenceCommandReceipt",
+
   listProjectFiles:"tracegraph:listProjectFiles",
   readProjectFile:"tracegraph:readProjectFile",
   saveProjectFile:"tracegraph:saveProjectFile",
@@ -35,6 +48,8 @@ const DESKTOP_IPC = {
   saveModelConnection:"tracegraph:saveModelConnection",
   removeModelConnection:"tracegraph:removeModelConnection",
   testModelConnection:"tracegraph:testModelConnection",
+  testModelCapabilities:"tracegraph:testModelCapabilities",
+  getModelCapabilityTestReceipt:"tracegraph:getModelCapabilityTestReceipt",
   getSessionRunOptions:"tracegraph:getSessionRunOptions",
   updateSessionRunOptions:"tracegraph:updateSessionRunOptions",
   getPermissionGrant:"tracegraph:getPermissionGrant",
@@ -111,6 +126,40 @@ const DESKTOP_IPC = {
   heartbeatTeam: "tracegraph:heartbeatTeam",
   sweepLostTeamMembers: "tracegraph:sweepLostTeamMembers",
   rollbackAction: "tracegraph:rollbackAction",
+  getBrowserCommandReceipt: "tracegraph:getBrowserCommandReceipt",
+  getComputerStatus: "tracegraph:getComputerStatus",
+  listComputerTargets: "tracegraph:listComputerTargets",
+  requestComputerGrant: "tracegraph:requestComputerGrant",
+  revokeComputerGrant: "tracegraph:revokeComputerGrant",
+  acquireComputerLease: "tracegraph:acquireComputerLease",
+  resumeComputerLease: "tracegraph:resumeComputerLease",
+  releaseComputerLease: "tracegraph:releaseComputerLease",
+  observeComputer: "tracegraph:observeComputer",
+  computerAction: "tracegraph:computerAction",
+  getComputerCommandReceipt: "tracegraph:getComputerCommandReceipt",
+  getComputerCapture: "tracegraph:getComputerCapture",
+  getPersonalProfile: "tracegraph:getPersonalProfile",
+  updatePersonalProfile: "tracegraph:updatePersonalProfile",
+  getPersonalProfileCommandReceipt: "tracegraph:getPersonalProfileCommandReceipt",
+  queryPersonalUsage: "tracegraph:queryPersonalUsage",
+  searchPublicSessions: "tracegraph:searchPublicSessions",
+  getBrowserStatus: "tracegraph:getBrowserStatus",
+  requestBrowserGrant: "tracegraph:requestBrowserGrant",
+  browserCommand: "tracegraph:browserCommand",
+  observeBrowser: "tracegraph:observeBrowser",
+  getBrowserEvidence: "tracegraph:getBrowserEvidence",
+  listGoals: "tracegraph:listGoals",
+  createGoal: "tracegraph:createGoal",
+  getGoal: "tracegraph:getGoal",
+  goalCommand: "tracegraph:goalCommand",
+  getGoalCreationReceipt: "tracegraph:getGoalCreationReceipt",
+  getGoalCommandReceipt: "tracegraph:getGoalCommandReceipt",
+  getGoalBudget: "tracegraph:getGoalBudget",
+  getWorkbenchSettingsHistory: "tracegraph:getWorkbenchSettingsHistory",
+  restoreWorkbenchSettings: "tracegraph:restoreWorkbenchSettings",
+  getProjectRunDefaults: "tracegraph:getProjectRunDefaults",
+  updateProjectRunDefaults: "tracegraph:updateProjectRunDefaults",
+  resetSessionRunOptions: "tracegraph:resetSessionRunOptions",
   getWorkbenchSettings: "tracegraph:getWorkbenchSettings",
   updateWorkbenchSettings: "tracegraph:updateWorkbenchSettings",
   getCapabilities: "tracegraph:getCapabilities",
@@ -140,7 +189,42 @@ async function invoke(channel:(typeof DESKTOP_IPC)[keyof typeof DESKTOP_IPC],...
   return value;
 }
 
+// This is the only pushed native event: validated, read-only identifiers.
+const nativeRunListeners = new Set<(navigation: NativeRunNavigation) => void>();
+let bufferedNativeRun: NativeRunNavigation | undefined;
+function parseNativeRunNavigation(value: unknown): NativeRunNavigation | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const record = value as Record<string, unknown>;
+  if (Object.keys(record).some(key => !["event_id", "run_id", "project_id", "session_id", "connection_generation"].includes(key))) return undefined;
+  const identifier = (input: unknown) => typeof input === "string" && input.trim().length > 0 && input.length <= 160;
+  if (![record.event_id, record.run_id, record.project_id].every(identifier) || (record.session_id !== undefined && !identifier(record.session_id)) || !Number.isSafeInteger(record.connection_generation) || Number(record.connection_generation) < 0) return undefined;
+  return {event_id: record.event_id as string, run_id: record.run_id as string, project_id: record.project_id as string, ...(record.session_id === undefined ? {} : {session_id: record.session_id as string}), connection_generation: record.connection_generation as number};
+}
+ipcRenderer.on("tracegraph:native-run-requested", (_event, value: unknown) => {
+  const navigation = parseNativeRunNavigation(value); if (!navigation) return;
+  if (nativeRunListeners.size === 0) bufferedNativeRun = navigation;
+  for (const listener of nativeRunListeners) { try { listener(navigation); } catch { /* One consumer cannot broaden or stop the fixed event. */ } }
+});
+
 const bridge: DesktopBridgeApi = Object.freeze({
+  listManagedSkills: (...args: Parameters<DesktopBridgeApi["listManagedSkills"]>) => invoke(DESKTOP_IPC.listManagedSkills, ...args) as ReturnType<DesktopBridgeApi["listManagedSkills"]>,
+  readManagedSkill: (...args: Parameters<DesktopBridgeApi["readManagedSkill"]>) => invoke(DESKTOP_IPC.readManagedSkill, ...args) as ReturnType<DesktopBridgeApi["readManagedSkill"]>,
+  validateManagedSkill: (...args: Parameters<DesktopBridgeApi["validateManagedSkill"]>) => invoke(DESKTOP_IPC.validateManagedSkill, ...args) as ReturnType<DesktopBridgeApi["validateManagedSkill"]>,
+  managedSkillCommand: (...args: Parameters<DesktopBridgeApi["managedSkillCommand"]>) => invoke(DESKTOP_IPC.managedSkillCommand, ...args) as ReturnType<DesktopBridgeApi["managedSkillCommand"]>,
+  getManagedSkillCommandReceipt: (...args: Parameters<DesktopBridgeApi["getManagedSkillCommandReceipt"]>) => invoke(DESKTOP_IPC.getManagedSkillCommandReceipt, ...args) as ReturnType<DesktopBridgeApi["getManagedSkillCommandReceipt"]>,
+  getVisualRetentionSettings: (...args: Parameters<DesktopBridgeApi["getVisualRetentionSettings"]>) => invoke(DESKTOP_IPC.getVisualRetentionSettings, ...args) as ReturnType<DesktopBridgeApi["getVisualRetentionSettings"]>,
+  updateVisualRetentionSettings: (...args: Parameters<DesktopBridgeApi["updateVisualRetentionSettings"]>) => invoke(DESKTOP_IPC.updateVisualRetentionSettings, ...args) as ReturnType<DesktopBridgeApi["updateVisualRetentionSettings"]>,
+  listVisualEvidence: (...args: Parameters<DesktopBridgeApi["listVisualEvidence"]>) => invoke(DESKTOP_IPC.listVisualEvidence, ...args) as ReturnType<DesktopBridgeApi["listVisualEvidence"]>,
+  pinVisualEvidence: (...args: Parameters<DesktopBridgeApi["pinVisualEvidence"]>) => invoke(DESKTOP_IPC.pinVisualEvidence, ...args) as ReturnType<DesktopBridgeApi["pinVisualEvidence"]>,
+  cleanupVisualEvidence: (...args: Parameters<DesktopBridgeApi["cleanupVisualEvidence"]>) => invoke(DESKTOP_IPC.cleanupVisualEvidence, ...args) as ReturnType<DesktopBridgeApi["cleanupVisualEvidence"]>,
+  getVisualEvidenceCommandReceipt: (...args: Parameters<DesktopBridgeApi["getVisualEvidenceCommandReceipt"]>) => invoke(DESKTOP_IPC.getVisualEvidenceCommandReceipt, ...args) as ReturnType<DesktopBridgeApi["getVisualEvidenceCommandReceipt"]>,
+
+  onNativeRunRequested: (listener: (navigation: NativeRunNavigation) => void) => {
+    if (typeof listener !== "function") throw new Error("A navigation listener is required");
+    nativeRunListeners.add(listener);
+    if (bufferedNativeRun) {const navigation = bufferedNativeRun; bufferedNativeRun = undefined; queueMicrotask(() => {if (nativeRunListeners.has(listener)) {try {listener(navigation);} catch { /* A consumer exception conveys no native authority. */ }}});}
+    return () => {nativeRunListeners.delete(listener);};
+  },
   listProjectFiles: (...args: Parameters<DesktopBridgeApi["listProjectFiles"]>)=>invoke(DESKTOP_IPC.listProjectFiles,...args) as ReturnType<DesktopBridgeApi["listProjectFiles"]>,
   readProjectFile: (...args: Parameters<DesktopBridgeApi["readProjectFile"]>)=>invoke(DESKTOP_IPC.readProjectFile,...args) as ReturnType<DesktopBridgeApi["readProjectFile"]>,
   saveProjectFile: (...args: Parameters<DesktopBridgeApi["saveProjectFile"]>)=>invoke(DESKTOP_IPC.saveProjectFile,...args) as ReturnType<DesktopBridgeApi["saveProjectFile"]>,
@@ -151,6 +235,8 @@ const bridge: DesktopBridgeApi = Object.freeze({
   saveModelConnection: (...args: Parameters<DesktopBridgeApi["saveModelConnection"]>)=>invoke(DESKTOP_IPC.saveModelConnection,...args) as ReturnType<DesktopBridgeApi["saveModelConnection"]>,
   removeModelConnection: (...args: Parameters<DesktopBridgeApi["removeModelConnection"]>)=>invoke(DESKTOP_IPC.removeModelConnection,...args) as ReturnType<DesktopBridgeApi["removeModelConnection"]>,
   testModelConnection: (...args: Parameters<DesktopBridgeApi["testModelConnection"]>)=>invoke(DESKTOP_IPC.testModelConnection,...args) as ReturnType<DesktopBridgeApi["testModelConnection"]>,
+  testModelCapabilities: (...args: Parameters<DesktopBridgeApi["testModelCapabilities"]>) => invoke(DESKTOP_IPC.testModelCapabilities, ...args) as ReturnType<DesktopBridgeApi["testModelCapabilities"]>,
+  getModelCapabilityTestReceipt: (...args: Parameters<DesktopBridgeApi["getModelCapabilityTestReceipt"]>) => invoke(DESKTOP_IPC.getModelCapabilityTestReceipt, ...args) as ReturnType<DesktopBridgeApi["getModelCapabilityTestReceipt"]>,
   getSessionRunOptions: (...args: Parameters<DesktopBridgeApi["getSessionRunOptions"]>)=>invoke(DESKTOP_IPC.getSessionRunOptions,...args) as ReturnType<DesktopBridgeApi["getSessionRunOptions"]>,
   updateSessionRunOptions: (...args: Parameters<DesktopBridgeApi["updateSessionRunOptions"]>)=>invoke(DESKTOP_IPC.updateSessionRunOptions,...args) as ReturnType<DesktopBridgeApi["updateSessionRunOptions"]>,
   getPermissionGrant: (...args: Parameters<DesktopBridgeApi["getPermissionGrant"]>)=>invoke(DESKTOP_IPC.getPermissionGrant,...args) as ReturnType<DesktopBridgeApi["getPermissionGrant"]>,
@@ -227,6 +313,40 @@ const bridge: DesktopBridgeApi = Object.freeze({
   heartbeatTeam: (...args: Parameters<DesktopBridgeApi["heartbeatTeam"]>) => invoke(DESKTOP_IPC.heartbeatTeam, ...args) as ReturnType<DesktopBridgeApi["heartbeatTeam"]>,
   sweepLostTeamMembers: (...args: Parameters<DesktopBridgeApi["sweepLostTeamMembers"]>) => invoke(DESKTOP_IPC.sweepLostTeamMembers, ...args) as ReturnType<DesktopBridgeApi["sweepLostTeamMembers"]>,
   rollbackAction: (...args: Parameters<DesktopBridgeApi["rollbackAction"]>) => invoke(DESKTOP_IPC.rollbackAction, ...args) as ReturnType<DesktopBridgeApi["rollbackAction"]>,
+  getBrowserCommandReceipt: (...args: Parameters<DesktopBridgeApi["getBrowserCommandReceipt"]>) => invoke(DESKTOP_IPC.getBrowserCommandReceipt, ...args) as ReturnType<DesktopBridgeApi["getBrowserCommandReceipt"]>,
+  getComputerStatus: (...args: Parameters<DesktopBridgeApi["getComputerStatus"]>) => invoke(DESKTOP_IPC.getComputerStatus, ...args) as ReturnType<DesktopBridgeApi["getComputerStatus"]>,
+  listComputerTargets: (...args: Parameters<DesktopBridgeApi["listComputerTargets"]>) => invoke(DESKTOP_IPC.listComputerTargets, ...args) as ReturnType<DesktopBridgeApi["listComputerTargets"]>,
+  requestComputerGrant: (...args: Parameters<DesktopBridgeApi["requestComputerGrant"]>) => invoke(DESKTOP_IPC.requestComputerGrant, ...args) as ReturnType<DesktopBridgeApi["requestComputerGrant"]>,
+  revokeComputerGrant: (...args: Parameters<DesktopBridgeApi["revokeComputerGrant"]>) => invoke(DESKTOP_IPC.revokeComputerGrant, ...args) as ReturnType<DesktopBridgeApi["revokeComputerGrant"]>,
+  acquireComputerLease: (...args: Parameters<DesktopBridgeApi["acquireComputerLease"]>) => invoke(DESKTOP_IPC.acquireComputerLease, ...args) as ReturnType<DesktopBridgeApi["acquireComputerLease"]>,
+  resumeComputerLease: (...args: Parameters<DesktopBridgeApi["resumeComputerLease"]>) => invoke(DESKTOP_IPC.resumeComputerLease, ...args) as ReturnType<DesktopBridgeApi["resumeComputerLease"]>,
+  releaseComputerLease: (...args: Parameters<DesktopBridgeApi["releaseComputerLease"]>) => invoke(DESKTOP_IPC.releaseComputerLease, ...args) as ReturnType<DesktopBridgeApi["releaseComputerLease"]>,
+  observeComputer: (...args: Parameters<DesktopBridgeApi["observeComputer"]>) => invoke(DESKTOP_IPC.observeComputer, ...args) as ReturnType<DesktopBridgeApi["observeComputer"]>,
+  computerAction: (...args: Parameters<DesktopBridgeApi["computerAction"]>) => invoke(DESKTOP_IPC.computerAction, ...args) as ReturnType<DesktopBridgeApi["computerAction"]>,
+  getComputerCommandReceipt: (...args: Parameters<DesktopBridgeApi["getComputerCommandReceipt"]>) => invoke(DESKTOP_IPC.getComputerCommandReceipt, ...args) as ReturnType<DesktopBridgeApi["getComputerCommandReceipt"]>,
+  getComputerCapture: (...args: Parameters<DesktopBridgeApi["getComputerCapture"]>) => invoke(DESKTOP_IPC.getComputerCapture, ...args) as ReturnType<DesktopBridgeApi["getComputerCapture"]>,
+  getPersonalProfile: (...args: Parameters<DesktopBridgeApi["getPersonalProfile"]>) => invoke(DESKTOP_IPC.getPersonalProfile, ...args) as ReturnType<DesktopBridgeApi["getPersonalProfile"]>,
+  updatePersonalProfile: (...args: Parameters<DesktopBridgeApi["updatePersonalProfile"]>) => invoke(DESKTOP_IPC.updatePersonalProfile, ...args) as ReturnType<DesktopBridgeApi["updatePersonalProfile"]>,
+  getPersonalProfileCommandReceipt: (...args: Parameters<DesktopBridgeApi["getPersonalProfileCommandReceipt"]>) => invoke(DESKTOP_IPC.getPersonalProfileCommandReceipt, ...args) as ReturnType<DesktopBridgeApi["getPersonalProfileCommandReceipt"]>,
+  queryPersonalUsage: (...args: Parameters<DesktopBridgeApi["queryPersonalUsage"]>) => invoke(DESKTOP_IPC.queryPersonalUsage, ...args) as ReturnType<DesktopBridgeApi["queryPersonalUsage"]>,
+  searchPublicSessions: (...args: Parameters<DesktopBridgeApi["searchPublicSessions"]>) => invoke(DESKTOP_IPC.searchPublicSessions, ...args) as ReturnType<DesktopBridgeApi["searchPublicSessions"]>,
+  getBrowserStatus: (...args: Parameters<DesktopBridgeApi["getBrowserStatus"]>) => invoke(DESKTOP_IPC.getBrowserStatus, ...args) as ReturnType<DesktopBridgeApi["getBrowserStatus"]>,
+  requestBrowserGrant: (...args: Parameters<DesktopBridgeApi["requestBrowserGrant"]>) => invoke(DESKTOP_IPC.requestBrowserGrant, ...args) as ReturnType<DesktopBridgeApi["requestBrowserGrant"]>,
+  browserCommand: (...args: Parameters<DesktopBridgeApi["browserCommand"]>) => invoke(DESKTOP_IPC.browserCommand, ...args) as ReturnType<DesktopBridgeApi["browserCommand"]>,
+  observeBrowser: (...args: Parameters<DesktopBridgeApi["observeBrowser"]>) => invoke(DESKTOP_IPC.observeBrowser, ...args) as ReturnType<DesktopBridgeApi["observeBrowser"]>,
+  getBrowserEvidence: (...args: Parameters<DesktopBridgeApi["getBrowserEvidence"]>) => invoke(DESKTOP_IPC.getBrowserEvidence, ...args) as ReturnType<DesktopBridgeApi["getBrowserEvidence"]>,
+  listGoals: (...args: Parameters<DesktopBridgeApi["listGoals"]>) => invoke(DESKTOP_IPC.listGoals, ...args) as ReturnType<DesktopBridgeApi["listGoals"]>,
+  createGoal: (...args: Parameters<DesktopBridgeApi["createGoal"]>) => invoke(DESKTOP_IPC.createGoal, ...args) as ReturnType<DesktopBridgeApi["createGoal"]>,
+  getGoal: (...args: Parameters<DesktopBridgeApi["getGoal"]>) => invoke(DESKTOP_IPC.getGoal, ...args) as ReturnType<DesktopBridgeApi["getGoal"]>,
+  goalCommand: (...args: Parameters<DesktopBridgeApi["goalCommand"]>) => invoke(DESKTOP_IPC.goalCommand, ...args) as ReturnType<DesktopBridgeApi["goalCommand"]>,
+  getGoalCreationReceipt: (...args: Parameters<DesktopBridgeApi["getGoalCreationReceipt"]>) => invoke(DESKTOP_IPC.getGoalCreationReceipt, ...args) as ReturnType<DesktopBridgeApi["getGoalCreationReceipt"]>,
+  getGoalCommandReceipt: (...args: Parameters<DesktopBridgeApi["getGoalCommandReceipt"]>) => invoke(DESKTOP_IPC.getGoalCommandReceipt, ...args) as ReturnType<DesktopBridgeApi["getGoalCommandReceipt"]>,
+  getGoalBudget: (...args: Parameters<DesktopBridgeApi["getGoalBudget"]>) => invoke(DESKTOP_IPC.getGoalBudget, ...args) as ReturnType<DesktopBridgeApi["getGoalBudget"]>,
+  getWorkbenchSettingsHistory: (...args: Parameters<DesktopBridgeApi["getWorkbenchSettingsHistory"]>) => invoke(DESKTOP_IPC.getWorkbenchSettingsHistory, ...args) as ReturnType<DesktopBridgeApi["getWorkbenchSettingsHistory"]>,
+  restoreWorkbenchSettings: (...args: Parameters<DesktopBridgeApi["restoreWorkbenchSettings"]>) => invoke(DESKTOP_IPC.restoreWorkbenchSettings, ...args) as ReturnType<DesktopBridgeApi["restoreWorkbenchSettings"]>,
+  getProjectRunDefaults: (...args: Parameters<DesktopBridgeApi["getProjectRunDefaults"]>) => invoke(DESKTOP_IPC.getProjectRunDefaults, ...args) as ReturnType<DesktopBridgeApi["getProjectRunDefaults"]>,
+  updateProjectRunDefaults: (...args: Parameters<DesktopBridgeApi["updateProjectRunDefaults"]>) => invoke(DESKTOP_IPC.updateProjectRunDefaults, ...args) as ReturnType<DesktopBridgeApi["updateProjectRunDefaults"]>,
+  resetSessionRunOptions: (...args: Parameters<DesktopBridgeApi["resetSessionRunOptions"]>) => invoke(DESKTOP_IPC.resetSessionRunOptions, ...args) as ReturnType<DesktopBridgeApi["resetSessionRunOptions"]>,
   getWorkbenchSettings: (...args: Parameters<DesktopBridgeApi["getWorkbenchSettings"]>) => invoke(DESKTOP_IPC.getWorkbenchSettings, ...args) as ReturnType<DesktopBridgeApi["getWorkbenchSettings"]>,
   updateWorkbenchSettings: (...args: Parameters<DesktopBridgeApi["updateWorkbenchSettings"]>) => invoke(DESKTOP_IPC.updateWorkbenchSettings, ...args) as ReturnType<DesktopBridgeApi["updateWorkbenchSettings"]>,
   getCapabilities: (...args: Parameters<DesktopBridgeApi["getCapabilities"]>) => invoke(DESKTOP_IPC.getCapabilities, ...args) as ReturnType<DesktopBridgeApi["getCapabilities"]>,

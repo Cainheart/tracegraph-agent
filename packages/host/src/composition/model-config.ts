@@ -24,7 +24,7 @@ import {
 } from "@tracegraph/core";
 
 const PROVIDER_DEFAULTS: Record<Exclude<ModelProvider, "custom">, Omit<ModelProviderConfig, "credentialRef">> = {
-  openai: { provider: "openai", protocol: "openai-chat-completions", baseUrl: "https://api.openai.com/v1", model: "gpt-4.1-mini" },
+  openai: { provider: "openai", protocol: "openai-chat-completions", baseUrl: "https://api.openai.com/v1", model: "gpt-6.1-sol" },
   deepseek: { provider: "deepseek", protocol: "openai-chat-completions", baseUrl: "https://api.deepseek.com", model: "deepseek-v4-flash" },
   glm: { provider: "glm", protocol: "openai-chat-completions", baseUrl: "https://open.bigmodel.cn/api/paas/v4", model: "glm-4.5" },
   qwen: { provider: "qwen", protocol: "openai-chat-completions", baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1", model: "qwen-plus" },

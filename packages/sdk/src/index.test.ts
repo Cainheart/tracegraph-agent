@@ -83,6 +83,28 @@ const replaySameDiff: ReplayDiff = {
 };
 
 describe("parseSseData", () => {
+  it("actively cancels an idle response read and releases its reader lock on abort", async () => {
+    const cancel = vi.fn();
+    const stream = new ReadableStream<Uint8Array>({ cancel });
+    const abort = new AbortController();
+    const iterator = parseSseData(stream, abort.signal);
+    const read = iterator.next();
+    expect(stream.locked).toBe(true);
+    abort.abort();
+    await expect(read).resolves.toEqual({ done: true, value: undefined });
+    await iterator.return();
+    expect(cancel).toHaveBeenCalledOnce();
+    expect(stream.locked).toBe(false);
+  });
+
+  it("does not emit an already buffered later event after a stream abort", async () => {
+    const abort = new AbortController();
+    const iterator = parseSseData(streamFrom(["data: first\n\ndata: later\n\n"]), abort.signal);
+    expect(await iterator.next()).toEqual({ done: false, value: "first" });
+    abort.abort();
+    expect(await iterator.next()).toEqual({ done: true, value: undefined });
+  });
+
   it("uses typed Todo, steering input, and exact plan-approval routes", async () => {
     const requests: Array<{ url: string; method: string; commandId: string | null; body?: unknown }> = [];
     const todo = {
@@ -1822,5 +1844,26 @@ describe("bootstrap-managed mutation authority",()=>{
     const client=new TraceGraphClient({fetch:async(input,init)=>{const url=String(input);if(url.endsWith("/api/bootstrap")){bootstraps++;return Response.json({token:"live",expiresAt:"2026-10-03T23:00:00Z"});}if(url.endsWith("/api/replay"))return Response.json(replaySessionResponse(token));expect(new Headers(init?.headers).get("authorization")).toBe(`Bearer ${token}`);return Response.json({error:"replay_read_only",message:"Replay is read-only"},{status:403});}});
     await client.bootstrap();await client.createReplay({session_id:"session-one",run_id:"run-one",until_sequence:1});const before=bootstraps;
     await expect(client.createProject({name:"Blocked"})).rejects.toMatchObject({status:403});expect(bootstraps).toBe(before);expect(client.token).toBe(token);expect(client.replayActive).toBe(true);
+  });
+});
+
+
+describe("public chat projection", () => {
+  it("reads recorded facts without dispatch and excludes lifecycle and private summaries", async () => {
+    const requests: {url: string; method: string}[] = [];
+    const projection = { ...replayProjection, status: "completed", last_sequence: 3, timeline: [
+      replayEvent,
+      { ...replayEvent, event_id: "public-plan", sequence: 2, type: "model.decision", summary: "PRIVATE", data: { public_plan: "Checking the requested files.", reasoning_content: "PRIVATE" } },
+      { ...replayEvent, event_id: "public-answer", sequence: 3, type: "run.completed", summary: "PRIVATE_TERMINAL_SUMMARY", data: { outcome: "The durable final answer.", reasoning_content: "PRIVATE_ANSWER_REASONING" } },
+    ] };
+    const client = new TraceGraphClient({ token: "test", fetch: async (input, init) => { requests.push({url: String(input), method: init?.method ?? "GET"}); return Response.json(projection); } });
+    const chat = await client.getPublicChat("run-one");
+    expect(requests).toEqual([{url: "http://127.0.0.1:4311/api/runs/run-one", method: "GET"}]);
+    expect(chat.blocks).toEqual([
+      expect.objectContaining({kind: "statement", text: "Checking the requested files."}),
+      expect.objectContaining({kind: "answer", id: "public-answer", text: "The durable final answer.", source_event_ids: ["public-answer"]}),
+    ]);
+    expect(JSON.stringify(chat)).not.toContain("PRIVATE");
+    expect(JSON.stringify(chat)).not.toContain("Run created");
   });
 });

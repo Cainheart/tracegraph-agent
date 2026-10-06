@@ -2,15 +2,15 @@
 
 # Generated reference catalogs
 
-Source set: `sha256:45056137898fea881147331f768f78e7d37e15ddcc5415ceef6eccc4fdcdf8ef`. Generator: `sha256:164175c682e6830959c4ce9271481fdfaadbc058080e1e51ff84d852f801c1e3`.
+Source set: `sha256:c8871b42c48d7eabd98bc3a23d6252259a62084c2fd461807c68f2e0d62e7935`. Generator: `sha256:cc2a7b4213121031c159d682983da045193bcea429846edb77d8c909472dfe89`.
 
 See [input manifest](catalog-manifest.json) for exact source hashes.
 
 All catalogs are deterministic source projections. Regenerate with `node scripts/gen-reference-catalogs.mjs --write`; verify every owned output with `node scripts/gen-reference-catalogs.mjs --check`.
 
 - [Events](events.md): 108 enum members.
-- [Built-in tools](tools.md): 20 declared names.
-- [Modules](modules.md): 22 packages and 558 source files.
+- [Built-in tools](tools.md): 22 declared names.
+- [Modules](modules.md): 22 packages and 708 source files.
 - [Profiles](profiles.md): 1 versioned profile source files.
 
 [Package/module graph](module-graph.md) and [current baseline](current-baseline.md) have their own existing generators and check commands. Generated catalogs do not certify translation review, external quality, or production deployment.

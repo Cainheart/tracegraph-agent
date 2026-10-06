@@ -1,0 +1,597 @@
+{
+  "provider_mode": "controlled-local-provider",
+  "profile_scope": "owned-test-profile",
+  "host_pid": 80829,
+  "owner_unchanged": true,
+  "exit": {
+    "code": 0,
+    "signal": null
+  },
+  "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+  "session_id": "session:2038641f-61ce-4c52-864a-044958df1099",
+  "status": "completed",
+  "mode": "plan",
+  "last_sequence": 13,
+  "public_activity_count": 6,
+  "terminal_answer_matches_ledger": true,
+  "background_owner_survives_cli_exit": true,
+  "events": [
+    {
+      "kind": "help",
+      "value": "Outlive Agent interactive chat\nWrite a message, or use // to send text beginning with /.\n/new                         Select a new conversation; background tasks continue\n/project <id>|none           Select a registered project (use /projects list)\n/session <id>                Open existing history without resuming execution\n/mode plan|execute           Mode for the next task\n/model <connection-id> <model>  Saved service/model for the next task\n/effort default|low|medium|high|xhigh|max\n/status                      Read the selected Run\n/guide <message>             Add explicit guidance to its durable mailbox\n/stop [run-id]               Explicitly cancel a Run\n/approve-plan <event-id>     Approve an exact plan revision\n/run approve|reject <id> --approval-id <id> --action-id <id>\n/sessions resume <id>        Explicit recovery through the shared controller\n/models list, /skills list, /config get, /doctor, and other named CLI operations\n/help, /quit                 Exit disconnects; it does not stop background work\nWhile the selected Run is active, messages join its durable input queue.\nUse a separate noninteractive command for stdin credentials, uploads or terminal attach.\n"
+    },
+    {
+      "kind": "next_task",
+      "value": {
+        "connection_id": "ui-verification",
+        "model": "fixture-ui"
+      }
+    },
+    {
+      "kind": "admission",
+      "value": {
+        "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+        "session_id": "session:2038641f-61ce-4c52-864a-044958df1099",
+        "project_id": "chat:local",
+        "status": "running",
+        "mode": "plan"
+      }
+    },
+    {
+      "kind": "activity",
+      "value": {
+        "schema_version": "tracegraph.session-event.v1",
+        "activity_id": "live:event:aa0e3121-fa48-4689-a226-905c495cfba3",
+        "source_event_id": "event:aa0e3121-fa48-4689-a226-905c495cfba3",
+        "source_event_type": "run.created",
+        "project_id": "chat:local",
+        "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+        "sequence": 1,
+        "occurred_at": "2026-10-04T20:50:26.547Z",
+        "kind": "run",
+        "status": "started",
+        "summary": "Run created"
+      }
+    },
+    {
+      "kind": "activity",
+      "value": {
+        "schema_version": "tracegraph.session-event.v1",
+        "activity_id": "live:event:3c2aff68-acd8-408d-8fdd-4db36a577f0c",
+        "source_event_id": "event:3c2aff68-acd8-408d-8fdd-4db36a577f0c",
+        "source_event_type": "run.started",
+        "project_id": "chat:local",
+        "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+        "sequence": 7,
+        "occurred_at": "2026-10-04T20:50:26.690Z",
+        "kind": "run",
+        "status": "started",
+        "summary": "Conversation started without workspace indexing"
+      }
+    },
+    {
+      "kind": "activity",
+      "value": {
+        "schema_version": "tracegraph.session-event.v1",
+        "activity_id": "live:event:cc2ca200-ec7d-418b-80b5-0f6c1cd25f17",
+        "source_event_id": "event:cc2ca200-ec7d-418b-80b5-0f6c1cd25f17",
+        "source_event_type": "context.built",
+        "project_id": "chat:local",
+        "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+        "sequence": 9,
+        "occurred_at": "2026-10-04T20:50:26.746Z",
+        "kind": "context",
+        "status": "completed",
+        "summary": "Context built with 129 input tokens",
+        "turn_id": "turn:21855fad-1b81-4534-9bb2-033d9d1d0c53",
+        "model_call_id": "model-call:b020c57b-73d0-4904-b8f6-6cb4dcd06074"
+      }
+    },
+    {
+      "kind": "activity",
+      "value": {
+        "schema_version": "tracegraph.session-event.v1",
+        "activity_id": "live:event:fbc8addd-c671-48b5-af46-98ba2ffa8487",
+        "source_event_id": "event:fbc8addd-c671-48b5-af46-98ba2ffa8487",
+        "source_event_type": "model.request_started",
+        "project_id": "chat:local",
+        "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+        "sequence": 10,
+        "occurred_at": "2026-10-04T20:50:26.774Z",
+        "kind": "model",
+        "status": "started",
+        "summary": "Requesting a decision from fixture-ui with provider-default reasoning",
+        "turn_id": "turn:21855fad-1b81-4534-9bb2-033d9d1d0c53",
+        "model_call_id": "model-call:b020c57b-73d0-4904-b8f6-6cb4dcd06074"
+      }
+    },
+    {
+      "kind": "activity",
+      "value": {
+        "schema_version": "tracegraph.session-event.v1",
+        "activity_id": "live:event:94ff1b6d-46cf-446b-a58b-fbfe146b5853",
+        "source_event_id": "event:94ff1b6d-46cf-446b-a58b-fbfe146b5853",
+        "source_event_type": "model.decision",
+        "project_id": "chat:local",
+        "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+        "sequence": 12,
+        "occurred_at": "2026-10-04T20:50:26.829Z",
+        "kind": "model",
+        "status": "completed",
+        "summary": "正在整理说明。",
+        "turn_id": "turn:21855fad-1b81-4534-9bb2-033d9d1d0c53",
+        "model_call_id": "model-call:b020c57b-73d0-4904-b8f6-6cb4dcd06074"
+      }
+    },
+    {
+      "kind": "activity",
+      "value": {
+        "schema_version": "tracegraph.session-event.v1",
+        "activity_id": "live:event:99dda375-6e7b-4677-a768-302167610f52",
+        "source_event_id": "event:99dda375-6e7b-4677-a768-302167610f52",
+        "source_event_type": "run.completed",
+        "project_id": "chat:local",
+        "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+        "sequence": 13,
+        "occurred_at": "2026-10-04T20:50:26.852Z",
+        "kind": "run",
+        "status": "completed",
+        "summary": "Run completed"
+      }
+    },
+    {
+      "kind": "run_status",
+      "value": {
+        "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+        "status": "completed",
+        "last_sequence": 13
+      }
+    },
+    {
+      "kind": "answer",
+      "value": {
+        "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+        "content": "这是界面和协议验收用的受控模型响应。\n\n这条普通问答以计划模式完成，没有创建 Todo，也没有修改项目文件。"
+      }
+    },
+    {
+      "kind": "receipt",
+      "value": {
+        "schema_version": "tracegraph.session-event.v1",
+        "projector_version": "tracegraph.projector.v9",
+        "project_id": "chat:local",
+        "session_id": "session:2038641f-61ce-4c52-864a-044958df1099",
+        "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+        "task": "验收交互 CLI 的普通计划问答 06701fcf-899d-4c35-a1b0-c3312ac135b0",
+        "mode": "plan",
+        "reasoning_effort": "default",
+        "workspace_kind": "readonly_local",
+        "status": "completed",
+        "last_sequence": 13,
+        "timeline": [
+          {
+            "schema_version": "tracegraph.session-event.v1",
+            "event_id": "event:aa0e3121-fa48-4689-a226-905c495cfba3",
+            "project_id": "chat:local",
+            "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+            "session_id": "session:2038641f-61ce-4c52-864a-044958df1099",
+            "sequence": 1,
+            "occurred_at": "2026-10-04T20:50:26.547Z",
+            "type": "run.created",
+            "summary": "Run created",
+            "artifact_refs": [],
+            "data": {
+              "task": "验收交互 CLI 的普通计划问答 06701fcf-899d-4c35-a1b0-c3312ac135b0",
+              "model_binding": {
+                "connection_id": "ui-verification",
+                "revision": 0,
+                "model": "fixture-ui",
+                "image_input": false
+              },
+              "mode": "plan",
+              "reasoning_effort": "default",
+              "workspace_kind": "readonly_local",
+              "conversation_message_count": 0,
+              "max_turns": 12,
+              "subagent_limits": {
+                "max_parallel_subagents": 2,
+                "max_depth": 1
+              }
+            }
+          },
+          {
+            "schema_version": "tracegraph.session-event.v1",
+            "event_id": "event:cad327cd-5a0d-420f-b456-24502652971a",
+            "project_id": "chat:local",
+            "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+            "session_id": "session:2038641f-61ce-4c52-864a-044958df1099",
+            "sequence": 2,
+            "occurred_at": "2026-10-04T20:50:26.569Z",
+            "type": "session.opened",
+            "summary": "Durable session opened",
+            "artifact_refs": [],
+            "data": {
+              "session_version": 1
+            }
+          },
+          {
+            "schema_version": "tracegraph.session-event.v1",
+            "event_id": "event:b99fc5b5-1334-4111-8ae1-b6a7430a82c3",
+            "project_id": "chat:local",
+            "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+            "session_id": "session:2038641f-61ce-4c52-864a-044958df1099",
+            "sequence": 3,
+            "occurred_at": "2026-10-04T20:50:26.593Z",
+            "type": "permission.configured",
+            "summary": "Permission preset configured as workspace-write",
+            "artifact_refs": [],
+            "data": {
+              "permission": {
+                "preset_key": "workspace-write",
+                "label": "Workspace write",
+                "sandbox_mode": "workspace-write",
+                "approval_policy": "on-write",
+                "policy_digest": "sha256:2ead0764af7749131eeb339bf052f20cbc9cdfa225af1ad47bc9bcbad70a05e0"
+              }
+            }
+          },
+          {
+            "schema_version": "tracegraph.session-event.v1",
+            "event_id": "event:5ed40c85-ebeb-44e6-bbdf-66d31818ef0d",
+            "project_id": "chat:local",
+            "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+            "session_id": "session:2038641f-61ce-4c52-864a-044958df1099",
+            "sequence": 4,
+            "occurred_at": "2026-10-04T20:50:26.612Z",
+            "type": "skill.registry_loaded",
+            "summary": "Loaded 1 local Skill catalog entries",
+            "artifact_refs": [],
+            "data": {
+              "registry_digest": "sha256:ce05fa3f49c0f229bcf9980ab43f2fd992a934834e65ec3aed3e69f736689933",
+              "skill_names": [
+                "ui-verification-skill"
+              ],
+              "loaded_count": 1,
+              "conflict_count": 0,
+              "diagnostic_count": 0
+            }
+          },
+          {
+            "schema_version": "tracegraph.session-event.v1",
+            "event_id": "event:0496fd92-0866-47a8-b08c-22579384fc0e",
+            "project_id": "chat:local",
+            "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+            "session_id": "session:2038641f-61ce-4c52-864a-044958df1099",
+            "sequence": 5,
+            "occurred_at": "2026-10-04T20:50:26.644Z",
+            "type": "sandbox.configured",
+            "summary": "Sandbox mode configured as workspace-write",
+            "artifact_refs": [],
+            "data": {
+              "mode": "workspace-write",
+              "platform": "darwin"
+            }
+          },
+          {
+            "schema_version": "tracegraph.session-event.v1",
+            "event_id": "event:3e24c011-f6e1-4a72-8c7d-39ef47e87e9c",
+            "project_id": "chat:local",
+            "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+            "session_id": "session:2038641f-61ce-4c52-864a-044958df1099",
+            "sequence": 6,
+            "occurred_at": "2026-10-04T20:50:26.664Z",
+            "type": "sandbox.enforced",
+            "summary": "OS sandbox enforcement is active",
+            "artifact_refs": [],
+            "data": {
+              "sandbox_report": {
+                "report_version": 1,
+                "mode": "workspace-write",
+                "enforcement": "full",
+                "platform": "darwin",
+                "mechanisms": [
+                  "seatbelt:/usr/bin/sandbox-exec",
+                  "filesystem:workspace-write",
+                  "path-scope:canonical-workspace",
+                  "network:denied",
+                  "process:shell-false"
+                ],
+                "unmet_constraints": []
+              }
+            }
+          },
+          {
+            "schema_version": "tracegraph.session-event.v1",
+            "event_id": "event:3c2aff68-acd8-408d-8fdd-4db36a577f0c",
+            "project_id": "chat:local",
+            "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+            "session_id": "session:2038641f-61ce-4c52-864a-044958df1099",
+            "sequence": 7,
+            "occurred_at": "2026-10-04T20:50:26.690Z",
+            "type": "run.started",
+            "summary": "Conversation started without workspace indexing",
+            "artifact_refs": [],
+            "data": {
+              "phase": "conversation"
+            }
+          },
+          {
+            "schema_version": "tracegraph.session-event.v1",
+            "event_id": "event:71a1dee0-4b22-4d06-8f11-69d61b832d59",
+            "project_id": "chat:local",
+            "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+            "session_id": "session:2038641f-61ce-4c52-864a-044958df1099",
+            "sequence": 8,
+            "occurred_at": "2026-10-04T20:50:26.717Z",
+            "type": "memory.recalled",
+            "summary": "Recalled 0 memory items within 0 tokens",
+            "artifact_refs": [],
+            "data": {
+              "retrieval_id": "memory-retrieval:9d0930ce-e6dd-42d6-a635-ddb64054934a",
+              "query_hash": "sha256:a171a9e8c254f973aa141ddb6cacf35612785dd46f55a1594714beb9c9d7ed90",
+              "status": "completed",
+              "budget": {
+                "max_tokens": 4096,
+                "max_hits": 8
+              },
+              "hits": [],
+              "blocked_hits": [],
+              "injected_tokens": 0
+            }
+          },
+          {
+            "schema_version": "tracegraph.session-event.v1",
+            "event_id": "event:cc2ca200-ec7d-418b-80b5-0f6c1cd25f17",
+            "project_id": "chat:local",
+            "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+            "session_id": "session:2038641f-61ce-4c52-864a-044958df1099",
+            "sequence": 9,
+            "occurred_at": "2026-10-04T20:50:26.746Z",
+            "type": "context.built",
+            "summary": "Context built with 129 input tokens",
+            "artifact_refs": [
+              {
+                "artifact_id": "artifact:b1918e33-a981-4bfe-9f6c-c0bf03280f75",
+                "kind": "context_manifest",
+                "content_hash": "sha256:a9a55b9740a5a6871429d08d5a76588fdc1e283641b51134346f914288325f93",
+                "mime_type": "application/json",
+                "byte_length": 3417,
+                "project_id": "chat:local",
+                "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+                "created_at": "2026-10-04T20:50:26.745Z"
+              }
+            ],
+            "turn_id": "turn:21855fad-1b81-4534-9bb2-033d9d1d0c53",
+            "context_manifest_ref": "context:6d372100-9a17-44bd-8750-1cb099921d72",
+            "model_call_id": "model-call:b020c57b-73d0-4904-b8f6-6cb4dcd06074",
+            "data": {
+              "manifest_id": "context:6d372100-9a17-44bd-8750-1cb099921d72",
+              "input_tokens": 129,
+              "token_limit": 258000,
+              "reserved_output_tokens": 32000,
+              "token_estimate": {
+                "estimator_id": "heuristic_v2",
+                "confidence": "calibrated",
+                "input_tokens": 129,
+                "output_tokens": 0,
+                "per_section": {
+                  "system": 111,
+                  "goal": 18,
+                  "history": 0,
+                  "tool": 0,
+                  "repo": 0,
+                  "memory": 0,
+                  "experience": 0
+                }
+              },
+              "input_budget_tokens": 226000,
+              "warning_threshold_tokens": 158200,
+              "compression_threshold_tokens": 180800,
+              "token_estimator": "heuristic_v2",
+              "context_status": "healthy",
+              "compression": {
+                "strategy": "none",
+                "applied_strategy": "none",
+                "trigger": "within_budget",
+                "before_tokens": 129,
+                "after_tokens": 129,
+                "checkpoint_tokens": 0,
+                "preserved_recent_message_count": 0,
+                "compacted_history_message_count": 0,
+                "steps": []
+              }
+            }
+          },
+          {
+            "schema_version": "tracegraph.session-event.v1",
+            "event_id": "event:fbc8addd-c671-48b5-af46-98ba2ffa8487",
+            "project_id": "chat:local",
+            "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+            "session_id": "session:2038641f-61ce-4c52-864a-044958df1099",
+            "sequence": 10,
+            "occurred_at": "2026-10-04T20:50:26.774Z",
+            "type": "model.request_started",
+            "summary": "Requesting a decision from fixture-ui with provider-default reasoning",
+            "artifact_refs": [],
+            "turn_id": "turn:21855fad-1b81-4534-9bb2-033d9d1d0c53",
+            "context_manifest_ref": "context:6d372100-9a17-44bd-8750-1cb099921d72",
+            "model_call_id": "model-call:b020c57b-73d0-4904-b8f6-6cb4dcd06074",
+            "data": {
+              "adapter": "configurable-model-provider",
+              "provider": "custom",
+              "model": "fixture-ui",
+              "requested_reasoning_effort": "default",
+              "reasoning_configuration": "provider_default",
+              "retry_taxonomy": {
+                "version": "retry-taxonomy.v1",
+                "model_provider": {
+                  "max_attempts": 3,
+                  "retryable_http_statuses": [
+                    408,
+                    425,
+                    429,
+                    500,
+                    502,
+                    503,
+                    504
+                  ],
+                  "retryable_transport_classes": [
+                    "timeout",
+                    "selected_network_errors"
+                  ],
+                  "base_backoff_ms": 250,
+                  "max_backoff_ms": 1000,
+                  "stop_after_provider_usage": true
+                },
+                "tool": {
+                  "max_automatic_dispatch_attempts": 1,
+                  "replay_policy": "disabled",
+                  "new_model_authored_actions_are_separate": true,
+                  "run_turn_limit": 12
+                },
+                "action": {
+                  "max_dispatch_attempts_per_operation": 1,
+                  "unknown_outcome": "reconcile_only"
+                }
+              }
+            }
+          },
+          {
+            "schema_version": "tracegraph.session-event.v1",
+            "event_id": "event:2244fc9b-0fe2-43cf-8262-1ebfd15befd7",
+            "project_id": "chat:local",
+            "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+            "session_id": "session:2038641f-61ce-4c52-864a-044958df1099",
+            "sequence": 11,
+            "occurred_at": "2026-10-04T20:50:26.807Z",
+            "type": "model.usage_reported",
+            "summary": "custom reported 140 tokens for the initial model request",
+            "artifact_refs": [],
+            "turn_id": "turn:21855fad-1b81-4534-9bb2-033d9d1d0c53",
+            "context_manifest_ref": "context:6d372100-9a17-44bd-8750-1cb099921d72",
+            "model_call_id": "model-call:b020c57b-73d0-4904-b8f6-6cb4dcd06074",
+            "data": {
+              "model_call_id": "model-call:b020c57b-73d0-4904-b8f6-6cb4dcd06074",
+              "provider": "custom",
+              "model": "fixture-ui",
+              "estimator_id": "heuristic_v2",
+              "confidence": "provider_reported",
+              "input_tokens": 100,
+              "output_tokens": 40,
+              "total_tokens": 140,
+              "estimated_input_tokens": 129,
+              "delta_ratio": 0.7751937984496124,
+              "anomaly": false,
+              "calibration_applied": true,
+              "calibration_revision": 3,
+              "request_kind": "initial",
+              "request_sequence": 1,
+              "cost_status": "unavailable"
+            }
+          },
+          {
+            "schema_version": "tracegraph.session-event.v1",
+            "event_id": "event:94ff1b6d-46cf-446b-a58b-fbfe146b5853",
+            "project_id": "chat:local",
+            "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+            "session_id": "session:2038641f-61ce-4c52-864a-044958df1099",
+            "sequence": 12,
+            "occurred_at": "2026-10-04T20:50:26.829Z",
+            "type": "model.decision",
+            "summary": "正在整理说明。",
+            "artifact_refs": [],
+            "turn_id": "turn:21855fad-1b81-4534-9bb2-033d9d1d0c53",
+            "context_manifest_ref": "context:6d372100-9a17-44bd-8750-1cb099921d72",
+            "model_call_id": "model-call:b020c57b-73d0-4904-b8f6-6cb4dcd06074",
+            "data": {
+              "decision_kind": "finish",
+              "risk": "none",
+              "evidence_ref_count": 0,
+              "public_plan": "正在整理说明。",
+              "finish_intent": "answer",
+              "adapter": "configurable-model-provider",
+              "provider": "custom",
+              "model": "fixture-ui",
+              "requested_reasoning_effort": "default",
+              "reasoning_configuration": "provider_default",
+              "provider_attempts": 1,
+              "provider_retry_count": 0,
+              "provider_retry_delays_ms": []
+            }
+          },
+          {
+            "schema_version": "tracegraph.session-event.v1",
+            "event_id": "event:99dda375-6e7b-4677-a768-302167610f52",
+            "project_id": "chat:local",
+            "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+            "session_id": "session:2038641f-61ce-4c52-864a-044958df1099",
+            "sequence": 13,
+            "occurred_at": "2026-10-04T20:50:26.852Z",
+            "type": "run.completed",
+            "summary": "Run completed",
+            "artifact_refs": [],
+            "data": {
+              "code": "completed",
+              "outcome": "这是界面和协议验收用的受控模型响应。\n\n这条普通问答以计划模式完成，没有创建 Todo，也没有修改项目文件。",
+              "finish_intent": "answer"
+            }
+          }
+        ],
+        "todos": {
+          "items": [],
+          "last_sequence": 13
+        },
+        "input_queue": {
+          "pending": []
+        },
+        "subagents": {
+          "items": [],
+          "active_count": 0,
+          "last_sequence": 13,
+          "limits": {
+            "max_parallel_subagents": 2,
+            "max_depth": 1
+          }
+        },
+        "attachments": {
+          "items": [],
+          "last_sequence": 0
+        },
+        "sandbox_report": {
+          "report_version": 1,
+          "mode": "workspace-write",
+          "enforcement": "full",
+          "platform": "darwin",
+          "mechanisms": [
+            "seatbelt:/usr/bin/sandbox-exec",
+            "filesystem:workspace-write",
+            "path-scope:canonical-workspace",
+            "network:denied",
+            "process:shell-false"
+          ],
+          "unmet_constraints": []
+        },
+        "permission": {
+          "preset_key": "workspace-write",
+          "label": "Workspace write",
+          "sandbox_mode": "workspace-write",
+          "approval_policy": "on-write",
+          "policy_digest": "sha256:2ead0764af7749131eeb339bf052f20cbc9cdfa225af1ad47bc9bcbad70a05e0"
+        },
+        "artifact_refs": [
+          {
+            "artifact_id": "artifact:b1918e33-a981-4bfe-9f6c-c0bf03280f75",
+            "kind": "context_manifest",
+            "content_hash": "sha256:a9a55b9740a5a6871429d08d5a76588fdc1e283641b51134346f914288325f93",
+            "mime_type": "application/json",
+            "byte_length": 3417,
+            "project_id": "chat:local",
+            "run_id": "run:c7a126d3-210f-482f-b2a2-24d91e1f3111",
+            "created_at": "2026-10-04T20:50:26.745Z"
+          }
+        ],
+        "outcome": "这是界面和协议验收用的受控模型响应。\n\n这条普通问答以计划模式完成，没有创建 Todo，也没有修改项目文件。"
+      }
+    }
+  ]
+}

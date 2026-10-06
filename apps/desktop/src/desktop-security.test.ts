@@ -30,7 +30,8 @@ describe("Desktop renderer process boundary", () => {
     const runtimeImports = preload.split("\n").filter((line) => /^import\s+(?!type\b)/u.test(line));
 
     expect(runtimeImports).toEqual(['import { contextBridge, ipcRenderer } from "electron";']);
-    expect(preload).not.toMatch(/ipcRenderer\.(?:send|on|once)\s*\(/u);
+    expect(preload).not.toMatch(/ipcRenderer\.(?:send|once)\s*\(/u);
+    expect([...preload.matchAll(/ipcRenderer\.on\(([^,]+)/gu)].map(match => match[1])).toEqual(['"tracegraph:native-run-requested"']);
     expect(main).toContain("contextIsolation: true");
     expect(main).toContain("nodeIntegration: false");
     expect(main).toContain("sandbox: true");

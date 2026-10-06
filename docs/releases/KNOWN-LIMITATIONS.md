@@ -9,10 +9,13 @@ content-derived build identity are not an OS vulnerability audit. The older
 archive contains built JavaScript and renderer assets, pinned manifests and
 lockfile, instructions, SHA-256 checksums and a CycloneDX dependency inventory.
 
-The current final8 local installer candidate has verified existing output files
-`_tmp_release/current-workbench-recovery-mac-final8/artifacts/Outlive-Agent-0.1.0-alpha.0-mac-arm64.dmg`
-and
-`_tmp_release/current-workbench-recovery-win-final8/artifacts/Outlive-Agent-0.1.0-alpha.0-win-x64.exe`.
+The previously verified final8 installer payloads were removed during the
+2026-10-06 cleanup. The latest current-source macOS app is installed at
+`/Users/cain/Applications/Outlive Agent.app`; its Build ID and local smoke
+evidence are recorded in
+[the 2026-10-06 install report](../validation/desktop-install-2026-10-06/README.md).
+The final8 hashes below remain historical metadata; no current Windows
+installer is retained.
 The macOS DMG hash is `7538966e67dca660b4661c68f35ef4b22e9f735932bdda351cd626a4932d04e5`,
 with build ID `871f507b0b4cc01f59950715d542b2a40294cf38022a9aed49e2bcbf5832ed8f`.
 The Windows EXE hash is `eac0970abf8872ce2cffd921c7d781d64f5fca769d766039efbcd7c288269e53`,
@@ -35,14 +38,14 @@ full GUI business flows passed before this failure, whose cause remains unknown.
 observed actual crash recovery/stop/Repair/fresh Main but retained a failed
 download-CDP cleanup result; owned processes exited and profile was removed.
 Neither receipt proves final8 installation acceptance. Final7 hashes and build
-identities remain in the [retained release record](README.md#retained-final7-artifacts-and-observations).
+identities remain in the [retained release record](README.md#historical-final7-build-receipts-payloads-cleaned-2026-10-06).
 Native Windows installation/use and formal signing are not
 proved by container hashes or macOS cross-builds.
-Retained final6 installers are
+Final6 payloads were also removed; their historical paths were
 `_tmp_release/current-workbench-recovery-mac-final6/artifacts/Outlive-Agent-0.1.0-alpha.0-mac-arm64.dmg`
 and
 `_tmp_release/current-workbench-recovery-win-final6/artifacts/Outlive-Agent-0.1.0-alpha.0-win-x64.exe`;
-both include Node 24.21.0 and need no separately installed Node or pnpm.
+the recorded packages included Node 24.21.0 and needed no separately installed Node or pnpm.
 [Built Web attempt 012](../validation/current-workbench-recovery/attempt012-final-web/report.json)
 and [packaged macOS attempt 016](../validation/current-workbench-recovery/attempt016-final-packaged-desktop/report.json)
 passed controlled maintainer-Agent journeys and cleanup. The preceding macOS

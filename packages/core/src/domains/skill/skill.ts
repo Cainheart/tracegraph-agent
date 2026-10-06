@@ -1,4 +1,5 @@
-import { lstat, readdir, readFile, realpath } from "node:fs/promises";
+import { lstat, readdir, open, realpath } from "node:fs/promises";
+import { constants } from "node:fs";
 import { homedir } from "node:os";
 import { basename, join, relative, resolve } from "node:path";
 import {
@@ -44,17 +45,26 @@ export class SkillRegistry {
     return this.#userSkillsRoot;
   }
 
-  async scan(projectRoot: string): Promise<SkillRegistrySnapshotInternal> {
-    const projectSkillsRoot = resolve(projectRoot, this.#projectSkillsRelativePath);
+  async scan(projectRoot: string, includeSkill: (skill: SkillDefinition) => boolean = () => true): Promise<SkillRegistrySnapshotInternal> {
+    return this.#scanSources(projectRoot, includeSkill);
+  }
+
+  async scanGlobal(): Promise<SkillRegistrySnapshotInternal> {
+    return this.#scanSources(undefined, () => true);
+  }
+
+  async #scanSources(projectRoot: string | undefined, includeSkill: (skill: SkillDefinition) => boolean): Promise<SkillRegistrySnapshotInternal> {
+    const projectSkillsRoot = projectRoot === undefined ? undefined : resolve(projectRoot, this.#projectSkillsRelativePath);
     const [userResult, projectResult] = await Promise.all([
       this.#scanScope(this.#userSkillsRoot, "user"),
-      this.#scanScope(projectSkillsRoot, "project"),
+      projectSkillsRoot === undefined ? Promise.resolve({ skills: [], diagnostics: [] }) : this.#scanScope(projectSkillsRoot, "project"),
     ]);
     const diagnostics = [...userResult.diagnostics, ...projectResult.diagnostics];
     const conflicts: SkillConflict[] = [];
     const selected = new Map<string, SkillDefinition>();
 
     for (const candidate of [...userResult.skills, ...projectResult.skills]) {
+      if (!includeSkill(candidate)) continue;
       const previous = selected.get(candidate.name);
       if (previous === undefined) {
         selected.set(candidate.name, candidate);
@@ -145,7 +155,7 @@ export class SkillRegistry {
       const skillPath = join(directory, "SKILL.md");
       const directoryStat = await safeLstat(directory);
       const fileStat = await safeLstat(skillPath);
-      if (directoryStat === undefined || fileStat === undefined || !fileStat.isFile() || fileStat.isSymbolicLink()) {
+      if (directoryStat === undefined || fileStat === undefined || !directoryStat.isDirectory() || directoryStat.isSymbolicLink() || !fileStat.isFile() || fileStat.isSymbolicLink() || fileStat.nlink !== 1) {
         diagnostics.push(this.#diagnostic(source, skillPath, "unsafe_path", "Skill directory and SKILL.md must be real files"));
         continue;
       }
@@ -164,7 +174,26 @@ export class SkillRegistry {
       }
       let raw: string;
       try {
-        raw = await readFile(skillPath, "utf8");
+        // Bind the existing loader's read to the inspected directory and
+        // single-link file. Never allocate from an untrusted file size.
+        const noFollow=process.platform==="darwin"?0x20000000:process.platform==="win32"?0:constants.O_NOFOLLOW;
+        const parent=process.platform==="win32"?undefined:await open(await realpath(directory),constants.O_RDONLY|constants.O_DIRECTORY|noFollow);
+        try {
+          const parentInfo=parent?await parent.stat():await lstat(directory);
+          if(parentInfo.ino!==directoryStat.ino||parentInfo.dev!==directoryStat.dev)throw new Error("Skill directory identity changed");
+          const path=process.platform==="linux"?`/proc/self/fd/${parent!.fd}/SKILL.md`:await realpath(skillPath);
+          const handle=await open(path,constants.O_RDONLY|noFollow);
+          try {
+            const info=await handle.stat(),current=await lstat(skillPath);
+            if(!info.isFile()||info.nlink!==1||info.ino!==fileStat.ino||info.dev!==fileStat.dev||current.isSymbolicLink()||current.ino!==info.ino||current.dev!==info.dev)throw new Error("Skill file identity changed");
+            const bytes=Buffer.alloc(MAX_SKILL_FILE_BYTES+1);let length=0;
+            while(length<bytes.length){const read=await handle.read(bytes,length,bytes.length-length,length);if(!read.bytesRead)break;length+=read.bytesRead;}
+            if(length>MAX_SKILL_FILE_BYTES){diagnostics.push(this.#diagnostic(source,skillPath,"invalid_body","SKILL.md exceeds the 256 KiB limit"));continue;}
+            const after=await handle.stat(),parentAfter=await lstat(directory);
+            if(after.nlink!==1||after.size!==info.size||after.mtimeMs!==info.mtimeMs||parentAfter.isSymbolicLink()||parentAfter.ino!==parentInfo.ino||parentAfter.dev!==parentInfo.dev)throw new Error("Skill changed during reading");
+            raw=new TextDecoder("utf8",{fatal:true,ignoreBOM:true}).decode(bytes.subarray(0,length));
+          } finally {await handle.close();}
+        } finally {await parent?.close();}
       } catch (error) {
         diagnostics.push(this.#diagnostic(source, skillPath, "read_failed", publicFsError(error)));
         continue;
@@ -218,6 +247,13 @@ export class SkillRegistry {
       message: message.slice(0, 500) || "Skill diagnostic",
     });
   }
+}
+
+/** The management surface reuses exactly the runtime's constrained parser. */
+export function validateSkillMarkdown(raw: string, name: string, source: SkillSource = "user"): SkillCatalogEntry {
+  if (Buffer.byteLength(raw, "utf8") > MAX_SKILL_FILE_BYTES || raw.includes("\0")) throw new SkillParseError("invalid_body", "SKILL.md exceeds its text bound");
+  const parsed = parseSkillMarkdown(raw, name);
+  return SkillCatalogEntrySchema.parse({name:parsed.name,description:parsed.description,version:parsed.version,allowed_tools:parsed.allowed_tools??[],source});
 }
 
 export interface SkillRegistrySnapshotInternal {

@@ -1,0 +1,49 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+ ❯ src/model-capability-http.test.ts (4 tests | 1 failed) 521ms
+   ❯ actual shared model-capability HTTP control (4)
+     × uses the selected model, persists the exact safe receipt and never repeats a completed command after reconnect 205ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/model-capability-http.test.ts > actual shared model-capability HTTP control > uses the selected model, persists the exact safe receipt and never repeats a completed command after reconnect
+TraceGraphHttpError: Route GET:/api/workbench/capabilities not found
+ ❯ TraceGraphClient.#httpError ../sdk/src/index.ts:1395:12
+ ❯ TraceGraphClient.#requestResponse ../sdk/src/index.ts:1356:13
+ ❯ TraceGraphClient.#requestUnknown ../sdk/src/index.ts:1312:22
+ ❯ TraceGraphClient.getCapabilities ../sdk/src/index.ts:500:41
+ ❯ src/model-capability-http.test.ts:29:207
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 3 passed (4)
+   Start at  04:53:33
+   Duration  1.72s (transform 46%, tests 31%, import 23%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/model-capability-http.test.ts '--maxWorkers=1'

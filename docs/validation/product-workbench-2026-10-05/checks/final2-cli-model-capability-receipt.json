@@ -1,0 +1,72 @@
+{
+  "command_id": "22a07d49-c562-43fe-bafa-beef5f285c97",
+  "state": "completed",
+  "result": {
+    "command_id": "22a07d49-c562-43fe-bafa-beef5f285c97",
+    "connection_id": "ui-capability-verification",
+    "connection_revision": 0,
+    "model": "fixture-ui",
+    "provider": "custom",
+    "protocol": "openai-chat-completions",
+    "checked_at": "2026-10-04T21:35:03.338Z",
+    "duration_ms": 26,
+    "results": [
+      {
+        "feature": "text",
+        "status": "passed",
+        "code": "model_probe_passed",
+        "duration_ms": 16,
+        "dispatched": true,
+        "usage_status": "reported",
+        "usage": {
+          "input_tokens": 31,
+          "output_tokens": 7,
+          "total_tokens": 38
+        },
+        "evidence": "exact_text"
+      },
+      {
+        "feature": "tools",
+        "status": "passed",
+        "code": "model_probe_passed",
+        "duration_ms": 3,
+        "dispatched": true,
+        "usage_status": "reported",
+        "usage": {
+          "input_tokens": 31,
+          "output_tokens": 7,
+          "total_tokens": 38
+        },
+        "evidence": "native_tool_call"
+      },
+      {
+        "feature": "image",
+        "status": "passed",
+        "code": "model_probe_passed",
+        "duration_ms": 4,
+        "dispatched": true,
+        "usage_status": "reported",
+        "usage": {
+          "input_tokens": 31,
+          "output_tokens": 7,
+          "total_tokens": 38
+        },
+        "evidence": "image_fixture_answer"
+      },
+      {
+        "feature": "structured",
+        "status": "passed",
+        "code": "model_probe_passed",
+        "duration_ms": 1,
+        "dispatched": true,
+        "usage_status": "reported",
+        "usage": {
+          "input_tokens": 31,
+          "output_tokens": 7,
+          "total_tokens": 38
+        },
+        "evidence": "native_json_schema"
+      }
+    ]
+  }
+}

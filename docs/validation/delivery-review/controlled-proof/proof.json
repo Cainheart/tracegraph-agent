@@ -1,0 +1,87 @@
+{
+  "status": "passed",
+  "scope": "controlled-real-disk-runtime-protocol",
+  "provider": "local deterministic HTTP fixture, not a paid model",
+  "project_id": "project:delivery",
+  "run_id": "run:22e038a8-ba62-47a9-af25-4a72b881cb2d",
+  "child_run_ids": [
+    "run:4f9e4e7c-26f5-473c-b84a-38e513b1588b",
+    "run:aeff1315-3cc6-454c-887e-1a9e886ca8e3"
+  ],
+  "request_count": 13,
+  "original_internal_phase_limit": 3,
+  "phase_checkpoints": [
+    3,
+    6
+  ],
+  "review_verdicts": [
+    "blocked",
+    "passed"
+  ],
+  "independent_external_edge_regression_before_repair": {
+    "exit_code": 1,
+    "expected_error": "Missing expected exception (RangeError)",
+    "stderr_path": "edge-before-repair.stderr.txt",
+    "stderr_sha256": "sha256:ab34bafc46be9c534d9bf03ec4c968cba028f30ece08ad1865a68a77f0be8189",
+    "outside_agent_authority": true
+  },
+  "files": {
+    "src/clamp.mjs": "sha256:74894bb0e2cdd58ddfeee4da4f5fe6a2b205572631dcacee67dbd3f3b4575725",
+    "dist/clamp.mjs": "sha256:74894bb0e2cdd58ddfeee4da4f5fe6a2b205572631dcacee67dbd3f3b4575725",
+    "test/clamp.test.mjs": "sha256:ec39d5920510d58dec872acc29cc45d9c7362f7d4ecc799aa9a7fac3175a9a06",
+    "outlive.commands.json": "sha256:29737d435aff734fe9e66dc8fa456dd3b45dd921e2b3559795b7b1146f117b78",
+    "build.mjs": "sha256:304307d0bfa363cc22dcdd65d438310590f914c5a253876127fc8628a841e657",
+    "verify.mjs": "sha256:5defb7d431651d810c58838e2a2667c95d81f3a5dad47171e61492cfa46b6f56"
+  },
+  "outputs": [
+    {
+      "path": "command-1.json",
+      "sha256": "sha256:3ec800b0ce0f2aa4da6a2c866ceff8418b6bd5c407c2c7c96a9c7ba855c2da0c",
+      "artifact_ref": {
+        "artifact_id": "artifact:690b1068-4faf-4b1c-a586-48bc08fa67eb",
+        "kind": "tool_output",
+        "content_hash": "sha256:3ec800b0ce0f2aa4da6a2c866ceff8418b6bd5c407c2c7c96a9c7ba855c2da0c",
+        "mime_type": "application/json",
+        "byte_length": 80,
+        "project_id": "project:delivery",
+        "run_id": "run:22e038a8-ba62-47a9-af25-4a72b881cb2d",
+        "created_at": "2026-10-04T19:19:40.550Z"
+      },
+      "event_id": "event:985ee9cd-797f-4c12-8225-97170d7ec59d"
+    },
+    {
+      "path": "command-2.json",
+      "sha256": "sha256:23f9fe2a4ae88ce9eab73b6270fe8527c9795a7b18749fbe8068f9b083a6b58d",
+      "artifact_ref": {
+        "artifact_id": "artifact:f1314e5a-f073-4468-95f5-7beb835c6f52",
+        "kind": "tool_output",
+        "content_hash": "sha256:23f9fe2a4ae88ce9eab73b6270fe8527c9795a7b18749fbe8068f9b083a6b58d",
+        "mime_type": "application/json",
+        "byte_length": 119,
+        "project_id": "project:delivery",
+        "run_id": "run:22e038a8-ba62-47a9-af25-4a72b881cb2d",
+        "created_at": "2026-10-04T19:19:42.127Z"
+      },
+      "event_id": "event:c96f9289-a202-47cb-b46a-ad56e9071b7b"
+    }
+  ],
+  "budget": {
+    "limits": {
+      "max_tokens": 200000,
+      "max_time_ms": 900000
+    },
+    "charged_tokens": 195,
+    "held_tokens": 0,
+    "held_request_count": 0,
+    "reported_input_tokens": 130,
+    "reported_output_tokens": 65,
+    "elapsed_ms": 3031,
+    "request_count": 13,
+    "unknown_request_count": 0,
+    "stop_reason": null
+  },
+  "no_default_profile": true,
+  "no_paid_requests": true,
+  "no_git_commit_merge_or_push": true,
+  "full_software_quality_claim": false
+}

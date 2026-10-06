@@ -1,0 +1,2299 @@
+{
+  "schema_version": "outlive.independent-package-audit.v1",
+  "audited_at": "2026-10-04T21:35:18.718187+00:00",
+  "operation_scope": "Read only file hashing, manifests, dependency graph, ZIP entries and signature inspection. Writes only this new receipt. No app/CLI/helper/browser execution, installer/DMG mount, Profile access, services, tests, or production edits.",
+  "release_root": "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/product-workbench-2026-10-05-mac-final2",
+  "build_id": "bc5bfd8ed89043fb63f149bcf195231d266aa34caa9795e494a23cf4bb91caa9",
+  "identity": {
+    "recomputed_stage_build_id": "bc5bfd8ed89043fb63f149bcf195231d266aa34caa9795e494a23cf4bb91caa9",
+    "stage_receipt_match": true,
+    "stage_inventory_match": true,
+    "packaged_inventory_match": true,
+    "product_release_match": true
+  },
+  "stage_checks": {
+    "app_files": {
+      "files": 16464,
+      "hash_size_mismatches": [],
+      "missing": [],
+      "extra": [],
+      "unsupported": [],
+      "inventory_sha256": "a09aee4f9e6607a5ad0efa906726bac52039eeb09d0b782c6a3eb894ad525489"
+    },
+    "runtime_files": {
+      "files": 906,
+      "hash_size_mismatches": [],
+      "missing": [],
+      "extra": [],
+      "unsupported": [],
+      "inventory_sha256": "53d0c2cd297d57fa49204a48aeb1355dcc84e7b6f5f56aa5dae076ffd227389f"
+    },
+    "launcher_files": {
+      "files": 1,
+      "hash_size_mismatches": [],
+      "missing": [],
+      "extra": [],
+      "unsupported": [],
+      "inventory_sha256": "622b31f6b677aca53816a5297c49d7882627e35fe31215ce839583399410ae9e"
+    }
+  },
+  "packaged_checks": {
+    "application_files": {
+      "files": 11825,
+      "hash_size_mismatches": [],
+      "missing": [],
+      "extra": [],
+      "unsupported": [],
+      "inventory_sha256": "ccabe97fa53cff00e96013b9bcb144754c66ec1ef97e9b871377e0d45f4e538f"
+    },
+    "runtime_files": {
+      "files": 906,
+      "hash_size_mismatches": [],
+      "missing": [],
+      "extra": [],
+      "unsupported": [],
+      "inventory_sha256": "53d0c2cd297d57fa49204a48aeb1355dcc84e7b6f5f56aa5dae076ffd227389f"
+    },
+    "launcher_files": {
+      "files": 1,
+      "hash_size_mismatches": [],
+      "missing": [],
+      "extra": [],
+      "unsupported": [],
+      "inventory_sha256": "622b31f6b677aca53816a5297c49d7882627e35fe31215ce839583399410ae9e"
+    }
+  },
+  "current_dist_and_examples": {
+    "files_compared": 2074,
+    "mismatches": [],
+    "missing": []
+  },
+  "dependency_graph": {
+    "packages": 226,
+    "edges": 608,
+    "errors": [],
+    "matches_inventory": true
+  },
+  "artifacts": [
+    {
+      "file": "Outlive-Agent-0.1.0-alpha.0-mac-arm64.dmg.blockmap",
+      "byte_length": 806095,
+      "sha256": "6c8cc01c13c66bb7e3f0a127680df7865ca296202c0c5710640e828927ef2ec9",
+      "size_matches": true,
+      "sha256_matches": true
+    },
+    {
+      "file": "Outlive-Agent-0.1.0-alpha.0-mac-arm64.dmg",
+      "byte_length": 769797890,
+      "sha256": "bae5b0bf58481fb5386d38a777535ddd00a916ce4e3b862a774b655b1641f34c",
+      "size_matches": true,
+      "sha256_matches": true
+    },
+    {
+      "file": "Outlive-Agent-0.1.0-alpha.0-mac-arm64.zip.blockmap",
+      "byte_length": 779344,
+      "sha256": "254b3ec8524b16612fbc11c2ec5735edee4206c4938b9793dd62cedbc4060b93",
+      "size_matches": true,
+      "sha256_matches": true
+    },
+    {
+      "file": "Outlive-Agent-0.1.0-alpha.0-mac-arm64.zip",
+      "byte_length": 753214627,
+      "sha256": "9abe022616b4468ef63ac281c3c327dfe8da18047c88429c2c9e8614f2f9327c",
+      "size_matches": true,
+      "sha256_matches": true
+    }
+  ],
+  "critical_resources": [
+    {
+      "label": "Bundled Node",
+      "path": "runtime/bin/node",
+      "byte_length": 122129232,
+      "sha256": "e4b5a3af0e05c75de2eae013904145f40fe7fc2a6e6f17510128bf45cca4e79b",
+      "mode": "0o755",
+      "mach_o_cpu": "0x100000c",
+      "matches_expected": true
+    },
+    {
+      "label": "Pinned Chromium",
+      "path": "runtime/browser/chromium/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
+      "byte_length": 52112,
+      "sha256": "8319963f6625accf51c0dd4f55091ceaf9f09ed39e7a52fed4fae12b2a6b668a",
+      "mode": "0o755",
+      "mach_o_cpu": "0x100000c",
+      "matches_expected": true
+    },
+    {
+      "label": "Native computer helper",
+      "path": "runtime/computer/outlive-computer",
+      "byte_length": 191200,
+      "sha256": "f3af0d185e6f8cebd8c877e13b37fea94c74b4931fe6cbca0572d5c35b714d1d",
+      "mode": "0o755",
+      "mach_o_cpu": "0x100000c",
+      "matches_expected": true
+    },
+    {
+      "label": "CLI launcher",
+      "path": "bin/outlive",
+      "byte_length": 381,
+      "sha256": "136ecf66a0c64bf09680cbfd203bae476285bf8c2ca1a89f344f5ca76e69a24a",
+      "mode": "0o755",
+      "matches_expected": true
+    },
+    {
+      "label": "B icon",
+      "path": "icon.icns",
+      "byte_length": 97845,
+      "sha256": "bc59efedb9292c9235f75c594dab406daf5dd15bad34c729e5e4a36a765de8d2",
+      "mode": "0o644",
+      "matches_expected": true
+    },
+    {
+      "label": "PTY native addon",
+      "path": "app/node_modules/node-pty/prebuilds/darwin-arm64/pty.node",
+      "byte_length": 85496,
+      "sha256": "e6457d66f45af3facd02920a5b212164e80fe0bb758afe6e6eab1eceeba3fc9a",
+      "mode": "0o644",
+      "mach_o_cpu": "0x100000c"
+    },
+    {
+      "label": "PTY spawn helper",
+      "path": "app/node_modules/node-pty/prebuilds/darwin-arm64/spawn-helper",
+      "byte_length": 50480,
+      "sha256": "21c589109bca43e287df884f3c34ab888033a83927ea7d273949ac5030583f26",
+      "mode": "0o755",
+      "mach_o_cpu": "0x100000c"
+    },
+    {
+      "label": "TypeScript native compiler",
+      "path": "app/node_modules/@typescript/typescript-darwin-arm64/lib/tsc",
+      "byte_length": 23653616,
+      "sha256": "a82f731365ad69d5c4c15f5e18fba4584bf3b7b839960172a76c3462b5114bf2",
+      "mode": "0o755",
+      "mach_o_cpu": "0x100000c"
+    },
+    {
+      "label": "TypeScript standard library",
+      "path": "app/node_modules/@typescript/typescript-darwin-arm64/lib/lib.d.ts",
+      "byte_length": 953,
+      "sha256": "0e6477e5049e579cc5de741a70ac91235252edc0468b2e569f22de9db3357786",
+      "mode": "0o644"
+    }
+  ],
+  "main_executable_matches_inventory": true,
+  "runtime_manifest": {
+    "schema_version": "outlive.bundled-runtime.v1",
+    "node_version": "24.21.0",
+    "platform": "darwin",
+    "arch": "arm64",
+    "executable": "bin/node",
+    "sha256": "e4b5a3af0e05c75de2eae013904145f40fe7fc2a6e6f17510128bf45cca4e79b",
+    "product_build_id": "bc5bfd8ed89043fb63f149bcf195231d266aa34caa9795e494a23cf4bb91caa9"
+  },
+  "browser_manifest": {
+    "schema_version": "outlive.browser-runtime.v1",
+    "platform": "darwin",
+    "arch": "arm64",
+    "playwright_version": "1.63.0",
+    "executable": "chromium/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing",
+    "sha256": "8319963f6625accf51c0dd4f55091ceaf9f09ed39e7a52fed4fae12b2a6b668a"
+  },
+  "computer_manifest": {
+    "schema_version": "outlive.native-computer.v1",
+    "platform": "darwin",
+    "arch": "arm64",
+    "available": true,
+    "executable": "outlive-computer",
+    "sha256": "f3af0d185e6f8cebd8c877e13b37fea94c74b4931fe6cbca0572d5c35b714d1d",
+    "source_sha256": "5e66235ee7309e6c1c7fd9ab118a668ef9b6538246dcc9ce930ed3c07a60b75a"
+  },
+  "native_helper_source_sha256": "5e66235ee7309e6c1c7fd9ab118a668ef9b6538246dcc9ce930ed3c07a60b75a",
+  "native_helper_source_matches": true,
+  "typescript_standard_library_count": 108,
+  "builder_transformation": {
+    "removed_files": 4691,
+    "changed_files": 194,
+    "changed_non_package_manifests": [],
+    "manifest_changes": [
+      {
+        "path": "node_modules/@types/d3-zoom/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-random/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@fastify/fast-json-stringify-compiler/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/fast-querystring/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-quadtree/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/sonic-boom/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-array/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@braintree/sanitize-url/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/toad-cache/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/rw/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-dispatch/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/set-cookie-parser/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-hierarchy/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@fastify/ajv-compiler/node_modules/fast-uri/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-interpolate/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/dagre-d3-es/package.json",
+        "changed_fields": [
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-time-format/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/commander/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-delaunay/package.json",
+        "changed_fields": [
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-drag/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/cytoscape/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/fastify/node_modules/process-warning/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/ret/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/fastify/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-axis/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/reusify/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@marijn/find-cluster-break/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/style-mod/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/points-on-path/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/fast-uri/benchmark/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-scale-chromatic/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/real-require/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/fast-json-stringify/node_modules/fast-uri/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-time-format/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/safe-regex2/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/quick-format-unescaped/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@upsetjs/venn.js/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/rfdc/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-polygon/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@fastify/merge-json-schemas/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/fast-json-stringify/node_modules/fast-uri/benchmark/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/pino/node_modules/process-warning/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/react-dom/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/w3c-keyname/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@fastify/proxy-addr/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-contour/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/scheduler/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-contour/package.json",
+        "changed_fields": [
+          "_moduleAliases",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/split2/package.json",
+        "changed_fields": [
+          "bugs"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-time/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-timer/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@codemirror/lang-markdown/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/require-from-string/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/uuid/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/secure-json-parse/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@codemirror/view/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-zoom/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/d3-array/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-geo/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-ease/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/cookie/package.json",
+        "changed_fields": [
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-color/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@fastify/error/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@codemirror/lang-html/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-scale/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/points-on-curve/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/marked/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords",
+          "tags"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@antfu/install-pkg/package.json",
+        "changed_fields": [
+          "bugs"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/json-schema-traverse/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords",
+          "nyc"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/ajv/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords",
+          "nyc"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-interpolate/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/path-data-parser/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-chord/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/fastq/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/dequal/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-force/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/geojson/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/roughjs/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/cytoscape-cose-bilkent/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-delaunay/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/typescript/package.json",
+        "changed_fields": [
+          "bugs",
+          "gitHead",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@chevrotain/cst-dts-gen/package.json",
+        "changed_fields": [
+          "bugs",
+          "gitHead",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-quadtree/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/fastify-plugin/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@iconify/types/package.json",
+        "changed_fields": [
+          "bugs"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/dayjs/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-geo/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@codemirror/autocomplete/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-array/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-polygon/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/safer-buffer/package.json",
+        "changed_fields": [
+          "bugs"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/avvio/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-selection/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@codemirror/lang-javascript/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/ts-dedent/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@chevrotain/regexp-to-ast/package.json",
+        "changed_fields": [
+          "bugs",
+          "gitHead",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@mermaid-js/parser/package.json",
+        "changed_fields": [
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-path/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-format/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-transition/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-dsv/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/on-exit-leak-free/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/elkjs/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/typescript/vendor/vscode-jsonrpc/package.json",
+        "changed_fields": [
+          "bugs"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-format/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/cose-base/package.json",
+        "changed_fields": [
+          "bugs"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-chord/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@codemirror/lang-css/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/pino-abstract-transport/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-shape/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/es-toolkit/package.json",
+        "changed_fields": [
+          "bugs"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/robust-predicates/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/ajv-formats/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/yaml/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@xterm/xterm/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/node-pty/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/fast-json-stringify/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-time/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-drag/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-random/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/crelt/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/pino-std-serializers/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-brush/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/json-schema-ref-resolver/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@iconify/utils/package.json",
+        "changed_fields": [
+          "bugs"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-transition/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/dompurify/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords",
+          "xo"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/lodash-es/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@codemirror/lint/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/mermaid/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/node-addon-api/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-axis/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/delaunator/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-fetch/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@typescript/typescript-darwin-arm64/package.json",
+        "changed_fields": [
+          "bugs",
+          "gitHead",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@pinojs/redact/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@codemirror/lang-json/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-shape/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/katex/node_modules/commander/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@codemirror/commands/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/fast-deep-equal/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords",
+          "nyc"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/trusted-types/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-fetch/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/import-meta-resolve/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@chevrotain/utils/package.json",
+        "changed_fields": [
+          "bugs",
+          "gitHead",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-force/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/hachure-fill/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/ipaddr.js/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/process-warning/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/light-my-request/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/iconv-lite/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/atomic-sleep/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@fastify/ajv-compiler/node_modules/fast-uri/benchmark/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/fast-uri/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/safe-stable-stringify/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/react/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/khroma/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-dsv/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-selection/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@fastify/ajv-compiler/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@chevrotain/gast/package.json",
+        "changed_fields": [
+          "bugs",
+          "gitHead",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/tinyexec/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/thread-stream/node_modules/real-require/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-ease/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/pino/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/chevrotain/package.json",
+        "changed_fields": [
+          "bugs",
+          "gitHead",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@codemirror/state/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/package-manager-detector/package.json",
+        "changed_fields": [
+          "bugs"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-scale-chromatic/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/fast-decode-uri-component/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-path/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/stylis/package.json",
+        "changed_fields": [
+          "bugs",
+          "eslintConfig",
+          "nyc"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/zod/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/cose-base/package.json",
+        "changed_fields": [
+          "bugs"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@fastify/cors/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@chevrotain/types/package.json",
+        "changed_fields": [
+          "bugs",
+          "gitHead",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@fastify/forwarded/package.json",
+        "changed_fields": [
+          "bugs",
+          "contributors",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-dispatch/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/find-my-way/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@xterm/addon-fit/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/d3-shape/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-hierarchy/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/thread-stream/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-timer/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-brush/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/layout-base/package.json",
+        "changed_fields": [
+          "bugs"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@codemirror/language/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-sankey/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/abstract-logging/package.json",
+        "changed_fields": [
+          "bugs",
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/@types/d3-color/package.json",
+        "changed_fields": [
+          "contributors"
+        ],
+        "runtime_fields_same": true
+      },
+      {
+        "path": "node_modules/d3-scale/package.json",
+        "changed_fields": [
+          "keywords"
+        ],
+        "runtime_fields_same": true
+      }
+    ],
+    "added_files": [
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/.babelrc",
+        "same_bytes_stage_paths": [
+          "node_modules/cose-base/.babelrc",
+          "node_modules/cytoscape-cose-bilkent/.babelrc",
+          "node_modules/cytoscape-fcose/.babelrc",
+          "node_modules/cytoscape-fcose/node_modules/cose-base/.babelrc",
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/.babelrc",
+          "node_modules/layout-base/.babelrc"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/LICENSE",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/LICENSE",
+          "node_modules/layout-base/LICENSE"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/bower.json",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/bower.json",
+          "node_modules/layout-base/bower.json"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/index.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/index.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/layout-base.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/layout-base.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/layout-schema.png",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/layout-schema.png"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/nbproject/private/private.properties",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-cose-bilkent/nbproject/private/private.properties",
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/nbproject/private/private.properties",
+          "node_modules/layout-base/nbproject/private/private.properties"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/nbproject/private/private.xml",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/nbproject/private/private.xml"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/nbproject/project.properties",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-cose-bilkent/nbproject/project.properties",
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/nbproject/project.properties",
+          "node_modules/layout-base/nbproject/project.properties"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/nbproject/project.xml",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/nbproject/project.xml",
+          "node_modules/layout-base/nbproject/project.xml"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/package.json",
+        "same_bytes_stage_paths": [],
+        "same_runtime_identity_stage_manifests": [
+          {
+            "path": "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/package.json",
+            "changed_fields": [
+              "bugs"
+            ]
+          }
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/LEdge.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/LEdge.js",
+          "node_modules/layout-base/src/LEdge.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/LGraph.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/LGraph.js",
+          "node_modules/layout-base/src/LGraph.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/LGraphManager.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/LGraphManager.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/LGraphObject.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/LGraphObject.js",
+          "node_modules/layout-base/src/LGraphObject.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/LNode.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/LNode.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/Layout.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/Layout.js",
+          "node_modules/layout-base/src/Layout.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/LayoutConstants.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/LayoutConstants.js",
+          "node_modules/layout-base/src/LayoutConstants.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/fd/FDLayout.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/fd/FDLayout.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/fd/FDLayoutConstants.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/fd/FDLayoutConstants.js",
+          "node_modules/layout-base/src/fd/FDLayoutConstants.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/fd/FDLayoutEdge.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/fd/FDLayoutEdge.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/fd/FDLayoutNode.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/fd/FDLayoutNode.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/DimensionD.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/DimensionD.js",
+          "node_modules/layout-base/src/util/DimensionD.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/Emitter.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/Emitter.js",
+          "node_modules/layout-base/src/util/Emitter.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/HashMap.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/HashMap.js",
+          "node_modules/layout-base/src/util/HashMap.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/HashSet.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/HashSet.js",
+          "node_modules/layout-base/src/util/HashSet.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/IGeometry.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/IGeometry.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/IMath.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/IMath.js",
+          "node_modules/layout-base/src/util/IMath.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/Integer.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/Integer.js",
+          "node_modules/layout-base/src/util/Integer.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/LinkedList.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/LinkedList.js",
+          "node_modules/layout-base/src/util/LinkedList.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/Matrix.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/Matrix.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/Point.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/Point.js",
+          "node_modules/layout-base/src/util/Point.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/PointD.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/PointD.js",
+          "node_modules/layout-base/src/util/PointD.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/Quicksort.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/Quicksort.js",
+          "node_modules/layout-base/src/util/Quicksort.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/RandomSeed.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/RandomSeed.js",
+          "node_modules/layout-base/src/util/RandomSeed.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/RectangleD.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/RectangleD.js",
+          "node_modules/layout-base/src/util/RectangleD.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/SVD.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/SVD.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/Transform.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/Transform.js",
+          "node_modules/layout-base/src/util/Transform.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/UniqueIDGeneretor.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/UniqueIDGeneretor.js",
+          "node_modules/layout-base/src/util/UniqueIDGeneretor.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/src/util/alignment/NeedlemanWunsch.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/src/util/alignment/NeedlemanWunsch.js",
+          "node_modules/layout-base/src/util/alignment/NeedlemanWunsch.js"
+        ]
+      },
+      {
+        "path": "node_modules/cytoscape-fcose/node_modules/layout-base/webpack.config.js",
+        "same_bytes_stage_paths": [
+          "node_modules/cytoscape-fcose/node_modules/cose-base/node_modules/layout-base/webpack.config.js",
+          "node_modules/layout-base/webpack.config.js"
+        ]
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/d3-path/LICENSE",
+        "same_bytes_stage_paths": [
+          "node_modules/d3-sankey/node_modules/d3-shape/node_modules/d3-path/LICENSE"
+        ]
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/d3-path/dist/d3-path.js",
+        "same_bytes_stage_paths": [
+          "node_modules/d3-sankey/node_modules/d3-shape/node_modules/d3-path/dist/d3-path.js"
+        ]
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/d3-path/dist/d3-path.min.js",
+        "same_bytes_stage_paths": [
+          "node_modules/d3-sankey/node_modules/d3-shape/node_modules/d3-path/dist/d3-path.min.js"
+        ]
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/d3-path/package.json",
+        "same_bytes_stage_paths": [],
+        "same_runtime_identity_stage_manifests": [
+          {
+            "path": "node_modules/d3-sankey/node_modules/d3-shape/node_modules/d3-path/package.json",
+            "changed_fields": [
+              "keywords"
+            ]
+          }
+        ]
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/d3-path/src/index.js",
+        "same_bytes_stage_paths": [
+          "node_modules/d3-sankey/node_modules/d3-shape/node_modules/d3-path/src/index.js"
+        ]
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/d3-path/src/path.js",
+        "same_bytes_stage_paths": [
+          "node_modules/d3-sankey/node_modules/d3-shape/node_modules/d3-path/src/path.js"
+        ]
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/internmap/LICENSE",
+        "same_bytes_stage_paths": [
+          "node_modules/d3-sankey/node_modules/d3-array/node_modules/internmap/LICENSE",
+          "node_modules/internmap/LICENSE"
+        ]
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/internmap/dist/internmap.js",
+        "same_bytes_stage_paths": [
+          "node_modules/d3-sankey/node_modules/d3-array/node_modules/internmap/dist/internmap.js"
+        ]
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/internmap/dist/internmap.min.js",
+        "same_bytes_stage_paths": [
+          "node_modules/d3-sankey/node_modules/d3-array/node_modules/internmap/dist/internmap.min.js"
+        ]
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/internmap/package.json",
+        "same_bytes_stage_paths": [
+          "node_modules/d3-sankey/node_modules/d3-array/node_modules/internmap/package.json"
+        ]
+      },
+      {
+        "path": "node_modules/d3-sankey/node_modules/internmap/src/index.js",
+        "same_bytes_stage_paths": [
+          "node_modules/d3-sankey/node_modules/d3-array/node_modules/internmap/src/index.js"
+        ]
+      }
+    ]
+  },
+  "zip_critical_entries": [
+    {
+      "path": "Contents/Resources/runtime/runtime-manifest.json",
+      "unique": true,
+      "matches_unpacked_app": true
+    },
+    {
+      "path": "Contents/Resources/runtime/browser/browser-manifest.json",
+      "unique": true,
+      "matches_unpacked_app": true
+    },
+    {
+      "path": "Contents/Resources/runtime/computer/computer-manifest.json",
+      "unique": true,
+      "matches_unpacked_app": true
+    },
+    {
+      "path": "Contents/Resources/runtime/computer/outlive-computer",
+      "unique": true,
+      "matches_unpacked_app": true
+    },
+    {
+      "path": "Contents/Resources/icon.icns",
+      "unique": true,
+      "matches_unpacked_app": true
+    },
+    {
+      "path": "Contents/Resources/bin/outlive",
+      "unique": true,
+      "matches_unpacked_app": true
+    },
+    {
+      "path": "Contents/Resources/app/apps/desktop/dist/main.js",
+      "unique": true,
+      "matches_unpacked_app": true
+    },
+    {
+      "path": "Contents/Resources/app/apps/desktop/dist/preload.cjs",
+      "unique": true,
+      "matches_unpacked_app": true
+    },
+    {
+      "path": "Contents/Resources/app/node_modules/@typescript/typescript-darwin-arm64/lib/lib.d.ts",
+      "unique": true,
+      "matches_unpacked_app": true
+    }
+  ],
+  "application_metadata": {
+    "CFBundleIdentifier": "com.outlive.agent",
+    "CFBundleName": "Outlive Agent",
+    "CFBundleShortVersionString": "0.1.0-alpha.0",
+    "CFBundleVersion": "0.1.0-alpha.0",
+    "CFBundleIconFile": "icon.icns"
+  },
+  "formal_signing": {
+    "signed": false,
+    "signature_status": "not-requested",
+    "notarization_requested": false
+  },
+  "external_runtime_requirements": {
+    "external_node_required": false,
+    "external_pnpm_required": false
+  },
+  "pinned_node_archive": {
+    "path": "_tmp_release/runtime-cache/node-v24.21.0-darwin-arm64.tar.gz",
+    "sha256": "bed7eea5325e1108f32ce5228ddd6a5f0f08a499ee42aa7442aea583702f6057",
+    "matches_official_pin": true
+  },
+  "brand_source_and_assets": {
+    "selection": "B Current",
+    "files": [
+      {
+        "path": "docs/brand/app-icon.svg",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/icon.png",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_16x16.png",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_16x16@2x.png",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_32x32.png",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_32x32@2x.png",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_128x128.png",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_128x128@2x.png",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_256x256.png",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_256x256@2x.png",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_512x512.png",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/Outlive.iconset/icon_512x512@2x.png",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/icon.icns",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/build/icon.ico",
+        "matches": true
+      },
+      {
+        "path": "apps/web/public/brand-current.svg",
+        "matches": true
+      },
+      {
+        "path": "apps/web/public/favicon.ico",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/renderer/public/brand-current.svg",
+        "matches": true
+      },
+      {
+        "path": "apps/desktop/renderer/public/favicon.ico",
+        "matches": true
+      },
+      {
+        "path": "docs/public/brand-current.svg",
+        "matches": true
+      },
+      {
+        "path": "docs/public/favicon.ico",
+        "matches": true
+      },
+      {
+        "path": "packages/workbench/src/brand-current.generated.ts",
+        "matches": true
+      }
+    ],
+    "source_matches": true
+  },
+  "signature_readonly_probes": [
+    {
+      "label": "native_computer_helper",
+      "argv": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--strict",
+        "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/product-workbench-2026-10-05-mac-final2/artifacts/mac-arm64/Outlive Agent.app/Contents/Resources/runtime/computer/outlive-computer"
+      ],
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "label": "packaged_chromium",
+      "argv": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/product-workbench-2026-10-05-mac-final2/artifacts/mac-arm64/Outlive Agent.app/Contents/Resources/runtime/browser/chromium/Google Chrome for Testing.app"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/product-workbench-2026-10-05-mac-final2/artifacts/mac-arm64/Outlive Agent.app/Contents/Resources/runtime/browser/chromium/Google Chrome for Testing.app: code has no resources but signature indicates they must be present\n"
+    },
+    {
+      "label": "original_pinned_chromium",
+      "argv": [
+        "/usr/bin/codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "/Users/cain/Library/Caches/ms-playwright/chromium-1243/chrome-mac-arm64/Google Chrome for Testing.app"
+      ],
+      "exit_code": 1,
+      "stdout": "",
+      "stderr": "/Users/cain/Library/Caches/ms-playwright/chromium-1243/chrome-mac-arm64/Google Chrome for Testing.app: code has no resources but signature indicates they must be present\n"
+    },
+    {
+      "label": "bundled_node_library_dependencies",
+      "argv": [
+        "/usr/bin/otool",
+        "-L",
+        "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/product-workbench-2026-10-05-mac-final2/artifacts/mac-arm64/Outlive Agent.app/Contents/Resources/runtime/bin/node"
+      ],
+      "exit_code": 0,
+      "stdout": "/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/_tmp_release/product-workbench-2026-10-05-mac-final2/artifacts/mac-arm64/Outlive Agent.app/Contents/Resources/runtime/bin/node:\n\t/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation (compatibility version 150.0.0, current version 3038.1.255)\n\t/System/Library/Frameworks/Security.framework/Versions/A/Security (compatibility version 1.0.0, current version 61439.1.1)\n\t/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 1800.101.0)\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)\n",
+      "stderr": ""
+    }
+  ],
+  "default_installed_application": {
+    "path": "/Users/cain/Applications/Outlive Agent.app",
+    "scope": "Read only runtime identity; no execution, installation, or Profile read",
+    "product_build_id": "871f507b0b4cc01f59950715d542b2a40294cf38022a9aed49e2bcbf5832ed8f",
+    "is_final2": false
+  },
+  "assembly_log": {
+    "path": "docs/validation/product-workbench-2026-10-05/checks/product-macos-final2-assembly.log",
+    "sha256": "9f42d1a3676843a04a11e37f7681812be6070070c14ef07d344b7705db973517",
+    "skipped_signing_reported": true,
+    "targets": [
+      "DMG",
+      "macOS zip"
+    ],
+    "failure_lines": []
+  },
+  "historical_previous_package": {
+    "build_id": "c1144883e205de7fb1f9fa342ec29abfa1347536db233f0e6f740b4f10081907",
+    "audit_report": "docs/validation/product-workbench-2026-10-05/package-audit.md",
+    "audit_receipt": "docs/validation/product-workbench-2026-10-05/checks/package-audit-final.json",
+    "scope": "Unmodified historical artifact/source inspection; not current final2 bytes."
+  },
+  "errors": [],
+  "limitations": [
+    "Artifact identity, dependency closure and source/dist byte agreement only; no GUI/product or native OS authorization outcome inferred.",
+    "No DMG mount/install, Gatekeeper, Developer ID/notarization, Windows native run, clean upgrade or independent user acceptance.",
+    "Packaged inventory excludes outer Electron Frameworks/plist/icon full trees; main executable, icon/plist checked separately and archive hashes bind containers.",
+    "Chromium deep strict vendor seal failure, if observed, is reported separately and compared to original pinned cache; not formal signing success."
+  ],
+  "status": "passed",
+  "status_scope": "Artifact identity/inventory/dependency/source agreement; excludes formal signing, vendor seal and product runtime/GUI acceptance."
+}

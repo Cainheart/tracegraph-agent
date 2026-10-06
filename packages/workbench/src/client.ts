@@ -1,4 +1,10 @@
-import type { ProjectFileContextRef, SessionRunOptions, SessionRunOptionsSnapshot, SessionRunOptionsUpdateRequest, ModelConnectionsSnapshot, ModelConnection, ModelConnectionSaveRequest, ModelConnectionRemoveRequest, PermissionGrant, PermissionGrantUpdateRequest } from "@tracegraph/contracts";
+import type {PersonalProfileSnapshot,PersonalProfileUpdateRequest,PersonalProfileCommandReceipt,PersonalUsageQuery,PersonalUsageSnapshot,PublicSessionSearchQuery,PublicSessionSearchResult} from "@tracegraph/contracts";
+import type {GoalCreationReceipt, NativeRunNavigation} from "@tracegraph/contracts";
+import type {ComputerActionRequest,ComputerActionResult,ComputerCaptureContentRequest,ComputerCommandReceipt,ComputerGrant,ComputerGrantRequest,ComputerLease,ComputerLeaseReleaseRequest,ComputerLeaseRequest,ComputerLeaseResumeRequest,ComputerObservation,ComputerObserveRequest,ComputerRevokeGrantRequest,ComputerStatus,ComputerTarget} from "@tracegraph/contracts";
+import type {BrowserStatus,BrowserGrantRequest,BrowserGrant,BrowserCommand,BrowserCommandResult,BrowserCommandReceipt,BrowserObservation,GoalListResponse,GoalCreateRequest,GoalSnapshot,GoalCommandRequest,GoalBudgetSnapshot,GoalCommandReceipt} from "@tracegraph/contracts";
+import type {SessionRunOptionsOverride} from "@tracegraph/contracts";
+import type {WorkbenchSettingsHistory,RestoreWorkbenchSettingsRequest,RestoreWorkbenchSettingsResult,ProjectRunDefaultsSnapshot,ProjectRunDefaultsUpdateRequest,SessionRunOptionsResetRequest} from "@tracegraph/contracts";
+import type { ProjectFileContextRef, SessionRunOptions, SessionRunOptionsSnapshot, SessionRunOptionsUpdateRequest, ModelConnectionsSnapshot, ModelConnection, ModelConnectionSaveRequest, ModelConnectionRemoveRequest, ModelCatalogDiscoveryRequest, ModelCatalogDiscoveryResult, PermissionGrant, PermissionGrantUpdateRequest } from "@tracegraph/contracts";
 import type { HostConnectionSnapshot, ProjectFileListRequest, ProjectFileReadRequest, ProjectFileList, ProjectFileSnapshot, ProjectFileSaveRequest, ProjectFileSaveResult, ProjectFileReconcileRequest, AnswerFeedbackRequest, AnswerFeedbackSnapshot } from "@tracegraph/contracts";
 import type { WorkbenchSettingsSnapshot, UpdateWorkbenchSettingsRequest, HostCapabilities, WorkbenchResources, WorkbenchCommandRequest, WorkbenchCommandResult, ModelConnectionTestResult, MigrationPreviewSnapshot, MigrationCommitReceipt, ImageProviderConfigSnapshot, ImageProviderConfigUpdate, StartMediaRunRequest } from "@tracegraph/contracts";
 import { DEFAULT_TEAM_LIMITS, TeamProjectionSchema, TodoItemSchema } from "@tracegraph/contracts";
@@ -36,10 +42,63 @@ import { createDemoSnapshot } from "./demo";
 import type { AttachmentPreviewContent, ContextArchiveLoadResult, PendingAttachment, ReasoningEffort, RunMode, RunStatus, WorkbenchSnapshot, WorkspaceKind, RollbackReceipt } from "./model";
 
 export interface WorkbenchClient {
+  getVisualRetentionSettings?():ReturnType<import("@tracegraph/sdk").TraceGraphClient["getVisualRetentionSettings"]>;
+  updateVisualRetentionSettings?(input:import("@tracegraph/contracts").VisualRetentionUpdate):ReturnType<import("@tracegraph/sdk").TraceGraphClient["updateVisualRetentionSettings"]>;
+  listVisualEvidence?(input:import("@tracegraph/contracts").VisualEvidenceQuery):ReturnType<import("@tracegraph/sdk").TraceGraphClient["listVisualEvidence"]>;
+  pinVisualEvidence?(id:string,input:import("@tracegraph/contracts").VisualEvidencePin):ReturnType<import("@tracegraph/sdk").TraceGraphClient["pinVisualEvidence"]>;
+  cleanupVisualEvidence?(input:import("@tracegraph/contracts").VisualEvidenceCleanupRequest):ReturnType<import("@tracegraph/sdk").TraceGraphClient["cleanupVisualEvidence"]>;
+  getVisualEvidenceCommandReceipt?(id:string):ReturnType<import("@tracegraph/sdk").TraceGraphClient["getVisualEvidenceCommandReceipt"]>;
+  listManagedSkills?(scope:import("@tracegraph/contracts").ManagedSkillScope):Promise<import("@tracegraph/contracts").ManagedSkillsSnapshot>;
+  readManagedSkill?(input:import("@tracegraph/contracts").ManagedSkillSelector):Promise<import("@tracegraph/contracts").ManagedSkillDocument>;
+  validateManagedSkill?(input:import("@tracegraph/contracts").ValidateManagedSkillRequest):Promise<import("@tracegraph/contracts").ManagedSkillValidation>;
+  managedSkillCommand?(input:import("@tracegraph/contracts").ManagedSkillCommand):Promise<import("@tracegraph/contracts").ManagedSkillCommandResult>;
+  getManagedSkillCommandReceipt?(commandId:string):Promise<import("@tracegraph/contracts").ManagedSkillCommandReceipt>;
+  getPersonalProfile?():Promise<PersonalProfileSnapshot>;
+  updatePersonalProfile?(input:PersonalProfileUpdateRequest):Promise<PersonalProfileSnapshot>;
+  getPersonalProfileCommandReceipt?(id:string):Promise<PersonalProfileCommandReceipt>;
+  queryPersonalUsage?(input:PersonalUsageQuery):Promise<PersonalUsageSnapshot>;
+  searchPublicSessions?(input:PublicSessionSearchQuery):Promise<PublicSessionSearchResult>;
+
+  onNativeRunRequested?(listener: (navigation: NativeRunNavigation) => void): () => void;
+  /** Navigate to a specific durable Run without submitting or resuming work. */
+  openRun?(runId: string): Promise<void>;
+  getBrowserCommandReceipt?(id:string):Promise<BrowserCommandReceipt>;
+  getComputerStatus?():Promise<ComputerStatus>;
+  listComputerTargets?():Promise<ComputerTarget[]>;
+  requestComputerGrant?(input:ComputerGrantRequest):Promise<ComputerGrant>;
+  revokeComputerGrant?(input:ComputerRevokeGrantRequest):Promise<ComputerGrant>;
+  acquireComputerLease?(input:ComputerLeaseRequest):Promise<ComputerLease>;
+  resumeComputerLease?(input:ComputerLeaseResumeRequest):Promise<ComputerLease>;
+  releaseComputerLease?(input:ComputerLeaseReleaseRequest):Promise<ComputerLease>;
+  observeComputer?(input:ComputerObserveRequest):Promise<ComputerObservation>;
+  computerAction?(input:ComputerActionRequest):Promise<ComputerActionResult>;
+  getComputerCommandReceipt?(id:string):Promise<ComputerCommandReceipt>;
+  getComputerCapture?(input:ComputerCaptureContentRequest):Promise<{sha256:string;bytes:Uint8Array}>;
+  getBrowserStatus?():Promise<BrowserStatus>;
+  requestBrowserGrant?(input:BrowserGrantRequest):Promise<BrowserGrant>;
+  browserCommand?(input:BrowserCommand):Promise<BrowserCommandResult>;
+  observeBrowser?(id:string):Promise<BrowserObservation>;
+  getBrowserEvidence?(id:string):Promise<{evidenceId:string;sha256:string;bytes:Uint8Array}>;
+  listGoals?():Promise<GoalListResponse>;
+  createGoal?(input:GoalCreateRequest):Promise<GoalSnapshot>;
+  getGoal?(id:string):Promise<GoalSnapshot>;
+  goalCommand?(id:string,input:GoalCommandRequest):Promise<GoalSnapshot>;
+  getGoalCreationReceipt?(id:string):Promise<GoalCreationReceipt>;
+  getGoalCommandReceipt?(id:string,commandId:string):Promise<GoalCommandReceipt>;
+  getGoalBudget?(id:string):Promise<GoalBudgetSnapshot>;
+  getWorkbenchSettingsHistory?(): Promise<WorkbenchSettingsHistory>;
+  restoreWorkbenchSettings?(input: RestoreWorkbenchSettingsRequest): Promise<RestoreWorkbenchSettingsResult>;
+  getProjectRunDefaults?(id: string): Promise<ProjectRunDefaultsSnapshot>;
+  updateProjectRunDefaults?(id: string, input: ProjectRunDefaultsUpdateRequest): Promise<ProjectRunDefaultsSnapshot>;
+  resetSessionRunOptions?(id: string, input: SessionRunOptionsResetRequest): Promise<SessionRunOptionsSnapshot>;
+
   getModelConnections?(): Promise<ModelConnectionsSnapshot>;
   saveModelConnection?(input: ModelConnectionSaveRequest): Promise<ModelConnectionsSnapshot>;
   removeModelConnection?(id: string, input: ModelConnectionRemoveRequest): Promise<ModelConnectionsSnapshot>;
   testModelConnection?(id: string, input: { command_id: string }): Promise<ModelConnectionTestResult>;
+  discoverModelCatalog?(id: string, input: ModelCatalogDiscoveryRequest): Promise<ModelCatalogDiscoveryResult>;
+  testModelCapabilities?(id: string, input: ModelCapabilityTestRequest): Promise<ModelCapabilityTestResult>;
+  getModelCapabilityTestReceipt?(commandId: string): Promise<ModelCapabilityTestReceipt>;
   getSessionRunOptions?(id: string): Promise<SessionRunOptionsSnapshot>;
   updateSessionRunOptions?(id: string, input: SessionRunOptionsUpdateRequest): Promise<SessionRunOptionsSnapshot>;
   getPermissionGrant?(): Promise<PermissionGrant>;
@@ -60,6 +119,8 @@ export interface WorkbenchClient {
   clearImageProvider(): Promise<ImageProviderConfigSnapshot>;
   startMediaRun(input: StartMediaRunRequest): Promise<void>;
   loadGeneratedArtifact(runId: string, artifactId: string): Promise<GeneratedArtifactContent>;
+  /** Read a tool-output Artifact only when a visible command receipt references it. */
+  loadCommandOutput?(runId: string, eventId: string, artifactId: string): Promise<{ content: string; sha256: string; byteLength: number; truncated: boolean }>;
   getWorkbenchSettings(): Promise<WorkbenchSettingsSnapshot>;
   updateWorkbenchSettings(input: UpdateWorkbenchSettingsRequest): Promise<WorkbenchSettingsSnapshot>;
   testModel(input: { command_id: string }): Promise<ModelConnectionTestResult>;
@@ -89,8 +150,8 @@ export interface WorkbenchClient {
   deleteSession(sessionId: string): Promise<void>;
   resumeSession(sessionId: string): Promise<void>;
   returnHome(): Promise<void>;
-  startRun(task: string, mode: RunMode, reasoningEffort?: ReasoningEffort, attachments?: readonly PendingAttachment[], options?: SessionRunOptions, fileContexts?: readonly ProjectFileContextRef[]): Promise<void>;
-  startChat(task: string, reasoningEffort?: ReasoningEffort, attachments?: readonly PendingAttachment[], options?: SessionRunOptions): Promise<void>;
+  startRun(task: string, mode: RunMode, reasoningEffort?: ReasoningEffort, attachments?: readonly PendingAttachment[], options?: SessionRunOptionsOverride, fileContexts?: readonly ProjectFileContextRef[]): Promise<void>;
+  startChat(task: string, reasoningEffort?: ReasoningEffort, attachments?: readonly PendingAttachment[], options?: SessionRunOptionsOverride): Promise<void>;
   approvePlan(): Promise<void>;
   updateTodo(input: TodoWriteInput): Promise<void>;
   createTeam(): Promise<void>;
@@ -509,7 +570,7 @@ export class DemoTraceGraphClient implements WorkbenchClient {
   async clearImageProvider(): Promise<ImageProviderConfigSnapshot> { throw new Error("Image configuration is unavailable in Preview"); }
   async startMediaRun(_input: StartMediaRunRequest): Promise<void> { throw new Error("Creation is unavailable in Preview"); }
   async loadGeneratedArtifact(_runId: string, _artifactId: string): Promise<GeneratedArtifactContent> { throw new Error("Generated content is unavailable in Preview"); }
-  async getModelConfig(): Promise<ModelConfigSnapshot> { return { provider: "openai", protocol: "openai-chat-completions", configured: false, base_url: "https://api.openai.com/v1", model: "gpt-4.1-mini", has_key: false }; }
+  async getModelConfig(): Promise<ModelConfigSnapshot> { return { provider: "openai", protocol: "openai-chat-completions", configured: false, base_url: "https://api.openai.com/v1", model: "gpt-6.1-sol", has_key: false }; }
   async configureModel(_input: ConfigureModelInput): Promise<ModelConfigSnapshot> { throw new Error("Model configuration is unavailable in browser demo mode"); }
   async getTelemetryStatus(): Promise<TelemetryStatusSnapshot> {
     return {
@@ -617,3 +678,4 @@ export class DemoTraceGraphClient implements WorkbenchClient {
     return new Promise((resolve) => window.setTimeout(resolve, milliseconds));
   }
 }
+import type { ModelCapabilityTestRequest, ModelCapabilityTestResult, ModelCapabilityTestReceipt } from "@tracegraph/contracts";

@@ -1,0 +1,82 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent
+
+ ✓ |tracegraph-evals| evals/runtime/crash-recovery.eval.ts (1 test) 7260ms
+   ✓ runtime behavior: crash recovery (1)
+     ✓ renews stale approval authority after restart and resumes the same ledger 7260ms
+ ✓ |tracegraph-evals| evals/runtime/subagent-delegation.eval.ts (1 test) 4010ms
+   ✓ runtime behavior: subagent delegation (1)
+     ✓ records six parent receipts for two children whose ledgers replay completely 4009ms
+ ✓ |tracegraph-evals| evals/runtime/attachment-multimodal.eval.ts (3 tests) 3107ms
+   ✓ runtime behavior: attachments and multimodal input (3)
+     ✓ recovers a staged >5 MiB rejection and records it before Run/model execution 1112ms
+     ✓ emits zero image blocks when explicit inline delivery lacks model capability 910ms
+     ✓ makes PDF extraction failure an explicit reference-only fallback 1084ms
+ ✓ |tracegraph-evals| evals/runtime/extension-system.eval.ts (3 tests) 2205ms
+   ✓ runtime behavior: extension system (3)
+     ✓ isolates a throwing event hook and records one non-recursive extension.error 947ms
+     ✓ removes one built-in capability group reversibly while later Runs still complete 1256ms
+ ✓ |tracegraph-evals| evals/runtime/approval-chain.eval.ts (1 test) 1647ms
+   ✓ runtime behavior: approval chain (1)
+     ✓ binds one approval to the previewed patch before applying it 1647ms
+ ✓ |tracegraph-evals| evals/runtime/tool-parallel.eval.ts (1 test) 1336ms
+   ✓ runtime behavior: parallel tools (1)
+     ✓ executes one safe batch concurrently while preserving requested observation order 1335ms
+ ✓ |tracegraph-evals| evals/runtime/compaction-trigger.eval.ts (1 test) 1004ms
+   ✓ runtime behavior: compaction trigger (1)
+     ✓ crosses the hard budget and records a strictly reducing strategy chain 1003ms
+ ✓ |tracegraph-evals| evals/perf/performance.eval.ts (3 tests) 637ms
+ ✓ |tracegraph-evals| evals/runtime/sandbox-refusal.eval.ts (1 test) 687ms
+   ✓ runtime behavior: sandbox refusal (1)
+     ✓ permits a reviewable preview but rejects mutation before approval in read-only mode 686ms
+ ✓ |tracegraph-evals| evals/replay/time-travel.eval.ts (1 test) 331ms
+   ✓ G23 replay: deterministic time travel (1)
+     ✓ rebuilds every recorded sequence with the same canonical projection hash after restart 331ms
+ ✓ |tracegraph-evals| evals/runtime/agent-team.eval.ts (1 test) 321ms
+   ✓ runtime behavior: durable agent team (1)
+     ✓ survives restart, gives a raced task one owner, and reopens it without reassignment on timeout 320ms
+ ✓ |tracegraph-evals| evals/quality/retrieval-rag-quality.eval.ts (2 tests) 189ms
+ ✓ |tracegraph-evals| evals/quality/codegraph-diagnostics-quality.eval.ts (1 test) 122ms
+ ✓ |tracegraph-evals| evals/docs/g22-release-consistency.eval.ts (4 tests) 35ms
+ ❯ |tracegraph-evals| evals/docs/implementation-consistency.eval.ts (6 tests | 1 failed) 19ms
+   ❯ G16 documentation consistency (6)
+     ✓ keeps documented public identifiers backed by their implementation 10ms
+     ✓ keeps independent schema and storage version literals synchronized 1ms
+     × pins the shared-workbench Event set while preserving G20 projector, tools, and recovery versions 4ms
+     ✓ keeps documented durable event names in the canonical EventTypeSchema 1ms
+     ✓ keeps implemented README and module routes registered by Host 2ms
+     ✓ keeps documented verification commands backed by root package scripts 1ms
+ ✓ |tracegraph-evals| evals/support/offline-guard.eval.ts (1 test) 8ms
+ ✓ |tracegraph-evals| evals/quality/memory-context-quality.eval.ts (1 test) 2ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  |tracegraph-evals| evals/docs/implementation-consistency.eval.ts > G16 documentation consistency > pins the shared-workbench Event set while preserving G20 projector, tools, and recovery versions
+AssertionError: expected [ 'read_file', 'list_dir', …(20) ] to have a length of 20 but got 22
+
+- Expected
++ Received
+
+- 20
++ 22
+
+ ❯ evals/docs/implementation-consistency.eval.ts:508:30
+    506|     expect(eventTypes.filter((event) => event.startsWith("code."))).to…
+    507|     const builtinToolNames = assignedStringArray(actionContract, "BUIL…
+    508|     expect(builtinToolNames).toHaveLength(20);
+       |                              ^
+    509|     expect(assignedConstantLiteral(teamContract, "DEFAULT_TEAM_READ_PA…
+    510|     expect(assignedConstantLiteral(teamContract, "MAX_TEAM_READ_PAGE_I…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 16 passed (17)
+      Tests  1 failed | 31 passed (32)
+   Start at  03:35:52
+   Duration  35.24s (tests 67%, transform 27%, import 6%)
+
+  Transform  |tracegraph-evals| transforming modules took 9.10s · 27% of tracked time, re-done on every run
+             persist transforms across runs with fsModuleCache: true
+             learn more: https://vitest.dev/guide/improving-performance#caching-between-reruns
+

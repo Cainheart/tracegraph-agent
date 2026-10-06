@@ -1,0 +1,7 @@
+$ tsc -p tsconfig.json --noEmit
+$ tsc -p tsconfig.test.json --noEmit
+$ tsc -p tsconfig.test.json --noEmit
+$ tsc -p tsconfig.json --noEmit
+$ tsc -p tsconfig.json --noEmit
+$ node scripts/verify-boundaries.mjs
+Architecture boundaries verified: 22 packages, 58 workspace dependencies, 3595 import references; 0 legacy findings reported.

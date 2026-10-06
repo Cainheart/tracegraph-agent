@@ -1,3 +1,4 @@
+import type { NativeRunNavigation } from "@tracegraph/contracts";
 import {
   ApprovalCommandSchema,
   ApprovePlanRequestSchema,
@@ -122,6 +123,7 @@ export const DesktopBridgeOutputSchemas = {
 
 export type DesktopHostStatus = z.infer<typeof DesktopHostStatusSchema>;
 export type DesktopBridgeApi = DirectDesktopBridgeApi & {
+  onNativeRunRequested?(listener: (navigation: NativeRunNavigation) => void): () => void;
   getConnectionStatus():Promise<HostConnectionSnapshot>;
   copyText(text:string):Promise<void>;
   startHost(): Promise<void>;

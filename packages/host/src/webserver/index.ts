@@ -141,7 +141,7 @@ export interface TraceGraphHostOptions {
   runtime: AgentRuntime;
   /** Only authenticated sockets of the private local transport may bypass loopback address checks. */
   isPrivateLocalRequest?: (request: FastifyRequest) => boolean;
-  mutationLifecycle?: { enter():void; leave():void };
+  mutationLifecycle?: { enter(request?:FastifyRequest):void; leave(request?:FastifyRequest):void };
   admission?: "single" | "workspace";
   prepareRunDispatch?(input:import("@tracegraph/contracts").StartRunRequest,workspace:WorkspaceHandle):Promise<import("@tracegraph/api").TrustedRunDispatch>;
   getDefaultReasoningEffort?:import("@tracegraph/api").RunSessionControllerOptions["getDefaultReasoningEffort"];
@@ -477,7 +477,7 @@ export async function createTraceGraphHost(
 
   app.setErrorHandler((error, request, reply) => {
     const safeTyped=error as {code?:unknown;statusCode?:unknown;message?:unknown};
-    if(typeof safeTyped.code === "string" && /^[a-z][a-z0-9_]{0,100}$/u.test(safeTyped.code) && typeof safeTyped.statusCode === "number" && safeTyped.statusCode>=400 && safeTyped.statusCode<=599 && (request.url.startsWith("/api/workbench/") || ["model_config_readonly","credential_storage_failed","credential_required","migration_busy","migration_source_required","workspace_queue_cancelled","host_restarting","file_context_unavailable","file_context_revision_conflict","file_context_limit","file_context_not_text","file_read_approval_required","file_read_policy_denied","file_scope_denied","file_symlink_denied","file_hardlink_denied","file_too_large","file_changed","file_unavailable","file_kind_unsupported","project_scope_denied","session_project_mismatch","workspace_project_mismatch"].includes(safeTyped.code))) {
+    if(typeof safeTyped.code === "string" && /^[a-z][a-z0-9_]{0,100}$/u.test(safeTyped.code) && typeof safeTyped.statusCode === "number" && safeTyped.statusCode>=400 && safeTyped.statusCode<=599 && (request.url.startsWith("/api/workbench/") || (request.url.startsWith("/api/local/upgrade/")&&safeTyped.code.startsWith("host_upgrade_")) || ["model_config_readonly","credential_storage_failed","credential_required","migration_busy","migration_source_required","workspace_queue_cancelled","host_restarting","file_context_unavailable","file_context_revision_conflict","file_context_limit","file_context_not_text","file_read_approval_required","file_read_policy_denied","file_scope_denied","file_symlink_denied","file_hardlink_denied","file_too_large","file_changed","file_unavailable","file_kind_unsupported","project_scope_denied","session_project_mismatch","workspace_project_mismatch"].includes(safeTyped.code))) {
       void reply.status(safeTyped.statusCode).send({error:safeTyped.code,message:redactSensitiveText(typeof safeTyped.message === "string"?safeTyped.message:"Host operation failed")});return;
     }
     if (error instanceof HostCapabilityError) {
@@ -586,9 +586,11 @@ export async function createTraceGraphHost(
   });
 
   const enteredMutations=new WeakSet<FastifyRequest>();
-  const finishMutation=(request:FastifyRequest)=>{if(enteredMutations.delete(request))options.mutationLifecycle?.leave();};
+  const finishMutation=(request:FastifyRequest)=>{if(enteredMutations.delete(request))options.mutationLifecycle?.leave(request);};
   app.addHook("onResponse",async request=>{finishMutation(request);});
-  app.addHook("onRequestAbort",async request=>{finishMutation(request);});
+  // The transport can disappear while a dispatched handler is still executing.
+  // Only a produced handler response proves that this admission has settled.
+  app.addHook("onSend",async(request,_reply,payload)=>{finishMutation(request);return payload;});
   app.addHook("preHandler", async (request) => {
     if (!request.url.startsWith("/api/") || request.url.startsWith("/api/bootstrap")) {
       return;
@@ -605,7 +607,7 @@ export async function createTraceGraphHost(
     }
     if (request.method !== "GET" && request.method !== "HEAD") {
       assertOrigin(request, allowedOrigins);
-      options.mutationLifecycle?.enter();
+      options.mutationLifecycle?.enter(request);
       enteredMutations.add(request);
     }
   });
@@ -771,7 +773,7 @@ export async function createTraceGraphHost(
       protocol: "openai-chat-completions",
       configured: false,
       base_url: "https://api.openai.com/v1",
-      model: "gpt-4.1-mini",
+      model: "gpt-6.1-sol",
       has_key: false,
     };
     return parsePublicModelConfigResponse(value);

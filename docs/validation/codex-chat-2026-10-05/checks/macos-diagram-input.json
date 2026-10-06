@@ -1,0 +1,12 @@
+{
+  "title": "macOS 安装验收流程",
+  "nodes": [
+    { "id": "model", "label": "真实模型连接" },
+    { "id": "chat", "label": "桌面聊天" },
+    { "id": "artifact", "label": "可读取的成果" }
+  ],
+  "edges": [
+    { "from": "model", "to": "chat", "label": "提交请求" },
+    { "from": "chat", "to": "artifact", "label": "生成并校验" }
+  ]
+}

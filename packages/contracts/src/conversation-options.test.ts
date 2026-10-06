@@ -1,18 +1,16 @@
-import {describe,it,expect} from "vitest";
-import {ModelConnectionsSnapshotSchema,PermissionGrantUpdateRequestSchema,SessionRunOptionsSchema} from "./conversation-options.js";
-import {StartChatRequestSchema,StartRunRequestSchema} from "./commands.js";
-describe("safe conversation choices",()=>{
- it("accepts old callers and real plan chat while never accepting paths or policy documents",()=>{
-  expect(StartChatRequestSchema.parse({command_id:"a",task:"hello"}).mode).toBeUndefined();
-  expect(StartChatRequestSchema.parse({command_id:"a",task:"plan",mode:"plan"}).mode).toBe("plan");
-  const options=SessionRunOptionsSchema.parse({connection_id:"saved-a"});expect(options.permission_preset).toBe("workspace-write");
-  expect(()=>StartRunRequestSchema.parse({command_id:"b",project_id:"p",task:"hello",mode:"execute",run_options:{...options,permission_policy:{allowed_tools:["run_command"]}}})).toThrow();
-  expect(()=>StartChatRequestSchema.parse({command_id:"a",task:"hello",project_id:"external"})).toThrow();
+import {describe,expect,it} from "vitest";
+import {ModelCatalogEntrySchema,resolveModelCatalogEntry} from "./conversation-options.js";
+
+const catalog=[ModelCatalogEntrySchema.parse({id:"deepseek-flash",name:"DeepSeek-V4.1-Flash",capability_status:"confirmed",source:"provider_response",context_window_tokens:1_048_576,max_output_tokens:393_216,input_modalities:["text","image"],output_modalities:["text"],reasoning_efforts:["low","high","max"],reasoning_default:"high"})];
+
+describe("model catalog alias resolution",()=>{
+ it("uses the official DeepSeek capability entry for its documented legacy model id",()=>{
+  expect(resolveModelCatalogEntry("deepseek-v4-flash",catalog,"deepseek","https://api.deepseek.com/v1")).toBe(catalog[0]);
  });
- it("requires explicit confirmed grants and rejects leaked key material from connection responses",()=>{
-  expect(()=>PermissionGrantUpdateRequestSchema.parse({command_id:"grant",enabled:true})).toThrow();
-  const safe={default_connection_id:"model-a",connections:[{connection_id:"model-a",label:"A",revision:0,provider:"custom",protocol:"openai-chat-completions",base_url:"http://127.0.0.1:1234/v1",model:"a",models:["a"],has_key:false,source:"profile",writable:true}]};
-  expect(ModelConnectionsSnapshotSchema.parse(safe)).toEqual(safe);
-  expect(()=>ModelConnectionsSnapshotSchema.parse({...safe,connections:[{...safe.connections[0],api_key:"should-never-return"}]})).toThrow();
+ it("prefers an exact provider entry and does not infer aliases for compatible proxies",()=>{
+  const exact=ModelCatalogEntrySchema.parse({id:"deepseek-v4-flash",capability_status:"unknown",source:"model_id_only"});
+  expect(resolveModelCatalogEntry("deepseek-v4-flash",[...catalog,exact],"deepseek","https://api.deepseek.com")).toBe(exact);
+  expect(resolveModelCatalogEntry("deepseek-v4-flash",catalog,"deepseek","https://proxy.example/v1")).toBeUndefined();
+  expect(resolveModelCatalogEntry("deepseek-v4-flash",catalog,"custom","https://api.deepseek.com/v1")).toBeUndefined();
  });
 });

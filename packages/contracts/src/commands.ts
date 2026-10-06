@@ -59,7 +59,7 @@ export const StartRunRequestSchema = z.object({
   task: NonEmptyStringSchema.max(8_000),
   mode: RunModeSchema,
   reasoning_effort: ReasoningEffortSchema.optional(),
-  run_options: z.object({connection_id:IdentifierSchema.optional(),model:z.string().trim().min(1).max(200).optional(),reasoning_effort:ReasoningEffortSchema.default("default"),mode:RunModeSchema.default("execute"),permission_preset:z.enum(["read-only","workspace-write","full-write"]).default("workspace-write")}).strict().optional(),
+  run_options: z.object({connection_id:IdentifierSchema.optional(),model:z.string().trim().min(1).max(200).optional(),reasoning_effort:ReasoningEffortSchema.optional(),mode:RunModeSchema.optional(),permission_preset:z.enum(["read-only","workspace-write","full-write"]).optional()}).strict().optional(),
   // The Context Manager, rather than an arbitrary UI slice, owns retention and
   // compaction. 160 bounded messages can exercise the 258K policy while still
   // placing a hard cap on a browser request.

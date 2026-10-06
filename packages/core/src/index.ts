@@ -22,6 +22,7 @@ export * from "./seams/media/index.js";
 export * from "./seams/lsp/index.js";
 export * from "./domains/model/model-provider.js";
 export * from "./domains/runtime/runtime.js";
+export * from "./domains/runtime/shared-run-budget.js";
 export * from "./seams/sandbox/index.js";
 export * from "./domains/session/session-controller.js";
 export * from "./domains/session/session-store.js";
@@ -34,3 +35,5 @@ export * from "./domains/tools/tool-output-limits.js";
 export * from "./kernel/types.js";
 export * from "./kernel/workspace.js";
 export type { Disposable } from "./kernel/registration.js";
+
+export * from "./domains/subagent/workspace.js";

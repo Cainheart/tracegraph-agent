@@ -7,6 +7,7 @@ import {MAX_PROJECT_CONTEXT_FILE_BYTES,type StartRunRequest} from "@tracegraph/c
 import {JsonlEventLedger,type ModelAdapter,type ModelInput} from "@tracegraph/core";
 import {createHostComposition} from "./composition/host-composition.js";
 import {createWorkbenchControl} from "./workbench-control.js";
+import {budgetedFixtureModel} from "../test-support/budgeted-fixture-model.js";
 
 const hash=(value:string|Uint8Array)=>`sha256:${createHash("sha256").update(value).digest("hex")}` as const;
 const origin="http://127.0.0.1:4310";
@@ -14,7 +15,7 @@ async function fixture(){
  const root=await mkdtemp(join(tmpdir(),"outlive-host-context-")),directory=join(root,"project");await mkdir(directory);
  const content="const admittedMarker = 'host-selected-version';\n";await writeFile(join(directory,"context.txt"),content);
  const inputs:ModelInput[]=[];let released=0;const model:ModelAdapter={name:"context-host-fixture",releaseRun(){released++;},async decide(input){inputs.push(input);return {decision_id:`decision:context:${inputs.length}`,kind:"finish",public_reason:"Read the selected file context",risk:"none",evidence_refs:[],final_answer:"Selected file observed"};}};
- const composition=await createHostComposition({profileRoot:root,dataDir:join(root,"data"),sessionDir:join(root,"sessions"),permissionConfigPath:join(root,"permission.json"),args:["--permission-ceiling","full-write"],environment:{},useEnvironmentModel:false,nativePicker:false,runtimeModel:model,admission:"workspace"});
+ const composition=await createHostComposition({profileRoot:root,dataDir:join(root,"data"),sessionDir:join(root,"sessions"),permissionConfigPath:join(root,"permission.json"),args:["--permission-ceiling","full-write"],environment:{},useEnvironmentModel:false,nativePicker:false,runtimeModel:budgetedFixtureModel(model),admission:"workspace"});
  const project=await composition.registerProject(directory,"read_write");project.workspace.capabilities.index=false;
  const bootstrap=await composition.host.app.inject({method:"GET",url:"/api/bootstrap",headers:{origin}});expect(bootstrap.statusCode).toBe(200);const token=bootstrap.json().token as string;
  const post=(url:string,input:Record<string,unknown>)=>composition.host.app.inject({method:"POST",url,headers:{origin,authorization:`Bearer ${token}`,"x-tracegraph-command-id":String(input.command_id)},payload:input});

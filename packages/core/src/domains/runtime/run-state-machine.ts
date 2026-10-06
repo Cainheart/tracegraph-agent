@@ -1,5 +1,5 @@
 import { UserInputConsumedDataSchema } from "@tracegraph/contracts";
-import type { RunMode } from "@tracegraph/contracts";
+import type { FinishIntent, RunMode } from "@tracegraph/contracts";
 
 /**
  * Decide whether the loop may start another model turn. This is a pure
@@ -7,10 +7,10 @@ import type { RunMode } from "@tracegraph/contracts";
  */
 export function transitionTurnStart(input: {
   completedTurns: number;
-  maxTurns: number;
+  maxTurns?: number;
   orchestrationDepth: number;
 }): TurnStartTransition {
-  if (input.completedTurns >= input.maxTurns) {
+  if (input.maxTurns !== undefined && input.completedTurns >= input.maxTurns) {
     return {
       kind: "budget_exhausted",
       failureCode: input.orchestrationDepth > 0
@@ -35,11 +35,13 @@ export type TurnStartTransition =
  */
 export function transitionAfterFinish(input: {
   mode: RunMode;
+  finishIntent?: FinishIntent;
   pendingInputCount: number;
   todoCount?: number;
 }): FinishTransition {
   if (input.pendingInputCount > 0) return { kind: "continue_for_input" };
-  if (input.mode === "execute") return { kind: "complete_run" };
+  if ((input.finishIntent ?? "answer") === "answer") return { kind: "complete_run" };
+  if (input.mode !== "plan") return { kind: "plan_submission_wrong_mode" };
   if (input.todoCount === undefined) return { kind: "inspect_plan_todos" };
   if (input.todoCount === 0) return { kind: "plan_missing_todos" };
   return { kind: "plan_ready" };
@@ -50,6 +52,7 @@ export type FinishTransition =
   | { kind: "complete_run" }
   | { kind: "inspect_plan_todos" }
   | { kind: "plan_missing_todos" }
+  | { kind: "plan_submission_wrong_mode" }
   | { kind: "plan_ready" };
 
 /**

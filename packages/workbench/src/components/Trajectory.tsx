@@ -302,6 +302,7 @@ export function Trajectory({
   onLoadAttachment = async () => { throw new Error("Attachment preview is unavailable"); },
   attachmentPreviewsDisabled = false,
   replaySequence,
+  compactControls = false,
 }: {
   events: readonly TraceEvent[];
   selectedId: string | null;
@@ -329,11 +330,12 @@ export function Trajectory({
   onLoadAttachment?: (attachmentId: string) => Promise<AttachmentPreviewContent>;
   attachmentPreviewsDisabled?: boolean;
   replaySequence?: number;
+  compactControls?: boolean;
 }) {
   const { t } = useI18n();
   return (
     <section className="trajectory" aria-label={t("Run trajectory")}>
-      <TodoPanel
+      {todos.length > 0 ? <TodoPanel
         busyTodoId={busyTodoId}
         disabled={todoUpdatesDisabled}
         disabledReason={todoUpdatesDisabledReason}
@@ -344,8 +346,8 @@ export function Trajectory({
         }}
         onStateChange={onTodoStateChange}
         todos={todos}
-      />
-      <TeamPanel
+      /> : todoError ? <p className="todo-error" role="alert"><Icon name="alert" size={12} />{todoError}</p> : null}
+      {team !== undefined && (team.roster.members.length > 0 || team.task_board.items.length > 0 || team.mailbox.messages.length > 0) ? <TeamPanel
         busyKey={teamBusyKey}
         disabled={teamControlsDisabled}
         disabledReason={teamControlsDisabledReason}
@@ -354,7 +356,7 @@ export function Trajectory({
         onCreate={onCreateTeam}
         onSteer={onSteerTeamMember}
         {...(team === undefined ? {} : { team })}
-      />
+      /> : <>{teamError && <p className="team-error" role="alert"><Icon name="alert" size={12} />{teamError}</p>}{!teamControlsDisabled && <button className="button subtle" disabled={teamBusyKey === "create"} onClick={onCreateTeam} type="button"><Icon name="route" size={12} />{t(teamBusyKey === "create" ? "Creating team…" : "Create team")}</button>}</>}
       <SubagentPanel
         disabled={subagentDetailsDisabled}
         onLoad={onLoadSubagent}
@@ -365,7 +367,7 @@ export function Trajectory({
         disabled={attachmentPreviewsDisabled}
         onLoad={onLoadAttachment}
       />
-      <div className="trajectory-heading">
+      {!compactControls && <><div className="trajectory-heading">
         <div>
           <span className="eyebrow">{t(replaySequence === undefined ? "Live execution" : "Replay mode")}</span>
           <h2>{t("Run trajectory")}</h2>
@@ -417,6 +419,7 @@ export function Trajectory({
       {events.length === 0 && (
         <div className="empty-events"><span className="empty-ring" /><p>{t("Events will appear here as the run advances.")}</p></div>
       )}
+      </>}
     </section>
   );
 }

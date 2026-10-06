@@ -1,0 +1,29 @@
+{
+  "schema_version": "outlive.macos-default-profile-upgrade-check.v1",
+  "observed_at": "2026-10-05",
+  "platform": "darwin",
+  "arch": "arm64",
+  "new_package_build_id": "d8b6f625ef8e384fec0ba58bf52eed92866cf84b0e06e8335c1771841765e43b",
+  "installed_owner_build_id": "871f507b0b4cc01f59950715d542b2a40294cf38022a9aed49e2bcbf5832ed8f",
+  "installed_owner_pid": 50247,
+  "result": "upgrade_required",
+  "surface": "actual packaged Desktop window",
+  "visible_state": "The installed application is waiting for a verified safe upgrade; existing work remains running.",
+  "composer_enabled": false,
+  "observed_active_runs": 0,
+  "observed_terminals": 0,
+  "observed_previews": 0,
+  "observed_schedules": 0,
+  "user_profile_changed": false,
+  "old_application_or_host_stopped": false,
+  "diagnostic": "The default Profile is still owned by the older installed Host, which does not advertise the verified idle-upgrade protocol. The new package did not force-stop or mutate that owner.",
+  "observed_profile_resource_query": "outlive host status + resources (read-only)",
+  "default_profile_model": {
+    "configured": true,
+    "provider": "deepseek",
+    "model": "deepseek-v4-flash",
+    "base_url": "https://api.deepseek.com",
+    "has_key": true,
+    "secret_recorded": false
+  }
+}

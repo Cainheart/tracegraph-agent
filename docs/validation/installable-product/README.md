@@ -1,6 +1,6 @@
 # 安装即用本地产品交付与验收
 
-> 本页保留 Mac-v2 安装即用阶段的历史验收，以下“本轮”“当前”“最终”均指该阶段，SHA、计数及回执不代表现交付字节。当时 A 仅作预览、标志尚未选择；用户随后已确认 B Current。当前 final8 安装、工作台和图标证据见[当前工作台闭环报告](../current-workbench-recovery/README.md)，安装包与平台边界见[当前发布记录](../../releases/README.md)。
+> 本页保留 Mac-v2 安装即用阶段的历史验收，以下“本轮”“当前”“最终”均指该阶段，SHA、计数及回执不代表现交付字节。当时 A 仅作预览、标志尚未选择；用户随后已确认 B Current。最新 macOS 安装、默认 Profile 复用和打包冒烟见[2026-10-06 安装记录](../desktop-install-2026-10-06/README.md)。当前工作台与图标证据见[当前工作台闭环报告](../current-workbench-recovery/README.md)，发行边界见[当前发布记录](../../releases/README.md)。
 
 本轮交付可本机试用的 **Outlive Agent 0.1.0-alpha.0**。应用随包携带独立 Node、Electron、编译后的 Host/Web/Desktop/CLI 与原生依赖；用户打开应用后配置并测试模型、添加项目或直接聊天，正常流程无需外部 Node/pnpm 或手动启动 Host。
 
@@ -8,12 +8,12 @@
 
 ## 最终交付字节
 
-以下路径为当前维护者工作区保留的实物，未公开发布。
+以下是此前保留的安装包字节。用户于 2026-10-06 要求清理旧构建包后，这些大型输出已删除；历史 SHA 与当时验收结论继续保留。Windows 交叉包已清理，用户进行原生验证前应从当前源码重新构建。
 
 | 平台 | 实物 | SHA-256 与实际验收 |
 | --- | --- | --- |
-| macOS arm64 | [DMG](../../../_tmp_release/installed-product-complete-mac-v2/artifacts/Outlive-Agent-0.1.0-alpha.0-mac-arm64.dmg)、[ZIP](../../../_tmp_release/installed-product-complete-mac-v2/artifacts/Outlive-Agent-0.1.0-alpha.0-mac-arm64.zip) | DMG `4c0f86eba3be42245bbfbece0f573cc07792f63352e949399e5ed8c2cf06d1d1`；ZIP `ee45109d597944f8e7b97fabe6dc5bf97d3377a6f5a01b27ac023cd72660d0ee`。真实挂载安装、随包运行时、UI 与 CLI 通过。 |
-| Windows x64 | [NSIS EXE](../../../_tmp_release/installed-product-complete-win-v2/artifacts/Outlive-Agent-0.1.0-alpha.0-win-x64.exe)、[ZIP](../../../_tmp_release/installed-product-complete-win-v2/artifacts/Outlive-Agent-0.1.0-alpha.0-win-x64.zip) | EXE `282f29259275c0ba7bbcee6ea072522ea9a954dfd091bad1ae2305a0e116d1fa`；ZIP `602ff1557481fa96a80c150d3d6a8312e8d1be5919c11293d018d004f4160f55`。macOS 交叉构建及目标二进制检查通过；原生安装/启动/PTY 尚未执行。 |
+| macOS arm64 | DMG/ZIP 历史输出已清理 | DMG `4c0f86eba3be42245bbfbece0f573cc07792f63352e949399e5ed8c2cf06d1d1`；ZIP `ee45109d597944f8e7b97fabe6dc5bf97d3377a6f5a01b27ac023cd72660d0ee`。本机当前已安装版本见 2026-10-06 记录。 |
+| Windows x64 | NSIS EXE/ZIP 历史输出已清理 | EXE `282f29259275c0ba7bbcee6ea072522ea9a954dfd091bad1ae2305a0e116d1fa`；ZIP `602ff1557481fa96a80c150d3d6a8312e8d1be5919c11293d018d004f4160f55`。macOS 交叉构建及目标二进制检查曾通过；原生安装/启动/PTY 尚未执行，需从当前源码重建。 |
 
 macOS 最终 build ID：`c72a0a30a897dab039db2275ddcb839ce4dc617fdb16da92968867e619c507f2`。
 [安装回执](installed-dmg-receipt.json)记录 builder 应用、只读挂载 DMG 应用和实际安装应用的 11563 项文件/符号链接 inventory 一致，摘要为 `d08a5fa23ba72569142d2ef5e65590cebc2f19a588f6c8a6bb14223e0a84bbbb`。pre-builder stage 与真实 packaged inventory 分别记录；打包器会重新布置依赖、裁剪非运行元数据，不能将两者等同。

@@ -459,6 +459,9 @@ importers:
       node-pty:
         specifier: 1.1.0
         version: 1.1.0
+      playwright-core:
+        specifier: 1.63.0
+        version: 1.63.0
       zod:
         specifier: 'catalog:'
         version: 4.6.5
@@ -2966,6 +2969,11 @@ packages:
   pkijs@3.4.1:
     resolution: {integrity: sha512-Oo/NZcSWccq8KyoG7gLE9fnltgHns+pNCjCAp/WmjsUySi+sX7y4z4Xqu4fVb42CDHzRPl33fjzT15V1wvcyhA==}
     engines: {node: '>=16.0.0'}
+
+  playwright-core@1.63.0:
+    resolution: {integrity: sha512-rYCsBF/M5HjUch52bbtVONEFjv6Xu8sm8h72dNlR5bzIE1fvC/bxgspzkjSfU+MweEMmPM8KJebG6nnyxo5mCg==}
+    engines: {node: '>=20'}
+    hasBin: true
 
   plist@3.1.0:
     resolution: {integrity: sha512-uysumyrvkUX0rX/dEVqt8gC3sTBzd4zoWfLeS29nb53imdaXVvLINYXTI2GNqzaMuvacNx4uJQ8+b3zXR0pkgQ==}
@@ -6017,6 +6025,8 @@ snapshots:
       pvutils: 1.2.0
       tslib: 2.8.1
 
+  playwright-core@1.63.0: {}
+
   plist@3.1.0:
     dependencies:
       '@xmldom/xmldom': 0.8.15
@@ -6685,6 +6695,7 @@ time:
   jsdom@26.1.0: '2025-04-13T10:23:39.077Z'
   mermaid@12.0.0: '2026-09-10T07:43:05.270Z'
   node-pty@1.1.0: '2025-12-22T13:51:43.876Z'
+  playwright-core@1.63.0: '2026-09-04T22:43:09.102Z'
   react-dom@19.3.0: '2026-09-09T17:17:39.744Z'
   react@19.3.0: '2026-09-09T17:21:30.071Z'
   tsx@4.23.13: '2026-08-30T00:46:16.265Z'

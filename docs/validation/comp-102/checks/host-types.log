@@ -1,0 +1,6 @@
+$ tsc -p tsconfig.json --noEmit
+src/goal-controller.ts(39,149): error TS2353: Object literal may only specify known properties, and 'execution_session_id' does not exist in type 'Omit<{ schema_version: "outlive.goal.v1"; goal_id: string; revision: number; proposal_revision: number; approved_proposal_revision: number | null; proposal: { project_id: string; session_id?: string | undefined; ... 4 more ...; run_options?: { ...; } | undefined; }; ... 8 more ...; receipt_event_id: string; }, "rece...'.
+src/goal-controller.ts(80,28): error TS2339: Property 'execution_session_id' does not exist on type '{ schema_version: "outlive.goal.v1"; goal_id: string; revision: number; proposal_revision: number; approved_proposal_revision: number | null; proposal: { project_id: string; session_id?: string | undefined; ... 4 more ...; run_options?: { ...; } | undefined; }; ... 8 more ...; receipt_event_id: string; }'.
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @tracegraph/host@0.1.0-alpha.0 typecheck: `tsc -p tsconfig.json --noEmit`
+Exit status 1

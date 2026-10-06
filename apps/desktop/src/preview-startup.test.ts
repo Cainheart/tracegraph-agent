@@ -23,13 +23,21 @@ vi.mock("@tracegraph/desktop-host", () => ({
 vi.mock("electron", () => ({
   app: { whenReady: () => Promise.resolve(), on: vi.fn(), getPath: doubles.getPath, quit: doubles.quit },
   BrowserWindow: class {
+    private bounds = { x: 80, y: 60, width: 1440, height: 920 };
     static getAllWindows() { return []; }
     webContents = { setWindowOpenHandler: vi.fn(), on: vi.fn() };
     once = vi.fn();
     on = vi.fn();
     show = vi.fn();
+    focus = vi.fn();
+    getBounds() { return { ...this.bounds }; }
+    setBounds(bounds: { x: number; y: number; width: number; height: number }) { this.bounds = { ...bounds }; }
+    setMinimumSize = vi.fn();
+    setAlwaysOnTop = vi.fn();
+    isDestroyed = () => false;
     loadFile = doubles.loadFile;
   },
+  screen: { getDisplayMatching: () => ({ workArea: { x: 0, y: 0, width: 1920, height: 1080 } }) },
   dialog: {}, ipcMain: { handle: vi.fn() }, shell: {},
   session: { defaultSession: { setPermissionRequestHandler: vi.fn() } },
 }));

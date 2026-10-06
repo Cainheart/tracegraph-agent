@@ -57,16 +57,13 @@ describe("SettingsPanel", () => {
     expect(html).toContain("MiniMax");
     expect(html).toContain("Claude (Anthropic)");
     expect(html).toContain("Custom / 自定义");
-    expect(html).toContain("GPT-4.1 mini");
-    expect(html).toContain("Custom model");
+    expect(html).not.toContain("GPT-6.1 Sol");
+    expect(html).toContain("Model ID");
     expect(html).toContain('aria-pressed="true"');
   });
 
-  it("uses current DeepSeek V4 model presets", () => {
-    expect(MODEL_PROVIDER_PRESETS.deepseek.models).toEqual([
-      { value: "deepseek-v4-flash", label: "DeepSeek V4 Flash（推荐）" },
-      { value: "deepseek-v4-pro", label: "DeepSeek V4 Pro" },
-    ]);
+  it("does not invent default model IDs before explicit provider discovery", () => {
+    expect(Object.values(MODEL_PROVIDER_PRESETS).every((preset) => preset.models.length === 0)).toBe(true);
   });
 
   it("shows only Host-advertised permission presets and warns for full write", () => {
@@ -103,7 +100,7 @@ describe("SettingsPanel", () => {
     );
 
     expect(html.match(/disabled=""/g)).toHaveLength(3);
-    expect(html).toContain("This setting is managed by the local Host.");
+    expect(html).toContain("This permission is controlled by its configuration source.");
     expect(html).not.toContain("TRACEGRAPH_PERMISSION_PRESET");
   });
 
@@ -126,7 +123,7 @@ describe("SettingsPanel", () => {
     expect(html).toContain(">3<");
     expect(html).toContain("2026-09-19T06:00:00.000Z");
     expect(html).toContain("read-only");
-    expect(html).toContain("Host restart required");
+    expect(html).not.toContain("Host restart required");
     expect(html).not.toContain("The browser cannot configure telemetry destinations or authorization data.");
     expect(html).not.toContain("<input");
     expect(html).not.toContain("<button");
@@ -202,7 +199,7 @@ describe("SettingsPanel", () => {
       protocol: "openai-chat-completions",
       configured: true,
       base_url: "https://api.openai.com/v1",
-      model: "gpt-4.1-mini",
+      model: "provider-model-fixture",
       has_key: true,
       credential: {
         name: "OPENAI_API_KEY",

@@ -46,6 +46,16 @@ Run package `build`, `typecheck`, and `test:unit`, plus shared Workbench tests. 
 
 [smoke-desktop-product.mjs](../../scripts/smoke-desktop-product.mjs) launches the real assembled app with an isolated profile and a system-only child PATH. It checks the actual window, bundled CLI/model state, same-owner Web gateway, managed project, bundled Node in a real PTY where policy supports it, background completion across window close/reopen and idle settings restart. It records app termination/owner cleanup separately. This is a maintainer-machine test, not an independent fresh-machine or Windows acceptance claim.
 
+## Background entry (APP-105 current slice)
+
+Live Main creates a real menu-bar/Tray entry using the packaged icon. Closing all windows retains this entry where Tray creation succeeds; **Quit application** detaches Main while the single Host continues. **Stop background and quit** first shows a concrete native confirmation and dispatches the existing journaled `host.stop` command. Preview creates no background entry. A platform without a usable Tray retains the normal window/platform quit fallback.
+
+Main reads the actual typed Host resources. Initial canonical notifications form a historical baseline, then new completion/failure/approval `event_id` values are deduplicated across owner replacement and filtered by shared profile notification preferences. OS bodies omit task contents. Clicking a notification loads/shows the packaged window and verifies the current live Run/project/session before emitting the one closed `onNativeRunRequested` event. Its consumer only navigates to a read-only Run; a click never approves, resumes or starts a task. Replay/offline cannot emit this event. A successful `Notification.show()` call is not proof of OS delivery.
+
+The Tray and General settings use the shared CAS/history preference `general.prevent_sleep_during_tasks` (absent/false by default). Main holds `prevent-app-suspension` only for canonical `created`/`indexing`/`running` Runs when opted in. Waiting for approval, queued/idle, Replay, unavailable Host and Main quit release the blocker; closing a window alone keeps Main active. Lock screen, lid-close/manual sleep and OS policy remain outside this guarantee. Main notifications and the blocker end when the application is fully quit even though Host work continues.
+
+[APP-105 narrow evidence](../../docs/validation/app-105/backend-slice.md) covers real persisted settings, compiled preload and isolated Main composition. Native system notification delivery, real Tray interaction and Windows acceptance remain separate pending evidence; this section does not certify an installer byte graph.
+
 ## Known limitations
 
 Unsigned macOS and Windows installer assembly is available. Signing/notarization is a separate explicit build option requiring trusted credentials; no signed or notarized delivery is claimed without verified receipts. Auto-update, independent external-user acceptance and production model quality are not established by deterministic local tests. macOS observations do not prove Windows native execution. See [release instructions](../../docs/releases/README.md) and effective Host capabilities for current platform/provider constraints.

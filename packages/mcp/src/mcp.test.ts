@@ -1,4 +1,5 @@
-import { McpConfigSchema, type McpServerConfig, type McpToolCatalogEntry } from "@tracegraph/contracts";
+import { McpConfigSchema, type McpServerConfig,
+  type McpStdioServerConfig, type McpToolCatalogEntry } from "@tracegraph/contracts";
 import { describe, expect, it } from "vitest";
 import {
   McpManager,
@@ -58,7 +59,7 @@ function config(servers: readonly McpServerConfig[]): ReturnType<typeof McpConfi
   return McpConfigSchema.parse({ config_version: "tracegraph.mcp.v1", servers });
 }
 
-function server(name: string, required = false): McpServerConfig {
+function server(name: string, required = false): McpStdioServerConfig {
   return {
     name,
     command: process.execPath,

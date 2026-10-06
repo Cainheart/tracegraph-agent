@@ -1,0 +1,253 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+ ❯ src/delivery-review-admission.test.ts (2 tests | 1 failed) 781ms
+   ❯ production Host default finite delivery admission (2)
+     × checks and releases the actual bound adapter even if its outer facade advertises budgets 634ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/delivery-review-admission.test.ts > production Host default finite delivery admission > checks and releases the actual bound adapter even if its outer facade advertises budgets
+AssertionError: promise resolved "{ …(19) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "artifact_refs": [],
++   "attachments": {
++     "items": [],
++     "last_sequence": 0,
++   },
++   "input_queue": {
++     "pending": [],
++   },
++   "last_sequence": 8,
++   "mode": "execute",
++   "permission": {
++     "approval_policy": "never",
++     "label": "Full write",
++     "policy_digest": "sha256:2014b24a0eaf5418c407464edc9ff70253fae23e9ce78ce8a59c50779b894875",
++     "preset_key": "full-write",
++     "sandbox_mode": "danger-full-access",
++   },
++   "project_id": "project:local:add34cd53497b2fa",
++   "projector_version": "tracegraph.projector.v9",
++   "reasoning_effort": "default",
++   "run_id": "run:276c2120-8325-49cc-9fe5-d332c768250c",
++   "sandbox_report": {
++     "enforcement": "none",
++     "mechanisms": [],
++     "mode": "danger-full-access",
++     "platform": "darwin",
++     "report_version": 1,
++     "unmet_constraints": [],
++   },
++   "schema_version": "tracegraph.session-event.v1",
++   "session_id": "session:e792b9b6-fd2d-4549-9f73-36202097df03",
++   "status": "running",
++   "subagents": {
++     "active_count": 0,
++     "items": [],
++     "last_sequence": 8,
++     "limits": {
++       "max_depth": 1,
++       "max_parallel_subagents": 2,
++     },
++   },
++   "task": "Implement this project",
++   "timeline": [
++     {
++       "artifact_refs": [],
++       "data": {
++         "background_model_derivation": false,
++         "conversation_message_count": 0,
++         "delivery_budget": "delivery:run:276c2120-8325-49cc-9fe5-d332c768250c",
++         "delivery_review": {
++           "maxRounds": 2,
++           "ordinaryBudget": {
++             "max_time_ms": 900000,
++             "max_tokens": 200000,
++           },
++         },
++         "max_turns": 12,
++         "mode": "execute",
++         "reasoning_effort": "default",
++         "subagent_limits": {
++           "max_depth": 1,
++           "max_parallel_subagents": 2,
++         },
++         "task": "Implement this project",
++         "workspace_kind": "managed_local",
++       },
++       "event_id": "event:8534f57d-98a7-4bb1-847b-90d9048c2d98",
++       "occurred_at": "2026-10-04T19:38:09.519Z",
++       "project_id": "project:local:add34cd53497b2fa",
++       "run_id": "run:276c2120-8325-49cc-9fe5-d332c768250c",
++       "schema_version": "tracegraph.session-event.v1",
++       "sequence": 1,
++       "session_id": "session:e792b9b6-fd2d-4549-9f73-36202097df03",
++       "summary": "Run created",
++       "type": "run.created",
++     },
++     {
++       "artifact_refs": [],
++       "data": {
++         "session_version": 1,
++       },
++       "event_id": "event:01b0e509-8616-4460-b714-1b80b7a6e315",
++       "occurred_at": "2026-10-04T19:38:09.565Z",
++       "project_id": "project:local:add34cd53497b2fa",
++       "run_id": "run:276c2120-8325-49cc-9fe5-d332c768250c",
++       "schema_version": "tracegraph.session-event.v1",
++       "sequence": 2,
++       "session_id": "session:e792b9b6-fd2d-4549-9f73-36202097df03",
++       "summary": "Durable session opened",
++       "type": "session.opened",
++     },
++     {
++       "artifact_refs": [],
++       "data": {
++         "permission": {
++           "approval_policy": "never",
++           "label": "Full write",
++           "policy_digest": "sha256:2014b24a0eaf5418c407464edc9ff70253fae23e9ce78ce8a59c50779b894875",
++           "preset_key": "full-write",
++           "sandbox_mode": "danger-full-access",
++         },
++       },
++       "event_id": "event:08297a30-677a-4648-aa01-1dd5460c1851",
++       "occurred_at": "2026-10-04T19:38:09.623Z",
++       "project_id": "project:local:add34cd53497b2fa",
++       "run_id": "run:276c2120-8325-49cc-9fe5-d332c768250c",
++       "schema_version": "tracegraph.session-event.v1",
++       "sequence": 3,
++       "session_id": "session:e792b9b6-fd2d-4549-9f73-36202097df03",
++       "summary": "Permission preset configured as full-write",
++       "type": "permission.configured",
++     },
++     {
++       "artifact_refs": [],
++       "data": {
++         "conflict_count": 0,
++         "diagnostic_count": 1,
++         "loaded_count": 0,
++         "registry_digest": "sha256:a4b89fd874bf4e20133a05dfccf4bb35f528b493f1ab92636c9f0b69db3acda1",
++         "skill_names": [],
++       },
++       "event_id": "event:b66a0286-1344-4762-a68a-1fcf23cb6bcd",
++       "occurred_at": "2026-10-04T19:38:09.671Z",
++       "project_id": "project:local:add34cd53497b2fa",
++       "run_id": "run:276c2120-8325-49cc-9fe5-d332c768250c",
++       "schema_version": "tracegraph.session-event.v1",
++       "sequence": 4,
++       "session_id": "session:e792b9b6-fd2d-4549-9f73-36202097df03",
++       "summary": "Loaded 0 local Skill catalog entries",
++       "type": "skill.registry_loaded",
++     },
++     {
++       "artifact_refs": [],
++       "data": {
++         "code": "read_failed",
++         "message": "Skill enablement could not be verified; Skills were not loaded",
++         "path": "enablement",
++         "source": "user",
++       },
++       "event_id": "event:a18767f3-2a87-406b-9f07-02770672e41d",
++       "occurred_at": "2026-10-04T19:38:09.719Z",
++       "project_id": "project:local:add34cd53497b2fa",
++       "run_id": "run:276c2120-8325-49cc-9fe5-d332c768250c",
++       "schema_version": "tracegraph.session-event.v1",
++       "sequence": 5,
++       "session_id": "session:e792b9b6-fd2d-4549-9f73-36202097df03",
++       "summary": "Skill file skipped: Skill enablement could not be verified; Skills were not loaded",
++       "type": "skill.load_failed",
++     },
++     {
++       "artifact_refs": [],
++       "data": {
++         "mode": "danger-full-access",
++         "platform": "darwin",
++       },
++       "event_id": "event:6d19d2ef-5a7a-4d7d-b7cc-0a784a535c72",
++       "occurred_at": "2026-10-04T19:38:09.767Z",
++       "project_id": "project:local:add34cd53497b2fa",
++       "run_id": "run:276c2120-8325-49cc-9fe5-d332c768250c",
++       "schema_version": "tracegraph.session-event.v1",
++       "sequence": 6,
++       "session_id": "session:e792b9b6-fd2d-4549-9f73-36202097df03",
++       "summary": "Sandbox mode configured as danger-full-access",
++       "type": "sandbox.configured",
++     },
++     {
++       "artifact_refs": [],
++       "data": {
++         "reason": "explicit_danger_full_access",
++         "sandbox_report": {
++           "enforcement": "none",
++           "mechanisms": [],
++           "mode": "danger-full-access",
++           "platform": "darwin",
++           "report_version": 1,
++           "unmet_constraints": [],
++         },
++       },
++       "event_id": "event:77e5f95d-b7ee-46e5-b399-03efea013d35",
++       "occurred_at": "2026-10-04T19:38:09.831Z",
++       "project_id": "project:local:add34cd53497b2fa",
++       "run_id": "run:276c2120-8325-49cc-9fe5-d332c768250c",
++       "schema_version": "tracegraph.session-event.v1",
++       "sequence": 7,
++       "session_id": "session:e792b9b6-fd2d-4549-9f73-36202097df03",
++       "summary": "OS sandbox explicitly disabled by Host configuration",
++       "type": "sandbox.disabled",
++     },
++     {
++       "artifact_refs": [],
++       "data": {
++         "phase": "conversation",
++       },
++       "event_id": "event:fc652c32-24ed-44e9-bf7f-15c1723f6b6f",
++       "occurred_at": "2026-10-04T19:38:09.879Z",
++       "project_id": "project:local:add34cd53497b2fa",
++       "run_id": "run:276c2120-8325-49cc-9fe5-d332c768250c",
++       "schema_version": "tracegraph.session-event.v1",
++       "sequence": 8,
++       "session_id": "session:e792b9b6-fd2d-4549-9f73-36202097df03",
++       "summary": "Conversation started without workspace indexing",
++       "type": "run.started",
++     },
++   ],
++   "todos": {
++     "items": [],
++     "last_sequence": 8,
++   },
++   "workspace_kind": "managed_local",
+  }
+
+ ❯ src/delivery-review-admission.test.ts:25:186
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  03:38:07
+   Duration  2.27s (transform 49%, tests 35%, import 15%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/delivery-review-admission.test.ts '--maxWorkers=1'

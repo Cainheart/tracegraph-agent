@@ -569,6 +569,7 @@ composer 明示“将在下一步发送”，展示 canonical pending 队列和�
 | 组件 | 行数 | 职责 |
 | --- | --- | --- |
 | `WorkbenchStates.tsx` | 354 | `NoProject` / `ProjectReady` / `ChatView` / `ChatTurn` / `PublicModelSurface` / `ContextBudgetStrip` |
+| `ChatProcess.tsx` | 205 | 公开任务过程：公开陈述/回答与按来源事件关联的操作组；运行中的行显示实时动效（见 §7.5） |
 | `MarkdownContent.tsx` | 293 | 回答渲染：代码块、表格、列表，` ```mermaid ` 块渲染为图形（`MarkdownContent.tsx:44`，懒加载后在主题切换时重绘） |
 | `ChangesView.tsx` | — | 变更视图：diff、架构增量、验证证据与 G-20 有界 CodeIntel 摘要 |
 | `Inspector.tsx` | 170 | 事件详情（按 §3.4 推导出的标签页） |
@@ -578,7 +579,7 @@ composer 明示“将在下一步发送”，展示 canonical pending 队列和�
 | `AttachmentComposer.tsx` | — | G-18 新 Run 文件选择/拖放、本地类型/大小/数量提示、默认 offload 与显式 image inline |
 | `SandboxBadge.tsx` | — | mode/enforcement/platform 与 mechanisms/unmet 详情；full/partial/none 分别绿/黄/红 |
 | `ContextBudget.tsx` | 88 | 上下文预算详情（来源分色条 + 阈值 + 压缩说明） |
-| `Icon.tsx` | 87 | 图标集合（内联 SVG） |
+| `Icon.tsx` | 90 | 图标集合（内联 SVG） |
 | `Primitives.tsx` | 80 | `BrandMark` / `StatusPill` / `IconButton` / `SectionLabel` / `Notice` |
 | `ApprovalStrip.tsx` | 35 | 审批条（风险、文件数、+/−、过期时间、回滚可用性、证据就绪状态） |
 | `TodoPanel.tsx` | — | canonical Todo 列表、依赖、证据跳转与用户状态修改；终态/中断/人工复核时禁写 |
@@ -656,7 +657,7 @@ Experience 面板显示来源证据、status 和 lifecycle sequence，仅呈现 
 
 语言、主题等profile偏好立即应用；reasoning/concurrency影响新Run；tools、telemetry、Memory/Experience opt-in及project范围在Host重启生效。两端读取同一profile，不把Desktop APIKey存进另一个 Electron userData目录。保存失败、只读、未配置和策略拒绝用实际code/message呈现；预览adapter与live共享owner隔离。
 
-[`WorkspaceResources`](../../packages/workbench/src/components/WorkspaceResources.tsx) 通过Host闭合commands呈现Git status/diff/stage/unstage/discard/commit/branch/worktree、Host-owned终端和预览、定时任务与后台Run；命令保持command ID、explicit request和canonical receipt。Git mutations、长期终端、owned preview与Run共享canonical workspace写租约，冲突时排队且可取消尚未开始的holder。运行中仍能切换/新建会话，退出窗口不取消后台任务；显式停止Host才结束资源。
+[`WorkspaceResources`](../../packages/workbench/src/components/WorkspaceResources.tsx) 通过Host闭合commands呈现Git status/diff/stage/unstage/discard/commit/branch/worktree、Host-owned终端和预览、定时任务与后台Run；命令保持command ID、explicit request和canonical receipt。Git mutations、长期终端与Run共享canonical workspace写租约，冲突时排队且可取消尚未开始的holder。当前owned preview为源码只读、独立cache/temp可写的进程沙箱，持只读租约；同工作区Run可继续写源码。外部登记preview只观察健康，不保证其源码权限。详见[真实预览验收](../validation/dev-readonly-preview/README.md)。运行中仍能切换/新建会话，退出窗口不取消后台任务；显式停止Host才结束资源。
 
 会话归档保留历史，搜索/通知中心/命令面板消费Host事实与本机呈现状态。[`App`](../../packages/workbench/src/App.tsx) 和 [`CommandPalette`](../../packages/workbench/src/components/CommandPalette.tsx)是入口。Desktop native migration由 [`MigrationSettings`](../../packages/workbench/src/components/MigrationSettings.tsx) 展示source预览/冲突/选择，只向Renderer提供安全ID；Web不通过字符串路径获得原生迁移权限。
 
@@ -707,18 +708,12 @@ Chat 视图的难点不是排版，而是**"哪些内容有资格出现在用户
 
 ### 7.1 三层内容来源
 
-```209:228:packages/workbench/src/components/WorkbenchStates.tsx
-const persistedPlans = process
-  .filter((event) => event.kind === "decision" && event.state === "succeeded" && Boolean(event.rationale ?? event.summary))
-  .map((event) => ({ ... type: "public_plan_snapshot", text: event.rationale ?? event.summary }));
-// Older Hosts may still send a `thinking_snapshot` … Treat it as compatibility data, never as public UI content.
-const safeModelSurface = modelSurface?.filter((item) => item.type !== "thinking_snapshot") ?? [];
-const visibleSurface = safeModelSurface.length > 0 ? safeModelSurface : persistedPlans;
-```
+公开计划只使用 `model.decision.data.public_plan` 的持久投影与明确的 `public_plan_snapshot`；不能从 policy rationale、通用事件 summary 或私有思考推导模型计划。
 
-1. **模型公开面流**（`public_plan_snapshot` / `answer_snapshot`）——优先级最高。
-2. **持久 Decision 事件**——快速流缺失时，用已落账的计划文本兜底（`persistedPlans`），因此断线重连后不会出现"过程空白"。
-3. **供应商私有思考**——**永不出现在 UI 中**，`thinking_snapshot` 只被解析、不复用。
+1. **持久任务结果**——终态、暂停与历史回答只显示该任务的 `outcome` / 持久状态投影，易失回答流不能覆盖它。
+2. **公开计划与真实活动**——按模型调用合并公开计划；快速活动由规范来源事件关联，持久事件到达后替换同源活动。
+3. **公开回答草稿**——仅运行时显示，明确标为“回答草稿 · 尚未核验”，不显示正式复制或赞踩入口。它不是已接受的交付结果。
+4. **供应商私有思考**——永不显示；`thinking_snapshot` 只保留解析兼容，不作为公开内容复用。
 
 ### 7.2 快速流与持久流在同一序列号上合并
 
@@ -739,9 +734,13 @@ function publicProcess(events, liveActivities = []): TraceEvent[] {
 
 ### 7.3 回答与"正在进行的回答"
 
-- 未结束前：若有 `answer_snapshot` 文本，直接流式渲染（带光标 `▍`）；否则显示"正在分析请求并等待下一步公开计划…"。
-- 结束后：渲染 `outcome`；`needs_approval` 时回答位置改为**审批关口说明**（提示先审查 diff 与证据再放行）。
-- 失败/取消：优先 `outcome`，否则回退到最后一个事件的 `summary`，并明确"本次运行没有生成最终回答"。
+- 运行时：仅显示当前模型调用的公开回答草稿。对应调用已记录 `model.decision`、`model.request_failed`、`model.output_invalid` 或取消，或存在更新的 `model.request_started` 时，旧候选失效。模型调用 ID 用于配对；表面流 cursor 与账本 sequence 是不同的序列，不比较大小。
+- finish 候选结束对应模型调用后，后续交付审阅、修复和验证仍可能继续。界面隐藏该候选，不以其成功口号代替任务结果；仅展示真实公开活动。
+- 旧服务完全没有模型操作历史时，公开文字仍可兼容显示为未核验草稿；无法绑定到已存在调用历史的候选不显示。失败、取消的表面流不回退为草稿，私有推理继续过滤。
+- 结束与历史：仅显示持久 `outcome` / 状态文案，立即替换正在显示的草稿，不继续旧候选的渐进动画。`needs_approval` 则显示精确审批关口说明。
+- 失败/取消：优先持久 `outcome`，否则使用最后持久事件的 `summary` 或明确失败文案，绝不显示先前的易失成功回答。正式赞踩仍只绑定 `completed` 的规范答案事件；运行中的草稿没有正式回答操作。
+
+源码级负例与边界见[回答权威验证](../validation/public-answer-authority/README.zh.md)。此增量不改变 Runtime 交付验收、SDK 传输或历史存储，也不代表新版安装包图形验收已完成。
 
 ### 7.4 上下文预算条
 
@@ -757,6 +756,19 @@ G-03 在同一面板明确分成两块：
 `LiveTraceGraphClient` 不按数组位置随意拼接：它用 Context 的 `model_call_id` 反查相同 call 中 sequence 最大的 usage，anomaly 还必须同时匹配 `request_kind` / `request_sequence` 并明确为 true。因此打开历史 Session 后仍能从 canonical timeline 重建；同一 call 若发生 repair，界面展示最新 repair 这一个请求的 usage，并标出 `Repair request #N`，不会继承较早 initial 的 anomaly。这里不是 initial+repair 的会话聚合账；两条原始事实仍都保留在 durable timeline。`ModelSurfaceEvent` 仍只是易失回答画面，不承载 usage 真相。
 
 > `ContextBudget` 只展示真实存在的 Context source。Runtime 注入 `memory` / `retrieved` 项时，它们会按普通来源显示；未命中时不会伪造占位项。
+
+### 7.5 运行中的操作行
+
+`ChatProcess.tsx` 把公开事实投影成两类块：**公开陈述/回答**与**操作组**。操作组里的每一行都是一次真实工具操作（`tool.started` / `tool.completed` / `tool.failed` / `tool.unknown` / `tool.cancelled` / `tool.interrupted`），行的 `running` 只来自 `tool.started` 这一持久事实，不来自易失活动文本或模型措辞。
+
+运行中的行必须一眼可辨，因此同时使用四种信号（`workbench.css`，作用域 `.app.outlive-workbench`）：
+
+- **旋转缺口圆弧**（`.chat-operation-spinner`，`Icon` 的 `spinner`）；操作组摘要行与组内操作行都用同一个类。
+- **标签高光扫过**（`chat-activity-sweep`）：标签使用 `background-clip: text` + 透明前景色，背景固定为 200% 宽度、位置只在 `0%`–`100%` 之间移动。背景必须始终覆盖整个标签框，否则文字尾部会因无背景可裁而变成空白。
+- **行底色与显式状态**：运行中的操作行（`.chat-operation.is-running > .chat-operation-row`）与操作组摘要行带浅色底；摘要行额外显示“运行中 / Running”与操作计数，使折叠状态下也能看出仍在执行。
+- **脉冲圆点与实时用时**：状态列显示 `chat-running-dot`，并由每秒一次的本地计时刷新 `进行中 · Ns`。
+
+`prefers-reduced-motion: reduce` 时停用上述全部动画，并回退为静态强调色。终态（completed/failed/unknown/cancelled）立即恢复静态图标、静态文案与默认底色，不残留“转圈”。
 
 ## 8. i18n 与主题
 
@@ -817,6 +829,8 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 - 广播 `tracegraph:themechange` 的唯一订阅者是图表层（`MarkdownContent.tsx:249`，卸载时在 252 移除）：**mermaid 渲染出的 SVG 配色不会随 CSS 变量自动变化**，必须显式重绘。这是一条"样式系统边界"上的必然妥协。
 - 调色板集中在 `styles.css` 顶部：共享字体令牌与基础色在 `:root`，组件级颜色令牌定义在 `.app` 作用域内；主题切换依赖根元素类名 `app theme-${theme}`。
 - 设置面板里的"外观"是两张带小样预览的按钮（`SettingsPanel.tsx:126:135`），`aria-pressed` 标记当前项。
+
+Mermaid 源码先按原文渲染；失败时会规范化常见保留字节点 ID，并保持节点声明与边引用一致。例如 `runtime --> graph` 会与 `graph[CodeGraph]` 一起改为安全 ID，而独立 `end` 仍作为子图终止符。回归测试实际生成 SVG，不只检查加载占位。
 
 ## 9. 测试
 

@@ -1,0 +1,17 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+
+ Test Files  5 passed (5)
+      Tests  28 passed (28)
+   Start at  05:18:21
+   Duration  7.68s (tests 71%, import 15%, transform 13%)
+
+    Isolate  5 workers spawned · ~131ms startup each (spawn + environment, per file)
+             at least ~524ms faster with isolate: false — reuses workers across files instead of one per file
+

@@ -1,0 +1,48 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench
+
+ ❯ src/help-topics.test.tsx (5 tests | 1 failed | 4 skipped) 21ms
+   ❯ Help guides real local capabilities without performing actions (5)
+     × points project selection to the sidebar and Browser permission to the real Workspace controls 20ms
+ ❯ src/product-settings.test.tsx (9 tests | 1 failed | 8 skipped) 34ms
+   ❯ Product settings safety and functional controls (7)
+     × opens existing Browser controls explicitly without requesting permission or running a browser command 33ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/help-topics.test.tsx > Help guides real local capabilities without performing actions > points project selection to the sidebar and Browser permission to the real Workspace controls
+AssertionError: expected 'Open Models, save a connection and ex…' to contain 'Select a project in the sidebar'
+
+Expected: "Select a project in the sidebar"
+Received: "Open Models, save a connection and explicitly run its small connection test.Choose the project and next-task model, permissions and mode in the composer."
+
+ ❯ src/help-topics.test.tsx:20:59
+     18|   it("points project selection to the sidebar and Browser permission t…
+     19|     const settings = vi.fn(); await act(async () => root.render(<Langu…
+     20|     expect(node.querySelector("article ol")!.textContent).toContain("S…
+       |                                                           ^
+     21|     await click("Use an isolated browser");
+     22|     expect(node.querySelector("article ol")!.textContent).toContain("W…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/product-settings.test.tsx > Product settings safety and functional controls > opens existing Browser controls explicitly without requesting permission or running a browser command
+AssertionError: expected 'Back to workbenchSettingsGeneralPerso…' to contain 'Workspace tools → Browser'
+
+Expected: "Workspace tools → Browser"
+Received: "Back to workbenchSettingsGeneralPersonal profileKeyboard shortcutsNotificationsAppearancePersonalizationModelsPermissionsBrowserComputerMemory and privacyDevelopment environmentGitSkills and extensionsMCP and LSPTasks and AgentsUsage and diagnosticsArchiveAbout and updatesOutlive AgentBrowserRefresh        Open preview inMetadata unavailableHelp and scopeCurrent value"panel"SourceNot loadedScopeNot loadedEffectiveNot loadedThe displayed value is the last confirmed setting. A failed save keeps the previous value.This value is controlled by its displayed source. Change that source rather than adding a conflicting override.PanelBrowserBrowser accessProject previews open according to the preference above. Browser automation requires its own connection and grant; it is separate from file permissions.Status: availableHelp and next stepsUse the Workspace Preview panel for an existing project preview. Optional browser connections do not block chat.Permissions"
+
+ ❯ src/product-settings.test.tsx:33:30
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  2 failed | 12 skipped (14)
+   Start at  04:33:51
+   Duration  734ms (transform 54%, environment 22%, import 19%, tests 4%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/help-topics.test.tsx src/product-settings.test.tsx -t 'points project|opens existing Browser'

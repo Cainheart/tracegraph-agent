@@ -272,28 +272,28 @@ describe("runtime provider usage accounting", () => {
         retry_scope: "model_provider",
         attempt: 1,
         next_attempt: 2,
-        max_attempts: 3,
-        delay_ms: 250,
+        max_attempts: 6,
+        delay_ms: 500,
         reason_code: "http_503",
       },
       {
         retry_scope: "model_provider",
         attempt: 2,
         next_attempt: 3,
-        max_attempts: 3,
-        delay_ms: 500,
+        max_attempts: 6,
+        delay_ms: 1_000,
         reason_code: "http_503",
       },
     ]);
     expect(requestStart?.data.retry_taxonomy).toMatchObject({
-      model_provider: { max_attempts: 3, base_backoff_ms: 250, max_backoff_ms: 1_000 },
+      model_provider: { max_attempts: 6, base_backoff_ms: 500, max_backoff_ms: 10_000 },
       tool: { max_automatic_dispatch_attempts: 1, replay_policy: "disabled" },
       action: { max_dispatch_attempts_per_operation: 1, unknown_outcome: "reconcile_only" },
     });
     expect(decision?.data).toMatchObject({
       provider_attempts: 3,
       provider_retry_count: 2,
-      provider_retry_delays_ms: [250, 500],
+      provider_retry_delays_ms: [500, 1_000],
     });
   });
 

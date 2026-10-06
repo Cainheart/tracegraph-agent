@@ -1,4 +1,4 @@
-import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, rm, writeFile, link } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { WorkspaceHandleSchema, type RunProjection, type WorkspaceHandle } from "@tracegraph/contracts";
@@ -29,6 +29,15 @@ afterEach(async () => {
 });
 
 describe("G10 Skill registry", () => {
+  it("does not load a private regular file linked into a Skill scope", async () => {
+    const root=await mkdtemp(join(tmpdir(),"outlive-skill-hardlink-"));roots.push(root);
+    const userRoot=join(root,"skills");await mkdir(join(userRoot,"review"),{recursive:true});
+    const privateFile=join(root,"private.md");await writeFile(privateFile,"---\nname: review\ndescription: Private linked data\nversion: 1.0.0\n---\nPRIVATE_LINKED_BODY\n");
+    await link(privateFile,join(userRoot,"review","SKILL.md"));
+    const registry=new SkillRegistry({userSkillsRoot:userRoot});
+    expect((await registry.scanGlobal()).skills).toEqual([]);
+    expect((await registry.scanGlobal()).diagnostics).toMatchObject([{code:"unsafe_path"}]);
+  });
   it("skips invalid frontmatter, keeps project precedence, and records diagnostics", async () => {
     const root = await mkdtemp(join(tmpdir(), "tracegraph-skill-"));
     roots.push(root);

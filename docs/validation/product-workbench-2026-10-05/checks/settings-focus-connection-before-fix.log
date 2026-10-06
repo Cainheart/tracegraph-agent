@@ -1,0 +1,77 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench
+
+ ❯ src/settings-focus-connection.test.tsx (4 tests | 4 failed) 103ms
+   ❯ settings modal isolation (2)
+     × makes the underlying workbench inert, contains escaped focus and restores the untouched draft on close 57ms
+     × includes visible disclosure summaries in Tab order and restores an external opener 11ms
+   ❯ initial connection presentation (2)
+     × shows pending empty connection as loading, then exposes a genuine failed connection 18ms
+     × shows pending ready connection as loading, then exposes a genuine failed connection 17ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/settings-focus-connection.test.tsx > settings modal isolation > makes the underlying workbench inert, contains escaped focus and restores the untouched draft on close
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/settings-focus-connection.test.tsx:53:71
+     51|     await act(async () => composer.dispatchEvent(new KeyboardEvent("ke…
+     52|     const dialog = node.querySelector<HTMLElement>('[role="dialog"][ar…
+     53|     expect(node.querySelector(".desktop-app")?.hasAttribute("inert")).…
+       |                                                                       ^
+     54|     expect(dialog.contains(document.activeElement)).toBe(true);
+     55|     await act(async () => { node.querySelector<HTMLButtonElement>('[ar…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/settings-focus-connection.test.tsx > settings modal isolation > includes visible disclosure summaries in Tab order and restores an external opener
+AssertionError: expected false to be true // Object.is equality
+
+- Expected
++ Received
+
+- true
++ false
+
+ ❯ src/settings-focus-connection.test.tsx:69:75
+     67|     await act(async () => root.render(draw(true)));
+     68|     const summary = node.querySelector<HTMLElement>(".installation-dia…
+     69|     const next = await key(summary, "Tab"); expect(next.defaultPrevent…
+       |                                                                           ^
+     70|     const previous = await key(document.activeElement!, "Tab", true); …
+     71|     await act(async () => root.render(draw(false))); expect(document.a…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/settings-focus-connection.test.tsx > initial connection presentation > shows pending empty connection as loading, then exposes a genuine failed connection
+ FAIL  src/settings-focus-connection.test.tsx > initial connection presentation > shows pending ready connection as loading, then exposes a genuine failed connection
+AssertionError: expected 'alert' to be 'status' // Object.is equality
+
+Expected: "status"
+Received: "alert"
+
+ ❯ src/settings-focus-connection.test.tsx:81:41
+     79|     await act(async () => root.render(<App client={client} />));
+     80|     const notice = node.querySelector(".connection-recovery")!;
+     81|     expect(notice.getAttribute("role")).toBe("status"); expect(notice.…
+       |                                         ^
+     82|     expect(node.textContent).not.toContain("Let's get you connected");…
+     83|     expect(node.querySelector("textarea")?.placeholder).toBe("Connecti…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed (4)
+   Start at  04:23:58
+   Duration  1.19s (transform 50%, import 28%, environment 12%, tests 9%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/settings-focus-connection.test.tsx

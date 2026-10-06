@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { DeliveryReviewResultSchema } from "./delivery-review.js";
 import {
   ArtifactRefSchema,
   IdentifierSchema,
@@ -22,6 +23,8 @@ export const BUILTIN_TOOL_NAMES = [
   "preview_patch",
   "commit_patch",
   "run_test",
+  "discover_project_commands",
+  "run_project_command",
   "todo_read",
   "todo_write",
   "spawn_subagent",
@@ -46,6 +49,10 @@ export const ToolCallSchema = z.object({
 }).strict();
 export type ToolCall = z.infer<typeof ToolCallSchema>;
 
+/** Answer completion never grants execution authority; plans require an explicit approval boundary. */
+export const FinishIntentSchema = z.enum(["answer", "submit_plan"]);
+export type FinishIntent = z.infer<typeof FinishIntentSchema>;
+
 export const DecisionSchema = z.object({
   decision_id: IdentifierSchema,
   kind: z.enum(["tool_call", "finish"]),
@@ -56,6 +63,8 @@ export const DecisionSchema = z.object({
   tool_call: ToolCallSchema.optional(),
   tool_calls: z.array(ToolCallSchema).min(1).max(MAX_TOOL_CALLS_PER_DECISION).optional(),
   final_answer: z.string().max(8_000).optional(),
+  finish_intent: FinishIntentSchema.optional(),
+  review_result: DeliveryReviewResultSchema.optional(),
 }).superRefine((value, context) => {
   if (value.kind === "tool_call") {
     const hasSingleCall = value.tool_call !== undefined;
@@ -69,6 +78,12 @@ export const DecisionSchema = z.object({
     }
     if (value.final_answer !== undefined) {
       context.addIssue({ code: "custom", path: ["final_answer"], message: "tool_call decisions cannot include final_answer" });
+    }
+    if (value.finish_intent !== undefined) {
+      context.addIssue({ code: "custom", path: ["finish_intent"], message: "tool_call decisions cannot include finish_intent" });
+    }
+    if (value.review_result !== undefined) {
+      context.addIssue({code: "custom", path: ["review_result"], message: "tool_call decisions cannot include review_result"});
     }
     if (value.tool_calls !== undefined) {
       const actionIds = value.tool_calls.map(({ action_id: actionId }) => actionId);

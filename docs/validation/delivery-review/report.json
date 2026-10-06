@@ -1,0 +1,33 @@
+{
+  "status": "passed-scoped-backend",
+  "complete_product_task": false,
+  "source_frozen": true,
+  "provider": "local deterministic HTTP fixture",
+  "paid_model_quality_verified": false,
+  "proof": "controlled-known-failure-proof/proof.json",
+  "canonical_events": "controlled-known-failure-proof/canonical-events.json",
+  "independent_verification": "controlled-known-failure-proof/verification.json",
+  "actual_requests": 15,
+  "actual_readonly_reviewers": 2,
+  "actual_command_receipts": ["success", "failure", "success"],
+  "review_verdicts": ["blocked", "passed"],
+  "independent_readonly_checks": 692,
+  "checks": [
+    {"path": "checks/core-final-focused.log", "files": 6, "tests": 70, "exit_code": 0},
+    {"path": "checks/core-team-final.log", "files": 2, "tests": 18, "exit_code": 0},
+    {"path": "checks/goal-final-focused.log", "files": 1, "tests": 17, "exit_code": 0},
+    {"path": "checks/host-production-admission-final2.log", "files": 1, "tests": 2, "exit_code": 0},
+    {"path": "checks/fixture-and-recovery-final.log", "files": 3, "tests": 30, "exit_code": 0},
+    {"path": "checks/contracts-focused.log", "files": 2, "tests": 6, "exit_code": 0},
+    {"path": "checks/host-budget-fixtures-final2.log", "files": 5, "tests": 26, "exit_code": 0}
+  ],
+  "retained_interim_evidence": ["controlled-proof/proof.json", "checks/core-focused.log", "checks/host-production-admission.log", "checks/host-production-admission-final.log", "checks/host-budget-fixtures-final.log"],
+  "limits": [
+    "Review inventory covers verified patch paths and command manifests, not all script-created files.",
+    "Review packet is initial public task first 4000 characters and latest ten completed verification-command IDs, not complete later steering or Goal acceptance.",
+    "Fresh test receipt does not prove coverage or semantic completeness.",
+    "Ordinary delivery human resume requires a new explicit Run; spent and unknown facts remain retained.",
+    "Windows verification-failure process quiescence and paid model quality are unverified.",
+    "Native UI, final installation and broader workspace checks remain separate parent-owned evidence."
+  ]
+}

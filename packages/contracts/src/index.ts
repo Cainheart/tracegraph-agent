@@ -1,4 +1,5 @@
 export * from "./action.js";
+export * from "./delivery-review.js";
 export * from "./action-reconciliation.js";
 export * from "./action-wal.js";
 export * from "./attachment.js";
@@ -13,6 +14,7 @@ export * from "./experience-lifecycle.js";
 export * from "./extension.js";
 export * from "./graph.js";
 export * from "./live-event.js";
+export * from "./public-chat.js";
 export * from "./lsp.js";
 export * from "./memory.js";
 export * from "./memory-episode.js";
@@ -46,3 +48,17 @@ export * from "./project-file-context.js";
 export * from "./host-connection.js";
 
 export * from "./conversation-options.js";
+
+export * from "./settings-history.js";
+export * from "./goal.js";
+export * from "./personal-data.js";
+export * from "./browser.js";
+
+export * from "./computer.js";
+
+export * from "./application-runtime.js";
+
+export * from "./subagent-workspace.js";
+export * from "./skill-management.js";
+export * from "./visual-evidence.js";
+export * from "./model-capability-tests.js";

@@ -7,6 +7,8 @@ import { createRequire } from "node:module";
 import { basename, dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { promisify } from "node:util";
+import {buildNativeComputer} from "./build-native-computer.mjs";
+import {stageBrowserRuntime} from "./stage-browser-runtime.mjs";
 import {buildBrandIcons} from "./build-brand-icons.mjs";
 
 export const NODE_VERSION = "24.21.0";
@@ -149,10 +151,14 @@ export async function stageDesktopProduct(root,output,platform=process.platform,
   await copyFile(join(root,"LICENSE"),join(app,"LICENSE"));
   await writeFile(join(app,"package.json"),JSON.stringify({name:"outlive-agent",version:original.version,private:true,type:"module",main:"apps/desktop/dist/main.js",description:"Outlive Agent local workbench",author:"Outlive Agent contributors",license:"MIT",dependencies:graph.dependencies},null,2)+"\n");
   await validateNativePrebuild(app,platform,arch);
-  const appInventory=await hashTree(app);const productBuildId=sha256(Buffer.from(JSON.stringify({layout_version:2,platform,arch,node_version:NODE_VERSION,runtime_resource_policy:"preserve-target-typescript-standard-libraries",files:appInventory})));
+  await mkdir(runtime,{recursive:true});
+  const browser=await stageBrowserRuntime(root,runtime,platform,arch);
+  const computer=await buildNativeComputer(root,join(runtime,"computer"),platform,arch);
+  const browserInventory=await hashTree(runtime);
+  const appInventory=await hashTree(app);const productBuildId=sha256(Buffer.from(JSON.stringify({layout_version:2,platform,arch,node_version:NODE_VERSION,runtime_resource_policy:"preserve-target-typescript-standard-libraries-and-pinned-browser",browser_files:browserInventory,files:appInventory})));
   const bundled=await stageRuntime(root,runtime,platform,arch,productBuildId);await mkdir(bin,{recursive:true});
   await copyFile(join(root,"apps","desktop","resources","bin",platform==="win32"?"outlive.cmd":"outlive"),join(bin,platform==="win32"?"outlive.cmd":"outlive"));if(platform!=="win32")await chmod(join(bin,"outlive"),0o755);
-  const receipt={schema_version:"outlive.product-stage.v1",version:original.version,platform,arch,product_build_id:productBuildId,runtime:bundled,packages:graph.packages,external_node_required:false,external_pnpm_required:false,signed:false};
+  const receipt={schema_version:"outlive.product-stage.v1",version:original.version,platform,arch,product_build_id:productBuildId,runtime:bundled,browser,computer,packages:graph.packages,external_node_required:false,external_pnpm_required:false,signed:false};
   await writeFile(join(output,"stage-inventory.json"),JSON.stringify({schema_version:"outlive.product-inventory.v1",product_build_id:productBuildId,app_files:appInventory,runtime_files:await hashTree(runtime),launcher_files:await hashTree(bin)},null,2)+"\n");
   await writeFile(join(output,"stage-receipt.json"),JSON.stringify(receipt,null,2)+"\n");
   return {app,runtime,bin,receipt};

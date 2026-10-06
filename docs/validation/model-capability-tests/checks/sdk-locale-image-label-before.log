@@ -1,0 +1,32 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/sdk
+
+ ❯ src/client/locale/index.test.ts (13 tests | 1 failed) 33ms
+   ❯ shared client locale contract (13)
+     × keeps explicit model tests and uncertain receipts understandable without overstating compatibility 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/client/locale/index.test.ts > shared client locale contract > keeps explicit model tests and uncertain receipts understandable without overstating compatibility
+AssertionError: expected 'Image input' to match /[\u4e00-\u9fff]/u
+
+- Expected:
+/[\u4e00-\u9fff]/u
+
++ Received:
+"Image input"
+
+ ❯ src/client/locale/index.test.ts:6:194
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 14 passed (15)
+   Start at  05:10:56
+   Duration  452ms (transform 60%, import 26%, tests 14%, worker 1%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/sdk:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/model-capability-tests.test.ts src/client/locale/index.test.ts '--maxWorkers=1'

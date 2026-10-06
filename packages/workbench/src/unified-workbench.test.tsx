@@ -2,7 +2,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { HostCapabilitiesSchema, WorkbenchSettingsSnapshotSchema, WorkbenchResourcesSchema } from "@tracegraph/contracts";
+import { HostCapabilitiesSchema, WorkbenchSettingsSnapshotSchema, WorkbenchResourcesSchema, ExtensionStatusSchema } from "@tracegraph/contracts";
 import { type WorkbenchClient, DemoTraceGraphClient } from "./client";
 import { createDemoSnapshot } from "./demo";
 import { LanguageProvider } from "./i18n";
@@ -41,6 +41,16 @@ beforeEach(() => {
 afterEach(async () => { await act(async () => root.unmount()); container.remove(); vi.restoreAllMocks(); });
 
 describe("unified settings authority and receipts", () => {
+  it("labels known built-ins while preserving exact identifiers for enablement and reload", async () => {
+    const client=new DemoTraceGraphClient(), name="@tracegraph/builtin-artifact-tools", other="trusted.custom-tool";
+    client.getCapabilities=vi.fn(async()=>capabilities(["settings.read","settings.write","extensions.read","extensions.reload"]));
+    client.getWorkbenchSettings=vi.fn(async()=>({...settings(),fields:[{path:"tools.disabled_extensions",source:"profile" as const,scope:"profile" as const,writable:true,effective:"new-run" as const}]}));
+    client.listExtensions=vi.fn(async()=>[name,other].map(name=>ExtensionStatusSchema.parse({name,api_version:"tracegraph.extension.v1",state:"active",registration_count:1,generation:1,updated_at:"2026-10-05T00:00:00Z"})));
+    client.updateWorkbenchSettings=vi.fn(async input=>({...settings(),revision:8,settings:{...settings().settings,tools:input.patch.tools!}}));client.reloadExtension=vi.fn(async name=>ExtensionStatusSchema.parse({name,api_version:"tracegraph.extension.v1",state:"active",registration_count:1,generation:2,updated_at:"2026-10-05T00:00:00Z"}));
+    await act(async()=>root.render(<LanguageProvider><UnifiedSettings client={client} open onClose={vi.fn()} onMemory={vi.fn()} onApplied={vi.fn()}/></LanguageProvider>));await click("Skills and extensions");
+    const rows=container.querySelectorAll(".settings-extension-row");expect(rows[0]!.querySelector("label")!.textContent).toBe("Built-in artifact tools");expect(rows[0]!.querySelector("details code")!.textContent).toBe(name);expect(rows[1]!.querySelector("label")!.textContent).toBe(other);expect(rows[0]!.querySelector(":scope > small")!.textContent).toBe("Enabled");expect(rows[0]!.querySelector("details")!.hasAttribute("open")).toBe(false);expect(rows[0]!.querySelector("details")!.textContent).toContain("Generation: 1");expect([...container.querySelectorAll("h1,h2")].filter(value=>value.textContent==="Skills and extensions")).toHaveLength(1);
+    await act(async()=>rows[0]!.querySelector<HTMLInputElement>("input")!.click());expect(client.updateWorkbenchSettings).toHaveBeenCalledWith(expect.objectContaining({patch:{tools:expect.objectContaining({disabled_extensions:[name]})}}));await act(async()=>rows[0]!.querySelector<HTMLButtonElement>("button")!.click());expect(client.reloadExtension).toHaveBeenCalledExactlyOnceWith(name);
+  });
   it("treats restart_requested as acceptance and reports applied only after real reconnect plus fresh settings", async () => {
     const client = new DemoTraceGraphClient(); let restarted = false, release!: () => void;
     client.getCapabilities = vi.fn(async () => capabilities(["settings.read", "host.restart"]));
@@ -110,6 +120,7 @@ describe("unified settings authority and receipts", () => {
     await act(async () => root.render(<LanguageProvider><UnifiedSettings client={client} open onClose={vi.fn()} onMemory={vi.fn()} onApplied={applied} /></LanguageProvider>));
     expect(container.querySelector<HTMLSelectElement>('[aria-label="Language"]')?.disabled).toBe(true);
     expect(container.textContent).toContain("environment · profile · restart");
+    await click("Keyboard shortcuts");
     await input(container.querySelector<HTMLSelectElement>('[aria-label="Send shortcut"]')!, "mod-enter");
     expect(client.updateWorkbenchSettings).toHaveBeenCalledWith(expect.objectContaining({ expected_revision: 7, command_id: expect.any(String), patch: { general: { ...settings().settings.general, enter_behavior: "mod-enter" } } }));
     expect(applied).toHaveBeenLastCalledWith(expect.objectContaining({ revision: 8 }));
@@ -209,10 +220,9 @@ describe("conversation disclosure", () => {
     const event = { ...fixture.run!.events[0]!, kind: "decision" as const, state: "running" as const, sourceType: "model.request_started", operationId: "call:observed", summary, title: "Model request started" };
     HTMLElement.prototype.scrollIntoView = vi.fn();
     await act(async () => root.render(<LanguageProvider><ChatView changedFiles={[]} conversation={[]} events={[event]} task="Inspect" status="running" dataSource="live" evidence={fixture.evidence} currentStep={summary} /></LanguageProvider>));
-    expect(container.querySelector(".current-public-statement")?.textContent).toBe("Waiting for the next update");
-    const details = container.querySelector<HTMLDetailsElement>(".inline-activity-details")!;
-    expect(details.open).toBe(false); expect(details.querySelector("summary")?.textContent).toContain("Request sent"); expect(details.querySelector("summary")?.textContent).not.toContain("synthetic-provider"); expect(details.querySelector("small")?.textContent).toBe("Started");
-    expect(details.textContent).toContain("synthetic-provider");
+    expect(container.querySelector(".chat-operation-waiting")?.textContent).toBe("Working…");
+    expect(container.textContent).not.toContain("synthetic-provider");
+    expect(container.querySelector(".public-progress-item")).toBeNull();
   });
   it("keeps approval success in the conversation until Review is explicitly opened", async () => {
     const client = new DemoTraceGraphClient(), snapshot = createDemoSnapshot("needs_approval");
@@ -236,7 +246,7 @@ describe("conversation disclosure", () => {
     Object.defineProperties(view, { scrollHeight: { configurable: true, value: 1_000 }, clientHeight: { configurable: true, value: 200 } });
     await act(async () => view.dispatchEvent(new Event("scroll", { bubbles: true })));
     scroll.mockClear();
-    const details = container.querySelector<HTMLDetailsElement>(".inline-activity-details")!;
+    const details = container.querySelector<HTMLDetailsElement>(".chat-operation-group")!;
     expect(details.open).toBe(false);
     await act(async () => { details.open = true; details.dispatchEvent(new Event("toggle")); });
     await act(async () => root.render(render([...fixture.run!.events, { ...fixture.run!.events[0]!, id: "new-event", sequence: 100, summary: "A new actual operation" }])));

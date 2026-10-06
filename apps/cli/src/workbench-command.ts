@@ -1,3 +1,8 @@
+import {ManagedSkillScopeSchema,ManagedSkillCommandSchema,ValidateManagedSkillRequestSchema} from "@tracegraph/contracts";
+import {VisualRetentionUpdateSchema,VisualEvidencePinSchema,VisualEvidenceQuerySchema,VisualEvidenceCleanupRequestSchema} from "@tracegraph/contracts";
+import {ComputerGrantRequestSchema,ComputerRevokeGrantRequestSchema,ComputerLeaseRequestSchema,ComputerLeaseResumeRequestSchema,ComputerLeaseReleaseRequestSchema,ComputerObserveRequestSchema,ComputerActionRequestSchema,ComputerCaptureContentRequestSchema} from "@tracegraph/contracts";
+import {PersonalProfileUpdateRequestSchema,PersonalUsageQuerySchema,PublicSessionSearchQuerySchema} from "@tracegraph/contracts";
+import {RestoreWorkbenchSettingsRequestSchema,ProjectRunDefaultsUpdateRequestSchema,SessionRunOptionsResetRequestSchema} from "@tracegraph/contracts";
 import {HostConnectionError,ModelConnectionSaveRequestSchema,SessionRunOptionsSchema,SessionRunOptionsUpdateRequestSchema,ProjectFileSaveRequestSchema,AnswerFeedbackRequestSchema} from "@tracegraph/contracts";
 import {randomUUID} from "node:crypto";
 import {readFile,stat,writeFile} from "node:fs/promises";
@@ -26,11 +31,11 @@ export interface WorkbenchCommandOptions {
   readStdin?: ()=>Promise<string>;
   signal?: AbortSignal;
 }
-const HEADS=new Set(["models","files","feedback","host","config","model","image","media","doctor","capabilities","projects","chat","run","sessions","approval","todo","artifact","attachments","replay","rollback","experience","usage","lsp","telemetry","terminal","preview","git","schedule","resources","team","memory","skills","mcp","extensions"]);
+const HEADS=new Set(["evidence","profile","search","computer","browser","goal","models","files","feedback","host","config","model","image","media","doctor","capabilities","projects","chat","run","sessions","approval","todo","artifact","attachments","replay","rollback","experience","usage","lsp","telemetry","terminal","preview","git","schedule","resources","team","memory","skills","mcp","extensions"]);
 const BOOL=new Set(["--confirm-full-access","--json","--jsonl","--key-stdin","--stdin","--force","--readonly","--help","--enabled","--disabled","--wait","--dry-run","--commit"]);
 const REPEAT=new Set(["--attachment-upload-id","--path","--context"]);
-const VALUES=new Set(["--profile-root","--command-id","--input-file","--input-json","--name","--template","--access","--project-id","--session-id","--run-id","--task","--mode","--reasoning-effort","--preset","--provider","--protocol","--base-url","--model","--limit","--view","--q","--cursor","--title","--approval-id","--action-id","--plan-event-id","--reason","--kind","--body","--input-id","--todo-id","--state","--file","--media-type","--delivery","--output","--until-sequence","--from","--to","--after-sequence","--after-cursor","--timeout-ms","--sequence","--action","--text","--cols","--rows","--scope","--base","--message","--branch","--worktree-path","--command","--args-json","--port","--source-id","--source","--inventory-json","--server-name","--expected-head","--connection-id","--expected-revision","--expected-sha256","--answer-event-id","--feedback-value","--approval-decision","--image-model","--prompt","--format","--size","--quality","--artifact-id"]);
-const HELP=`Outlive shared local Workbench CLI\nUsage: outlive <command> [--profile-root <path>] [--json]\n  host start|status|restart|stop\n  doctor | capabilities | resources | usage | telemetry | lsp\n  config get|set --input-file <json> | config permission get|set --preset <preset>\n  models list|save --input-file <json> [--key-stdin]|test|remove <id> --expected-revision <n>\n  files list|read|save|reconcile --project-id <id> [--path <relative-path>]\n  feedback get|set --run-id <id> [--answer-event-id <id> --feedback-value like|dislike|clear]\n  sessions options-get|options-set <id> [--input-file <json>]\n  config permission grant-status|grant|revoke [--confirm-full-access]\n  model get|configure --provider <provider> --protocol <protocol> --base-url <url> --model <name> [--key-stdin] | model test|clear-key\n  image get|configure --protocol openai-images|openai-responses|openai-chat-images --base-url <url> --model <name> [--image-model <name>] [--key-stdin] | image clear\n  media generate --prompt <text> [--project-id <id>] [--output <new-file>]\n  media diagram|chart --input-file <json> [--project-id <id>] [--output <new-file>]\n  media export --run-id <id> --artifact-id <id> --output <new-file>\n  projects list|create --name <name>|register <directory> [--readonly]|remove <id>\n  chat start --task <text> [--session-id <id>]\n  run start --project-id <id> --task <text> [--mode plan|execute] [--context <project-relative UTF-8 file>]... | run get|events|activity|model <run-id>\n  run input|stop|approve|reject|approve-plan|rollback <run-id> [exact command flags]\n  sessions list|get|rename|delete|resume|archive|unarchive [id]\n  todo list|create|update|write <run-id> [--todo-id <id>] [--title <text>] [--state <state>] [--input-file <json>]\n  artifact get <run-id> <artifact-id>\n  attachments upload --file <path> [--project-id <id>] | attachments content <run-id> <attachment-id> --output <path>\n  replay create|diff --session-id <id> --run-id <id> --until-sequence <n> [--from <n> --to <n>]\n  experience list|review <case-id> --sequence <n> --action validate|reject|revoke\n  terminal list|create|attach|input|resize|close [id] | preview list|start|register|stop [id]\n  git status|diff|stage|unstage|discard|commit|branch|worktree-create|worktree-remove --project-id <id> [...]\n  schedule list|create|update|delete|run|history [id] [--input-file <json>]\n  team / memory / skills / mcp / extensions retain their named workflows through the shared Host.\nMutations accept --command-id for exact retries; events/activity/model write real JSONL. Model/image keys use stdin only. Media writes PNG or constrained SVG; unknown image outcomes are never retried automatically.\n`;
+const VALUES=new Set(["--profile-root","--command-id","--input-file","--input-json","--name","--template","--access","--project-id","--session-id","--run-id","--task","--mode","--reasoning-effort","--preset","--provider","--protocol","--base-url","--model","--limit","--view","--q","--cursor","--title","--approval-id","--action-id","--plan-event-id","--reason","--kind","--body","--input-id","--todo-id","--state","--file","--media-type","--delivery","--output","--until-sequence","--from","--to","--after-sequence","--after-cursor","--timeout-ms","--sequence","--action","--text","--cols","--rows","--scope","--base","--message","--branch","--worktree-path","--command","--args-json","--port","--source-id","--source","--inventory-json","--server-name","--expected-head","--connection-id","--expected-revision","--expected-sha256","--answer-event-id","--feedback-value","--approval-decision","--image-model","--prompt","--format","--size","--quality","--artifact-id","--target-revision","--from-day","--to-day","--archive","--offset"]);
+const HELP=`Outlive shared local Workbench CLI\nUsage: outlive <command> [--profile-root <path>] [--json]\n  host start|status|restart|stop\n  computer status|targets|receipt <command-id>|grant|revoke|acquire|resume|release|observe|action --input-file <json>|capture --input-file <json> --output <new-file>\n  browser status|grant|command --input-file <json>|receipt <command-id>|observe <tab-id>|export <evidence-id> --output <new-file>\n  goal list|create --input-file <json>|get|budget <goal-id>|command <goal-id> --input-file <json>\n  goal receipt <goal-id> <command-id> | goal creation-receipt <command-id> (read-only, no execution)\n  profile get|set --input-file <json>|receipt <command-id>\n  evidence settings|get|list|pin|cleanup|receipt <command-id> [--input-file <json>]\n  evidence settings-set --input-file <json> | evidence pin <evidence-id> --state pinned|unpinned --expected-revision <n>\n  search sessions --q <text> [--project-id <id> --session-id <id> --state <status> --archive active|archived|all --from <time> --to <time> --cursor <id>]\n  usage daily --from-day YYYY-MM-DD --to-day YYYY-MM-DD [--project-id <id> --session-id <id> --cursor <id>]\n  doctor | capabilities | resources | usage | telemetry | lsp\n  config get|set --input-file <json> | config history | config restore --target-revision <n> --expected-revision <n>\n  config project-get|project-set --project-id <id> [--input-file <json>] | config permission get|set --preset <preset>\n  models list|save --input-file <json> [--key-stdin]|test|remove <id> --expected-revision <n>\n  models capability-test <id> --input-file <json> | models capability-receipt <command-id> (read-only)\n  skills list|read|validate|create|save|import|remove|restore|set-enabled|receipt [--project-id <id>] [--input-file <json>] (remove retains the local file)\n  files list|read|save|reconcile --project-id <id> [--path <relative-path>]\n  feedback get|set --run-id <id> [--answer-event-id <id> --feedback-value like|dislike|clear]\n  sessions options-get|options-set|options-reset <id> [--input-file <json>]\n  config permission grant-status|grant|revoke [--confirm-full-access]\n  model get|configure --provider <provider> --protocol <protocol> --base-url <url> --model <name> [--key-stdin] | model test|clear-key\n  image get|configure --protocol openai-images|openai-responses|openai-chat-images --base-url <url> --model <name> [--image-model <name>] [--key-stdin] | image clear\n  media generate --prompt <text> [--project-id <id>] [--output <new-file>]\n  media diagram|chart --input-file <json> [--project-id <id>] [--output <new-file>]\n  media export --run-id <id> --artifact-id <id> --output <new-file>\n  projects list|create --name <name>|register <directory> [--readonly]|remove <id>\n  chat start --task <text> [--session-id <id>]\n  run start --project-id <id> --task <text> [--mode plan|execute] [--context <project-relative UTF-8 file>]... | run get|public-chat|events|activity|model <run-id>\n  run input|stop|approve|reject|approve-plan|rollback <run-id> [exact command flags]\n  sessions list|get|rename|delete|resume|archive|unarchive [id]\n  todo list|create|update|write <run-id> [--todo-id <id>] [--title <text>] [--state <state>] [--input-file <json>]\n  artifact get <run-id> <artifact-id>\n  attachments upload --file <path> [--project-id <id>] | attachments content <run-id> <attachment-id> --output <path>\n  replay create|diff --session-id <id> --run-id <id> --until-sequence <n> [--from <n> --to <n>]\n  experience list|review <case-id> --sequence <n> --action validate|reject|revoke\n  terminal list|create|attach|input|resize|close [id] | preview list|start|register|stop [id]\n  git status|diff|stage|unstage|discard|commit|branch|worktree-create|worktree-remove --project-id <id> [...]\n  schedule list|create|update|delete|run|history [id] [--input-file <json>]\n  team / memory / skills / mcp / extensions retain their named workflows through the shared Host.\nMutations accept --command-id for exact retries; events/activity/model write real JSONL. Model/image keys use stdin only. Media writes PNG or constrained SVG; unknown image outcomes are never retried automatically.\n`;
 class UsageError extends Error {}
 class Arguments {
   readonly positional:string[]=[];readonly values=new Map<string,string[]>();readonly used=new Set<string>();
@@ -51,9 +56,17 @@ function outputSafe(value:unknown):unknown {
 function businessExit(value:unknown):number {
   if(!value||typeof value!=="object")return 0;
   const record=value as Record<string,unknown>;
+  if(record.valid===false)return 1;
+  if(["unknown","pending"].includes(String(record.state)))return 3;
+  if(["failed","not_found"].includes(String(record.state)))return 1;
+  // Journal completion records that the handler returned; its native effect
+  // can still be unknown. Intentional Goal states such as paused remain valid.
+  if(record.state==="completed"&&record.result&&typeof record.result==="object"&&(record.result as Record<string,unknown>).status==="unknown")return 3;
   if(["failed","failure","conflict","rejected","denied","cancelled","interrupted","needs_manual_review"].includes(String(record.status)))return 1;
   if(["unknown","pending","awaiting_approval","awaiting_plan_approval"].includes(String(record.status)))return 3;
   if(record.business_status!==undefined&&record.business_status!=="success")return 1;
+  if(Array.isArray(record.results)&&typeof record.connection_revision==="number"){const results=record.results as Array<{status?:string}>;return results.some(item=>item.status==="unknown")?3:results.some(item=>item.status!=="passed")?1:0;}
+  if(record.state==="completed"&&record.result&&typeof record.result==="object"&&"connection_revision" in record.result)return businessExit(record.result);
   if(record.receipt!==undefined)return businessExit(record.receipt);
   return 0;
 }
@@ -131,12 +144,50 @@ export async function maybeRunWorkbenchCommand(argv:readonly string[],options:Wo
       else throw new UsageError("host requires start, status, restart or stop");
     } else if(head==="doctor")result=await perform(()=>client.workbenchCommand({type:"host.diagnostics",command_id:commandId}));
     else if(head==="capabilities")result=await perform(()=>client.getCapabilities());
+    else if(head==="computer"){
+      if(sub==="status")result=await perform(()=>client.getComputerStatus());
+      else if(sub==="targets")result=await perform(()=>client.listComputerTargets());
+      else if(sub==="receipt"){const id=args.id();result=await perform(()=>client.getComputerCommandReceipt(id),1);}
+      else if(sub==="capture"){const input=ComputerCaptureContentRequestSchema.parse(await inputJson()),path=resolve(args.required("--output"));result=await perform(async()=>{const content=await client.getComputerCapture(input);await writeFile(path,content.bytes,{flag:"wx"});return {status:"succeeded",sha256:content.sha256,output:path};});}
+      else {
+        const input={...await inputJson() as object,command_id:commandId};
+        if(sub==="grant")result=await perform(()=>client.requestComputerGrant(ComputerGrantRequestSchema.parse(input)));
+        else if(sub==="revoke")result=await perform(()=>client.revokeComputerGrant(ComputerRevokeGrantRequestSchema.parse(input)));
+        else if(sub==="acquire")result=await perform(()=>client.acquireComputerLease(ComputerLeaseRequestSchema.parse(input)));
+        else if(sub==="resume")result=await perform(()=>client.resumeComputerLease(ComputerLeaseResumeRequestSchema.parse(input)));
+        else if(sub==="release")result=await perform(()=>client.releaseComputerLease(ComputerLeaseReleaseRequestSchema.parse(input)));
+        else if(sub==="observe")result=await perform(()=>client.observeComputer(ComputerObserveRequestSchema.parse(input)));
+        else if(sub==="action")result=await perform(()=>client.computerAction(ComputerActionRequestSchema.parse(input)));
+        else throw new UsageError("computer requires status, targets, receipt <id>, grant|revoke|acquire|resume|release|observe|action --input-file <json>, or capture --input-file <json> --output <new-file>");
+      }
+    }
+    else if(head==="browser"){
+      if(sub==="status"||sub==="list")result=await perform(()=>client.getBrowserStatus());
+      else if(sub==="grant"){const input=BrowserGrantRequestSchema.parse({...await inputJson() as object,command_id:commandId});result=await perform(()=>client.requestBrowserGrant(input));}
+      else if(sub==="command"){const input=BrowserCommandSchema.parse({...await inputJson() as object,command_id:commandId});result=await perform(()=>client.browserCommand(input));}
+      else if(sub==="receipt"){const id=args.id();result=await perform(()=>client.getBrowserCommandReceipt(id),1);}
+      else if(sub==="observe"){const id=args.id();result=await perform(()=>client.observeBrowser(id),1);}
+      else if(sub==="export"){const id=args.id(),path=resolve(args.required("--output"));result=await perform(async()=>{const evidence=await client.getBrowserEvidence(id);await writeFile(path,evidence.bytes,{flag:"wx"});return {status:"succeeded",evidence_id:id,sha256:evidence.sha256,output:path};},1);}
+      else throw new UsageError("browser requires status, grant --input-file, command --input-file, observe <tab-id> or export <evidence-id> --output <new-file>");
+    }
+    else if(head==="goal"){
+      if(sub==="list")result=await perform(()=>client.listGoals());
+      else if(sub==="create"){const input=GoalCreateRequestSchema.parse({...await inputJson() as object,command_id:commandId});result=await perform(()=>client.createGoal(input));}
+      else if(sub==="get"){const id=args.id();result=await perform(()=>client.getGoal(id),1);}
+      else if(sub==="receipt"){const id=args.id(),receiptId=args.id(1);result=await perform(()=>client.getGoalCommandReceipt(id,receiptId),2);}
+      else if(sub==="creation-receipt"){const id=args.id();result=await perform(()=>client.getGoalCreationReceipt(id),1);}
+      else if(sub==="budget"){const id=args.id();result=await perform(()=>client.getGoalBudget(id),1);}
+      else if(sub==="command"){const id=args.id(),input=GoalCommandRequestSchema.parse({...await inputJson() as object,command_id:commandId});result=await perform(()=>client.goalCommand(id,input),1);}
+      else throw new UsageError("goal requires list, create --input-file, get|budget <goal-id> or command <goal-id> --input-file");
+    }
     else if(head==="models"){
       if(sub==="list")result=await perform(()=>client.getModelConnections());
       else if(sub==="save"){const raw=await inputJson() as Record<string,unknown>;if("api_key" in raw)throw new UsageError("Model keys must use --key-stdin");const key=args.bool("--key-stdin");const input=ModelConnectionSaveRequestSchema.parse({...raw,command_id:commandId,...(key?{api_key:(await readStdin()).replace(/[\r\n]+$/u,"")}:{})});result=await perform(()=>client.saveModelConnection(input));}
       else if(sub==="remove"){const id=args.id(),revision=args.integer("--expected-revision");result=await perform(()=>client.removeModelConnection(id,{command_id:commandId,expected_revision:revision}),1);}
       else if(sub==="test"){const id=args.id();result=await perform(()=>client.testModelConnection(id,{command_id:commandId}),1);}
-      else throw new UsageError("models requires list, save, remove or test");
+      else if(sub==="capability-test"){const id=args.id();const input=ModelCapabilityTestRequestSchema.parse({...await inputJson() as object,command_id:commandId});result=await perform(()=>client.testModelCapabilities(id,input),1);}
+      else if(sub==="capability-receipt"){result=await perform(()=>client.getModelCapabilityTestReceipt(args.id()),1);}
+      else throw new UsageError("models requires list, save, remove, test, capability-test or capability-receipt");
     }
     else if(head==="files"){
       const project=args.required("--project-id"),path=args.value("--path");
@@ -148,6 +199,28 @@ export async function maybeRunWorkbenchCommand(argv:readonly string[],options:Wo
     }
     else if(head==="feedback"){const run=args.required("--run-id");if(sub==="get")result=await perform(()=>client.getAnswerFeedback(run));else if(sub==="set"){const input=AnswerFeedbackRequestSchema.parse({command_id:commandId,answer_event_id:args.required("--answer-event-id"),value:args.required("--feedback-value")});result=await perform(()=>client.setAnswerFeedback(run,input));}else throw new UsageError("feedback requires get or set");}
     else if(head==="resources")result=await perform(()=>client.getWorkbenchResources());
+    else if(head==="evidence"){
+      if(sub==="settings"||sub==="get")result=await perform(()=>client.getVisualRetentionSettings());
+      else if(sub==="settings-set"){const input=VisualRetentionUpdateSchema.parse({...await inputJson() as object,command_id:commandId});result=await perform(()=>client.updateVisualRetentionSettings(input));}
+      else if(sub==="list"){const input=VisualEvidenceQuerySchema.parse({...field("project_id",args.value("--project-id")),...field("run_id",args.value("--run-id")),limit:args.integer("--limit",50),offset:args.integer("--offset",0)});result=await perform(()=>client.listVisualEvidence(input));}
+      else if(sub==="pin"){const id=args.id(),state=args.required("--state");if(!["pinned","unpinned"].includes(state))throw new UsageError("Evidence pin state must be pinned or unpinned");const input=VisualEvidencePinSchema.parse({command_id:commandId,expected_revision:args.integer("--expected-revision"),pinned:state==="pinned"});result=await perform(()=>client.pinVisualEvidence(id,input),1);}
+      else if(sub==="cleanup"){const input=VisualEvidenceCleanupRequestSchema.parse({command_id:commandId,...field("project_id",args.value("--project-id")),...field("run_id",args.value("--run-id")),limit:args.integer("--limit",50)});result=await perform(()=>client.cleanupVisualEvidence(input));}
+      else if(sub==="receipt"){const id=args.id();result=await perform(()=>client.getVisualEvidenceCommandReceipt(id),1);}
+      else throw new UsageError("evidence requires settings, settings-set, list, pin, cleanup or receipt");
+    }
+    else if(head==="profile"){
+      if(sub==="get")result=await perform(()=>client.getPersonalProfile());
+      else if(sub==="set"){const input=PersonalProfileUpdateRequestSchema.parse({...await inputJson() as object,command_id:commandId});result=await perform(()=>client.updatePersonalProfile(input));}
+      else if(sub==="receipt"){const id=args.id();result=await perform(()=>client.getPersonalProfileCommandReceipt(id),1);}
+      else throw new UsageError("profile requires get, set --input-file, or receipt <command-id>");
+    }
+    else if(head==="search"){
+      if(sub!=="sessions")throw new UsageError("search requires sessions --q <public text>");
+      const input=PublicSessionSearchQuerySchema.parse({q:args.required("--q"),...field("project_id",args.value("--project-id")),...field("session_id",args.value("--session-id")),...field("from",args.value("--from")),...field("to",args.value("--to")),...field("status",args.value("--state")),archive:args.value("--archive")??"active",limit:args.integer("--limit",20),...field("cursor",args.value("--cursor"))});result=await perform(()=>client.searchPublicSessions(input));
+    }
+    else if(head==="usage"&&sub==="daily"){
+      const input=PersonalUsageQuerySchema.parse({from_day:args.required("--from-day"),to_day:args.required("--to-day"),...field("project_id",args.value("--project-id")),...field("session_id",args.value("--session-id")),...field("cursor",args.value("--cursor"))});result=await perform(()=>client.queryPersonalUsage(input));
+    }
     else if(head==="usage") { const project=args.value("--project-id"),session=args.value("--session-id"),from=args.value("--from"),to=args.value("--to");
       if(project||session||from||to){const query=WorkbenchCommandRequestSchema.parse({type:"usage.query",command_id:commandId,...field("project_id",project),...field("session_id",session),...field("from",from),...field("to",to)});result=await perform(async()=>{const value=await client.workbenchCommand(query);return value.usage??value;});}else result=await perform(()=>client.getUsage());
     }
@@ -181,7 +254,7 @@ export async function maybeRunWorkbenchCommand(argv:readonly string[],options:Wo
           if(receipt?.business_status==="unknown")return {status:"unknown",code:receipt.code,run_id:run.run_id,message:"Provider outcome unknown; inspect the existing Run/provider account before creating another request"};
           if(["awaiting_approval","awaiting_plan_approval"].includes(run.status))return {status:"pending",code:"media_approval_required",run_id:run.run_id,approval:run.pending_approval};
           const ref=receipt?.business_status==="success"&&receipt.code==="media_artifact_created"?receipt.artifact_refs.find(artifact=>artifact.run_id===run.run_id&&artifact.project_id===run.project_id&&["image/png","image/svg+xml"].includes(artifact.mime_type)&&run.artifact_refs.some(canonical=>canonical.artifact_id===artifact.artifact_id&&canonical.content_hash===artifact.content_hash)):undefined;
-          if(run.status!=="completed"||!ref)return {status:"failed",code:receipt?.code??"media_output_missing",run_id:run.run_id,message:"No verified successful media Artifact is recorded",...(receipt?{receipt}:{})};
+          if(run.status!=="completed"||!ref)return {status:"failed",code:receipt?.code??"media_output_missing",run_id:run.run_id,message:receipt?.business_status==="failure"?receipt.summary:"No verified successful media Artifact is recorded",...(receipt?{receipt}:{})};
           const content=await client.getArtifactContent(run.run_id,ref.artifact_id);if(content.sha256!==ref.content_hash||content.mediaType!==ref.mime_type||content.bytes.byteLength!==ref.byte_length)throw new Error("Media content differs from its canonical receipt");
           const output=outputValue?resolve(outputValue):undefined;if(output)await writeFile(output,content.bytes,{flag:"wx",mode:0o600});return {status:"succeeded",run_id:run.run_id,project_id:run.project_id,receipt_id:receipt!.receipt_id,artifact:ref,...(output?{output}:{})};
         });
@@ -189,6 +262,10 @@ export async function maybeRunWorkbenchCommand(argv:readonly string[],options:Wo
     }else if(head==="config"){
       if(sub==="get")result=await perform(()=>client.getWorkbenchSettings());
       else if(sub==="set") {const input=UpdateWorkbenchSettingsRequestSchema.parse(await inputJson());result=await perform(()=>client.updateWorkbenchSettings(input));}
+      else if(sub==="history")result=await perform(()=>client.getWorkbenchSettingsHistory());
+      else if(sub==="restore"){const input=RestoreWorkbenchSettingsRequestSchema.parse({command_id:commandId,expected_revision:args.integer("--expected-revision"),target_revision:args.integer("--target-revision")});result=await perform(()=>client.restoreWorkbenchSettings(input));}
+      else if(sub==="project-get"){const id=args.required("--project-id");result=await perform(()=>client.getProjectRunDefaults(id));}
+      else if(sub==="project-set"){const id=args.required("--project-id"),raw=await inputJson() as object;const input=ProjectRunDefaultsUpdateRequestSchema.parse({...raw,command_id:commandId});result=await perform(()=>client.updateProjectRunDefaults(id,input));}
       else if(sub==="permission"){
         const operation=args.positional.shift();
         if(operation==="get")result=await perform(()=>client.getPermissionConfig());
@@ -208,7 +285,7 @@ export async function maybeRunWorkbenchCommand(argv:readonly string[],options:Wo
       if(head==="chat"&&sub!=="start")throw new UsageError("chat requires start");
       const wait=args.bool("--wait");
       const connection=args.value("--connection-id"),modelName=args.value("--model"),preset=args.value("--preset"),mode=args.value("--mode")??(head==="chat"?"execute":"plan"),effort=args.value("--reasoning-effort");
-      const runOptions=(connection||modelName||preset)?SessionRunOptionsSchema.parse({...field("connection_id",connection),...field("model",modelName),...field("permission_preset",preset),mode,...field("reasoning_effort",effort)}):undefined;
+      const runOptions=(connection||modelName||preset)?StartRunRequestSchema.shape.run_options.unwrap().parse({...field("connection_id",connection),...field("model",modelName),...field("permission_preset",preset),mode,...field("reasoning_effort",effort)}):undefined;
       const request={...(runOptions?{run_options:runOptions}:{}),mode,command_id:commandId,task:args.required("--task"),...field("session_id",args.value("--session-id")),...field("reasoning_effort",effort),attachment_upload_ids:args.all("--attachment-upload-id")};
       if(head==="chat"){const input=StartChatRequestSchema.parse(request);result=await perform(async()=>{const run=await client.startChat(input);return wait?waitRun(client,run.run_id,localAbort.signal):run;});}
       else {
@@ -228,6 +305,7 @@ export async function maybeRunWorkbenchCommand(argv:readonly string[],options:Wo
       const operation=head==="rollback"?"rollback":sub;const runId=head==="rollback"?sub??args.id():args.id();const count=head==="rollback"?0:1;
       if(operation==="cancel"&&runId.startsWith("queued:"))result=await perform(()=>client.workbenchCommand({type:"queue.cancel",command_id:commandId,holder_id:runId.slice("queued:".length)}),count);
       else if(operation==="get")result=await perform(()=>client.getRun(runId),count);
+      else if(operation==="public-chat")result=await perform(()=>client.getPublicChat(runId),count);
       else if(["events","activity","model"].includes(operation??"")){
         const after=operation==="model"?args.integer("--after-cursor",0):args.integer("--after-sequence",0);args.done(count);
         const stream=operation==="events"?client.streamEvents(runId,{afterSequence:after,signal:localAbort.signal,reconnect:false}):operation==="activity"?client.streamLiveActivities(runId,{afterSequence:after,signal:localAbort.signal,reconnect:false}):client.streamModelSurface(runId,{afterCursor:after,signal:localAbort.signal,reconnect:false});
@@ -247,7 +325,7 @@ export async function maybeRunWorkbenchCommand(argv:readonly string[],options:Wo
       }else throw new UsageError("run/approval requires an exact named operation");
     }else if(head==="sessions"){
       if(sub==="list") {const query=SessionListQuerySchema.parse({view:args.value("--view")??"roots",limit:args.integer("--limit",50),...field("project_id",args.value("--project-id")),...field("q",args.value("--q")),...field("cursor",args.value("--cursor"))});result=await perform(()=>client.listSessions(query));}
-      else {const id=args.id();if(sub==="get")result=await perform(()=>client.getSession(id),1);else if(sub==="options-get")result=await perform(()=>client.getSessionRunOptions(id),1);else if(sub==="options-set"){const raw=await inputJson() as object;const input=SessionRunOptionsUpdateRequestSchema.parse({...raw,command_id:commandId});result=await perform(()=>client.updateSessionRunOptions(id,input),1);}else if(sub==="rename"){const title=args.required("--title");result=await perform(()=>client.renameSession(id,{title}),1);}else if(sub==="delete")result=await perform(()=>client.deleteSession(id),1);else if(sub==="resume")result=await perform(()=>client.resumeSession(id,{command_id:commandId}),1);else if(sub==="archive"||sub==="unarchive")result=await perform(()=>client.workbenchCommand({type:sub==="archive"?"sessions.archive":"sessions.unarchive",command_id:commandId,session_id:id}),1);else throw new UsageError("Unknown sessions operation");}
+      else {const id=args.id();if(sub==="get")result=await perform(()=>client.getSession(id),1);else if(sub==="options-get")result=await perform(()=>client.getSessionRunOptions(id),1);else if(sub==="options-reset"){const input=SessionRunOptionsResetRequestSchema.parse({command_id:commandId,expected_revision:args.integer("--expected-revision")});result=await perform(()=>client.resetSessionRunOptions(id,input),1);}else if(sub==="options-set"){const raw=await inputJson() as object;const input=SessionRunOptionsUpdateRequestSchema.parse({...raw,command_id:commandId});result=await perform(()=>client.updateSessionRunOptions(id,input),1);}else if(sub==="rename"){const title=args.required("--title");result=await perform(()=>client.renameSession(id,{title}),1);}else if(sub==="delete")result=await perform(()=>client.deleteSession(id),1);else if(sub==="resume")result=await perform(()=>client.resumeSession(id,{command_id:commandId}),1);else if(sub==="archive"||sub==="unarchive")result=await perform(()=>client.workbenchCommand({type:sub==="archive"?"sessions.archive":"sessions.unarchive",command_id:commandId,session_id:id}),1);else throw new UsageError("Unknown sessions operation");}
     }else if(head==="todo"){
       const id=args.id();if(sub==="list")result=await perform(()=>client.getTodos(id),1);
       else if(sub==="create"||sub==="update"||sub==="write") {const input=TodoWriteInputSchema.parse(sub==="write"?await inputJson():{operation:sub,todo_id:args.required("--todo-id"),...field("title",args.value("--title")),...field("state",args.value("--state"))});result=await perform(()=>client.writeTodo(id,{command_id:commandId,input}),1);}
@@ -267,7 +345,14 @@ export async function maybeRunWorkbenchCommand(argv:readonly string[],options:Wo
       else if(sub==="review"){const id=args.id();const input=ExperienceLifecycleReviewRequestSchema.parse({command_id:commandId,expected_sequence:args.integer("--sequence"),action:args.required("--action")});result=await perform(()=>client.reviewExperienceCase(id,input),1);}
       else throw new UsageError("experience requires list or review");
     }else if(head==="skills"){
-      if(sub==="list")result=await perform(()=>client.listSkills());else if(sub==="validate"){const project=args.required("--project-id");result=await perform(()=>client.workbenchCommand({type:"skills.validate",command_id:commandId,project_id:project}));}else throw new UsageError("skills requires list or validate --project-id");
+      const scope=ManagedSkillScopeSchema.parse(args.value("--project-id")?{kind:"project",project_id:args.value("--project-id")}:{kind:"global"});
+      if(sub==="list")result=await perform(()=>client.listManagedSkills(scope));
+      else if(sub==="read")result=await perform(()=>client.readManagedSkill({scope,name:args.required("--name")}));
+      else if(sub==="receipt")result=await perform(()=>client.getManagedSkillCommandReceipt(args.id()),1);
+      else if(sub==="validate"&&args.values.has("--input-file")||sub==="validate"&&args.values.has("--input-json")){const input=ValidateManagedSkillRequestSchema.parse(await inputJson());result=await perform(()=>client.validateManagedSkill(input));}
+      else if(sub==="validate"){const project=args.required("--project-id");result=await perform(()=>client.workbenchCommand({type:"skills.validate",command_id:commandId,project_id:project}));}
+      else if(["create","save","import","remove","restore","set-enabled"].includes(sub??"")){const raw=await inputJson() as object;const input=ManagedSkillCommandSchema.parse({...raw,type:sub,scope,command_id:commandId});result=await perform(()=>client.managedSkillCommand(input));}
+      else throw new UsageError("skills requires list/read/validate/create/save/import/remove/restore/set-enabled/receipt; remove keeps the original file for explicit restore");
     }else if(["terminal","preview","git","schedule"].includes(head)){
       if(head==="terminal"&&sub==="attach"){const id=args.id();args.done(1);if(args.values.has("--json")||args.values.has("--jsonl"))throw new UsageError("Interactive terminal attach writes raw output; use terminal list for JSON");return await attachHostTerminal(client,id,{signal:localAbort.signal,write});}
       else if(sub==="list"&&head!=="git"){args.done();const resources=await client.getWorkbenchResources();result=head==="terminal"?resources.terminals:head==="preview"?resources.previews:resources.schedules;}
@@ -322,3 +407,5 @@ async function waitRun(client:TraceGraphClient,runId:string,signal:AbortSignal){
   while(!signal.aborted){const run=await client.getRun(runId);if(!["created","queued","indexing","running","planning","executing"].includes(run.status))return run;await new Promise<void>(done=>{const complete=()=>{clearTimeout(timer);signal.removeEventListener("abort",complete);done();};const timer=setTimeout(complete,100);signal.addEventListener("abort",complete,{once:true});});}
   throw new Error("Waiting for the Run ended; the background Run was not cancelled");
 }
+import {BrowserGrantRequestSchema,BrowserCommandSchema,GoalCreateRequestSchema,GoalCommandRequestSchema} from "@tracegraph/contracts";
+import { ModelCapabilityTestRequestSchema } from "@tracegraph/contracts";

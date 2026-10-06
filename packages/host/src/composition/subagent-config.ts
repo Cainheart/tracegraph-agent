@@ -12,7 +12,7 @@ import {
   SubagentRegistry,
 } from "@tracegraph/core";
 
-type TrustedProfileKey = "readonly" | "code-explorer" | "evidence-reviewer";
+type TrustedProfileKey = "readonly" | "code-explorer" | "evidence-reviewer" | "isolated-coder";
 
 interface TrustedProfileDefinition {
   readonly name: TrustedProfileKey;
@@ -22,8 +22,9 @@ interface TrustedProfileDefinition {
 }
 
 /**
- * Every compiled-in worker can coordinate through the root Team ledger while
- * retaining the same read-only Workspace boundary. This authority remains
+ * Compiled workers coordinate through the root Team ledger. Read roles retain
+ * readonly tools; isolated-coder additionally requires the trusted child
+ * workspace resolver and the admitted parent ceiling. Role authority remains
  * Host-owned and is never accepted from CLI, HTTP, or model input.
  */
 const TRUSTED_TEAM_WORKER_TOOLS = Object.freeze([
@@ -73,6 +74,17 @@ const TRUSTED_PROFILES: Readonly<Record<TrustedProfileKey, TrustedProfileDefinit
       "and return a bounded evidence-backed result to the parent agent.",
     ].join(" "),
     toolAllowlist: CODE_REVIEW_TOOLS,
+  },
+  "isolated-coder": {
+    name: "isolated-coder",
+    rolePromptVersion: "outlive.subagent.isolated-coder.v1",
+    rolePrompt: [
+      "Implement only the delegated task in the Host-provided isolated worktree.",
+      "The baseline includes authorized uncommitted source changes.",
+      "Use only exposed patch, test and hash-bound discovered project commands; preserve the source workspace,",
+      "do not merge or clean up, and return evidence and limitations for review.",
+    ].join(" "),
+    toolAllowlist: [...CODE_REVIEW_TOOLS,"preview_patch","commit_patch","run_test","discover_project_commands","run_project_command"],
   },
 };
 

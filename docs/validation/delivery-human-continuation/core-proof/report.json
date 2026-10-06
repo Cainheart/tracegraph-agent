@@ -1,0 +1,66 @@
+{
+  "status": "passed",
+  "boundary": "deterministic local HTTP protocol; no paid model quality claim",
+  "run_id": "run:68c7e137-560c-408a-921f-5a82fb200be2",
+  "child_run_id": "run:841ed841-e35f-4ceb-978f-867a4b51368f",
+  "provider_requests": 5,
+  "exited_owner_pid": 4958,
+  "owner_exited_before_resume": true,
+  "first_resumed_request_guidance": true,
+  "provider_usage_per_request": {
+    "input_tokens": 1000,
+    "output_tokens": 5
+  },
+  "resume_command_id": "human:continue",
+  "budget_restored": {
+    "operation": "delivery.budget_restored",
+    "budget_id": "delivery:run:68c7e137-560c-408a-921f-5a82fb200be2",
+    "budget_snapshot": {
+      "limits": {
+        "max_tokens": 200000,
+        "max_time_ms": 900000
+      },
+      "charged_tokens": 1005,
+      "held_tokens": 0,
+      "held_request_count": 0,
+      "reported_input_tokens": 1000,
+      "reported_output_tokens": 5,
+      "elapsed_ms": 503,
+      "request_count": 1,
+      "unknown_request_count": 0,
+      "stop_reason": null
+    },
+    "new_budget": false
+  },
+  "terminal": {
+    "code": "completed",
+    "outcome": "Controlled implementation and real verification recorded; final user acceptance remains separate",
+    "finish_intent": "answer",
+    "delivery_review_rounds": 1,
+    "delivery_budget": {
+      "limits": {
+        "max_tokens": 200000,
+        "max_time_ms": 900000
+      },
+      "charged_tokens": 5025,
+      "held_tokens": 0,
+      "held_request_count": 0,
+      "reported_input_tokens": 5000,
+      "reported_output_tokens": 25,
+      "elapsed_ms": 2504,
+      "request_count": 5,
+      "unknown_request_count": 0,
+      "stop_reason": null
+    }
+  },
+  "artifact_ref": {
+    "artifact_id": "artifact:1cf92408-19ce-4628-98f9-2cac4011b93c",
+    "kind": "context_source_archive",
+    "content_hash": "sha256:c01a981085af621032790c76ac64d6c52e7f46b72918ddf1e56b0da2d5ca4f65",
+    "mime_type": "application/json",
+    "byte_length": 5621,
+    "project_id": "project:delivery",
+    "run_id": "run:841ed841-e35f-4ceb-978f-867a4b51368f",
+    "created_at": "2026-10-04T21:25:36.084Z"
+  }
+}

@@ -11,6 +11,23 @@ export class WorkbenchJournal {
   readonly #pending=new Map<string,{digest:string;result:Promise<unknown>}>();
   constructor(root:string){this.ledger=new JsonlEventLedger(root);}
   async initialize(){await this.ledger.initialize();}
+  /** Trusted, bounded verification of projection provenance; never executes it. */
+  async verifyCompleted(commandId:string,operation:string,input:unknown):Promise<boolean>{
+    const id=`workbench:${createHash("sha256").update(commandId).digest("hex")}`;
+    const events=await this.ledger.listBounded(id,{maxBytes:1024*1024,maxEvents:10});
+    return events[0]?.type==="workbench.command_requested"&&events[0].data.operation===operation&&events[0].data.digest===createHash("sha256").update(JSON.stringify(input)).digest("hex")&&events.some(event=>event.type==="workbench.command_completed"&&event.data.operation===operation);
+  }
+  /** Read a durable command receipt without invoking its executor or replaying effects. */
+  async inspect(commandId:string):Promise<{command_id:string;state:"not_found"|"unknown"|"failed"|"completed";operation?:string;result?:unknown;code?:string}> {
+    const runId=`workbench:${createHash("sha256").update(commandId).digest("hex")}`;
+    const events=await this.ledger.list(runId);
+    if(!events.length)return {command_id:commandId,state:"not_found"};
+    const operation=String(events[0]!.data.operation),completed=events.find(event=>event.type==="workbench.command_completed");
+    if(completed)return {command_id:commandId,state:"completed",operation,result:completed.data.result};
+    const failed=events.find(event=>event.type==="workbench.command_failed");
+    if(failed){const code=String(failed.data.code);return {command_id:commandId,state:code.includes("effect_unknown")||code.includes("launch_unknown")?"unknown":"failed",operation,code};}
+    return {command_id:commandId,state:"unknown",operation,code:"effect_unknown"};
+  }
   async once<T>(commandId:string,operation:string,input:unknown,execute:()=>Promise<T>):Promise<T> {
     const digest=createHash("sha256").update(JSON.stringify(input)).digest("hex");
     const pending=this.#pending.get(commandId);

@@ -1,4 +1,4 @@
-import { useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { PendingAttachment, RunMode } from "../model";
 import type { PendingUserInput } from "@tracegraph/contracts";
 import { useI18n } from "../i18n";
@@ -8,22 +8,33 @@ import { useComposerPopover } from "../popover";
 import type { PendingProjectFileContext } from "../drafts";
 
 /** One input surface. UI options describe the next admission, never mutate a running Run. */
-export function Composer({ value, onChange, onSubmit, onStop, busy = false, submitDisabled = false, stopping = false, disabledReason = null, active = false, enterBehavior = "enter", label = "Message", placeholder = "Ask anything…", attachments, onAttachmentsChange, attachmentsAvailable = false, imageInputAvailable = false, onConfigureImageInput, fileContexts = [], onFileContextsChange, onAddFileContext, fileContextAvailable = false, onCreateMedia, modelControl, permissionControl, mode, onModeChange, optionsDisabled = false, pending = [], error, children }: {
+export function Composer({ value, onChange, onSubmit, onStop, busy = false, submitDisabled = false, stopping = false, disabledReason = null, active = false, enterBehavior = "enter", label = "Message", placeholder = "Ask anything…", attachments, onAttachmentsChange, attachmentsAvailable = false, imageInputAvailable = false, onConfigureImageInput, fileContexts = [], onFileContextsChange, onAddFileContext, fileContextAvailable = false, onCreateMedia, onCreateGoal, modelControl, permissionControl, mode, onModeChange, optionsDisabled = false, pending = [], error, children, optionsHelp }: {
   value: string; onChange: (value: string) => void; onSubmit: () => void;
   onStop?: () => void; busy?: boolean; submitDisabled?: boolean; stopping?: boolean; disabledReason?: string | null; active?: boolean;
   enterBehavior?: "enter" | "mod-enter"; label?: string; placeholder?: string;
   attachments: readonly PendingAttachment[]; onAttachmentsChange: (value: readonly PendingAttachment[]) => void;
-  attachmentsAvailable?: boolean; onCreateMedia?: () => void; modelControl?: ReactNode; permissionControl?: ReactNode;
+  attachmentsAvailable?: boolean; onCreateMedia?: () => void; onCreateGoal?: () => void; modelControl?: ReactNode; permissionControl?: ReactNode;
   imageInputAvailable?: boolean; onConfigureImageInput?: () => void;
   fileContexts?: readonly PendingProjectFileContext[]; onFileContextsChange?: (files: readonly PendingProjectFileContext[]) => void; onAddFileContext?: () => void; fileContextAvailable?: boolean;
   mode: RunMode; onModeChange: (mode: RunMode) => void; optionsDisabled?: boolean;
-  pending?: readonly PendingUserInput[]; error?: string | null; children?: ReactNode;
+  pending?: readonly PendingUserInput[]; error?: string | null; children?: ReactNode; optionsHelp?: ReactNode;
 }) {
   const { t } = useI18n();
   const [menu, setMenu] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const popover = useComposerPopover(menu, setMenu);
   const [attachmentError, setAttachmentError] = useState<string | null>(null);
   const root = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const textarea = root.current?.querySelector("textarea");
+    if (textarea) { textarea.style.height = "auto"; textarea.style.height = `${Math.min(200, Math.max(52, textarea.scrollHeight))}px`; }
+  }, [value]);
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const dismiss = (event: MouseEvent) => { if (event.target instanceof Node && !root.current?.contains(event.target)) setSettingsOpen(false); };
+    document.addEventListener("mousedown", dismiss);
+    return () => document.removeEventListener("mousedown", dismiss);
+  }, [settingsOpen]);
   const disabled = disabledReason !== null;
   const cancellationPending = pending.some((input) => input.kind === "cancel");
   const canSend = !submitDisabled && !disabled && !busy && !cancellationPending && pending.length < 99 && Boolean(value.trim()) && (active || imageInputAvailable || !attachments.some((item) => item.delivery === "inline"));
@@ -33,6 +44,7 @@ export function Composer({ value, onChange, onSubmit, onStop, busy = false, subm
     setAttachmentError(result.error); onAttachmentsChange(result.attachments);
   };
   return <div className={`unified-composer ${disabled ? "is-disabled" : ""}`} data-composer-surface="unified" ref={root}
+    onKeyDown={(event) => { if (settingsOpen && event.key === "Escape" && !event.nativeEvent.isComposing) { event.preventDefault(); event.stopPropagation(); setSettingsOpen(false); root.current?.querySelector<HTMLButtonElement>(".composer-add-menu > button")?.focus(); } }}
     onDragOver={(event) => { if (event.dataTransfer.types.includes("Files")) event.preventDefault(); }}
     onDrop={(event) => { if (!event.dataTransfer.files.length) return; event.preventDefault(); add(Array.from(event.dataTransfer.files)); }}>
     {children}
@@ -46,14 +58,14 @@ export function Composer({ value, onChange, onSubmit, onStop, busy = false, subm
       <div className="composer-option-row">
         <div className="composer-add-menu" {...popover}>
           <button className="composer-tool-button" aria-label={t("Add to message")} aria-expanded={menu} disabled={disabled || active || busy} onClick={() => setMenu(!menu)} type="button"><span aria-hidden="true" className="composer-plus">+</span></button>
-          {menu && <div role="menu" className="composer-popover"><button role="menuitem" disabled={!attachmentsAvailable} onClick={() => { root.current?.querySelector<HTMLInputElement>('input[type="file"]')?.click(); setMenu(false); }} type="button"><Icon name="file" />{t("Attach image or PDF")}</button>{onAddFileContext && <button role="menuitem" disabled={!fileContextAvailable} onClick={() => { setMenu(false); onAddFileContext(); }} type="button"><Icon name="file" />{t("Add project file context")}</button>}{onCreateMedia && <button role="menuitem" onClick={() => { setMenu(false); onCreateMedia(); }} type="button"><Icon name="spark" />{t("Create media")}</button>}</div>}
+          {menu && <div role="menu" className="composer-popover"><button role="menuitem" disabled={!attachmentsAvailable} onClick={() => { root.current?.querySelector<HTMLInputElement>('input[type="file"]')?.click(); setMenu(false); }} type="button"><Icon name="file" />{t("Attach image or PDF")}</button>{onAddFileContext && <button role="menuitem" disabled={!fileContextAvailable} onClick={() => { setMenu(false); onAddFileContext(); }} type="button"><Icon name="file" />{t("Add project file context")}</button>}<button role="menuitemcheckbox" aria-checked={mode === "plan"} disabled={optionsDisabled} onClick={() => { onModeChange(mode === "plan" ? "execute" : "plan"); setMenu(false); }} type="button"><Icon name="route" />{t("Plan mode")}{mode === "plan" && <span className="composer-menu-check">✓</span>}</button>{onCreateGoal && <button role="menuitem" onClick={() => { setMenu(false); onCreateGoal(); }} type="button"><Icon name="route" />{t("Create Goal")}</button>}{onCreateMedia && <button role="menuitem" onClick={() => { setMenu(false); onCreateMedia(); }} type="button"><Icon name="spark" />{t("Create media")}</button>}{optionsHelp && <button role="menuitem" onClick={() => { setMenu(false); setSettingsOpen(true); }} type="button"><Icon name="settings" />{t("Conversation overrides")}</button>}</div>}
           {attachmentsAvailable && <div hidden><AttachmentComposer minimal attachments={attachments} disabled={disabled || active || busy} imageInputAvailable={imageInputAvailable} onChange={onAttachmentsChange} /></div>}
         </div>
         {permissionControl}
-        <button className={`composer-option ${mode === "plan" ? "is-active" : ""}`} aria-label={t("Plan mode")} aria-pressed={mode === "plan"} disabled={disabled || optionsDisabled} title={t(active ? "Applies to the next task" : "Plan before making changes")} onClick={() => onModeChange(mode === "plan" ? "execute" : "plan")} type="button"><Icon name="route" size={13} />{t("Plan")}</button>
       </div>
       <div className="composer-submit-row">{modelControl}{active && onStop && <button aria-label={t("Stop")} title={t("Stop at the next safe boundary")} className="composer-stop" disabled={disabled || stopping || cancellationPending || pending.length >= 100} onClick={onStop} type="button"><Icon name="stop" size={14} /></button>}{(!active || Boolean(value.trim())) && <button aria-label={t(active ? "Queue input" : "Send message")} className="composer-send" disabled={!canSend} onClick={onSubmit} type="button"><Icon name="send" size={15} /></button>}</div>
     </div>
+    {settingsOpen && optionsHelp && <div className="composer-settings-popover"><button className="icon-button" aria-label={t("Close")} onClick={() => setSettingsOpen(false)} type="button"><Icon name="close" size={13} /></button>{optionsHelp}</div>}
     {pending.length > 0 && <details className="composer-queued"><summary>{t("Queued")}: {pending.length}</summary>{pending.map((input) => <p key={input.input_id}>{input.kind === "cancel" ? t("Stop at the next safe boundary") : input.body}</p>)}<small>{t("Will be sent at the next step")}</small></details>}
     {(error || attachmentError) && <p className="composer-error" role="alert">{t(error ?? attachmentError ?? "")}</p>}
   </div>;

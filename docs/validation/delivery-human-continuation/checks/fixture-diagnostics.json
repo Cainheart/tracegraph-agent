@@ -1,0 +1,22 @@
+{
+  "scope": "test-only controlled provider and real-owner fixture diagnosis",
+  "production_deadline_relaxed": false,
+  "paid_requests": 0,
+  "findings": [
+    {
+      "initial_observation": "positive guidance case reached the 15-second test deadline",
+      "cause_proved": "worker supplied nonexistent submit_user_input kind steer; Zod rejected and exited; parent cleanup awaited an already exited child",
+      "fix": "use canonical kind message and idempotently wait only while the owned child is alive",
+      "deadline_changed": false
+    },
+    {
+      "initial_observation": "guidance was canonically consumed and kept in the first resumed Context Manifest but absent from the first provider body",
+      "cause_proved": "controlled provider reported only 10 input tokens for a 4,200-character task; calibration allocated zero tokens to the short history item, so rendering excluded it",
+      "fixture_fix": "report 1,000 input and five output tokens per request; preserve strict first-request guidance assertion and actual aggregate charges",
+      "production_guard": "complete review packet pages require positive included tokens in addition to kept and equality to original tokens",
+      "deadline_changed": false
+    }
+  ],
+  "final_core_focused": {"files": 4, "tests": 56, "status": "passed"},
+  "final_fresh_proof": {"tests": 1, "status": "passed"}
+}

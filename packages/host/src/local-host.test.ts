@@ -2,7 +2,7 @@ import {mkdtemp,mkdir,rm,readFile,writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {createServer,request as httpRequest} from "node:http";
-import {describe,it,expect} from "vitest";
+import {describe,it,expect,vi} from "vitest";
 import {TraceGraphClient} from "@tracegraph/sdk";
 import {WorkbenchSettingsValuesSchema} from "@tracegraph/contracts";
 import {startLocalHost,connectLocalHost,ensureLocalHost} from "../dist/local-host.js";
@@ -15,13 +15,20 @@ describe("one authenticated long-lived local Host",()=>{
  it("shares real UDS/TCP state, queues same workspace, runs another workspace and survives client closure",async()=>{
   const root=await mkdtemp(join(tmpdir(),"outlive-owner-"));
   const pending:Array<()=>void>=[];const modelCalls:Array<{model:string;authorization:string|undefined}>=[];
-  const modelServer=createServer(async(request,response)=>{let bytes="";for await(const chunk of request)bytes+=String(chunk);const payload=JSON.parse(bytes) as {model:string,messages?:Array<{content:string}>};if(payload.messages?.[0]?.content.startsWith("You extract")){response.writeHead(200,{"content-type":"application/json"});response.end(JSON.stringify({choices:[{message:{content:JSON.stringify({summary:"No reusable facts",candidates:[]})}}]}));return;}modelCalls.push({model:payload.model,authorization:request.headers.authorization});pending.push(()=>{response.writeHead(200,{"content-type":"application/json"});response.end(JSON.stringify({choices:[{message:{content:JSON.stringify(finish)}}]}));});});
+  const modelServer=createServer(async(request,response)=>{let bytes="";for await(const chunk of request)bytes+=String(chunk);const payload=JSON.parse(bytes) as {model:string,messages?:Array<{content:string}>};if(payload.messages?.[0]?.content.startsWith("You extract")){response.writeHead(200,{"content-type":"application/json"});response.end(JSON.stringify({choices:[{message:{content:JSON.stringify({summary:"No reusable facts",candidates:[]})}}]}));return;}modelCalls.push({model:payload.model,authorization:request.headers.authorization});pending.push(()=>{response.writeHead(200,{"content-type":"application/json"});response.end(JSON.stringify({choices:[{message:{content:JSON.stringify(finish)}}],usage:{prompt_tokens:10,completion_tokens:5,total_tokens:15}}));});});
   await new Promise<void>(resolve=>modelServer.listen(0,"127.0.0.1",resolve));const address=modelServer.address();if(!address||typeof address==="string")throw new Error("Missing provider address");
   const owner=await startLocalHost({profileRoot:root,httpPort:0,credentialBackend:"private-file"});
   const a=await connectLocalHost({profileRoot:root});const b=await connectLocalHost({profileRoot:root});
   const web=new TraceGraphClient({baseUrl:owner.status.http_address});await web.bootstrap();
   try{
    expect(a.status.boot_nonce).toBe(b.status.boot_nonce);await expect(startLocalHost({profileRoot:root,httpPort:0,credentialBackend:"private-file"})).rejects.toThrow("already owns");
+   // The shared owner disables directory picking, not its trusted OS permission
+   // channel. Reading these statuses must not open or accept a permission dialog.
+   const hasNativePrompt=["darwin","win32"].includes(process.platform);
+   for(const client of [a.client,b.client,web]){
+    expect((await client.getBrowserStatus()).human_grant_available).toBe(hasNativePrompt);
+    expect((await client.getComputerStatus()).human_grant_available).toBe(hasNativePrompt);
+   }
    await a.client.configureModel({provider:"custom",protocol:"openai-chat-completions",base_url:`http://127.0.0.1:${address.port}/v1`,model:"isolated-fixture-model",api_key:"isolated-fixture-key"});
    expect(await web.getModelConfig()).toMatchObject({model:"isolated-fixture-model",has_key:true});expect(await b.client.getModelConfig()).toMatchObject({model:"isolated-fixture-model",has_key:true});
    await mkdir(join(root,"project-a"));await mkdir(join(root,"project-b"));const projectA=await a.native.registerProject({selectedPath:join(root,"project-a"),access:"read_write"});const projectB=await a.native.registerProject({selectedPath:join(root,"project-b"),access:"read_write"});expect((await web.listProjects()).some(x=>x.project_id===projectA.project_id)).toBe(true);
@@ -63,6 +70,25 @@ describe("one authenticated long-lived local Host",()=>{
    await new Promise(resolve=>setTimeout(resolve,100));const started=Date.now();await owner.close();expect(Date.now()-started).toBeLessThan(5_000);for(const controller of controllers)controller.abort();await Promise.all(reads);expect((await owner.composition.runtime.getProjection(run.run_id)).status).toBe("cancelled");
    const replacement=await startLocalHost({profileRoot:root,httpPort:0,credentialBackend:"private-file"});await replacement.close();
   }finally{for(const controller of controllers)controller.abort();await client.close();await owner.close();await new Promise<void>(resolve=>provider.close(()=>resolve()));await rm(root,{recursive:true,force:true});}
+ },20_000);
+
+ it("attempts all shutdown boundaries after browser cleanup fails and retains the writer lease",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"outlive-cleanup-failure-"));let contacted=false;
+  const provider=createServer(async(request,_response)=>{for await(const _chunk of request){}contacted=true;});
+  await new Promise<void>(resolve=>provider.listen(0,"127.0.0.1",resolve));const address=provider.address();if(!address||typeof address==="string")throw new Error("Missing held provider");
+  const owner=await startLocalHost({profileRoot:root,httpPort:0,credentialBackend:"private-file"});const client=await connectLocalHost({profileRoot:root});
+  const closeBrowser=owner.composition.browserControl.close.bind(owner.composition.browserControl);
+  const browser=vi.spyOn(owner.composition.browserControl,"close").mockImplementation(async()=>{await closeBrowser();throw new Error("browser_cleanup_failed");});
+  const computer=vi.spyOn(owner.composition.computerControl,"close");const mcp=vi.spyOn(owner.composition.mcp,"stop");const lsp=vi.spyOn(owner.composition.lsp,"stop");
+  try{
+   await client.client.configureModel({provider:"custom",protocol:"openai-chat-completions",base_url:`http://127.0.0.1:${address.port}/v1`,model:"held-model",api_key:"isolated-cleanup-key"});
+   const run=await client.client.startChat({command_id:"cleanup:held",task:"Wait for the held provider"});await eventually(async()=>contacted,x=>x);
+   await expect(owner.close()).rejects.toMatchObject({errors:[expect.objectContaining({message:"browser_cleanup_failed"})]});
+   expect(browser).toHaveBeenCalledOnce();expect(computer).toHaveBeenCalledOnce();expect(mcp).toHaveBeenCalledOnce();expect(lsp).toHaveBeenCalledOnce();
+   expect((await owner.composition.runtime.getProjection(run.run_id)).status).toBe("cancelled");
+   await expect(fetch(`${owner.status.http_address}/health`)).rejects.toThrow();
+   await expect(startLocalHost({profileRoot:root,httpPort:0,credentialBackend:"private-file"})).rejects.toThrow("already owns");
+  }finally{await client.close();await owner.close().catch(()=>undefined);await new Promise<void>(resolve=>provider.close(()=>resolve()));await rm(root,{recursive:true,force:true});}
  },20_000);
 
  it("applies restart settings, keeps disabled extensions disabled on reload, and preserves cleared model drafts",async()=>{

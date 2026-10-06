@@ -27,7 +27,7 @@ describe("G11 MCP contracts", () => {
     expect(McpConfigSchema.parse({
       config_version: "tracegraph.mcp.v1",
       servers: [{ ...baseServer, env: { API_TOKEN: "\${secret:FILESYSTEM_TOKEN}" } }],
-    }).servers[0]?.env.API_TOKEN).toBe("\${secret:FILESYSTEM_TOKEN}");
+    }).servers.filter(server => server.transport === "stdio")[0]?.env.API_TOKEN).toBe("\${secret:FILESYSTEM_TOKEN}");
   });
 
   it("keeps server status bounded and rejects inconsistent tool counts", () => {

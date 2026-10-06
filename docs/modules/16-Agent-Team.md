@@ -186,3 +186,30 @@ pnpm evals
 ```
 
 重点验收由本模块及对应测试维护：mailbox 重启不丢、heartbeat timeout 原子 reopen 且不自动重派、空/部分 sweep 的 durable receipt 与重试修复、late-create running child backfill、并发 claim 单 owner、exact-command result、完成证据与最终 payload 校验、CLI/Host/SDK/Web authority/read-only 边界，以及事件/projector/recovery 版本的文档一致性。V2 去向见 [`../outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md`](../outlive-agent-v2/10-tracegraph-to-outlive-migration/README.md)。
+
+
+## 9. TEAM-100：dirty 基线上的隔离可写子任务（已验证后端切片）
+
+标准共享 Host 现在向模型发布闭合的 `readonly`、`isolated-coder` 角色目录。低层兼容装配默认仍为 readonly；模型只能选择已发布名称、任务和有界预算，不能自定义工具、权限、凭据或工作区路径。空目录安全启动并拒绝未知角色。父 Run 必须是 Execute 且已有写能力；Plan/readonly 父不能借角色升级权限。
+
+`isolated-coder` 从已有 HEAD 的普通 Git 仓库读取父级已授权的 staged、unstaged、untracked 和删除状态，创建私有 detached `--no-checkout` worktree，再复制冻结字节。源 HEAD、源 index 和源文件不被 stage/stash/reset/clean/checkout；仓库 hook、smudge filter 不执行。边界为 2,000 路径、单文件 1 MiB、总字节 16 MiB，读取只接受父级冻结策略的 allow 和无链接普通文件，并复用 `read_file` 的敏感路径硬边界。忽略的依赖/构建文件不复制；linked worktree、无 HEAD、冲突 index、submodule、符号/硬链接及超限基线拒绝。原生 workspace-write 必须达到 full enforcement，当前真实工作区验收仅在 macOS 完成；其他平台不能据此宣称可写子工作区已通过。
+
+子 policy/capability/tool intersection 均不超过父级，并将 full-access 父收紧到 workspace-write。子工作区使用独立协调器 lease，不再占用父任务已持有的 root Run 名额；同一 Goal 请求预算沿用同一实例。支持实际暴露的 patch/test 及 `discover_project_commands` → `run_project_command` 已有命令 manifest/hash 绑定链，不提供任意 Shell 或自动安装依赖。
+
+父 `subagent.started.spec.workspace_binding` 与子 `run.created.workspace_binding` 保存 opaque binding 和源 HEAD/index/tree digests；绝对根目录与完整基线只保存在 Host 私有 manifest/baseline。准备由 canonical Host command journal 持有回执；副作用后失败保留 worktree 并报 `team_workspace_effect_unknown`，相同 command 不自动重做。子终态仅释放自己的工作区/model lease，结果树保留审阅。`LeasedModelAdapter` 的 snapshot `forRun()` 为每个 child 建独立凭据引用，同时保持父级准入的 model、Key 版本与能力；保存连接旋转 Key 后，旧凭据等所有父子任务终态再清理。
+
+恢复检测到可写子绑定时以 `subagent_workspace_review_required` 停止，保留原树/基线；不会改回父 root、重发补丁、自动合并或清理。可信 Host 的 `inspect(bindingId)` 提供相对路径与基线/当前 hash diff；当前尚未提供一般用户的三端 child diff/合并/CAS 工作流，也没有完成关系图、手动多角色设置或非阻塞多轮调度。因此这是 TEAM-100 后端切片，不是完整多 Agent 产品闭环。
+
+源码与实际证据：
+
+- [公开 binding 契约](../../packages/contracts/src/subagent-workspace.ts)、[Core 权限验证/resolver seam](../../packages/core/src/domains/subagent/workspace.ts)、[Runtime](../../packages/core/src/domains/runtime/runtime.ts)。
+- [Host 冻结基线/私有 diff](../../packages/host/src/subagent-worktrees.ts)、[编译角色目录](../../packages/host/src/composition/subagent-config.ts)、[独立模型 lease](../../packages/host/src/composition/leased-model.ts)。
+- [后端验证报告](../validation/team-100/backend-slice.md)：真实 Git 文件树/索引对比、两 child 原生命令和共享请求账单、Key 旋转前后真实本地 provider 请求；不代表真实 UI、最终安装包或 Windows 原生验收。
+
+## 10. FLOW/TEAM：交付前独立只读审阅（已验证受限切片）
+
+标准 Host 对普通软件 execute 根任务启用最多两轮编译 `delivery-reviewer`；普通任务使用同一 200,000 Token / 15 分钟总额度，Goal 复用已准入预算。审阅是实际独立子 Run/Session，Plan mode、独立冻结模型 lease，工具与父权限相交且只读；不会执行构建、修改文件、delegation 或自动合并。私有推理不作为审阅证据。父等待审阅时不持有 control lock，完成前重新核对输入和终态。
+
+`Decision.review_result` 仅接受可信 reviewer 的闭合结果，声明路径必须有实际成功 `read_file` 回执。父校验子 canonical terminal id/hash、真实读路径及审阅前后授权文件 hash；阻断发现进入现有 AgentLoop 的 canonical Observation，经正常权限/批准闸门修复和新验证。未知/失败/证据不足/取消审阅不会转成功交付。最多两轮不是需求保证；Goal 最终用户验收仍独立。
+
+真实临时 clamp 软件 fixture 完成源码、构建、弱测试通过、审阅发现漏项、新增回归实际失败、修复并重建测试通过、再次只读审阅通过；15 次本机确定性 HTTP 请求和所有子请求共用同一额度。[报告](../validation/delivery-review/README.zh.md)与 [692 项独立只读核验](../validation/delivery-review/controlled-known-failure-proof/verification.json)链接实际字节与事件链。该证明不代表付费模型质量。必读范围目前为 verified 补丁路径与命令 manifest；尚无任意脚本产物的完整变更清单，不能宣称全部生成文件已独立审阅。三端审阅设置/关系图、非阻塞持续调度和完整 TEAM/FLOW 产品验收仍待完成。

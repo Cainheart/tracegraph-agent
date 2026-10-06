@@ -1,0 +1,44 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/desktop
+
+ ❯ src/native-background.test.ts (7 tests | 1 failed) 1111ms
+   ❯ native background entry projections (7)
+     × baselines existing canonical events, deduplicates by event ID across owner replacement and never copies task content 1007ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/native-background.test.ts > native background entry projections > baselines existing canonical events, deduplicates by event ID across owner replacement and never copies task content
+AssertionError: expected "vi.fn()" to be called with arguments: [ { …(8) }, 1, 'profile:real' ]
+
+Received:
+
+  1st vi.fn() call:
+
+@@ -7,8 +7,8 @@
+      "run_id": "run:real",
+      "session_id": "session:real",
+      "status": "completed",
+      "task": "DO_NOT_SHOW_TASK_IN_OS_NOTIFICATION",
+    },
+-   1,
++   2,
+    "profile:real",
+  ]
+
+
+Number of calls: 1
+
+ ❯ src/native-background.test.ts:15:605
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 4 passed (5)
+      Tests  1 failed | 32 passed (33)
+   Start at  01:25:37
+   Duration  1.43s (tests 76%, transform 17%, import 7%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/desktop:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run --config vitest.config.ts src/native-background.test.ts src/direct-routes.test.ts src/desktop-security.test.ts src/main-connection.test.ts src/preview-startup.test.ts

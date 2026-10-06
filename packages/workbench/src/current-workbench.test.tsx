@@ -3,7 +3,7 @@ import { act, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { EditorView } from "@codemirror/view";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { HostCapabilitiesSchema, type SessionRunOptions, type ProjectFileSaveRequest } from "@tracegraph/contracts";
+import { SessionRunOptionsSchema, HostCapabilitiesSchema, type SessionRunOptions, type ProjectFileSaveRequest } from "@tracegraph/contracts";
 import { type WorkbenchClient, DemoTraceGraphClient } from "./client";
 import { Composer } from "./components/Composer";
 import { ModelConnectionsSettings } from "./components/ModelConnectionsSettings";
@@ -55,44 +55,83 @@ describe("current conversation workbench", () => {
     await click("Use as file attachment"); expect(visibleCheckbox().checked).toBe(false); expect(button("Send message").disabled).toBe(false); await click("Send message"); expect(submit).toHaveBeenLastCalledWith([expect.objectContaining({ file, delivery: "offload" })]);
   });
   it("saves only explicitly declared image-capable models in the configured model set, without treating a passed connection test as image proof", async () => {
-    const client: WorkbenchClient = new DemoTraceGraphClient(); const connection = { connection_id: "one", label: "Provider", revision: 4, provider: "custom" as const, protocol: "openai-chat-completions" as const, base_url: "http://127.0.0.1/v1", model: "gpt-4.1-mini", models: ["gpt-4.1-mini", "text-only"], has_key: true, source: "profile" as const, writable: true, test: { status: "passed" as const, code: "connection_ok", message: "Connected", model: "gpt-4.1-mini", checked_at: "2026-10-03T00:00:00.000Z", duration_ms: 1 } };
+    const client: WorkbenchClient = new DemoTraceGraphClient(); const connection = { connection_id: "one", label: "Provider", revision: 4, provider: "custom" as const, protocol: "openai-chat-completions" as const, base_url: "http://127.0.0.1/v1", model: "provider-model-fixture", models: ["provider-model-fixture", "text-only"], has_key: true, source: "profile" as const, writable: true, test: { status: "passed" as const, code: "connection_ok", message: "Connected", model: "provider-model-fixture", checked_at: "2026-10-03T00:00:00.000Z", duration_ms: 1 } };
     client.getModelConnections = vi.fn(async () => ({ default_connection_id: "one", connections: [connection] })); client.saveModelConnection = vi.fn(async (_input) => ({ default_connection_id: "one", connections: [connection] })); client.testModelConnection = vi.fn();
     await act(async () => root.render(<ModelConnectionsSettings client={client} capabilities={caps(["models.read", "models.write", "models.test"])} online />)); await click("Edit connection");
     const checkbox = (name: string) => container.querySelector<HTMLInputElement>(`input[aria-label="Enable image input for ${name}"]`)!;
-    expect(checkbox("gpt-4.1-mini").checked).toBe(false); expect(container.textContent).toContain("A connection test does not validate image support.");
-    await act(async () => { checkbox("gpt-4.1-mini").click(); checkbox("text-only").click(); }); await type(container.querySelector<HTMLTextAreaElement>('[aria-label="Connection model list"]')!, "gpt-4.1-mini"); await click("Save connection");
-    expect(client.saveModelConnection).toHaveBeenCalledWith(expect.objectContaining({ connection_id: "one", expected_revision: 4, models: ["gpt-4.1-mini"], image_input_models: ["gpt-4.1-mini"] })); expect(client.testModelConnection).not.toHaveBeenCalled();
+    expect(checkbox("provider-model-fixture").checked).toBe(false); expect(container.textContent).toContain("A text connection test does not verify it; inspect a dedicated image test or a real task before relying on compatibility.");
+    await act(async () => { checkbox("provider-model-fixture").click(); checkbox("text-only").click(); }); await type(container.querySelector<HTMLTextAreaElement>('[aria-label="Connection model list"]')!, "provider-model-fixture"); await click("Save connection");
+    expect(client.saveModelConnection).toHaveBeenCalledWith(expect.objectContaining({ connection_id: "one", expected_revision: 4, models: ["provider-model-fixture"], image_input_models: ["provider-model-fixture"] })); expect(client.testModelConnection).not.toHaveBeenCalled();
+  });
+  it("discovers models only after an explicit Host request and lets the user select a discovered model", async () => {
+    const client: WorkbenchClient = new DemoTraceGraphClient();
+    const connection = { connection_id: "one", label: "Provider", revision: 7, provider: "deepseek" as const, protocol: "openai-chat-completions" as const, base_url: "https://api.deepseek.com/v1", model: "old-model", models: ["old-model"], has_key: true, source: "profile" as const, writable: true };
+    const entry = { id: "deepseek-v4-flash", name: "DeepSeek V4 Flash", capability_status: "confirmed" as const, source: "provider_response" as const, context_window_tokens: 1_000_000, max_output_tokens: 128_000, input_modalities: ["text" as const], output_modalities: ["text" as const], reasoning_efforts: ["none" as const, "low" as const, "high" as const], reasoning_default: "high" as const };
+    client.getModelConnections = vi.fn(async () => ({ default_connection_id: "one", connections: [connection] }));
+    client.discoverModelCatalog = vi.fn(async () => ({ connection_id: "one", connection_revision: 7, status: "succeeded" as const, discovered_at: "2026-10-06T00:00:00.000Z", models: [entry] }));
+    client.saveModelConnection = vi.fn(async () => ({ default_connection_id: "one", connections: [{ ...connection, revision: 8, model: entry.id, models: ["old-model", entry.id] }] }));
+    await act(async () => root.render(<ModelConnectionsSettings client={client} capabilities={caps(["models.read", "models.write"])} online />));
+    expect(client.discoverModelCatalog).not.toHaveBeenCalled();
+    await click("Discover models");
+    expect(client.discoverModelCatalog).toHaveBeenCalledWith("one", expect.objectContaining({ expected_revision: 7 }));
+    expect(container.textContent).toContain("1,000,000 context tokens");
+    expect(container.textContent).toContain("none, low, high");
+    await click("Use as default");
+    expect(container.querySelector<HTMLInputElement>('[aria-label="Connection default model"]')!.value).toBe(entry.id);
+    await click("Save connection");
+    expect(client.saveModelConnection).toHaveBeenCalledWith(expect.objectContaining({ connection_id: "one", expected_revision: 7, model: entry.id, models: ["old-model", entry.id] }));
   });
   it("does not advertise unsupported reasoning levels or prematurely label a pending grant Full", async () => {
     const options: SessionRunOptions = { mode: "execute", permission_preset: "full-write", reasoning_effort: "default", connection_id: "one", model: "unknown" };
     const connections = { default_connection_id: "one", connections: [{ connection_id: "one", label: "Custom", revision: 0, provider: "custom" as const, protocol: "openai-chat-completions" as const, base_url: "http://127.0.0.1/v1", model: "unknown", models: ["unknown"], has_key: true, source: "profile" as const, writable: true, reasoning_by_model: { unknown: ["default" as const] } }] };
     await act(async () => root.render(<><ComposerModelMenu connections={connections} options={options} disabled={false} active onChange={vi.fn()} onSettings={vi.fn()} /><ComposerPermissionMenu options={options} permission={null} grant={{ enabled: true, can_grant: true, ceiling: "workspace-write", source: "profile", pending_restart: true }} disabled={false} active onChange={vi.fn()} onGrant={vi.fn()} /></>));
-    expect(button("Choose permissions").textContent).toContain("Workspace access"); await click("Choose model"); await click("Reasoning effort"); expect([...container.querySelectorAll('[role="option"]')].map((node) => node.textContent)).toEqual(["Default"]); expect(container.textContent).not.toContain("Maximum");
+    expect(button("Choose permissions").textContent).toContain("Workspace access"); await click("Choose model"); await click("Reasoning effort");
+    expect([...container.querySelectorAll(".model-reasoning-levels button")].map((node) => node.textContent?.trim())).toEqual(["Default"]);
+    expect(container.textContent).not.toContain("Maximum");
+  });
+  it("shows DeepSeek effort choices when a saved legacy model id matches the official catalog alias", async () => {
+    const change = vi.fn();
+    const options: SessionRunOptions = { mode: "execute", permission_preset: "workspace-write", reasoning_effort: "default", connection_id: "deepseek", model: "deepseek-v4-flash" };
+    const connections = { default_connection_id: "deepseek", connections: [{ connection_id: "deepseek", label: "DeepSeek", revision: 3, provider: "deepseek" as const, protocol: "openai-chat-completions" as const, base_url: "https://api.deepseek.com/v1", model: "deepseek-v4-flash", models: ["deepseek-v4-flash"], has_key: true, source: "profile" as const, writable: true, reasoning_by_model: { "deepseek-v4-flash": ["default" as const, "low" as const, "high" as const, "max" as const] }, model_catalog: [{ id: "deepseek-flash", name: "DeepSeek-V4.1-Flash", capability_status: "confirmed" as const, source: "provider_response" as const, context_window_tokens: 1_048_576, max_output_tokens: 393_216, input_modalities: ["text" as const, "image" as const], output_modalities: ["text" as const], reasoning_efforts: ["low" as const, "high" as const, "max" as const], reasoning_default: "high" as const }] }] };
+    await act(async () => root.render(<ComposerModelMenu connections={connections} options={options} disabled={false} active onChange={change} onSettings={vi.fn()} />));
+    await click("Choose model");
+    expect(button("Model").textContent).toContain("DeepSeek-V4.1-Flash");
+    expect(button("Reasoning effort").textContent).toContain("Default");
+    await click("Model");
+    expect(container.textContent).toContain("1,048,576 context tokens");
+    expect(container.textContent).toContain("deepseek-v4-flash");
+    await click("Back"); await click("Reasoning effort");
+    expect([...container.querySelectorAll(".model-reasoning-levels button")].map((node) => node.textContent?.trim())).toEqual(["Default", "Low", "High", "Maximum"]);
+    await click("High"); expect(change).toHaveBeenCalledWith({ reasoning_effort: "high" });
   });
   it("normalizes reasoning when selecting a different model and closes the popover with focus restored", async () => {
     const change = vi.fn();
     const options: SessionRunOptions = { mode: "execute", permission_preset: "workspace-write", reasoning_effort: "max", connection_id: "one", model: "strong" };
     const connections = { default_connection_id: "one", connections: [{ connection_id: "one", label: "Provider", revision: 1, provider: "custom" as const, protocol: "openai-chat-completions" as const, base_url: "http://127.0.0.1/v1", model: "strong", models: ["strong", "basic"], has_key: true, source: "profile" as const, writable: true, reasoning_by_model: { strong: ["default" as const, "max" as const], basic: ["default" as const] } }] };
     await act(async () => root.render(<ComposerModelMenu connections={connections} options={options} disabled={false} active onChange={change} onSettings={vi.fn()} />));
-    await click("Choose model"); await click("basic"); expect(change).toHaveBeenCalledWith({ connection_id: "one", model: "basic", reasoning_effort: "default" });
-    await click("Choose model"); await act(async () => button("strong").dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }))); expect(button("Choose model").getAttribute("aria-expanded")).toBe("false"); expect(document.activeElement).toBe(button("Choose model"));
+    await click("Choose model"); await click("Model"); await click("basic"); expect(change).toHaveBeenCalledWith({ connection_id: "one", model: "basic", reasoning_effort: "default" });
+    await click("Choose model");
+    await act(async () => container.querySelector(".composer-model-menu")!.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
+    expect(button("Choose model").getAttribute("aria-expanded")).toBe("false"); expect(document.activeElement).toBe(button("Choose model"));
   });
   it("uses the first saved provider for an empty conversation without reopening legacy setup", async () => {
     const client: WorkbenchClient = new DemoTraceGraphClient(); const original = createDemoSnapshot("ready"); const snapshot = { ...original, dataSource: "live" as const, run: null, project: null, selectedSessionId: null }; client.getSnapshot = () => snapshot;
-    const capability = caps(["models.read", "model.configure"]); client.getCapabilities = vi.fn(async () => capability);
+    const capability = caps(["models.read", "model.configure", "project.defaults.read"]); client.getCapabilities = vi.fn(async () => capability);
     client.getModelConnections = vi.fn<NonNullable<WorkbenchClient["getModelConnections"]>>(async () => ({ default_connection_id: "saved-one", connections: [{ connection_id: "saved-one", label: "Saved provider", revision: 1, provider: "custom", protocol: "openai-chat-completions", base_url: "http://127.0.0.1/v1", model: "saved-model", models: ["saved-model"], has_key: true, source: "profile", writable: true }] }));
+    client.getProjectRunDefaults = vi.fn<NonNullable<WorkbenchClient["getProjectRunDefaults"]>>(async () => ({project_id:"chat:local",revision:0,overrides:{},options:{mode:"execute",reasoning_effort:"high",permission_preset:"read-only"},fields:[]}));
     await act(async () => root.render(<App client={client} />));
     expect(button("Choose model").textContent).toContain("saved-model"); expect(container.querySelector('[aria-label="Set up Outlive Agent"]')).toBeNull();
     await type(container.querySelector('[aria-label="Plain chat message"]')!, "Start with this saved connection"); expect(button("Send message").disabled).toBe(false);
   });
   it.each([false, true])("connects the selected saved model's image declaration to the common composer and exact new-chat payload: %s", async (declared) => {
     const client: WorkbenchClient = new DemoTraceGraphClient(); const snapshot = { ...createDemoSnapshot("ready"), dataSource: "live" as const, run: null, project: null, selectedSessionId: null }; client.getSnapshot = () => snapshot;
-    client.getCapabilities = vi.fn(async () => caps(["models.read", "model.configure", "attachments.upload"]));
+    client.getCapabilities = vi.fn(async () => caps(["models.read", "model.configure", "attachments.upload", "project.defaults.read"]));
     client.getModelConnections = vi.fn(async () => ({ default_connection_id: "saved-one", connections: [{ connection_id: "saved-one", label: "Provider", revision: 1, provider: "custom" as const, protocol: "openai-chat-completions" as const, base_url: "http://127.0.0.1/v1", model: "selected-model", models: ["selected-model"], has_key: true, source: "profile" as const, writable: true, ...(declared ? { image_input_models: ["selected-model"] } : {}) }] })); client.startChat = vi.fn(async () => undefined);
+    client.getProjectRunDefaults = vi.fn<NonNullable<WorkbenchClient["getProjectRunDefaults"]>>(async () => ({project_id:"chat:local",revision:0,overrides:{},options:{mode:"execute",reasoning_effort:"default",permission_preset:"workspace-write"},fields:[]}));
     await act(async () => root.render(<App client={client} />));
     const file = new File([new Uint8Array([1, 2])], "picture.png", { type: "image/png" }); const input = container.querySelector<HTMLInputElement>('[data-composer-surface="unified"] input[type="file"]')!; Object.defineProperty(input, "files", { configurable: true, value: [file] }); await act(async () => input.dispatchEvent(new Event("change", { bubbles: true })));
     const checkbox = container.querySelector<HTMLInputElement>('.unified-composer > .attachment-composer input[type="checkbox"]')!; expect(checkbox.disabled).toBe(!declared); if (declared) await act(async () => checkbox.click());
-    await type(container.querySelector('[aria-label="Plain chat message"]')!, "Inspect this supplied file"); await click("Send message"); expect(client.startChat).toHaveBeenCalledWith("Inspect this supplied file", "default", [expect.objectContaining({ file, delivery: declared ? "inline" : "offload" })], expect.objectContaining({ connection_id: "saved-one", model: "selected-model" }));
+    await type(container.querySelector('[aria-label="Plain chat message"]')!, "Inspect this supplied file"); await click("Send message"); expect(client.startChat).toHaveBeenCalledWith("Inspect this supplied file", undefined, [expect.objectContaining({ file, delivery: declared ? "inline" : "offload" })], {});
   });
   it("clears only the selected saved credential while preserving its model metadata", async () => {
     const client: WorkbenchClient = new DemoTraceGraphClient(); const connection = { connection_id: "one", label: "Private", revision: 4, provider: "custom" as const, protocol: "openai-chat-completions" as const, base_url: "http://127.0.0.1/v1", model: "model", models: ["model"], image_input_models: ["model"], has_key: true, source: "profile" as const, writable: true };
@@ -104,11 +143,11 @@ describe("current conversation workbench", () => {
   it("saves next-run options for the exact session while leaving the running snapshot unchanged", async () => {
     const client: WorkbenchClient = new DemoTraceGraphClient(); const original = client.getSnapshot().run!;
     client.getSessionRunOptions = vi.fn<NonNullable<WorkbenchClient["getSessionRunOptions"]>>(async () => ({ session_id: "s-one", revision: 8, options: { mode: "execute", reasoning_effort: "default", permission_preset: "workspace-write" } }));
-    client.updateSessionRunOptions = vi.fn<NonNullable<WorkbenchClient["updateSessionRunOptions"]>>(async (_id, input) => ({ session_id: "s-one", revision: 9, options: input.options }));
+    client.updateSessionRunOptions = vi.fn<NonNullable<WorkbenchClient["updateSessionRunOptions"]>>(async (_id, input) => ({ session_id: "s-one", revision: 9, overrides: input.overrides ?? input.options, options: SessionRunOptionsSchema.parse(input.overrides ?? input.options) }));
     function OptionsHarness() { const state = useConversationOptions({ client, scope: "s-one", sessionId: "s-one", online: true, capabilities: capability, refreshKey: 0 }); return <button onClick={() => void state.update({ mode: "plan" })}>{state.options.mode}</button>; }
     const capability = caps(["session.options.read", "session.options.write"]);
     await act(async () => root.render(<OptionsHarness />)); await click("execute");
-    expect(client.updateSessionRunOptions).toHaveBeenCalledWith("s-one", expect.objectContaining({ expected_revision: 8, options: { mode: "plan", permission_preset: "workspace-write", reasoning_effort: "default" } })); expect(container.textContent).toBe("plan"); expect(client.getSnapshot().run).toBe(original);
+    expect(client.updateSessionRunOptions).toHaveBeenCalledWith("s-one", expect.objectContaining({ expected_revision: 8, overrides: { mode: "plan", permission_preset: "workspace-write", reasoning_effort: "default" } })); expect(container.textContent).toBe("plan"); expect(client.getSnapshot().run).toBe(original);
   });
   it("does not query or offer final-answer feedback at an approval gate", async () => {
     const client: WorkbenchClient = new DemoTraceGraphClient(); client.getAnswerFeedback = vi.fn(); const snapshot = createDemoSnapshot("needs_approval");
@@ -134,7 +173,8 @@ describe("current conversation workbench", () => {
     const list = vi.fn(async () => { throw new Error("MEMORY_READ_FAILED"); });
     await act(async () => root.render(<MemoryControlPanel onClose={vi.fn()} onList={list} onCreate={vi.fn()} onReview={vi.fn()} onCorrect={vi.fn()} onRevoke={vi.fn()} onDelete={vi.fn()} onListExperiences={vi.fn()} onReviewExperience={vi.fn()} />));
     expect(container.textContent).toContain("Your memories could not be loaded. Try again."); expect(container.textContent).not.toContain("No V2 Memory records yet.");
-    await click("Background consolidation"); expect(container.textContent).toContain("Background jobs could not be loaded. Try again."); expect(container.textContent).not.toContain("This Host does not provide job status.");
+    await click("Background jobs");
+    expect(container.textContent).toContain("Background jobs could not be loaded. Try again."); expect(container.textContent).not.toContain("This Host does not provide job status.");
     expect(list).toHaveBeenCalledOnce();
   });
   it("reviews CAS save approval and reconciles an uncertain write using its original command", async () => {
@@ -187,5 +227,17 @@ describe("current conversation workbench", () => {
     const editor = EditorView.findFromDOM(container.querySelector<HTMLElement>(".cm-editor")!)!; await act(async () => editor.dispatch({ changes: { from: 0, to: editor.state.doc.length, insert: "new" } })); await click("Save");
     expect(container.textContent).toContain("save-receipt"); expect(container.textContent).not.toContain("The save outcome is unknown"); expect(button("Retry save")).toBeUndefined(); expect(button("Save").disabled).toBe(true); expect(editor.state.doc.toString()).toBe("new");
     await click("Reload file"); expect(client.saveProjectFile).toHaveBeenCalledOnce(); expect(editor.state.doc.toString()).toBe("new"); expect(button("Save").disabled).toBe(true);
+  });
+  it("opens a requested path only inside its matching project and acknowledges the navigation", async () => {
+    const client: WorkbenchClient = new DemoTraceGraphClient();
+    client.listProjectFiles = vi.fn(async (_id, options) => ({ project_id: "p", path: options?.path ?? "", entries: [], truncated: false }));
+    client.readProjectFile = vi.fn(async (_id, input) => ({ project_id: "p", path: input.path, sha256: hash, kind: "text" as const, byte_length: 3, content: "ok\n" }));
+    const handled = vi.fn();
+    await act(async () => root.render(<ProjectFiles client={client} projectId="p" openRequest={{ id: 7, path: "src/main.ts", projectId: "p" }} onOpenRequestHandled={handled} capabilities={caps(["files.list", "files.read"])} readOnly online />));
+    expect(client.readProjectFile).toHaveBeenCalledWith("p", { path: "src/main.ts" });
+    expect(handled).toHaveBeenCalledWith(7);
+    await act(async () => root.render(<ProjectFiles client={client} projectId="other" openRequest={{ id: 8, path: "src/main.ts", projectId: "p" }} onOpenRequestHandled={handled} capabilities={caps(["files.list", "files.read"])} readOnly online />));
+    expect(client.readProjectFile).toHaveBeenCalledOnce();
+    expect(handled).toHaveBeenLastCalledWith(8);
   });
 });

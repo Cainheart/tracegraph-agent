@@ -128,6 +128,8 @@ Desktop Main 与 CLI 使用 [`LocalHostConnectionSupervisor`](../../packages/hos
 | POST | `/api/workbench/model-test`、`/api/workbench/commands` | 有界模型连接测试和闭合命令 union；Git/worktree、PTY、预览、schedule、archive、诊断、清除 Key、取消 queued task、stop |
 | GET / POST | `/api/workbench/models` | 已保存连接安全快照 / command ID 与 revision 保护的保存；不返回原始 Key |
 | POST | `/api/workbench/models/:id/remove`、`/test` | CAS 移除 / 显式有界连接测试；测试结果不代表实际任务完成 |
+| POST | `/api/workbench/models/:id/capability-tests` | confirmed、连接 revision、具体 model 和显式 text/tools/image/structured；生成夹具逐项至多一次请求，不执行工具 |
+| GET | `/api/workbench/model-capability-tests/:commandId` | 原命令规范回执，只读核对；completed 的单项仍可 failed/unsupported/unknown，不重派发 |
 | GET / POST | `/api/workbench/sessions/:id/options` | Session 的下一 Run 选项 / revision/CAS 更新；Host 验证模型与权限上限 |
 | GET / POST | `/api/workbench/permission-grant` | 当前本地 Full 授权资格 / `confirmed:true` 的显式更改；管理员 ceiling 不可提升 |
 | POST | `/api/workbench/projects/:projectId/files/list`、`/read` | bounded 相对路径目录/文本读取；路径在 strict body，仍受统一 auth/replay 限制 |
@@ -137,6 +139,8 @@ Desktop Main 与 CLI 使用 [`LocalHostConnectionSupervisor`](../../packages/hos
 | POST / GET | `/api/local/migration/preview`、`/commit`、`/results/:operationId` | 仅私有已认证 socket；扫描、source 选择、busy 拒绝、备份/提交/重启与持久 receipt |
 
 **501 是一个明确的契约**：相关 seam 未注入时，项目创建/选择/揭示/移除、模型/权限配置、扩展管理或 Session 控制返回 501，而不是静默失败。Telemetry status 不另设 Host seam：Host 直接读取 Runtime 拥有的 process-local 状态；Runtime 默认 Noop sink，因此未显式配置时自然返回 `noop / disabled / error_count:0`。
+
+模型能力测试只在[控制器](../../packages/host/src/model-capability-control.ts)实际装配时提供 `models.capabilities.test/read`。请求 schema、回执和连接当前版本摘要采用[独立契约](../../packages/contracts/src/model-capability-tests.ts)。配置/凭据在派发前按原租约冻结；摘要只在 canonical receipt 完成后更新，摘要存储失败仍可按原 ID 读取回执，不自动重复请求。SDK 校验返回的 connection/model/revision/command 和完整所选项目，固定 Desktop 通道不接收任意 prompt、路径或秘密。Replay 不允许测试命令，回执端点不把历史视图提升为 live 权限。仅当前尚未 settle 的命令阻止闲时升级，历史未知用量不被当作未知文件写。协议、用量及安装边界见[验收记录](../validation/model-capability-tests/README.zh.md)。
 
 Session 路由在 HTTP 边界重复检查 session id 与 project scope；列表默认 `view=roots`，先排除带 `parent_session_id` 的 child，再按 Host 可见项目过滤并分页，避免 child 污染普通历史以及 cursor/页大小侧信道泄漏其它项目。`view=all` 只供受信调用方检查完整 Session 树；Web 普通列表始终显式请求 roots。租约冲突返回脱敏 409，并写只含 operation/code/status/method/route 的 `session.operation_rejected` structured audit；Host 不记录可能含 lock path/PID/hostname 的底层错误，也不绕过 lease 向目标 Session 账本写冲突事件。
 
@@ -197,7 +201,7 @@ Runtime 的 command idempotency key 使用 hash namespace，原始 command/input
 
 [`RunSessionController`](../../packages/api/src/run-session-controller.ts) 绑定 Host-owned Workspace、Session scope 与 command fingerprint。当前共享 composition 选择 `admission:"workspace"`：同 Session 串行、同 canonical workspace 写任务排队、独立 workspace 在有界并发额度内执行。排队不取消活动 Run，切换或新建会话也不取消后台工作。默认未注入新 admission 的嵌入/旧兼容 Host 仍保留 API-061 的 `single` 行为。
 
-- [`WorkspaceCoordinator`](../../packages/host/src/workspace-coordinator.ts) 通过 realpath 合并根目录别名；Run、Git mutation、长期 PTY 和 owned preview 共用写租约。显式只读操作可并行，同 Session 仍串行。
+- [`WorkspaceCoordinator`](../../packages/host/src/workspace-coordinator.ts) 通过 realpath 合并根目录别名；Run、Git mutation 和长期 PTY 共用写租约。当前 owned preview 始终执行源码只读与独立私有 cache/temp 沙箱，使用只读租约，不阻塞后续同工作区写 Run；外部登记 preview 不能限制其进程权限。显式只读操作可并行，同 Session 仍串行。见[预览实际验收](../validation/dev-readonly-preview/README.md)。
 - 排队状态可通过 Host 资源/诊断面观察；`queue.cancel` 只取消尚未开始的 holder，不撤销 active writer。Run 到终态后释放租约，下一项才开始。
 - `startCommands` 提供真正的启动幂等：
 
@@ -288,6 +292,23 @@ POST 的字段约束：`provider` 枚举 7 项、`protocol` 枚举 2 项、`base
 
 因此**响应里永远不含 `api_key`**：密钥从 write-only POST/固定 IPC 进入 Host，不回流到前端。当前 backend/configure/clear/轮换 owner 位于 [`host-composition.ts`](../../packages/host/src/composition/host-composition.ts)，三端共享同一状态。共享 Host 不把进程环境模型配置当作另一个来源；旧显式 serve 的环境只读优先级仍保留。清除 Key 保留 provider/protocol/base_url/model draft，恢复 Key 不需要重新填写地址；模型配置与 credential reference 按 Run 绑定，轮换不热改进行中的后续轮次。
 
+### 8.0 CFG-098：当前配置继承与安全历史切片
+
+[ConversationControl](../../packages/host/src/conversation-control.ts) 对新 dispatch 按显式请求、会话 `overrides`、Profile 内项目默认值、当前全局模型/推理与权限选择解析。省略不再自动补入 `default` 推理或 `workspace-write`；旧完整 Session 记录仍作为显式覆盖读取。`options` 是解析后的展示值，`overrides` 与 `fields.source` 说明实际覆盖；全局/项目变化只影响仍在继承的下一任务。`full-write` 仍受固定 ceiling、有效 consent 与项目收紧规则校验。已准入任务的模型、凭据与策略不会热切换。
+
+新增认证路由及 typed SDK 方法：
+
+| 路由 | 方法与实际结果 |
+|---|---|
+| `GET /api/workbench/settings/history` | `getWorkbenchSettingsHistory()`：从 canonical command receipts 读取最多 200 个最新 Profile revision，`has_more` 不代表旧日志被删除 |
+| `POST /api/workbench/settings/restore` | `restoreWorkbenchSettings()`：校验 `expected_revision`，恢复 `target_revision` 为新 revision；回执含 `preserved_sections` |
+| `GET/POST /api/workbench/projects/:id/defaults` | `getProjectRunDefaults()` / `updateProjectRunDefaults()`：Profile-owned 项目默认覆盖与 CAS；不会写仓库配置文件 |
+| `POST /api/workbench/sessions/:id/options/reset` | `resetSessionRunOptions()`：CAS 删除选定或全部会话覆盖，重新继承 |
+
+`updateSessionRunOptions` 兼容旧完整 `options`，或接收新的 partial `overrides`，两者只能选一个。[契约](../../packages/contracts/src/settings-history.ts)、[路由](../../packages/host/src/workbench-routes.ts)、[SDK](../../packages/sdk/src/index.ts) 是当前事实源。
+
+[Workbench settings history](../../packages/host/src/settings-history.ts) 记录安全 checkpoint 以及成功 update/restore；工具 literal env/args 和敏感文字不进入新历史/命令回执。恢复不恢复凭据、Full grant 或仓库策略；历史脱敏字段所属分组保留当前值并明示于回执。当前只交付 Profile 设置历史恢复，项目/会话历史恢复、客户端外观继承和所有配置安全空闲自动重启仍待后续切片。现有旧日志保持原样。[真实 Host/provider 与 HTTP auth/replay 测试](../../packages/host/src/configuration-inheritance-history.test.ts) 已通过；新设置视觉交互和新安装包 GUI 验收不能从该测试推断。
+
 ### 8.1 权限配置
 
 Host 的 `permissionSettings` seam 只有 `get()` 与 `configure({command_id,preset_key})`。GET/POST 返回同一 `PermissionSettingsResponseSchema`：active preset、其固定 sandbox/approval pair、policy digest、Host ceiling、最多三个 available built-in presets、source/locked/lock reason。完整 preset tool/path scope、Host/project rules、配置文件路径和 approval token 从结构上不在公开响应里。
@@ -318,6 +339,14 @@ Runtime 返回值还必须通过 `.strict()` 的 `TelemetryStatusSchema`：sink 
 `POST /api/extensions/commands/:name` 的 path/body name 必须一致，args 最多 64 个且每项最多 2,000 字符。reload/command 都把 `command_id` 同时绑定 header/body，并用 fingerprint 防止同 id 换参数；并发重复请求共享同一个 Promise，失败会移除内存幂等项供显式重试。Replay bearer 在统一 authority gate 上只能读取历史 snapshot，不能调用这些 live 管理路由。
 
 ---
+
+### 8.4 COMP-102：独立原生应用授权后端切片
+
+[ComputerControl](../../packages/host/src/computer-control.ts)与文件权限分开：指定应用 once/always 人工授权、全局独占输入租约、精确前台窗口复核，以及外部输入/锁屏/撤销/任务取消后暂停并要求人工恢复。Outlive 和系统权限/脚本授权窗口禁止成为操作目标。模型 DTO 不能提供已确认标志、执行路径或批准自己的权限。授权和回执私有持久化，Host 重启不恢复输入租约、不重放历史输入。
+
+[原生助手边界](../../packages/host/src/native-computer.ts)从固定安装/source 路径加载匹配 SHA、平台和架构的编译程序，不接受环境变量、项目或模型的 executable 路径。Mac 使用 AX、限定窗口 ScreenCaptureKit 和 Quartz；Windows 提供 UIA/Win32 助手源码，原生构建与操作验收仍未知。操作回执 `posted` 只表示输入发出；中断是 `unknown`，业务结果必须再次观察，对账读取 canonical 回执而不重发输入。Plan 只观察。
+
+当前窄测试 20 Host/2 契约/2 交付负例通过；真实 Mac 助手编译与只读状态通过，但当前 Accessibility/输入监控授权为 false，因此**没有真实用户应用输入成功证据**。三端路由、人工 GUI、Runtime 工具与安装旅程以根任务最后证据为准。详见[后端切片与验证边界](../validation/comp-102/backend-slice.md)。
 
 ## 9. 三条 SSE 通道
 
@@ -564,6 +593,8 @@ CLI 单测验证 stdout 纯净、无效输入不 bootstrap、事件 envelope 与
 
 三条 stream 使用 [`stream-bridge.ts`](../../apps/desktop/src/stream-bridge.ts) 的固定 open/read/close pull bridge，将私有 HTTP 上的 canonical、activity、model-surface SSE 传给 Renderer。每次 read 只推进对应迭代器，不以 500ms Run.get polling 代替流；断开订阅只 detach，不取消 Run。Main 再次过滤 `thinking_snapshot`，三种游标保留各自语义。Preview 仅构造 deterministic demo adapter，不启动 live owner。
 
+SDK `parseSseData` 在 abort 或消费者提前 return 时主动取消 response、移除 listener 并释放 reader lock，不能只检查 aborted 标志后留下空闲 socket。真实私有 UDS 负例与修后回归见 [Desktop 退出验证](../validation/desktop-quit/README.md)。Main 在窗口接受关闭后的 `will-quit` 才 detach；取消未保存编辑的退出保留原窗口与连接。最终 `app.quit` 安排到下一事件循环轮，避免同一原生退出事务内的 promise 重入被忽略。不取消 Run 或停止独立 Host。
+
 连接状态来自 [`host-connection.ts`](../../packages/contracts/src/host-connection.ts)，包含 `state/generation/profile_id/owner_nonce` 及闭合安全 code，不包含 token/socket/绝对路径。`getCapabilities()` 连接失败会抛出 typed error，不能合成“未安装/unsupported”的 capability；真实 backend 缺失仍由已连接 Host 的能力清单解释。Main 在 IPC 边界将连接错误封装成受控结构，preload 解包后保留 code，避免 Electron 丢弃自定义 Error 属性。
 
 | 连接 code | 操作含义 |
@@ -679,3 +710,18 @@ Web、Desktop 和 CLI 现在经同一 Host route/`MemoryExperienceController`，
 - 模块 11（CLI）：`modelSettings`、项目 seams 与 G-15 sink/config 的真实装配；Host status 直接读取 Runtime
 - 模块 15（插件与扩展系统）：trusted catalog、idle-only reload、Run lease 与 recovery v5
 - 模块 16（Agent Team）：Team route、actor binding、optimistic task version 与 heartbeat/sweep 边界
+
+
+## 14. 当前共享 owner 的版本升级边界（2026-10-05）
+
+[local-host.ts](../../packages/host/src/local-host.ts) 校验私有 discovery 的 Profile/root/PID/nonce，并从经过验证的本机 runtime manifest 取得 `product_build_id`。当前支持 `outlive.local-upgrade.v1` 的 owner 可被新安装包在安全空闲点接替；Main 与内置 CLI 复用同一个 `ensureLocalHost()` 路径，Web 继续连接同 gateway 与 Runtime。源码模式单独指定 build ID 不获得安装包替换权威。已绑定旧 build 的 supervisor 不会反向替换其它 build；规范 retirement 记录阻止自动回到已退役源 build。
+
+[LocalOwnerUpgrade](../../packages/host/src/local-host-upgrade.ts) 只接受私有认证 socket 的固定 `prepare` DTO：命令、Profile、预期 owner nonce 和 source/target build ID，不接受 renderer/model 路径、PID kill 或任意 RPC。旧 owner 先同步 seal mutation/Run 准入、暂停 scheduler/Memory/视觉清理和工作区 producer，再检查实际在途 handler、工作区 claims、Run/Goal/审批、工具/WAL/命令未结算事实、浏览器标签页、电脑输入租约与后台资源。繁忙或未知时重开准入、恢复 producer 并保留进程；不会取消工作来制造空闲。
+
+两个客户端同时进入的私有 prepare 属于串行生命周期检查，不计为业务 write；第二个客户端只观察相同目标的准备回执，不重发事务。其它已准入 HTTP handler 在 socket abort 后仍保持 active，只有 handler 产生响应才释放计数。已完成的 `models.capabilities.test` 严格验证原命令与 DTO 后保留结果；缺 Token 用量和已终止的只读 unknown 测试不冒充项目写入未知。真实网络、回执投影与 controller `pending` 仍阻断升级。
+
+准备与完整资源退役分别写入规范 `owner-upgrade-events`。prepared 不等于升级成功；客户端须验证 retired 回执、原 lease/discovery 退出和停止标记，才启动自身已核验的 bundled Node/worker，并验证目标 build、新 nonce 与同 Profile。重连、升级和 Web token preflight 都不重提任何旧 Run/写入。显式 `owner-stop.json` 优先，自动升级不会清除它。
+
+[隔离验证](../validation/idle-local-host-upgrade/README.md) 的五个窄测试文件共 28 项通过，包含真实 detached 子进程接替、两客户端单 owner、完整 Run 时间线/配置字节保持、真实 provider 请求时间边界、断连 handler、活跃任务/未知效果、Replay、已退役版本和停止意图。测试 runtime 使用开发 Node 和严格临时 manifest，不是正式安装包验收。当前最终新包 GUI、Windows 原生及签名升级由整合发布验收另行记录。
+
+没有固定升级协议的已运行旧 owner 不能被新代码安全追注入。此时 `local_host_upgrade_required` 保留旧进程，并指导先完成或明确停止旧工作、退出旧应用、通过其 Stop Host 操作退役后再启动新包。缺失/损坏/超界历史、prepared-only 回执、清理失败、waiting Memory job 与活跃资源保持阻断，不能据 GET health 或空列表猜测安全。

@@ -2,7 +2,7 @@ import {randomUUID} from "node:crypto";
 import {realpath} from "node:fs/promises";
 import type {WorkspaceHandle} from "@tracegraph/contracts";
 
-export interface WorkspaceClaim {holderId:string;kind:"run"|"terminal"|"preview"|"git"|"schedule"|"file";signal?:AbortSignal;sessionId?:string;readOnly?:boolean;}
+export interface WorkspaceClaim {holderId:string;kind:"run"|"subagent"|"terminal"|"preview"|"git"|"schedule"|"file";signal?:AbortSignal;sessionId?:string;readOnly?:boolean;}
 export interface WorkspaceLease {readonly leaseId:string;readonly root:string;release():void;}
 export interface WorkspaceAdmission {lease_id:string;holder_id:string;project_id:string;root:string;kind:WorkspaceClaim["kind"];state:"queued"|"active";queued_at:string;}
 interface Waiting {record:WorkspaceAdmission;keys:string[];resolve:(lease:WorkspaceLease)=>void;reject:(error:unknown)=>void;abort:()=>void;signal:AbortSignal|undefined;}
@@ -11,11 +11,14 @@ export class WorkspaceCoordinator {
   readonly #active=new Map<string,Waiting>();
   readonly #waiting:Waiting[]=[];
   #closed=false;
+  #ownerUpgradePauses=0;
   #maxParallelRuns=4;
   setMaxParallelRuns(value:number):void {if(!Number.isInteger(value)||value<1||value>16)throw new RangeError("Parallel Runs must be 1..16");this.#maxParallelRuns=value;this.#pump();}
   async acquireWorkspace(workspace:WorkspaceHandle,input:WorkspaceClaim):Promise<WorkspaceLease> {
     if(this.#closed) throw new Error("Workspace admission is closed");
+    if(this.#ownerUpgradePauses)throw Object.assign(new Error("Workspace admission is paused for a verified owner upgrade"),{code:"host_upgrade_in_progress",statusCode:409});
     const root=await realpath(workspace.real_root);
+    if(this.#closed||this.#ownerUpgradePauses)throw Object.assign(new Error("Workspace admission changed before its lease was acquired"),{code:"host_upgrade_in_progress",statusCode:409});
     const keys=[...(input.readOnly===true ? [] : [`workspace:${root}`]),...(input.sessionId ? [`session:${input.sessionId}`] : [])];
     return new Promise((resolve,reject)=>{
       const record:WorkspaceAdmission={lease_id:randomUUID(),holder_id:input.holderId,project_id:workspace.project_id,root,kind:input.kind,state:"queued",queued_at:new Date().toISOString()};
@@ -26,6 +29,7 @@ export class WorkspaceCoordinator {
       input.signal?.addEventListener("abort",waiting.abort,{once:true});this.#waiting.push(waiting);this.#pump();
     });
   }
+  pauseForOwnerUpgrade(){this.#ownerUpgradePauses++;let resumed=false;return {busy:this.list().length>0,resume:()=>{if(!resumed){resumed=true;this.#ownerUpgradePauses--;}}};}
   cancel(holderId:string):boolean {
     const index=this.#waiting.findIndex(x=>x.record.holder_id===holderId);
     if(index<0)return false;

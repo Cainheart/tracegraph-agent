@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile, readdir, link, symlink, unlink } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { SessionEventProposal, TodoList } from "@tracegraph/contracts";
@@ -23,6 +23,31 @@ afterEach(async () => {
 });
 
 describe("@tracegraph/evidence public contract", () => {
+  it("bounded query reads preserve canonical hashes while refusing byte/event excess", async () => {
+    const root=await temporaryRoot(), ledger=new JsonlEventLedger(join(root,"events"),{primitives});
+    const first=await ledger.append(eventProposal("bounded-created","run.created",{task:"Bounded",mode:"execute",workspace_kind:"managed_local"}));
+    await ledger.append(eventProposal("bounded-started","run.started",{}));
+    expect(await ledger.listBounded("run:evidence",{maxBytes:16_384,maxEvents:2})).toEqual(await ledger.list("run:evidence"));
+    await expect(ledger.listBounded("run:evidence",{maxBytes:16_384,maxEvents:1})).rejects.toThrow(/event count/);
+    await expect(ledger.listBounded("run:evidence",{maxBytes:1,maxEvents:2})).rejects.toThrow(/bounded query limits/);
+    await expect(ledger.listBounded("run:evidence",{maxBytes:16_777_217,maxEvents:2})).rejects.toThrow(RangeError);
+    const path=join(root,"events",(await readdir(join(root,"events")))[0]!);
+    const lines=(await readFile(path,"utf8")).trim().split("\n");const changed=JSON.parse(lines[0]!);changed.summary="Tampered";
+    await writeFile(path,JSON.stringify(changed)+"\n"+lines[1]+"\n");
+    await expect(ledger.listBounded("run:evidence",{maxBytes:16_384,maxEvents:2})).rejects.toThrow(/hash mismatch/);
+    expect(first.event_hash).toMatch(/^sha256:/);
+  });
+  it("bounded reads refuse symlink/hardlink streams and invalid UTF8", async () => {
+    const root=await temporaryRoot(), ledger=new JsonlEventLedger(join(root,"events"),{primitives});
+    await ledger.append(eventProposal("bounded-links","run.created",{task:"Links",mode:"execute",workspace_kind:"managed_local"}));
+    const path=join(root,"events",(await readdir(join(root,"events")))[0]!),bytes=await readFile(path),external=join(root,"external.jsonl");
+    await writeFile(external,bytes);await unlink(path);await link(external,path);
+    await expect(ledger.listBounded("run:evidence",{maxBytes:16_384,maxEvents:2})).rejects.toThrow(/regular file/);
+    await unlink(path);await symlink(external,path);
+    await expect(ledger.listBounded("run:evidence",{maxBytes:16_384,maxEvents:2})).rejects.toThrow(/regular file/);
+    await unlink(path);await writeFile(path,Buffer.from([0xc3,0x28]));
+    await expect(ledger.listBounded("run:evidence",{maxBytes:16_384,maxEvents:2})).rejects.toThrow();
+  });
   it("preserves Ledger integrity and idempotency through the package root", async () => {
     const root = await temporaryRoot();
     const ledger = new JsonlEventLedger(join(root, "events"), { primitives });

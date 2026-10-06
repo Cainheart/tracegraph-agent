@@ -2,6 +2,8 @@
 
 记录日期：2026-10-03。审查者独立读取最终报告、业务回执、截图、当前源码及归档清单；没有重新运行应用、测试、构建或修改产品源码。本文只记录本次检查的事实，完整任务状态由 [主验收报告](README.md)登记。
 
+历史 preview tarball 已在 2026-10-06 清理；本页记录的 hash、manifest 和验收证据保留，不能再通过原 `_tmp_release` 路径获取归档。
+
 结论：未发现本轮 HOST-087、PAR-088、CLI-089、SET-090、DEV-091、RUN-092 与 UX-086 二次验收尚未处理的重大实现缺口。最终 Web 和新目录安装后的真实 Electron/CLI 旅程均通过，实际业务结果和清理状态可复核。该结论限于维护者 macOS arm64 环境与声明的合成 Provider。
 
 ## 最终报告与真实结果
@@ -19,7 +21,7 @@ Web 的 [回滚证明](evidence/ui/rollback-proof.json)同样包含真实 `tests
 
 ## 构建与归档边界
 
-最终归档为 `_tmp_release/unified-local-workbench-20261003-complete/outlive-agent-0.1.0-alpha.0-preview.tar.gz`：
+最终归档曾输出到 `_tmp_release/unified-local-workbench-20261003-complete/outlive-agent-0.1.0-alpha.0-preview.tar.gz`，已于 2026-10-06 清理：
 
 ```text
 SHA-256: 33147dfea9230ad877627946d5117bd1eb96bc27289435528bd60b067f87c615

@@ -1,0 +1,25 @@
+$ tsc -p tsconfig.test.json --noEmit
+src/main-native-background.test.ts(14,256): error TS2322: Type 'Promise<void>' is not assignable to type 'Promise<undefined>'.
+  Type 'void' is not assignable to type 'undefined'.
+src/native-background.test.ts(15,219): error TS18048: 'f.current' is possibly 'undefined'.
+src/native-background.test.ts(15,418): error TS18048: 'f.current' is possibly 'undefined'.
+src/native-background.test.ts(15,449): error TS18048: 'f.current' is possibly 'undefined'.
+src/native-background.test.ts(16,180): error TS18048: 'f.current' is possibly 'undefined'.
+src/native-background.test.ts(16,239): error TS18048: 'f.current' is possibly 'undefined'.
+src/native-background.test.ts(16,295): error TS18048: 'f.current' is possibly 'undefined'.
+src/native-background.test.ts(16,353): error TS18048: 'f.current' is possibly 'undefined'.
+src/native-background.test.ts(16,568): error TS18048: 'f.current' is possibly 'undefined'.
+src/native-background.test.ts(16,625): error TS18048: 'f.current' is possibly 'undefined'.
+src/native-background.test.ts(16,781): error TS18048: 'f.current' is possibly 'undefined'.
+src/native-background.test.ts(16,819): error TS18048: 'f.current' is possibly 'undefined'.
+src/native-background.test.ts(17,155): error TS18048: 'f.current' is possibly 'undefined'.
+src/native-background.test.ts(17,347): error TS18048: 'f.current' is possibly 'undefined'.
+src/native-background.test.ts(17,532): error TS18048: 'f.current' is possibly 'undefined'.
+src/native-background.test.ts(17,677): error TS18048: 'f.current' is possibly 'undefined'.
+src/native-background.test.ts(17,810): error TS18048: 'f.current' is possibly 'undefined'.
+src/native-background.test.ts(19,310): error TS18048: 'f.current' is possibly 'undefined'.
+src/native-background.test.ts(20,115): error TS18048: 'f.current' is possibly 'undefined'.
+src/native-background.test.ts(20,183): error TS18048: 'f.current' is possibly 'undefined'.
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/desktop:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @tracegraph/desktop@0.1.0-alpha.0 typecheck: `tsc -p tsconfig.test.json --noEmit`
+Exit status 1

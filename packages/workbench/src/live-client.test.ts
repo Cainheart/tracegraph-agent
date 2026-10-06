@@ -1256,6 +1256,19 @@ describe("LiveTraceGraphClient", () => {
     expect(client.getSnapshot().run).toMatchObject({ status: "cancelled", lastSequence: 13 });
   });
 
+  it("reconstructs a truthful delivery-budget reason from legacy terminal facts", async () => {
+    const terminal = { ...projection("cancelled", [], [
+      event(1, "run.created", { data: { delivery_budget: "delivery:run_live" } }),
+      event(2, "run.cancelled", { summary: "Goal budget stopped", data: { code: "goal_token_limit", goal_budget: "delivery:run_live" } }),
+    ]), outcome: "Goal budget stopped" };
+    const client = new LiveTraceGraphClient({ sdk: new FakeSdk(terminal) });
+    await client.initialize();
+    await client.chooseProject("disposable_fixture");
+    await client.startRun("Recover the durable cancellation cause", "plan");
+    expect(client.getSnapshot().run?.currentStep).toBe("Run token budget cannot fit the next model request");
+    expect(client.getSnapshot().run?.outcome).toBe("Run token budget cannot fit the next model request");
+  });
+
   it("lazily loads relation-scoped child ledgers and clears them on replay", async () => {
     const parentTimeline = [event(1, "run.created"), event(2, "subagent.started")];
     const parent = {
@@ -1725,6 +1738,39 @@ describe("LiveTraceGraphClient", () => {
     await client.chooseProject("disposable_fixture");
   });
 
+  it("opens the exact historical Run with only earlier turns and never resumes or submits", async () => {
+    const sdk = new FakeSdk({ ...projection("completed"), session_id: durableSession.session_id });
+    const runIds = ["run:earlier", "run:chosen", "run:later"];
+    vi.spyOn(sdk, "getSession").mockResolvedValue({header:{kind:"header",session_version:1,session_id:durableSession.session_id,project_id:fixtureProject.project_id,created_at:occurredAt,title:undefined,run_ids:runIds},entries:[],truncated:false});
+    const reads: string[] = [];
+    sdk.getRunHandler = async (id) => { reads.push(id); return { ...projection("completed"), run_id:id, session_id:durableSession.session_id, task:id }; };
+    const client = new LiveTraceGraphClient({ sdk }); await client.initialize();
+    await client.openRun("run:chosen");
+    expect(client.getSnapshot().run?.id).toBe("run:chosen");
+    expect(client.getSnapshot().conversation.map(turn=>turn.runId)).toEqual(["run:earlier"]);
+    expect(reads).not.toContain("run:later");
+    expect(sdk.startInputs).toEqual([]); expect(sdk.chatInputs).toEqual([]); expect(sdk.resumedSessionIds).toEqual([]);
+    const before=client.getSnapshot();
+    sdk.getRunHandler=async(id)=>({...projection("completed"),run_id:id,session_id:durableSession.session_id,project_id:"project:foreign"});
+    await expect(client.openRun("run:chosen")).rejects.toThrow("out-of-scope");
+    expect(client.getSnapshot()).toBe(before);
+  });
+
+  it("discards stale native notification generations and removes its fixed listener", async () => {
+    const sdk = new FakeSdk(projection("completed"));
+    let notification: ((input: import("@tracegraph/contracts").NativeRunNavigation)=>void) | undefined;
+    const off=vi.fn();
+    const port=Object.assign(sdk,{onNativeRunRequested:(listener:NonNullable<typeof notification>)=>{notification=listener;return off;},getConnectionStatus:async()=>({state:"connected" as const,generation:3})});
+    const client=new LiveTraceGraphClient({sdk:port});await client.initialize();
+    const listener=vi.fn();const unsubscribe=client.onNativeRunRequested(listener);
+    const input={event_id:"event:notice",run_id:"run_live",project_id:fixtureProject.project_id,connection_generation:2};
+    notification!(input); await Promise.resolve(); await Promise.resolve();
+    expect(listener).not.toHaveBeenCalled();
+    notification!({...input,connection_generation:3});await vi.waitFor(()=>expect(listener).toHaveBeenCalledOnce());
+    unsubscribe(); expect(off).toHaveBeenCalledOnce();notification!({...input,connection_generation:3});await Promise.resolve();await Promise.resolve();expect(listener).toHaveBeenCalledOnce();
+    expect(sdk.startInputs).toEqual([]);expect(sdk.resumedSessionIds).toEqual([]);
+  });
+
   it("lists, searches, restores, and resumes a durable interrupted session", async () => {
     const sdk = new FakeSdk({
       ...projection("interrupted", [], [event(1, "run.created"), event(2, "run.interrupted")]),
@@ -1848,6 +1894,15 @@ describe("LiveTraceGraphClient", () => {
       run: null,
       sessions: [],
     });
+  });
+
+  it("keeps Recents global after selecting a project while preserving each session's real project binding", async () => {
+    const sdk = new FakeSdk(projection("completed", [], [event(1, "run.completed")]));
+    sdk.sessionSummaries = [durableSession, { ...durableSession, session_id: "session-other-project", project_id: "project-other", title: "Other project work" }];
+    const client = new LiveTraceGraphClient({ sdk });
+    await client.initialize(); await client.chooseProjectById(fixtureProject.project_id); await client.searchSessions("work");
+    expect(sdk.sessionQueries.at(-1)).toEqual({ limit: 50, view: "roots", q: "work" });
+    expect(client.getSnapshot().sessions.map((session) => session.project_id)).toEqual([durableSession.project_id, "project-other"]);
   });
 
   it("selects the exact Host-picked directory, exposes its location, and delegates reveal", async () => {

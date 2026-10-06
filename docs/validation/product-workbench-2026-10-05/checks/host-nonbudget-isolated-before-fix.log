@@ -1,0 +1,40 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+ ❯ src/skill-management-http.test.ts (2 tests | 1 failed) 11020ms
+   × freezes admitted Skill content while the next real Run resolves the edited registry 10538ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/skill-management-http.test.ts > freezes admitted Skill content while the next real Run resolves the edited registry
+Error: Canonical fixture did not complete: {"status":"cancelled","events":[{"type":"graph.snapshot_created","summary":"Baseline graph snapshot created"},{"type":"code.intel_updated","summary":"Semantic CodeGraph baseline captured"},{"type":"memory.recalled","summary":"Recalled 0 memory items within 0 tokens"},{"type":"context.built","summary":"Context built with 159 input tokens"},{"type":"model.request_started","summary":"Requesting a decision from isolated-skill-fixture with provider-default reasoning"},{"type":"workbench.command_completed","summary":"Software delivery aggregate budget checkpoint"},{"type":"workbench.command_completed","summary":"Software delivery aggregate budget checkpoint"},{"type":"run.cancelled","summary":"Goal budget stopped"}]}
+ ❯ wait src/skill-management-http.test.ts:20:345
+
+ ❯ src/skill-management-http.test.ts:21:1334
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 1 passed (2)
+      Tests  1 failed | 14 passed (15)
+   Start at  03:45:30
+   Duration  13.91s (tests 90%, transform 6%, import 4%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/visual-evidence-control.test.ts src/skill-management-http.test.ts --maxWorkers 1

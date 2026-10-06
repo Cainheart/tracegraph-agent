@@ -64,11 +64,12 @@ describe("Runtime feature-driver contributions", () => {
         expect(schemas).not.toContain("todo_write");
         await expect(runtime.readTodos(started.run_id, started.project_id))
           .rejects.toMatchObject({ code: "feature_disabled" });
-        await expect(runtime.startRun({
+        const ordinaryPlanAnswer = await runtime.startRun({
           ...startInput(harness.workspace),
           command_id: "command:start:plan-with-todo-disabled",
           mode: "plan",
-        })).rejects.toMatchObject({ code: "feature_disabled" });
+        });
+        expect((await waitForTerminal(runtime, ordinaryPlanAnswer.run_id)).status).toBe("completed");
       } else if (disabledFeature === "team") {
         expect(schemas).not.toContain("team_read");
         expect(schemas).not.toContain("team_task_write");

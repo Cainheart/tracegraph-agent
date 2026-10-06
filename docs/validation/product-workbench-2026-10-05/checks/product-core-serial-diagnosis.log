@@ -1,0 +1,26 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/core
+
+ ❯ src/domains/runtime/runtime.project-file-context.test.ts (4 tests | 1 failed) 8519ms
+   ❯ trusted project file context admission and provenance (4)
+     × restores a pending plan from immutable redacted artifacts after the original file changes, without automatic dispatch 8122ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/domains/runtime/runtime.project-file-context.test.ts > trusted project file context admission and provenance > restores a pending plan from immutable redacted artifacts after the original file changes, without automatic dispatch
+Error: Run did not reach awaiting_plan_approval
+ ❯ status src/domains/runtime/runtime.project-file-context.test.ts:18:396
+
+ ❯ src/domains/runtime/runtime.project-file-context.test.ts:43:256
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 67 passed (68)
+      Tests  1 failed | 601 passed (602)
+   Start at  03:37:11
+   Duration  119.88s (tests 94%, import 5%, transform 1%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/core:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src '--maxWorkers=1' --no-file-parallelism

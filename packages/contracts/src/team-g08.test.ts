@@ -398,7 +398,7 @@ describe("G-08 Agent Team contracts", () => {
     expect(EventTypeSchema.options.slice(teamStart, teamStart + teamEvents.length)).toEqual(teamEvents);
     expect(SCHEMA_VERSION).toBe("tracegraph.session-event.v1");
     expect(PROJECTOR_VERSION).toBe("tracegraph.projector.v9");
-    expect(BUILTIN_TOOL_NAMES).toHaveLength(20);
+    expect(BUILTIN_TOOL_NAMES).toHaveLength(22);
     for (const toolName of [
       "team_read",
       "team_task_write",

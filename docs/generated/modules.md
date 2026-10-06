@@ -2,7 +2,7 @@
 
 # Module catalog
 
-Source set: `sha256:45056137898fea881147331f768f78e7d37e15ddcc5415ceef6eccc4fdcdf8ef`. Generator: `sha256:164175c682e6830959c4ce9271481fdfaadbc058080e1e51ff84d852f801c1e3`.
+Source set: `sha256:c8871b42c48d7eabd98bc3a23d6252259a62084c2fd461807c68f2e0d62e7935`. Generator: `sha256:cc2a7b4213121031c159d682983da045193bcea429846edb77d8c909472dfe89`.
 
 See [input manifest](catalog-manifest.json) for exact source hashes.
 
@@ -11,27 +11,27 @@ Workspace inventory comes from package manifests and source files; governance co
 | Package | Governance | Public exports | Source modules |
 | --- | --- | --- | --- |
 | `@tracegraph/api` | managed | `.` | 7 |
-| `@tracegraph/cli` | legacy | none | 40 |
+| `@tracegraph/cli` | legacy | none | 45 |
 | `@tracegraph/codegraph` | legacy | `.` | 7 |
 | `@tracegraph/context` | managed | `.` | 7 |
-| `@tracegraph/contracts` | managed | `.` | 81 |
-| `@tracegraph/core` | legacy | `.` | 137 |
-| `@tracegraph/desktop` | managed | none | 21 |
+| `@tracegraph/contracts` | managed | `.` | 104 |
+| `@tracegraph/core` | legacy | `.` | 154 |
+| `@tracegraph/desktop` | managed | none | 31 |
 | `@tracegraph/desktop-host` | managed | `.` | 19 |
 | `@tracegraph/evidence` | managed | `.` | 7 |
 | `@tracegraph/failing-typescript-fixture` | legacy | none | 2 |
-| `@tracegraph/host` | legacy | `.`, `./composition/composition`, `./composition/extension-config`, `./composition/model-config`, `./composition/node-executable`, `./composition/permission-config`, `./composition/project-registry`, `./composition/retrieval-config`, `./composition/subagent-config`, `./composition/telemetry-config`, `./webserver` | 65 |
+| `@tracegraph/host` | legacy | `.`, `./composition/composition`, `./composition/extension-config`, `./composition/model-config`, `./composition/node-executable`, `./composition/permission-config`, `./composition/project-registry`, `./composition/retrieval-config`, `./composition/subagent-config`, `./composition/telemetry-config`, `./webserver` | 119 |
 | `@tracegraph/lsp` | managed | `.` | 4 |
-| `@tracegraph/mcp` | managed | `.` | 4 |
+| `@tracegraph/mcp` | managed | `.` | 6 |
 | `@tracegraph/retrieval` | managed | `.` | 9 |
 | `@tracegraph/retrieval-service` | legacy | `.` | 5 |
-| `@tracegraph/sdk` | legacy | `.`, `./client`, `./protocol`, `./server` | 19 |
+| `@tracegraph/sdk` | legacy | `.`, `./client`, `./protocol`, `./server` | 24 |
 | `@tracegraph/session` | managed | `.` | 3 |
 | `@tracegraph/telemetry` | managed | `.`, `./testing` | 11 |
 | `@tracegraph/test-support` | legacy | `.` | 11 |
 | `@tracegraph/tool` | managed | `.` | 15 |
 | `@tracegraph/web` | legacy | none | 2 |
-| `@tracegraph/workbench` | managed | `.`, `./client`, `./demo`, `./live-client`, `./model`, `./styles.css`, `./workbench.css` | 82 |
+| `@tracegraph/workbench` | managed | `.`, `./client`, `./demo`, `./live-client`, `./model`, `./styles.css`, `./workbench.css` | 116 |
 
 ## Source inventory
 
@@ -41,16 +41,20 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/cli` | [apps/cli/src/boot/profile.ts](../../apps/cli/src/boot/profile.ts) |
 | `@tracegraph/cli` | [apps/cli/src/composition.test.ts](../../apps/cli/src/composition.test.ts) |
 | `@tracegraph/cli` | [apps/cli/src/composition.ts](../../apps/cli/src/composition.ts) |
+| `@tracegraph/cli` | [apps/cli/src/computer-receipt.test.ts](../../apps/cli/src/computer-receipt.test.ts) |
 | `@tracegraph/cli` | [apps/cli/src/e2e.test.ts](../../apps/cli/src/e2e.test.ts) |
 | `@tracegraph/cli` | [apps/cli/src/extension-command.test.ts](../../apps/cli/src/extension-command.test.ts) |
 | `@tracegraph/cli` | [apps/cli/src/extension-command.ts](../../apps/cli/src/extension-command.ts) |
 | `@tracegraph/cli` | [apps/cli/src/extension-config.test.ts](../../apps/cli/src/extension-config.test.ts) |
 | `@tracegraph/cli` | [apps/cli/src/extension-config.ts](../../apps/cli/src/extension-config.ts) |
 | `@tracegraph/cli` | [apps/cli/src/index.ts](../../apps/cli/src/index.ts) |
+| `@tracegraph/cli` | [apps/cli/src/interactive-chat.test.ts](../../apps/cli/src/interactive-chat.test.ts) |
+| `@tracegraph/cli` | [apps/cli/src/interactive-chat.ts](../../apps/cli/src/interactive-chat.ts) |
 | `@tracegraph/cli` | [apps/cli/src/mcp-command.test.ts](../../apps/cli/src/mcp-command.test.ts) |
 | `@tracegraph/cli` | [apps/cli/src/mcp-command.ts](../../apps/cli/src/mcp-command.ts) |
 | `@tracegraph/cli` | [apps/cli/src/memory-command.test.ts](../../apps/cli/src/memory-command.test.ts) |
 | `@tracegraph/cli` | [apps/cli/src/memory-command.ts](../../apps/cli/src/memory-command.ts) |
+| `@tracegraph/cli` | [apps/cli/src/model-capability-http.test.ts](../../apps/cli/src/model-capability-http.test.ts) |
 | `@tracegraph/cli` | [apps/cli/src/model-config.test.ts](../../apps/cli/src/model-config.test.ts) |
 | `@tracegraph/cli` | [apps/cli/src/model-config.ts](../../apps/cli/src/model-config.ts) |
 | `@tracegraph/cli` | [apps/cli/src/permission-config.test.ts](../../apps/cli/src/permission-config.test.ts) |
@@ -75,6 +79,7 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/cli` | [apps/cli/src/telemetry-config.ts](../../apps/cli/src/telemetry-config.ts) |
 | `@tracegraph/cli` | [apps/cli/src/terminal-attach.test.ts](../../apps/cli/src/terminal-attach.test.ts) |
 | `@tracegraph/cli` | [apps/cli/src/terminal-attach.ts](../../apps/cli/src/terminal-attach.ts) |
+| `@tracegraph/cli` | [apps/cli/src/visual-evidence-http.test.ts](../../apps/cli/src/visual-evidence-http.test.ts) |
 | `@tracegraph/cli` | [apps/cli/src/workbench-command.test.ts](../../apps/cli/src/workbench-command.test.ts) |
 | `@tracegraph/cli` | [apps/cli/src/workbench-command.ts](../../apps/cli/src/workbench-command.ts) |
 | `@tracegraph/desktop-host` | [apps/desktop-host/src/desktop-host.e2e.test.ts](../../apps/desktop-host/src/desktop-host.e2e.test.ts) |
@@ -105,18 +110,28 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/desktop` | [apps/desktop/src/host-node-regression.test.mjs](../../apps/desktop/src/host-node-regression.test.mjs) |
 | `@tracegraph/desktop` | [apps/desktop/src/ipc-channels.ts](../../apps/desktop/src/ipc-channels.ts) |
 | `@tracegraph/desktop` | [apps/desktop/src/main-connection.test.ts](../../apps/desktop/src/main-connection.test.ts) |
+| `@tracegraph/desktop` | [apps/desktop/src/main-native-background.test.ts](../../apps/desktop/src/main-native-background.test.ts) |
 | `@tracegraph/desktop` | [apps/desktop/src/main.ts](../../apps/desktop/src/main.ts) |
+| `@tracegraph/desktop` | [apps/desktop/src/management-bridge.test.ts](../../apps/desktop/src/management-bridge.test.ts) |
 | `@tracegraph/desktop` | [apps/desktop/src/migration-contract.ts](../../apps/desktop/src/migration-contract.ts) |
+| `@tracegraph/desktop` | [apps/desktop/src/model-capability-bridge.test.ts](../../apps/desktop/src/model-capability-bridge.test.ts) |
+| `@tracegraph/desktop` | [apps/desktop/src/native-background-electron.test.ts](../../apps/desktop/src/native-background-electron.test.ts) |
+| `@tracegraph/desktop` | [apps/desktop/src/native-background-electron.ts](../../apps/desktop/src/native-background-electron.ts) |
+| `@tracegraph/desktop` | [apps/desktop/src/native-background.test.ts](../../apps/desktop/src/native-background.test.ts) |
+| `@tracegraph/desktop` | [apps/desktop/src/native-background.ts](../../apps/desktop/src/native-background.ts) |
 | `@tracegraph/desktop` | [apps/desktop/src/native-files.test.ts](../../apps/desktop/src/native-files.test.ts) |
 | `@tracegraph/desktop` | [apps/desktop/src/native-files.ts](../../apps/desktop/src/native-files.ts) |
 | `@tracegraph/desktop` | [apps/desktop/src/native-preview.test.ts](../../apps/desktop/src/native-preview.test.ts) |
 | `@tracegraph/desktop` | [apps/desktop/src/native-preview.ts](../../apps/desktop/src/native-preview.ts) |
+| `@tracegraph/desktop` | [apps/desktop/src/preload-events.test.ts](../../apps/desktop/src/preload-events.test.ts) |
 | `@tracegraph/desktop` | [apps/desktop/src/preload.cts](../../apps/desktop/src/preload.cts) |
 | `@tracegraph/desktop` | [apps/desktop/src/preview-startup.test.ts](../../apps/desktop/src/preview-startup.test.ts) |
 | `@tracegraph/desktop` | [apps/desktop/src/renderer-bridge.ts](../../apps/desktop/src/renderer-bridge.ts) |
 | `@tracegraph/desktop` | [apps/desktop/src/stream-bridge.test.ts](../../apps/desktop/src/stream-bridge.test.ts) |
 | `@tracegraph/desktop` | [apps/desktop/src/stream-bridge.ts](../../apps/desktop/src/stream-bridge.ts) |
 | `@tracegraph/desktop` | [apps/desktop/src/stream-contract.ts](../../apps/desktop/src/stream-contract.ts) |
+| `@tracegraph/desktop` | [apps/desktop/src/window-presentation.test.ts](../../apps/desktop/src/window-presentation.test.ts) |
+| `@tracegraph/desktop` | [apps/desktop/src/window-presentation.ts](../../apps/desktop/src/window-presentation.ts) |
 | `@tracegraph/retrieval-service` | [apps/retrieval-service/src/client.ts](../../apps/retrieval-service/src/client.ts) |
 | `@tracegraph/retrieval-service` | [apps/retrieval-service/src/contracts.ts](../../apps/retrieval-service/src/contracts.ts) |
 | `@tracegraph/retrieval-service` | [apps/retrieval-service/src/dev.ts](../../apps/retrieval-service/src/dev.ts) |
@@ -152,12 +167,17 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/contracts` | [packages/contracts/src/action-wal.test.ts](../../packages/contracts/src/action-wal.test.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/action-wal.ts](../../packages/contracts/src/action-wal.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/action.ts](../../packages/contracts/src/action.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/application-runtime.test.ts](../../packages/contracts/src/application-runtime.test.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/application-runtime.ts](../../packages/contracts/src/application-runtime.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/attachment-g18.test.ts](../../packages/contracts/src/attachment-g18.test.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/attachment.ts](../../packages/contracts/src/attachment.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/browser.ts](../../packages/contracts/src/browser.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/code-intel-g20.test.ts](../../packages/contracts/src/code-intel-g20.test.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/code-intel.ts](../../packages/contracts/src/code-intel.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/commands.ts](../../packages/contracts/src/commands.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/common.ts](../../packages/contracts/src/common.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/computer.test.ts](../../packages/contracts/src/computer.test.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/computer.ts](../../packages/contracts/src/computer.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/context-g02.test.ts](../../packages/contracts/src/context-g02.test.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/context.ts](../../packages/contracts/src/context.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/contracts.test.ts](../../packages/contracts/src/contracts.test.ts) |
@@ -165,6 +185,8 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/contracts` | [packages/contracts/src/conversation-options.ts](../../packages/contracts/src/conversation-options.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/coverage-g22.test.ts](../../packages/contracts/src/coverage-g22.test.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/credentials.ts](../../packages/contracts/src/credentials.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/delivery-review.test.ts](../../packages/contracts/src/delivery-review.test.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/delivery-review.ts](../../packages/contracts/src/delivery-review.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/event.ts](../../packages/contracts/src/event.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/experience-case.test.ts](../../packages/contracts/src/experience-case.test.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/experience-case.ts](../../packages/contracts/src/experience-case.ts) |
@@ -172,6 +194,9 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/contracts` | [packages/contracts/src/experience-lifecycle.ts](../../packages/contracts/src/experience-lifecycle.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/extension-g17.test.ts](../../packages/contracts/src/extension-g17.test.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/extension.ts](../../packages/contracts/src/extension.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/finish-intent.test.ts](../../packages/contracts/src/finish-intent.test.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/goal.test.ts](../../packages/contracts/src/goal.test.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/goal.ts](../../packages/contracts/src/goal.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/graph.ts](../../packages/contracts/src/graph.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/host-connection.ts](../../packages/contracts/src/host-connection.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/index.ts](../../packages/contracts/src/index.ts) |
@@ -196,14 +221,20 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/contracts` | [packages/contracts/src/memory-use.ts](../../packages/contracts/src/memory-use.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/memory-v2.test.ts](../../packages/contracts/src/memory-v2.test.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/memory.ts](../../packages/contracts/src/memory.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/model-capability-tests.test.ts](../../packages/contracts/src/model-capability-tests.test.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/model-capability-tests.ts](../../packages/contracts/src/model-capability-tests.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/model-stream.ts](../../packages/contracts/src/model-stream.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/permission-g06.test.ts](../../packages/contracts/src/permission-g06.test.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/permission.ts](../../packages/contracts/src/permission.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/personal-data.test.ts](../../packages/contracts/src/personal-data.test.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/personal-data.ts](../../packages/contracts/src/personal-data.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/project-file-context.test.ts](../../packages/contracts/src/project-file-context.test.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/project-file-context.ts](../../packages/contracts/src/project-file-context.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/project-files-feedback.test.ts](../../packages/contracts/src/project-files-feedback.test.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/project-files-feedback.ts](../../packages/contracts/src/project-files-feedback.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/projection.ts](../../packages/contracts/src/projection.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/public-chat.test.ts](../../packages/contracts/src/public-chat.test.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/public-chat.ts](../../packages/contracts/src/public-chat.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/replay-g23.test.ts](../../packages/contracts/src/replay-g23.test.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/replay.ts](../../packages/contracts/src/replay.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/retry.test.ts](../../packages/contracts/src/retry.test.ts) |
@@ -211,11 +242,16 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/contracts` | [packages/contracts/src/sandbox-g13.test.ts](../../packages/contracts/src/sandbox-g13.test.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/sandbox.ts](../../packages/contracts/src/sandbox.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/session.ts](../../packages/contracts/src/session.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/settings-history.ts](../../packages/contracts/src/settings-history.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/settings-inheritance.test.ts](../../packages/contracts/src/settings-inheritance.test.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/skill-g10.test.ts](../../packages/contracts/src/skill-g10.test.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/skill-management.ts](../../packages/contracts/src/skill-management.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/skill.ts](../../packages/contracts/src/skill.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/steering-g14.test.ts](../../packages/contracts/src/steering-g14.test.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/steering.ts](../../packages/contracts/src/steering.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/subagent-g07.test.ts](../../packages/contracts/src/subagent-g07.test.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/subagent-workspace.test.ts](../../packages/contracts/src/subagent-workspace.test.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/subagent-workspace.ts](../../packages/contracts/src/subagent-workspace.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/subagent.ts](../../packages/contracts/src/subagent.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/team-g08.test.ts](../../packages/contracts/src/team-g08.test.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/team.ts](../../packages/contracts/src/team.ts) |
@@ -227,6 +263,8 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/contracts` | [packages/contracts/src/tool-g05.test.ts](../../packages/contracts/src/tool-g05.test.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/tool.ts](../../packages/contracts/src/tool.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/usage.ts](../../packages/contracts/src/usage.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/visual-evidence.test.ts](../../packages/contracts/src/visual-evidence.test.ts) |
+| `@tracegraph/contracts` | [packages/contracts/src/visual-evidence.ts](../../packages/contracts/src/visual-evidence.ts) |
 | `@tracegraph/contracts` | [packages/contracts/src/workspace.ts](../../packages/contracts/src/workspace.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/context/context-package.integration.test.ts](../../packages/core/src/domains/context/context-package.integration.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/context/runtime-service.ts](../../packages/core/src/domains/context/runtime-service.ts) |
@@ -276,11 +314,17 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/core` | [packages/core/src/domains/memory/memory.test.ts](../../packages/core/src/domains/memory/memory.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/memory/memory.ts](../../packages/core/src/domains/memory/memory.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/model/fake-model.ts](../../packages/core/src/domains/model/fake-model.ts) |
+| `@tracegraph/core` | [packages/core/src/domains/model/model-budget.test.ts](../../packages/core/src/domains/model/model-budget.test.ts) |
+| `@tracegraph/core` | [packages/core/src/domains/model/model-capability-probe.test.ts](../../packages/core/src/domains/model/model-capability-probe.test.ts) |
+| `@tracegraph/core` | [packages/core/src/domains/model/model-capability-probe.ts](../../packages/core/src/domains/model/model-capability-probe.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/model/model-provider.test.ts](../../packages/core/src/domains/model/model-provider.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/model/model-provider.ts](../../packages/core/src/domains/model/model-provider.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/runtime/agent-loop.ts](../../packages/core/src/domains/runtime/agent-loop.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/runtime/cancellation-controller.test.ts](../../packages/core/src/domains/runtime/cancellation-controller.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/runtime/cancellation-controller.ts](../../packages/core/src/domains/runtime/cancellation-controller.ts) |
+| `@tracegraph/core` | [packages/core/src/domains/runtime/delivery-recovery-safety.test.ts](../../packages/core/src/domains/runtime/delivery-recovery-safety.test.ts) |
+| `@tracegraph/core` | [packages/core/src/domains/runtime/delivery-review.test.ts](../../packages/core/src/domains/runtime/delivery-review.test.ts) |
+| `@tracegraph/core` | [packages/core/src/domains/runtime/delivery-review.ts](../../packages/core/src/domains/runtime/delivery-review.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/runtime/no-progress-guard.test.ts](../../packages/core/src/domains/runtime/no-progress-guard.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/runtime/no-progress-guard.ts](../../packages/core/src/domains/runtime/no-progress-guard.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/runtime/project-file-context.ts](../../packages/core/src/domains/runtime/project-file-context.ts) |
@@ -295,20 +339,27 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/core` | [packages/core/src/domains/runtime/runtime-telemetry.ts](../../packages/core/src/domains/runtime/runtime-telemetry.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/runtime/runtime.attachment.test.ts](../../packages/core/src/domains/runtime/runtime.attachment.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/runtime/runtime.code-intel.test.ts](../../packages/core/src/domains/runtime/runtime.code-intel.test.ts) |
+| `@tracegraph/core` | [packages/core/src/domains/runtime/runtime.delivery-continuation.test.ts](../../packages/core/src/domains/runtime/runtime.delivery-continuation.test.ts) |
+| `@tracegraph/core` | [packages/core/src/domains/runtime/runtime.delivery-review.test.ts](../../packages/core/src/domains/runtime/runtime.delivery-review.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/runtime/runtime.extension.test.ts](../../packages/core/src/domains/runtime/runtime.extension.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/runtime/runtime.external-action-reconciliation.test.ts](../../packages/core/src/domains/runtime/runtime.external-action-reconciliation.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/runtime/runtime.memory-episode.test.ts](../../packages/core/src/domains/runtime/runtime.memory-episode.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/runtime/runtime.memory-experience-recall.test.ts](../../packages/core/src/domains/runtime/runtime.memory-experience-recall.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/runtime/runtime.permission.test.ts](../../packages/core/src/domains/runtime/runtime.permission.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/runtime/runtime.plan-mode.test.ts](../../packages/core/src/domains/runtime/runtime.plan-mode.test.ts) |
+| `@tracegraph/core` | [packages/core/src/domains/runtime/runtime.project-commands.test.ts](../../packages/core/src/domains/runtime/runtime.project-commands.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/runtime/runtime.project-file-context.test.ts](../../packages/core/src/domains/runtime/runtime.project-file-context.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/runtime/runtime.recovery.test.ts](../../packages/core/src/domains/runtime/runtime.recovery.test.ts) |
+| `@tracegraph/core` | [packages/core/src/domains/runtime/runtime.shared-budget.test.ts](../../packages/core/src/domains/runtime/runtime.shared-budget.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/runtime/runtime.steering.test.ts](../../packages/core/src/domains/runtime/runtime.steering.test.ts) |
+| `@tracegraph/core` | [packages/core/src/domains/runtime/runtime.subagent-workspace.test.ts](../../packages/core/src/domains/runtime/runtime.subagent-workspace.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/runtime/runtime.subagent.test.ts](../../packages/core/src/domains/runtime/runtime.subagent.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/runtime/runtime.team.test.ts](../../packages/core/src/domains/runtime/runtime.team.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/runtime/runtime.telemetry.test.ts](../../packages/core/src/domains/runtime/runtime.telemetry.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/runtime/runtime.ts](../../packages/core/src/domains/runtime/runtime.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/runtime/runtime.usage.test.ts](../../packages/core/src/domains/runtime/runtime.usage.test.ts) |
+| `@tracegraph/core` | [packages/core/src/domains/runtime/shared-run-budget.test.ts](../../packages/core/src/domains/runtime/shared-run-budget.test.ts) |
+| `@tracegraph/core` | [packages/core/src/domains/runtime/shared-run-budget.ts](../../packages/core/src/domains/runtime/shared-run-budget.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/session/session-controller.ts](../../packages/core/src/domains/session/session-controller.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/session/session-runtime.test.ts](../../packages/core/src/domains/session/session-runtime.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/session/session-store.test.ts](../../packages/core/src/domains/session/session-store.test.ts) |
@@ -316,6 +367,8 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/core` | [packages/core/src/domains/skill/skill.test.ts](../../packages/core/src/domains/skill/skill.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/skill/skill.ts](../../packages/core/src/domains/skill/skill.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/subagent/subagent.ts](../../packages/core/src/domains/subagent/subagent.ts) |
+| `@tracegraph/core` | [packages/core/src/domains/subagent/workspace.test.ts](../../packages/core/src/domains/subagent/workspace.test.ts) |
+| `@tracegraph/core` | [packages/core/src/domains/subagent/workspace.ts](../../packages/core/src/domains/subagent/workspace.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/team/team.test.ts](../../packages/core/src/domains/team/team.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/team/team.ts](../../packages/core/src/domains/team/team.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/todo/todo.test.ts](../../packages/core/src/domains/todo/todo.test.ts) |
@@ -326,6 +379,8 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/core` | [packages/core/src/domains/tools/executor.ts](../../packages/core/src/domains/tools/executor.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/tools/index.ts](../../packages/core/src/domains/tools/index.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/tools/policy-engine.ts](../../packages/core/src/domains/tools/policy-engine.ts) |
+| `@tracegraph/core` | [packages/core/src/domains/tools/project-commands.test.ts](../../packages/core/src/domains/tools/project-commands.test.ts) |
+| `@tracegraph/core` | [packages/core/src/domains/tools/project-commands.ts](../../packages/core/src/domains/tools/project-commands.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/tools/registry.test.ts](../../packages/core/src/domains/tools/registry.test.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/tools/registry.ts](../../packages/core/src/domains/tools/registry.ts) |
 | `@tracegraph/core` | [packages/core/src/domains/tools/runtime-service.ts](../../packages/core/src/domains/tools/runtime-service.ts) |
@@ -372,6 +427,16 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/evidence` | [packages/evidence/src/projection.ts](../../packages/evidence/src/projection.ts) |
 | `@tracegraph/evidence` | [packages/evidence/src/public-api.test.ts](../../packages/evidence/src/public-api.test.ts) |
 | `@tracegraph/evidence` | [packages/evidence/src/replay.ts](../../packages/evidence/src/replay.ts) |
+| `@tracegraph/host` | [packages/host/src/application-preferences.test.ts](../../packages/host/src/application-preferences.test.ts) |
+| `@tracegraph/host` | [packages/host/src/browser-control.test.ts](../../packages/host/src/browser-control.test.ts) |
+| `@tracegraph/host` | [packages/host/src/browser-control.ts](../../packages/host/src/browser-control.ts) |
+| `@tracegraph/host` | [packages/host/src/browser-grant-prompt.test.ts](../../packages/host/src/browser-grant-prompt.test.ts) |
+| `@tracegraph/host` | [packages/host/src/browser-grant-prompt.ts](../../packages/host/src/browser-grant-prompt.ts) |
+| `@tracegraph/host` | [packages/host/src/browser-routes.ts](../../packages/host/src/browser-routes.ts) |
+| `@tracegraph/host` | [packages/host/src/browser-runtime.test.ts](../../packages/host/src/browser-runtime.test.ts) |
+| `@tracegraph/host` | [packages/host/src/browser-runtime.ts](../../packages/host/src/browser-runtime.ts) |
+| `@tracegraph/host` | [packages/host/src/browser-tools.ts](../../packages/host/src/browser-tools.ts) |
+| `@tracegraph/host` | [packages/host/src/budgeted-fixture-model.test.ts](../../packages/host/src/budgeted-fixture-model.test.ts) |
 | `@tracegraph/host` | [packages/host/src/composition/bundled-runtime.test.ts](../../packages/host/src/composition/bundled-runtime.test.ts) |
 | `@tracegraph/host` | [packages/host/src/composition/bundled-runtime.ts](../../packages/host/src/composition/bundled-runtime.ts) |
 | `@tracegraph/host` | [packages/host/src/composition/composition.ts](../../packages/host/src/composition/composition.ts) |
@@ -382,19 +447,31 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/host` | [packages/host/src/composition/leased-model.ts](../../packages/host/src/composition/leased-model.ts) |
 | `@tracegraph/host` | [packages/host/src/composition/model-config.ts](../../packages/host/src/composition/model-config.ts) |
 | `@tracegraph/host` | [packages/host/src/composition/node-executable.ts](../../packages/host/src/composition/node-executable.ts) |
+| `@tracegraph/host` | [packages/host/src/composition/owned-cleanup.ts](../../packages/host/src/composition/owned-cleanup.ts) |
 | `@tracegraph/host` | [packages/host/src/composition/permission-config.ts](../../packages/host/src/composition/permission-config.ts) |
 | `@tracegraph/host` | [packages/host/src/composition/project-registry.ts](../../packages/host/src/composition/project-registry.ts) |
 | `@tracegraph/host` | [packages/host/src/composition/projects.ts](../../packages/host/src/composition/projects.ts) |
 | `@tracegraph/host` | [packages/host/src/composition/recovery-policy.test.ts](../../packages/host/src/composition/recovery-policy.test.ts) |
+| `@tracegraph/host` | [packages/host/src/composition/resume-policy.test.ts](../../packages/host/src/composition/resume-policy.test.ts) |
 | `@tracegraph/host` | [packages/host/src/composition/resume-policy.ts](../../packages/host/src/composition/resume-policy.ts) |
 | `@tracegraph/host` | [packages/host/src/composition/retrieval-config.ts](../../packages/host/src/composition/retrieval-config.ts) |
 | `@tracegraph/host` | [packages/host/src/composition/subagent-config.ts](../../packages/host/src/composition/subagent-config.ts) |
 | `@tracegraph/host` | [packages/host/src/composition/telemetry-config.ts](../../packages/host/src/composition/telemetry-config.ts) |
+| `@tracegraph/host` | [packages/host/src/computer-control.test.ts](../../packages/host/src/computer-control.test.ts) |
+| `@tracegraph/host` | [packages/host/src/computer-control.ts](../../packages/host/src/computer-control.ts) |
+| `@tracegraph/host` | [packages/host/src/computer-routes.ts](../../packages/host/src/computer-routes.ts) |
+| `@tracegraph/host` | [packages/host/src/computer-tools.ts](../../packages/host/src/computer-tools.ts) |
+| `@tracegraph/host` | [packages/host/src/configuration-inheritance-history.test.ts](../../packages/host/src/configuration-inheritance-history.test.ts) |
 | `@tracegraph/host` | [packages/host/src/conversation-control.test.ts](../../packages/host/src/conversation-control.test.ts) |
 | `@tracegraph/host` | [packages/host/src/conversation-control.ts](../../packages/host/src/conversation-control.ts) |
 | `@tracegraph/host` | [packages/host/src/conversation-routes.ts](../../packages/host/src/conversation-routes.ts) |
+| `@tracegraph/host` | [packages/host/src/delivery-continuation.test.ts](../../packages/host/src/delivery-continuation.test.ts) |
+| `@tracegraph/host` | [packages/host/src/delivery-review-admission.test.ts](../../packages/host/src/delivery-review-admission.test.ts) |
 | `@tracegraph/host` | [packages/host/src/dev-workbench.ts](../../packages/host/src/dev-workbench.ts) |
 | `@tracegraph/host` | [packages/host/src/dev.ts](../../packages/host/src/dev.ts) |
+| `@tracegraph/host` | [packages/host/src/goal-controller.test.ts](../../packages/host/src/goal-controller.test.ts) |
+| `@tracegraph/host` | [packages/host/src/goal-controller.ts](../../packages/host/src/goal-controller.ts) |
+| `@tracegraph/host` | [packages/host/src/goal-routes.ts](../../packages/host/src/goal-routes.ts) |
 | `@tracegraph/host` | [packages/host/src/index.test.ts](../../packages/host/src/index.test.ts) |
 | `@tracegraph/host` | [packages/host/src/index.ts](../../packages/host/src/index.ts) |
 | `@tracegraph/host` | [packages/host/src/local-connection-client.test.ts](../../packages/host/src/local-connection-client.test.ts) |
@@ -402,7 +479,11 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/host` | [packages/host/src/local-connection-owner.e2e.test.ts](../../packages/host/src/local-connection-owner.e2e.test.ts) |
 | `@tracegraph/host` | [packages/host/src/local-connection-supervisor.test.ts](../../packages/host/src/local-connection-supervisor.test.ts) |
 | `@tracegraph/host` | [packages/host/src/local-connection-supervisor.ts](../../packages/host/src/local-connection-supervisor.ts) |
+| `@tracegraph/host` | [packages/host/src/local-fetch.test.ts](../../packages/host/src/local-fetch.test.ts) |
 | `@tracegraph/host` | [packages/host/src/local-fetch.ts](../../packages/host/src/local-fetch.ts) |
+| `@tracegraph/host` | [packages/host/src/local-host-upgrade-owner.e2e.test.ts](../../packages/host/src/local-host-upgrade-owner.e2e.test.ts) |
+| `@tracegraph/host` | [packages/host/src/local-host-upgrade.test.ts](../../packages/host/src/local-host-upgrade.test.ts) |
+| `@tracegraph/host` | [packages/host/src/local-host-upgrade.ts](../../packages/host/src/local-host-upgrade.ts) |
 | `@tracegraph/host` | [packages/host/src/local-host-worker.ts](../../packages/host/src/local-host-worker.ts) |
 | `@tracegraph/host` | [packages/host/src/local-host.test.ts](../../packages/host/src/local-host.test.ts) |
 | `@tracegraph/host` | [packages/host/src/local-host.ts](../../packages/host/src/local-host.ts) |
@@ -411,10 +492,23 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/host` | [packages/host/src/local-policy.test.ts](../../packages/host/src/local-policy.test.ts) |
 | `@tracegraph/host` | [packages/host/src/local-profile.ts](../../packages/host/src/local-profile.ts) |
 | `@tracegraph/host` | [packages/host/src/local-restart.test.ts](../../packages/host/src/local-restart.test.ts) |
+| `@tracegraph/host` | [packages/host/src/local-upgrade-aborted-handler.test.ts](../../packages/host/src/local-upgrade-aborted-handler.test.ts) |
+| `@tracegraph/host` | [packages/host/src/local-upgrade-model-probe.test.ts](../../packages/host/src/local-upgrade-model-probe.test.ts) |
 | `@tracegraph/host` | [packages/host/src/media.test.ts](../../packages/host/src/media.test.ts) |
+| `@tracegraph/host` | [packages/host/src/model-capability-control.test.ts](../../packages/host/src/model-capability-control.test.ts) |
+| `@tracegraph/host` | [packages/host/src/model-capability-control.ts](../../packages/host/src/model-capability-control.ts) |
+| `@tracegraph/host` | [packages/host/src/model-capability-http.test.ts](../../packages/host/src/model-capability-http.test.ts) |
+| `@tracegraph/host` | [packages/host/src/model-capability-routes.ts](../../packages/host/src/model-capability-routes.ts) |
+| `@tracegraph/host` | [packages/host/src/model-catalog-discovery.test.ts](../../packages/host/src/model-catalog-discovery.test.ts) |
+| `@tracegraph/host` | [packages/host/src/native-computer.test.ts](../../packages/host/src/native-computer.test.ts) |
+| `@tracegraph/host` | [packages/host/src/native-computer.ts](../../packages/host/src/native-computer.ts) |
 | `@tracegraph/host` | [packages/host/src/owner-lease.ts](../../packages/host/src/owner-lease.ts) |
 | `@tracegraph/host` | [packages/host/src/packaged-host.test.ts](../../packages/host/src/packaged-host.test.ts) |
 | `@tracegraph/host` | [packages/host/src/packaged-web.ts](../../packages/host/src/packaged-web.ts) |
+| `@tracegraph/host` | [packages/host/src/personal-data-control.test.ts](../../packages/host/src/personal-data-control.test.ts) |
+| `@tracegraph/host` | [packages/host/src/personal-data-control.ts](../../packages/host/src/personal-data-control.ts) |
+| `@tracegraph/host` | [packages/host/src/personal-data-routes.ts](../../packages/host/src/personal-data-routes.ts) |
+| `@tracegraph/host` | [packages/host/src/preview-sandbox.ts](../../packages/host/src/preview-sandbox.ts) |
 | `@tracegraph/host` | [packages/host/src/profile-migration.test.ts](../../packages/host/src/profile-migration.test.ts) |
 | `@tracegraph/host` | [packages/host/src/profile-migration.ts](../../packages/host/src/profile-migration.ts) |
 | `@tracegraph/host` | [packages/host/src/project-file-context.test.ts](../../packages/host/src/project-file-context.test.ts) |
@@ -423,13 +517,28 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/host` | [packages/host/src/project-files-feedback.integration.test.ts](../../packages/host/src/project-files-feedback.integration.test.ts) |
 | `@tracegraph/host` | [packages/host/src/project-files-feedback.test.ts](../../packages/host/src/project-files-feedback.test.ts) |
 | `@tracegraph/host` | [packages/host/src/project-files-feedback.ts](../../packages/host/src/project-files-feedback.ts) |
+| `@tracegraph/host` | [packages/host/src/readonly-preview.test.ts](../../packages/host/src/readonly-preview.test.ts) |
 | `@tracegraph/host` | [packages/host/src/resource-supervisor.ts](../../packages/host/src/resource-supervisor.ts) |
 | `@tracegraph/host` | [packages/host/src/saved-image-capabilities.test.ts](../../packages/host/src/saved-image-capabilities.test.ts) |
 | `@tracegraph/host` | [packages/host/src/scheduler.ts](../../packages/host/src/scheduler.ts) |
+| `@tracegraph/host` | [packages/host/src/settings-history.ts](../../packages/host/src/settings-history.ts) |
+| `@tracegraph/host` | [packages/host/src/skill-management-http.test.ts](../../packages/host/src/skill-management-http.test.ts) |
+| `@tracegraph/host` | [packages/host/src/skill-management-routes.ts](../../packages/host/src/skill-management-routes.ts) |
+| `@tracegraph/host` | [packages/host/src/skill-management.test.ts](../../packages/host/src/skill-management.test.ts) |
+| `@tracegraph/host` | [packages/host/src/skill-management.ts](../../packages/host/src/skill-management.ts) |
+| `@tracegraph/host` | [packages/host/src/subagent-model-leases.test.ts](../../packages/host/src/subagent-model-leases.test.ts) |
+| `@tracegraph/host` | [packages/host/src/subagent-worktree-runtime.test.ts](../../packages/host/src/subagent-worktree-runtime.test.ts) |
+| `@tracegraph/host` | [packages/host/src/subagent-worktrees.test.ts](../../packages/host/src/subagent-worktrees.test.ts) |
+| `@tracegraph/host` | [packages/host/src/subagent-worktrees.ts](../../packages/host/src/subagent-worktrees.ts) |
 | `@tracegraph/host` | [packages/host/src/terminal-guardian.ts](../../packages/host/src/terminal-guardian.ts) |
 | `@tracegraph/host` | [packages/host/src/terminal-job-control.test.ts](../../packages/host/src/terminal-job-control.test.ts) |
 | `@tracegraph/host` | [packages/host/src/terminal-owner.ts](../../packages/host/src/terminal-owner.ts) |
 | `@tracegraph/host` | [packages/host/src/terminal-processes.ts](../../packages/host/src/terminal-processes.ts) |
+| `@tracegraph/host` | [packages/host/src/visual-evidence-capture.test.ts](../../packages/host/src/visual-evidence-capture.test.ts) |
+| `@tracegraph/host` | [packages/host/src/visual-evidence-control.test.ts](../../packages/host/src/visual-evidence-control.test.ts) |
+| `@tracegraph/host` | [packages/host/src/visual-evidence-control.ts](../../packages/host/src/visual-evidence-control.ts) |
+| `@tracegraph/host` | [packages/host/src/visual-evidence-local-host.test.ts](../../packages/host/src/visual-evidence-local-host.test.ts) |
+| `@tracegraph/host` | [packages/host/src/visual-evidence-routes.ts](../../packages/host/src/visual-evidence-routes.ts) |
 | `@tracegraph/host` | [packages/host/src/webserver/index.ts](../../packages/host/src/webserver/index.ts) |
 | `@tracegraph/host` | [packages/host/src/workbench-control.test.ts](../../packages/host/src/workbench-control.test.ts) |
 | `@tracegraph/host` | [packages/host/src/workbench-control.ts](../../packages/host/src/workbench-control.ts) |
@@ -442,6 +551,8 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/lsp` | [packages/lsp/src/lsp.test.ts](../../packages/lsp/src/lsp.test.ts) |
 | `@tracegraph/lsp` | [packages/lsp/src/manager.ts](../../packages/lsp/src/manager.ts) |
 | `@tracegraph/mcp` | [packages/mcp/src/client.ts](../../packages/mcp/src/client.ts) |
+| `@tracegraph/mcp` | [packages/mcp/src/http-client.test.ts](../../packages/mcp/src/http-client.test.ts) |
+| `@tracegraph/mcp` | [packages/mcp/src/http-client.ts](../../packages/mcp/src/http-client.ts) |
 | `@tracegraph/mcp` | [packages/mcp/src/index.ts](../../packages/mcp/src/index.ts) |
 | `@tracegraph/mcp` | [packages/mcp/src/manager.ts](../../packages/mcp/src/manager.ts) |
 | `@tracegraph/mcp` | [packages/mcp/src/mcp.test.ts](../../packages/mcp/src/mcp.test.ts) |
@@ -462,6 +573,8 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/sdk` | [packages/sdk/src/index.test.ts](../../packages/sdk/src/index.test.ts) |
 | `@tracegraph/sdk` | [packages/sdk/src/index.ts](../../packages/sdk/src/index.ts) |
 | `@tracegraph/sdk` | [packages/sdk/src/media.test.ts](../../packages/sdk/src/media.test.ts) |
+| `@tracegraph/sdk` | [packages/sdk/src/model-capability-tests.test.ts](../../packages/sdk/src/model-capability-tests.test.ts) |
+| `@tracegraph/sdk` | [packages/sdk/src/personal-data.test.ts](../../packages/sdk/src/personal-data.test.ts) |
 | `@tracegraph/sdk` | [packages/sdk/src/project-file-integrity.ts](../../packages/sdk/src/project-file-integrity.ts) |
 | `@tracegraph/sdk` | [packages/sdk/src/project-files-feedback.test.ts](../../packages/sdk/src/project-files-feedback.test.ts) |
 | `@tracegraph/sdk` | [packages/sdk/src/protocol/constants.ts](../../packages/sdk/src/protocol/constants.ts) |
@@ -470,9 +583,12 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/sdk` | [packages/sdk/src/protocol/index.ts](../../packages/sdk/src/protocol/index.ts) |
 | `@tracegraph/sdk` | [packages/sdk/src/server/index.test.ts](../../packages/sdk/src/server/index.test.ts) |
 | `@tracegraph/sdk` | [packages/sdk/src/server/index.ts](../../packages/sdk/src/server/index.ts) |
+| `@tracegraph/sdk` | [packages/sdk/src/settings-history.test.ts](../../packages/sdk/src/settings-history.test.ts) |
+| `@tracegraph/sdk` | [packages/sdk/src/skill-management.test.ts](../../packages/sdk/src/skill-management.test.ts) |
 | `@tracegraph/sdk` | [packages/sdk/src/transport/duplex.ts](../../packages/sdk/src/transport/duplex.ts) |
 | `@tracegraph/sdk` | [packages/sdk/src/transport/framing.test.ts](../../packages/sdk/src/transport/framing.test.ts) |
 | `@tracegraph/sdk` | [packages/sdk/src/transport/framing.ts](../../packages/sdk/src/transport/framing.ts) |
+| `@tracegraph/sdk` | [packages/sdk/src/visual-evidence.test.ts](../../packages/sdk/src/visual-evidence.test.ts) |
 | `@tracegraph/session` | [packages/session/src/index.ts](../../packages/session/src/index.ts) |
 | `@tracegraph/session` | [packages/session/src/session-contract.test.ts](../../packages/session/src/session-contract.test.ts) |
 | `@tracegraph/session` | [packages/session/src/session-store.ts](../../packages/session/src/session-store.ts) |
@@ -521,43 +637,60 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/workbench` | [packages/workbench/src/components/ApprovalStrip.tsx](../../packages/workbench/src/components/ApprovalStrip.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/AttachmentComposer.test.tsx](../../packages/workbench/src/components/AttachmentComposer.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/AttachmentComposer.tsx](../../packages/workbench/src/components/AttachmentComposer.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/components/BrowserPanel.tsx](../../packages/workbench/src/components/BrowserPanel.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/ChangesView.test.tsx](../../packages/workbench/src/components/ChangesView.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/ChangesView.tsx](../../packages/workbench/src/components/ChangesView.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/components/chat-process.test.tsx](../../packages/workbench/src/components/chat-process.test.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/components/ChatProcess.tsx](../../packages/workbench/src/components/ChatProcess.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/CommandPalette.tsx](../../packages/workbench/src/components/CommandPalette.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/components/compact-progress.test.tsx](../../packages/workbench/src/components/compact-progress.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/Composer.tsx](../../packages/workbench/src/components/Composer.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/components/ComputerSettings.tsx](../../packages/workbench/src/components/ComputerSettings.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/ContextBudget.test.tsx](../../packages/workbench/src/components/ContextBudget.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/ContextBudget.tsx](../../packages/workbench/src/components/ContextBudget.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/ExperienceControlSection.test.ts](../../packages/workbench/src/components/ExperienceControlSection.test.ts) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/ExperienceControlSection.tsx](../../packages/workbench/src/components/ExperienceControlSection.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/GeneratedGallery.tsx](../../packages/workbench/src/components/GeneratedGallery.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/components/GoalWorkspace.tsx](../../packages/workbench/src/components/GoalWorkspace.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/Icon.tsx](../../packages/workbench/src/components/Icon.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/ImageProviderSettings.tsx](../../packages/workbench/src/components/ImageProviderSettings.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/Inspector.tsx](../../packages/workbench/src/components/Inspector.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/components/MarkdownContent.mermaid.test.tsx](../../packages/workbench/src/components/MarkdownContent.mermaid.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/MarkdownContent.test.tsx](../../packages/workbench/src/components/MarkdownContent.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/MarkdownContent.tsx](../../packages/workbench/src/components/MarkdownContent.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/components/McpConnectionForm.tsx](../../packages/workbench/src/components/McpConnectionForm.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/media.test.tsx](../../packages/workbench/src/components/media.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/MediaStudio.tsx](../../packages/workbench/src/components/MediaStudio.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/components/memory-overview.test.tsx](../../packages/workbench/src/components/memory-overview.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/MemoryBackgroundJobs.test.tsx](../../packages/workbench/src/components/MemoryBackgroundJobs.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/MemoryBackgroundJobs.tsx](../../packages/workbench/src/components/MemoryBackgroundJobs.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/MemoryControlPanel.tsx](../../packages/workbench/src/components/MemoryControlPanel.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/MessageActions.tsx](../../packages/workbench/src/components/MessageActions.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/MigrationSettings.tsx](../../packages/workbench/src/components/MigrationSettings.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/components/ModelCapabilityTests.tsx](../../packages/workbench/src/components/ModelCapabilityTests.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/ModelConnectionsSettings.tsx](../../packages/workbench/src/components/ModelConnectionsSettings.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/components/PersonalProfile.tsx](../../packages/workbench/src/components/PersonalProfile.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/PlanApprovalBanner.tsx](../../packages/workbench/src/components/PlanApprovalBanner.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/Primitives.tsx](../../packages/workbench/src/components/Primitives.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/components/ProjectDefaultsSettings.tsx](../../packages/workbench/src/components/ProjectDefaultsSettings.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/ProjectFileContextPicker.tsx](../../packages/workbench/src/components/ProjectFileContextPicker.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/ProjectFiles.tsx](../../packages/workbench/src/components/ProjectFiles.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/components/public-answer-authority.test.tsx](../../packages/workbench/src/components/public-answer-authority.test.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/components/PublicSessionSearch.tsx](../../packages/workbench/src/components/PublicSessionSearch.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/ReasoningEffortPicker.tsx](../../packages/workbench/src/components/ReasoningEffortPicker.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/ReplayBanner.tsx](../../packages/workbench/src/components/ReplayBanner.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/RollbackControls.tsx](../../packages/workbench/src/components/RollbackControls.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/SandboxBadge.test.tsx](../../packages/workbench/src/components/SandboxBadge.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/SandboxBadge.tsx](../../packages/workbench/src/components/SandboxBadge.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/SessionNavigation.test.tsx](../../packages/workbench/src/components/SessionNavigation.test.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/components/SettingsCapabilityGuide.tsx](../../packages/workbench/src/components/SettingsCapabilityGuide.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/components/SettingsHistory.tsx](../../packages/workbench/src/components/SettingsHistory.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/SettingsPanel.test.tsx](../../packages/workbench/src/components/SettingsPanel.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/SettingsPanel.tsx](../../packages/workbench/src/components/SettingsPanel.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/SetupFlow.test.tsx](../../packages/workbench/src/components/SetupFlow.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/SetupFlow.tsx](../../packages/workbench/src/components/SetupFlow.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/Sidebar.tsx](../../packages/workbench/src/components/Sidebar.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/components/SkillsManager.tsx](../../packages/workbench/src/components/SkillsManager.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/SteeringComposer.test.tsx](../../packages/workbench/src/components/SteeringComposer.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/SteeringComposer.tsx](../../packages/workbench/src/components/SteeringComposer.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/TeamPanel.test.tsx](../../packages/workbench/src/components/TeamPanel.test.tsx) |
@@ -567,31 +700,48 @@ Workspace inventory comes from package manifests and source files; governance co
 | `@tracegraph/workbench` | [packages/workbench/src/components/Trajectory.test.tsx](../../packages/workbench/src/components/Trajectory.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/Trajectory.tsx](../../packages/workbench/src/components/Trajectory.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/UnifiedSettings.tsx](../../packages/workbench/src/components/UnifiedSettings.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/components/UsageOverview.tsx](../../packages/workbench/src/components/UsageOverview.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/components/VisualRetentionSettings.tsx](../../packages/workbench/src/components/VisualRetentionSettings.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/components/WorkbenchHelp.tsx](../../packages/workbench/src/components/WorkbenchHelp.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/WorkbenchStates.test.tsx](../../packages/workbench/src/components/WorkbenchStates.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/WorkbenchStates.tsx](../../packages/workbench/src/components/WorkbenchStates.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/components/WorkspaceResources.tsx](../../packages/workbench/src/components/WorkspaceResources.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/computer-settings.test.tsx](../../packages/workbench/src/computer-settings.test.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/configuration-inheritance.test.tsx](../../packages/workbench/src/configuration-inheritance.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/conversation-options.tsx](../../packages/workbench/src/conversation-options.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/current-workbench.test.tsx](../../packages/workbench/src/current-workbench.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/demo.ts](../../packages/workbench/src/demo.ts) |
 | `@tracegraph/workbench` | [packages/workbench/src/drafts.ts](../../packages/workbench/src/drafts.ts) |
 | `@tracegraph/workbench` | [packages/workbench/src/generated-media.test.ts](../../packages/workbench/src/generated-media.test.ts) |
 | `@tracegraph/workbench` | [packages/workbench/src/generated-media.ts](../../packages/workbench/src/generated-media.ts) |
+| `@tracegraph/workbench` | [packages/workbench/src/help-topics.test.tsx](../../packages/workbench/src/help-topics.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/i18n.test.tsx](../../packages/workbench/src/i18n.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/i18n.tsx](../../packages/workbench/src/i18n.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/index.ts](../../packages/workbench/src/index.ts) |
 | `@tracegraph/workbench` | [packages/workbench/src/live-client.test.ts](../../packages/workbench/src/live-client.test.ts) |
 | `@tracegraph/workbench` | [packages/workbench/src/live-client.ts](../../packages/workbench/src/live-client.ts) |
+| `@tracegraph/workbench` | [packages/workbench/src/model-capability-tests.test.tsx](../../packages/workbench/src/model-capability-tests.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/model.test.ts](../../packages/workbench/src/model.test.ts) |
 | `@tracegraph/workbench` | [packages/workbench/src/model.ts](../../packages/workbench/src/model.ts) |
+| `@tracegraph/workbench` | [packages/workbench/src/mutation-rejection.ts](../../packages/workbench/src/mutation-rejection.ts) |
 | `@tracegraph/workbench` | [packages/workbench/src/notifications.test.ts](../../packages/workbench/src/notifications.test.ts) |
 | `@tracegraph/workbench` | [packages/workbench/src/notifications.ts](../../packages/workbench/src/notifications.ts) |
+| `@tracegraph/workbench` | [packages/workbench/src/personal-data-ui.test.tsx](../../packages/workbench/src/personal-data-ui.test.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/personal-identity.test.tsx](../../packages/workbench/src/personal-identity.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/popover.ts](../../packages/workbench/src/popover.ts) |
+| `@tracegraph/workbench` | [packages/workbench/src/product-controller-ui.test.tsx](../../packages/workbench/src/product-controller-ui.test.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/product-settings.test.tsx](../../packages/workbench/src/product-settings.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/project-file-context.test.tsx](../../packages/workbench/src/project-file-context.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/public-progress.test.ts](../../packages/workbench/src/public-progress.test.ts) |
 | `@tracegraph/workbench` | [packages/workbench/src/public-progress.ts](../../packages/workbench/src/public-progress.ts) |
 | `@tracegraph/workbench` | [packages/workbench/src/rollback.test.ts](../../packages/workbench/src/rollback.test.ts) |
 | `@tracegraph/workbench` | [packages/workbench/src/rollback.ts](../../packages/workbench/src/rollback.ts) |
+| `@tracegraph/workbench` | [packages/workbench/src/run-messages.ts](../../packages/workbench/src/run-messages.ts) |
+| `@tracegraph/workbench` | [packages/workbench/src/settings-focus-connection.test.tsx](../../packages/workbench/src/settings-focus-connection.test.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/skills-manager.test.tsx](../../packages/workbench/src/skills-manager.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/terminal-input.test.ts](../../packages/workbench/src/terminal-input.test.ts) |
 | `@tracegraph/workbench` | [packages/workbench/src/terminal-input.ts](../../packages/workbench/src/terminal-input.ts) |
 | `@tracegraph/workbench` | [packages/workbench/src/unified-workbench.test.tsx](../../packages/workbench/src/unified-workbench.test.tsx) |
 | `@tracegraph/workbench` | [packages/workbench/src/ux-086-journey.test.tsx](../../packages/workbench/src/ux-086-journey.test.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/visual-retention-ui.test.tsx](../../packages/workbench/src/visual-retention-ui.test.tsx) |
+| `@tracegraph/workbench` | [packages/workbench/src/workspace-resource-states.test.tsx](../../packages/workbench/src/workspace-resource-states.test.tsx) |

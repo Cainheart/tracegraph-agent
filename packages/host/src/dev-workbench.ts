@@ -4,13 +4,14 @@ import {access,mkdir,readFile,realpath} from "node:fs/promises";
 import {isAbsolute,join,relative,resolve,basename} from "node:path";
 import {fileURLToPath} from "node:url";
 import * as pty from "node-pty";
-import {generateSeatbeltProfile,probeNativeSandbox,redactSensitiveText,runBoundedProcess,SEATBELT_EXECUTABLE,seatbeltArguments} from "@tracegraph/core";
+import {generateSeatbeltProfile,PolicyEngine,probeNativeSandbox,redactSensitiveText,runBoundedProcess,SEATBELT_EXECUTABLE,seatbeltArguments} from "@tracegraph/core";
 import {TerminalSnapshotSchema,PreviewSnapshotSchema,type GitStatusSnapshot,type PreviewSnapshot,type TerminalSnapshot,type WorkbenchCommandRequest,type WorkbenchCommandResult,type WorkbenchSettingsValues,type WorkspaceHandle} from "@tracegraph/contracts";
 import {atomicPrivateJson} from "./local-profile.js";
 import {workbenchError} from "./workbench-journal.js";
 import type {WorkbenchControlContext} from "./workbench-control.js";
 import type {WorkspaceLease} from "./workspace-coordinator.js";
 import {startTerminalGuardian,type TerminalGuardian} from "./terminal-owner.js";
+import {createReadOnlyPreviewExecution} from "./preview-sandbox.js";
 interface DevContext extends WorkbenchControlContext {getSettings():WorkbenchSettingsValues;}
 interface ActiveTerminal {snapshot:TerminalSnapshot;process?:pty.IPty;guardian?:TerminalGuardian;lease?:WorkspaceLease;closing?:Promise<void>;}
 interface ActivePreview {snapshot:PreviewSnapshot;process?:ChildProcess;lease?:WorkspaceLease;closing?:Promise<void>;}
@@ -39,7 +40,7 @@ export class DevWorkbench {
   }
   terminals(){return [...this.#terminals.values()].map(item=>({...item.snapshot}));}
   previews(){return [...this.#previews.values()].map(item=>({...item.snapshot}));}
-  async close(){this.#closed=true;if(this.#timer)clearInterval(this.#timer);for(const item of this.#terminals.values())await this.#closeTerminal(item);for(const item of this.#previews.values())await this.#closePreview(item);await this.#persist(true);}
+  async close(){this.#closed=true;if(this.#timer)clearInterval(this.#timer);const results=await Promise.allSettled([...this.#terminals.values()].map(item=>this.#closeTerminal(item)).concat([...this.#previews.values()].map(item=>this.#closePreview(item))));const errors=results.flatMap(result=>result.status==="rejected"?[result.reason]:[]);try{await this.#persist(true);}catch(error){errors.push(error);}if(errors.length)throw new AggregateError(errors,"Some developer resources could not be confirmed stopped; uncertain resources remain reserved");}
   async command(input:WorkbenchCommandRequest):Promise<WorkbenchCommandResult>{
     if(this.#closed)throw workbenchError("host_stopping","The Host is stopping",409);
     const base={command_id:input.command_id,status:"succeeded" as const,code:"ok",message:"Operation completed"};
@@ -111,13 +112,14 @@ export class DevWorkbench {
       if(this.#previews.size>=32){const stopped=[...this.#previews].find(([,item])=>item.snapshot.state==="stopped");if(stopped)this.#previews.delete(stopped[0]);}
       if(this.#previews.size>=32)throw workbenchError("preview_limit","Stop an existing preview before creating another");
       const workspace=await this.#context.resolveWorkspace(input.project_id);
+      if(workspace.project_id!==input.project_id||!workspace.capabilities.read)throw workbenchError("project_scope_denied","Project preview read access is unavailable",403);
       if([...this.#previews.values()].some(x=>x.snapshot.url===`http://127.0.0.1:${input.port}/`&&x.snapshot.state!=="stopped"))throw workbenchError("preview_port_busy","This port is already managed by a preview");
-      const snapshot:PreviewSnapshot={preview_id:`preview:${randomUUID()}`,project_id:input.project_id,url:`http://127.0.0.1:${input.port}/`,state:"starting",owned_process:input.type==="preview.start"};const active:ActivePreview={snapshot};
+      const snapshot:PreviewSnapshot={preview_id:`preview:${randomUUID()}`,project_id:input.project_id,url:`http://127.0.0.1:${input.port}/`,state:"starting",owned_process:input.type==="preview.start",source_access:input.type==="preview.start"?"read-only":"external-unmanaged",cache_writable:input.type==="preview.start"};const active:ActivePreview={snapshot};
       if(input.type==="preview.start"){
-        this.#assertWrite(workspace);const lease=await this.#context.workspaceCoordinator.acquireWorkspace(workspace,{holderId:input.command_id,kind:"preview"});active.lease=lease;
-        try{const command=await this.#resolveExecutable(input.command,workspace);const execution=await this.#execution(workspace,command,input.args,input.port);
-          const child=spawn(process.execPath,[fileURLToPath(new URL("./resource-supervisor.js",import.meta.url)),execution.command,...execution.args],{cwd:workspace.real_root,detached:process.platform!=="win32",env:{PATH:process.env.PATH??"/usr/bin:/bin",LANG:process.env.LANG??"en_US.UTF-8",PORT:String(input.port)},stdio:["pipe","ignore","pipe"]});active.process=child;
-          child.stderr?.on("data",data=>{snapshot.message=redactSensitiveText(String(data)).slice(-1000);});
+        await this.#assertPreviewRead(workspace);const lease=await this.#context.workspaceCoordinator.acquireWorkspace(workspace,{holderId:input.command_id,kind:"preview",readOnly:true});active.lease=lease;
+        try{const command=await this.#resolveExecutable(input.command,workspace);const execution=await createReadOnlyPreviewExecution({workspace,profileRoot:this.#context.profileRoot,previewId:snapshot.preview_id,command,args:input.args,port:input.port,...(this.#context.sandboxProbe?{probe:this.#context.sandboxProbe}:{})});
+          const child=spawn(process.execPath,[fileURLToPath(new URL("./resource-supervisor.js",import.meta.url)),execution.command,...execution.args],{cwd:workspace.real_root,detached:process.platform!=="win32",env:{PATH:process.env.PATH??"/usr/bin:/bin",LANG:process.env.LANG??"en_US.UTF-8",PORT:String(input.port),...execution.environment},stdio:["pipe","ignore","pipe"]});active.process=child;
+          child.stderr?.on("data",data=>{snapshot.message=redactSensitiveText(String(data)).replaceAll(execution.environment.XDG_CACHE_HOME,"[private preview cache]").replaceAll(this.#context.profileRoot,"[private profile]").slice(-1000);});
           child.once("error",()=>{snapshot.state="failed";snapshot.message="Preview process could not start";lease.release();});
           child.once("exit",()=>{if(snapshot.state!=="stopped")snapshot.state="failed";void this.#closePreview(active).catch(()=>{snapshot.state="failed";snapshot.message="Process group cleanup requires manual inspection";});});
         }catch(error){lease.release();throw error;}
@@ -132,6 +134,7 @@ export class DevWorkbench {
     throw workbenchError("developer_operation_invalid","Unsupported developer operation",400);
   }
   #assertWrite(workspace:WorkspaceHandle){if(!workspace.capabilities.commit_patch&&!workspace.capabilities.run_command)throw workbenchError("workspace_read_only","Project registration is read-only",403);if(this.#context.permissionConfig.snapshot().selected_preset.sandbox_mode==="read-only")throw workbenchError("policy_denied","Select a Host-permitted write preset before this operation",403);}
+  async #assertPreviewRead(workspace:WorkspaceHandle){const policy=await this.#context.permissionConfig.resolveProject(workspace.real_root),decision=PolicyEngine.fromEffective(policy).evaluate({toolName:"list_dir",sideEffect:"read",capabilityAllowed:workspace.capabilities.read});if(decision.kind!=="allow")throw workbenchError("preview_read_policy_denied","Project policy does not permit preview source reads",403);const restricted=policy.preset.path_scope.length!==1||policy.preset.path_scope[0]!=="**"||[...policy.host_rules,...policy.project_rules].some(rule=>rule.then!=="allow"&&(!rule.when.tool||["list_dir","read_file"].includes(rule.when.tool))&&(!rule.when.side_effect||rule.when.side_effect==="read"));if(restricted)throw workbenchError("preview_read_policy_restricted","This preview cannot enforce restricted per-file read policy; use a workspace whose read policy permits preview source access",403);}
   #branch(name:string){if(name.startsWith("-")||! /^[a-zA-Z0-9][a-zA-Z0-9._/-]{0,255}$/u.test(name)||name.includes("..")||name.endsWith("/"))throw workbenchError("git_branch_invalid","Invalid branch name",400);}
   #within(root:string,target:string){const rel=relative(root,target);return rel===""||(!rel.startsWith("..")&&!isAbsolute(rel));}
   async #worktreeDirectory(){const requested=this.#context.getSettings().developer.worktree_directory||join(this.#context.profileRoot,"worktrees");await mkdir(requested,{recursive:true,mode:0o700});return realpath(requested);}
@@ -176,11 +179,11 @@ export class DevWorkbench {
     const worktrees=trees.trim().split("\n\n").filter(Boolean).map(record=>{const lines=record.split("\n");return {path:lines.find(x=>x.startsWith("worktree "))?.slice(9)??"",head:lines.find(x=>x.startsWith("HEAD "))?.slice(5)??"",branch:lines.find(x=>x.startsWith("branch "))?.slice(7)??"",locked:lines.some(x=>x.startsWith("locked"))};});
     return {project_id:workspace.project_id,branch,head,files,worktrees};
   }
-  async #resolveExecutable(command:string,workspace:WorkspaceHandle){if(command.includes("/")&&!isAbsolute(command))throw workbenchError("preview_command_invalid","Use an executable name or absolute path",400);const candidates=isAbsolute(command)?[command]:(process.env.PATH??"/usr/bin:/bin").split(":").map(directory=>join(directory,command));for(const path of candidates){try{await access(path);const actual=await realpath(path);if(this.#within(workspace.real_root,actual)||actual.startsWith("/usr/")||actual.startsWith("/bin/")||actual.startsWith("/opt/homebrew/")||actual.startsWith("/usr/local/")||actual.includes("/.codex/"))return actual;}catch{/* next candidate */}}throw workbenchError("preview_dependency_missing",`Install ${command} or choose an installed absolute executable`,400);}
+  async #resolveExecutable(command:string,workspace:WorkspaceHandle){if(command.includes("/")&&!isAbsolute(command))throw workbenchError("preview_command_invalid","Use an executable name or absolute path",400);const candidates=isAbsolute(command)?[command]:(process.env.PATH??"/usr/bin:/bin").split(":").map(directory=>join(directory,command));const ownNode=await realpath(process.execPath);for(const path of candidates){try{await access(path);const actual=await realpath(path);if(actual===ownNode||this.#within(workspace.real_root,actual)||actual.startsWith("/usr/")||actual.startsWith("/bin/")||actual.startsWith("/opt/homebrew/")||actual.startsWith("/usr/local/")||actual.includes("/.codex/"))return actual;}catch{/* next candidate */}}throw workbenchError("preview_dependency_missing",`Install ${command} or choose an installed absolute executable`,400);}
   #checkingHealth=false;
   async #health(){if(this.#checkingHealth)return;this.#checkingHealth=true;try{for(const active of this.#previews.values()){if(active.snapshot.state==="stopped"||active.snapshot.state==="failed")continue;try{const response=await fetch(active.snapshot.url,{signal:AbortSignal.timeout(700),redirect:"manual"});active.snapshot.state=response.status<500?"ready":"failed";active.snapshot.message=`HTTP ${response.status}`;await response.body?.cancel();}catch{active.snapshot.state="starting";active.snapshot.message="Local service is not responding";}}}finally{this.#checkingHealth=false;}}
   #closeTerminal(active:ActiveTerminal):Promise<void>{return active.closing??=(async()=>{const processHandle=active.process;try{if(active.guardian)await active.guardian.close();else if(processHandle)await terminateOwnedGroup(processHandle.pid,()=>{try{processHandle.kill();}catch{}});}catch{active.snapshot.state="interrupted";throw workbenchError("resource_quiescence_unknown","Owned terminal jobs could not be confirmed stopped; the workspace remains reserved",503);}delete active.guardian;delete active.process;active.snapshot.state="closed";active.lease?.release();delete active.lease;})();}
-  #closePreview(active:ActivePreview):Promise<void>{return active.closing??=(async()=>{if(active.process?.pid){const handle=active.process;await terminateOwnedGroup(handle.pid!,()=>{handle.kill();});}delete active.process;active.snapshot.state="stopped";active.lease?.release();delete active.lease;})();}
+  #closePreview(active:ActivePreview):Promise<void>{return active.closing??=(async()=>{try{if(active.process?.pid){const handle=active.process;await terminateOwnedGroup(handle.pid!,()=>{handle.kill();});}}catch{active.snapshot.state="failed";active.snapshot.message="Owned preview cleanup could not be confirmed; its resource remains reserved";throw workbenchError("resource_quiescence_unknown",active.snapshot.message,503);}delete active.process;active.snapshot.state="stopped";active.lease?.release();delete active.lease;})();}
   #persist(force=false){if(this.#closed&&!force)return Promise.resolve();const save=()=>atomicPrivateJson(join(this.#context.profileRoot,"developer-resources.json"),{terminals:this.terminals(),previews:this.previews()});const result=this.#saveQueue.then(save,save);this.#saveQueue=result.catch(()=>undefined);return result;}
 }
 

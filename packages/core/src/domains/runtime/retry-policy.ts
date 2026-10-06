@@ -1,9 +1,11 @@
 import { ModelRequestError } from "../../kernel/types.js";
 
 export const MODEL_PROVIDER_RETRY_POLICY = Object.freeze({
-  maxAttempts: 3,
-  baseDelayMs: 250,
-  maxDelayMs: 1_000,
+  // Five retries after the original request. This applies only before a
+  // Decision is accepted; Tools and side effects have separate dispatch rules.
+  maxAttempts: 6,
+  baseDelayMs: 500,
+  maxDelayMs: 10_000,
 });
 
 const TRANSIENT_HTTP_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504]);
@@ -39,7 +41,7 @@ export interface ModelRetryPlan {
  * Public, bounded snapshot written with each logical model request. Tool and
  * Action entries make their independent single-dispatch limits explicit.
  */
-export function retryTaxonomySnapshot(maxTurns: number): Record<string, unknown> {
+export function retryTaxonomySnapshot(maxTurns?: number): Record<string, unknown> {
   return {
     version: "retry-taxonomy.v1",
     model_provider: {
@@ -54,7 +56,7 @@ export function retryTaxonomySnapshot(maxTurns: number): Record<string, unknown>
       max_automatic_dispatch_attempts: 1,
       replay_policy: "disabled",
       new_model_authored_actions_are_separate: true,
-      run_turn_limit: maxTurns,
+      run_turn_limit: maxTurns ?? null,
     },
     action: {
       max_dispatch_attempts_per_operation: 1,
@@ -101,4 +103,3 @@ function retryReasonCode(code: string): ModelRetryReasonCode | undefined {
   if (!TRANSIENT_HTTP_STATUSES.has(status)) return undefined;
   return `http_${status}` as ModelRetryReasonCode;
 }
-

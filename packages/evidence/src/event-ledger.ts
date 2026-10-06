@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { constants as fsConstants } from "node:fs";
-import { mkdir, open, opendir, readFile, readdir, rename, unlink } from "node:fs/promises";
+import { mkdir, open, opendir, readFile, readdir, rename, unlink, lstat } from "node:fs/promises";
 import { basename, dirname, join, resolve } from "node:path";
 import {
   SCHEMA_VERSION,
@@ -513,6 +513,27 @@ export class JsonlEventLedger {
     return this.#readList(runId);
   }
 
+  /** Query surfaces must not load an arbitrarily large or linked Run stream. */
+  async listBounded(runId:string,limits:{maxBytes:number;maxEvents:number}):Promise<SessionEvent[]> {
+    if(!Number.isSafeInteger(limits.maxBytes)||limits.maxBytes<1||limits.maxBytes>16_777_216||!Number.isSafeInteger(limits.maxEvents)||limits.maxEvents<1||limits.maxEvents>50_000)throw new RangeError("Invalid bounded Ledger read limits");
+    await this.#queue;
+    let handle;
+    try{
+      const path=this.#path(runId),before=await lstat(path);
+      if(!before.isFile()||before.isSymbolicLink()||before.nlink!==1)throw new LedgerCorruptionError("Ledger stream is not an independent regular file");
+      handle=await open(path,fsConstants.O_RDONLY|(fsConstants.O_NOFOLLOW??0));
+      const metadata=await handle.stat();
+      if(!metadata.isFile()||metadata.nlink!==1||metadata.dev!==before.dev||metadata.ino!==before.ino||metadata.size>limits.maxBytes)throw new LedgerCorruptionError("Ledger stream exceeds bounded query limits");
+      const bytes=Buffer.alloc(limits.maxBytes+1);let offset=0;
+      while(offset<bytes.length){const {bytesRead}=await handle.read(bytes,offset,bytes.length-offset,offset);if(!bytesRead)break;offset+=bytesRead;}
+      if(offset>limits.maxBytes)throw new LedgerCorruptionError("Ledger stream exceeds bounded query limits");
+      const content=new TextDecoder("utf-8",{fatal:true}).decode(bytes.subarray(0,offset));
+      if(content.split("\n").length-1>limits.maxEvents)throw new LedgerCorruptionError("Ledger event count exceeds bounded query limits");
+      return this.#parseList(content);
+    }catch(error){if((error as NodeJS.ErrnoException).code==="ENOENT")return [];throw error;}
+    finally{await handle?.close();}
+  }
+
   /** Bounded-work callers use this inventory to recover post-settlement jobs. */
   async listRunIds(): Promise<string[]> {
     await this.#queue;
@@ -559,6 +580,10 @@ export class JsonlEventLedger {
       }
       throw error;
     }
+    return this.#parseList(content);
+  }
+
+  #parseList(content:string):SessionEvent[] {
     if (content.length === 0) {
       return [];
     }

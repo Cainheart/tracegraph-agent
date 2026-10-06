@@ -30,6 +30,21 @@ describe("Chat workbench", () => {
     expect(html).toMatch(/<button[^>]*disabled=""[^>]*title="Execute is unavailable for a read-only project"[^>]*>.*Execute<\/button>/u);
   });
 
+  it("keeps a selected project's empty state aligned with the shared bottom composer", () => {
+    const html = renderToStaticMarkup(<LanguageProvider><ProjectReady connection={{ state: "live", message: "Connected", lastSequence: 0 }} projectName="fixture"
+      composer={<div className="unified-composer" />}
+      readonly={false}
+      onReasoningEffortChange={vi.fn()}
+      onStart={vi.fn()}
+      reasoningEffort="low"
+    /></LanguageProvider>);
+    expect(html).toContain("Start using Outlive");
+    expect(html).toContain('class="unified-composer"');
+    expect(html).not.toContain("entry-suggestions");
+    expect(html).not.toContain("Your permission policy applies to every tool call");
+    expect(html).not.toContain("Describe a task. Your agent can inspect");
+  });
+
   it("renders actual durable tool facts without inventing a model thought narration", () => {
     const events: TraceEvent[] = [{
       id: "event-read-started",
@@ -58,16 +73,24 @@ describe("Chat workbench", () => {
       toolName: "read_file",
     }];
     const html = renderToStaticMarkup(<LanguageProvider><ChatView changedFiles={[]} conversation={[]} dataSource="live" events={events} evidence={emptyEvidence} outcome="Done" status="completed" task="Introduce the project" /></LanguageProvider>);
-    expect(html).toContain("Run activity");
-    expect(html).toContain("public-progress-item is-event is-completed");
-    expect(html).not.toContain("is-event is-running");
-    expect(html).toContain("<details");
-    expect(html).toContain("public-progress-detail");
-    expect(html).toContain("Read 120 lines");
+    expect(html).toContain("Task process");
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).not.toContain("Read 120 lines"); // completed process is closed and lazy by default
     expect(html).not.toContain("do-not-render-tool-input");
     expect(html).not.toContain("do-not-render-tool-output");
-    expect(html).toContain("Only explicit public plans and observed tool facts are shown");
+    expect(html).not.toContain("Only explicit public plans and observed tool facts are shown");
     expect(html).not.toContain("I have read apps/web/src/App.tsx");
+  });
+
+  it("places copy and feedback actions outside the message bubbles", () => {
+    const html = renderToStaticMarkup(<LanguageProvider><ChatView
+      changedFiles={[]} conversation={[]} dataSource="live" events={[]} evidence={emptyEvidence}
+      outcome="A verified answer." status="completed" task="A question"
+    /></LanguageProvider>);
+    const userMessage = html.match(/<article class="chat-message user-message"[\s\S]*?<\/article>/u)?.[0];
+    const agentMessage = html.match(/<article class="chat-message agent-message[^"]*"[\s\S]*?<\/article>/u)?.[0];
+    expect(userMessage).toMatch(/<div class="chat-turn-body">[\s\S]*?<\/div><div class="message-actions">/u);
+    expect(agentMessage).toMatch(/<div class="chat-turn-body">[\s\S]*?<\/div><div class="message-actions">/u);
   });
 
   it("offers the exact supported reasoning effort values with readable labels", () => {
@@ -100,7 +123,7 @@ describe("Chat workbench", () => {
       sourceType: "model.decision",
       operationId: "model-call-1",
     }];
-    const html = renderToStaticMarkup(<LanguageProvider><ChatView changedFiles={[]} conversation={[]} dataSource="live" events={events} evidence={emptyEvidence} outcome="Done" status="completed" task="Introduce the project" /></LanguageProvider>);
+    const html = renderToStaticMarkup(<LanguageProvider><ChatView changedFiles={[]} conversation={[]} dataSource="live" events={events} evidence={emptyEvidence} outcome="Done" status="running" task="Introduce the project" /></LanguageProvider>);
     expect(html).toContain("Inspect the repository before answering");
     expect(html).not.toContain("My next public step is:");
   });
@@ -166,17 +189,17 @@ describe("Chat workbench", () => {
       status="running"
       task="Inspect the context implementation"
     /></LanguageProvider>);
-    expect(html).toContain("Searching the repository for ContextBuilder");
+    expect(html).not.toContain("Searching the repository for ContextBuilder"); // no narration inferred from generic summary
     expect(html).toContain("streaming");
-    expect(html).toContain("public-progress-item is-plan is-streaming");
+    expect(html).toContain("chat-public-statement");
     expect(html).not.toContain("I found the context boundary and will verify its budget calculation.");
     expect(html).toContain("<h2>Context</h2>");
     expect(html).toContain("chat-live-answer");
-    expect(html).toContain("Only explicit public plans and observed tool facts are shown");
+    expect(html).not.toContain("Only explicit public plans and observed tool facts are shown");
     expect(html).not.toContain("I am first understanding your question");
   });
 
-  it("renders multiple public plans as an inline progress timeline", () => {
+  it("renders multiple public statements in order with collapsed tool groups", () => {
     const html = renderToStaticMarkup(<LanguageProvider><ChatView
       changedFiles={[]}
       conversation={[]}
@@ -227,15 +250,15 @@ describe("Chat workbench", () => {
         text: "Validate the answer against the source",
       }]}
       outcome="Done"
-      status="completed"
+      status="running"
       task="Inspect the context implementation"
     /></LanguageProvider>);
 
-    expect(html.match(/class="public-progress-item is-plan is-completed"/gu)).toHaveLength(2);
+    expect(html.match(/class="chat-public-statement"/gu)).toHaveLength(2);
     expect(html).toContain("Inspect the repository structure");
     expect(html).toContain("Validate the answer against the source");
-    expect(html).toContain("Read 24 lines");
-    expect(html).not.toContain('class="chat-process');
+    expect(html).not.toContain("Read 24 lines");
+    expect(html).toContain('class="chat-process');
   });
 
   it("does not turn policy explanations into model plans", () => {
@@ -271,12 +294,12 @@ describe("Chat workbench", () => {
       task="Inspect the project"
     /></LanguageProvider>);
 
-    expect(html).toContain("Public plan");
-    expect(html).toContain("Policy");
+    expect(html).toContain('aria-expanded="false"');
+    expect(html).not.toContain("Policy");
     expect(html).not.toContain("深度思考");
   });
 
-  it("renders terminal runtime and context usage as a compact footer", () => {
+  it("shows runtime and context usage before collapsible task diagnostics", () => {
     const contextBudget: ContextBudgetSnapshot = {
       modelCallId: "model_call_usage",
       windowTokens: 8_192,
@@ -286,7 +309,7 @@ describe("Chat workbench", () => {
       warningThresholdTokens: 5_000,
       compressionThresholdTokens: 6_000,
       estimator: "heuristic_v2",
-      status: "healthy",
+      status: "compressed",
       estimate: {
         estimatorId: "heuristic:openai:gpt-test:r3",
         confidence: "calibrated",
@@ -321,6 +344,7 @@ describe("Chat workbench", () => {
       evidence={emptyEvidence}
       elapsed="00:05"
       outcome="Done"
+      runDetails={<p>Full run diagnostics</p>}
       status="completed"
       task="Inspect usage"
     /></LanguageProvider>);
@@ -328,13 +352,20 @@ describe("Chat workbench", () => {
     expect(html).toContain('class="chat-run-summary"');
     expect(html).toContain("Run 00:05");
     expect(html).toContain("Context 1K / 7.2K");
-    expect(html).toContain("Healthy");
+    expect(html).toContain("Compressed");
     expect(html).not.toContain("context-budget-strip");
     expect(html).not.toContain("Budget estimate");
     expect(html).not.toContain("Provider reported usage");
     expect(html).not.toContain("heuristic:openai:gpt-test:r3");
     expect(html).not.toContain("Usage anomaly");
+    const diagnosticsStart = html.indexOf('<details class="turn-diagnostics">');
+    const diagnosticsEnd = html.indexOf("</details>", diagnosticsStart);
     expect(html.indexOf('class="chat-run-summary"')).toBeGreaterThan(html.indexOf('class="chat-answer"'));
     expect(html.indexOf('class="chat-run-summary"')).toBeGreaterThan(html.indexOf('class="chat-evidence"'));
+    expect(diagnosticsStart).toBeGreaterThan(html.indexOf('class="chat-run-summary"'));
+    expect(diagnosticsStart).toBeGreaterThanOrEqual(0);
+    expect(html.slice(diagnosticsStart, diagnosticsEnd)).toContain("Full run diagnostics");
+    expect(html.slice(diagnosticsStart, diagnosticsEnd)).not.toContain("chat-run-summary");
+    expect(html.slice(diagnosticsStart, diagnosticsEnd)).not.toContain("open=");
   });
 });

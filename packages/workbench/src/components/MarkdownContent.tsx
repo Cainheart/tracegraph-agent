@@ -331,7 +331,7 @@ function MermaidFlow({ source }: { source: string }) {
           theme: "base",
           look: "classic",
           suppressErrorRendering: true,
-          fontFamily: "Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+          fontFamily: window.getComputedStyle(node).fontFamily || "sans-serif",
           themeVariables: theme,
           flowchart: {
             curve: "basis",
@@ -398,10 +398,19 @@ export function normalizeMermaidSource(source: string): string {
   if (firstDiagramLine > 0) normalized = lines.slice(firstDiagramLine).join("\n");
   normalized = normalized.replace(/^\s*graph\s+(TD|TB|BT|RL|LR)\b/imu, "flowchart $1");
   // Mermaid reserves keywords such as `graph` and `end` as grammar tokens.
-  // Models often use them as node ids (`graph[State]`), which makes the first
-  // diagram fail while a later one appears to work. Rename only id-shaped
-  // occurrences, leaving labels and subgraph delimiters intact.
+  // Models often use them as node ids (`graph[State]`, `runtime --> graph`),
+  // which makes the whole diagram fail while the source remains readable.
+  // Rename shaped IDs first, then bare IDs at flowchart statement/edge
+  // boundaries. Keep Mermaid's standalone `end` subgraph delimiter and header
+  // keywords intact.
   normalized = normalized.replace(/\b(graph|flowchart|end|classDef|style)\s*(?=[[(])/giu, "tg_$1");
+  normalized = normalized.split("\n").map((line) => {
+    if (/^\s*end\s*$/iu.test(line)) return line;
+    return line.replace(
+      /(^\s*|(?:-->|---|-.->|==>|<--|<---|--o|--x|o--|x--)\s*)(graph|flowchart|end|classDef|style)(?=\s*(?:$|--|==|-\.|<--|<---|[[(\{]))/giu,
+      (_match, boundary: string, identifier: string) => `${boundary}tg_${identifier}`,
+    );
+  }).join("\n");
   return normalized.trim();
 }
 

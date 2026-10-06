@@ -1,0 +1,31 @@
+$ vitest run --config vitest.config.ts
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/desktop
+
+ ❯ src/direct-routes.test.ts (5 tests | 1 failed) 9ms
+   ❯ Fixed Desktop typed SDK routes (5)
+     × has an explicit preload channel for every supported typed route 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/direct-routes.test.ts > Fixed Desktop typed SDK routes > has an explicit preload channel for every supported typed route
+AssertionError: getPersonalProfile: expected { …(124) } to have property "getPersonalProfile"
+ ❯ src/direct-routes.test.ts:11:38
+      9|     const preload = await readFile(new URL("./preload.cts", import.met…
+     10|     for (const operation of [...Object.keys(DIRECT_DESKTOP_ROUTES), "u…
+     11|       expect(DESKTOP_IPC, operation).toHaveProperty(operation);
+       |                                      ^
+     12|       expect(preload, operation).toContain(`  ${operation}: (...args: …
+     13|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 10 passed (11)
+      Tests  1 failed | 58 passed (59)
+   Start at  01:31:08
+   Duration  1.42s (tests 48%, transform 35%, import 16%)
+
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/desktop:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @tracegraph/desktop@0.1.0-alpha.0 test:unit: `vitest run --config vitest.config.ts`
+Exit status 1

@@ -41,7 +41,7 @@ Web 与实际 Electron 在 1440×900、1280×800、1024×768 验证。Desktop �
 - [Host 设计与窄验证](host-design-and-verification.md)、[检查原始日志](evidence/checks/)。统一构建/类型检查通过；21 个 workspace 单测汇总为 **1367 passed / 0 failed**；离线评估 **32 passed**，五条 recorded snapshots 通过；工程门 **94 Node + 8 Vitest passed**，最后发布脚本窄门 **11 passed**。
 - [独立只读复核](independent-review.md)：分别核对源码与安装版产物、PNG、规范事件、文件哈希、进程退出和发布边界。文档/翻译/目录/模块图/架构/锁文件/发布门与 `git diff --check` 通过；翻译登记仍不等于人工审校。
 
-最终归档：[`outlive-agent-0.1.0-alpha.0-preview.tar.gz`](../../../_tmp_release/unified-local-workbench-20261003-complete/outlive-agent-0.1.0-alpha.0-preview.tar.gz)，SHA-256 `33147dfea9230ad877627946d5117bd1eb96bc27289435528bd60b067f87c615`。安装步骤见[发布说明](../../releases/README.md)。本轮不提交、不推送、不打 tag，也未公开发布。
+最终归档 `outlive-agent-0.1.0-alpha.0-preview.tar.gz`（SHA-256 `33147dfea9230ad877627946d5117bd1eb96bc27289435528bd60b067f87c615`）已于 2026-10-06 清理；本页验收记录与摘要保留。安装步骤见[发布说明](../../releases/README.md)。本轮不提交、不推送、不打 tag，也未公开发布。
 
 安装尝试同样保留失败：第一候选 smoke 使用旧 `--host-url`，第二候选缺 HTTP SDK bootstrap，第三候选漏带 fixture 模板、在任何 GUI 断言前失败；最终候选修正 smoke 并包含固定的六个模板资源，重新校验/安装/完整 GUI 与 CLI 后通过。见[安装缺资源的原始失败](evidence/attempts/installed-001-missing-fixture-source/report.json)及 `evidence/checks/outlive-unified-installed-smoke.log` / `outlive-unified-final-smoke.log`。早期 source Desktop 矩阵早于最后一句遥测文案校准，最新安装矩阵验证最终字节；原图/摘要仍保留。
 

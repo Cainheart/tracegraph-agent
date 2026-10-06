@@ -13,7 +13,7 @@ import {
 import { SecretReferenceSchema } from "./credentials.js";
 
 export const MCP_CONFIG_VERSION = "tracegraph.mcp.v1" as const;
-export const MCP_TRANSPORT_SCHEMA = z.literal("stdio");
+export const MCP_TRANSPORT_SCHEMA = z.enum(["stdio", "streamable-http"]);
 export const MCP_SERVER_NAME_SCHEMA = IdentifierSchema.max(96).regex(
   /^[A-Za-z0-9][A-Za-z0-9_.:-]*$/u,
   "invalid MCP server name",
@@ -33,7 +33,11 @@ const MCP_ENV_VALUE_SCHEMA = z.string().max(4_000);
  * executed without a shell; secret-looking environment keys must use the
  * G-19 `${secret:NAME}` reference form rather than persisting plaintext.
  */
-export const McpServerConfigSchema = z.object({
+const McpToolPolicySchema = z.object({
+  allow: z.array(MCP_REMOTE_TOOL_NAME_SCHEMA).max(MAX_MCP_TOOLS_PER_SERVER).optional(),
+  deny: z.array(MCP_REMOTE_TOOL_NAME_SCHEMA).max(MAX_MCP_TOOLS_PER_SERVER).optional(),
+}).strict();
+export const McpStdioServerConfigSchema = z.object({
   name: MCP_SERVER_NAME_SCHEMA,
   command: NonEmptyStringSchema.max(512),
   args: z.array(z.string().max(2_000)).max(64).default([]),
@@ -55,12 +59,29 @@ export const McpServerConfigSchema = z.object({
     }
   }).default({}),
   required: z.boolean().default(false),
-  transport: MCP_TRANSPORT_SCHEMA.default("stdio"),
-  tool_policy: z.object({
-    allow: z.array(MCP_REMOTE_TOOL_NAME_SCHEMA).max(MAX_MCP_TOOLS_PER_SERVER).optional(),
-    deny: z.array(MCP_REMOTE_TOOL_NAME_SCHEMA).max(MAX_MCP_TOOLS_PER_SERVER).optional(),
-  }).strict().optional(),
+  transport: z.literal("stdio").default("stdio"),
+  tool_policy: McpToolPolicySchema.optional(),
 }).strict();
+export const McpHttpServerConfigSchema = z.object({
+  name: MCP_SERVER_NAME_SCHEMA,
+  transport: z.literal("streamable-http"),
+  url: z.url().max(2_048).superRefine((value, context) => {
+    const url = new URL(value);
+    const loopback = ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
+    if (url.protocol !== "https:" && !(url.protocol === "http:" && loopback)) {
+      context.addIssue({ code: "custom", message: "MCP requires HTTPS or loopback HTTP" });
+    }
+    if (url.username || url.password || url.hash || [...url.searchParams.keys()].some(key => /token|secret|password|key|authorization/iu.test(key))) {
+      context.addIssue({ code: "custom", message: "MCP URL cannot contain credentials or fragments" });
+    }
+  }),
+  authorization_ref: SecretReferenceSchema.optional(),
+  required: z.boolean().default(false),
+  tool_policy: McpToolPolicySchema.optional(),
+}).strict();
+export const McpServerConfigSchema = z.union([McpStdioServerConfigSchema, McpHttpServerConfigSchema]);
+export type McpStdioServerConfig = z.infer<typeof McpStdioServerConfigSchema>;
+export type McpHttpServerConfig = z.infer<typeof McpHttpServerConfigSchema>;
 export type McpServerConfig = z.infer<typeof McpServerConfigSchema>;
 
 export const McpConfigSchema = z.object({

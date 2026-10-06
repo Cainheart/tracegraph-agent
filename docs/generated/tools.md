@@ -2,33 +2,35 @@
 
 # Built-in tool catalog
 
-Source set: `sha256:45056137898fea881147331f768f78e7d37e15ddcc5415ceef6eccc4fdcdf8ef`. Generator: `sha256:164175c682e6830959c4ce9271481fdfaadbc058080e1e51ff84d852f801c1e3`.
+Source set: `sha256:c8871b42c48d7eabd98bc3a23d6252259a62084c2fd461807c68f2e0d62e7935`. Generator: `sha256:cc2a7b4213121031c159d682983da045193bcea429846edb77d8c909472dfe89`.
 
 See [input manifest](catalog-manifest.json) for exact source hashes.
 
-Canonical names: [BUILTIN_TOOL_NAMES](../../packages/contracts/src/action.ts); implementation: [registry](../../packages/core/src/domains/tools/registry.ts).
+Canonical names: [BUILTIN_TOOL_NAMES](../../packages/contracts/src/action.ts); registration: [registry](../../packages/core/src/domains/tools/registry.ts).
 
-This static inventory does not enumerate dynamic MCP servers or extension registrations and does not imply that a tool is authorized in every profile.
+Definition sources are resolved from the registry's literal registrations and named local imports. This static inventory does not enumerate dynamic MCP servers or extension registrations and does not imply that a tool is authorized in every profile.
 
-| Tool | Implementation source |
-| --- | --- |
-| `commit_patch` | [registry](../../packages/core/src/domains/tools/registry.ts) |
-| `interrupt_subagent` | [registry](../../packages/core/src/domains/tools/registry.ts) |
-| `list_artifacts` | [registry](../../packages/core/src/domains/tools/registry.ts) |
-| `list_dir` | [registry](../../packages/core/src/domains/tools/registry.ts) |
-| `list_subagents` | [registry](../../packages/core/src/domains/tools/registry.ts) |
-| `load_skill` | [registry](../../packages/core/src/domains/tools/registry.ts) |
-| `preview_patch` | [registry](../../packages/core/src/domains/tools/registry.ts) |
-| `read_artifact` | [registry](../../packages/core/src/domains/tools/registry.ts) |
-| `read_file` | [registry](../../packages/core/src/domains/tools/registry.ts) |
-| `run_test` | [registry](../../packages/core/src/domains/tools/registry.ts) |
-| `search` | [registry](../../packages/core/src/domains/tools/registry.ts) |
-| `send_subagent_message` | [registry](../../packages/core/src/domains/tools/registry.ts) |
-| `spawn_subagent` | [registry](../../packages/core/src/domains/tools/registry.ts) |
-| `team_heartbeat` | [registry](../../packages/core/src/domains/tools/registry.ts) |
-| `team_mailbox_claim` | [registry](../../packages/core/src/domains/tools/registry.ts) |
-| `team_mailbox_send` | [registry](../../packages/core/src/domains/tools/registry.ts) |
-| `team_read` | [registry](../../packages/core/src/domains/tools/registry.ts) |
-| `team_task_write` | [registry](../../packages/core/src/domains/tools/registry.ts) |
-| `todo_read` | [registry](../../packages/core/src/domains/tools/registry.ts) |
-| `todo_write` | [registry](../../packages/core/src/domains/tools/registry.ts) |
+| Tool | Definition source | Registration source |
+| --- | --- | --- |
+| `commit_patch` | [registry.ts](../../packages/core/src/domains/tools/registry.ts#L1496) | [registry](../../packages/core/src/domains/tools/registry.ts#L222) |
+| `discover_project_commands` | [project-commands.ts](../../packages/core/src/domains/tools/project-commands.ts#L39) | [registry](../../packages/core/src/domains/tools/registry.ts#L224) |
+| `interrupt_subagent` | [registry.ts](../../packages/core/src/domains/tools/registry.ts#L772) | [registry](../../packages/core/src/domains/tools/registry.ts#L266) |
+| `list_artifacts` | [registry.ts](../../packages/core/src/domains/tools/registry.ts#L927) | [registry](../../packages/core/src/domains/tools/registry.ts#L255) |
+| `list_dir` | [registry.ts](../../packages/core/src/domains/tools/registry.ts#L1171) | [registry](../../packages/core/src/domains/tools/registry.ts#L219) |
+| `list_subagents` | [registry.ts](../../packages/core/src/domains/tools/registry.ts#L745) | [registry](../../packages/core/src/domains/tools/registry.ts#L265) |
+| `load_skill` | [registry.ts](../../packages/core/src/domains/tools/registry.ts#L275) | [registry](../../packages/core/src/domains/tools/registry.ts#L260) |
+| `preview_patch` | [registry.ts](../../packages/core/src/domains/tools/registry.ts#L1425) | [registry](../../packages/core/src/domains/tools/registry.ts#L221) |
+| `read_artifact` | [registry.ts](../../packages/core/src/domains/tools/registry.ts#L829) | [registry](../../packages/core/src/domains/tools/registry.ts#L255) |
+| `read_file` | [registry.ts](../../packages/core/src/domains/tools/registry.ts#L1301) | [registry](../../packages/core/src/domains/tools/registry.ts#L218) |
+| `run_project_command` | [project-commands.ts](../../packages/core/src/domains/tools/project-commands.ts#L67) | [registry](../../packages/core/src/domains/tools/registry.ts#L225) |
+| `run_test` | [registry.ts](../../packages/core/src/domains/tools/registry.ts#L1599) | [registry](../../packages/core/src/domains/tools/registry.ts#L223) |
+| `search` | [registry.ts](../../packages/core/src/domains/tools/registry.ts#L1369) | [registry](../../packages/core/src/domains/tools/registry.ts#L220) |
+| `send_subagent_message` | [registry.ts](../../packages/core/src/domains/tools/registry.ts#L718) | [registry](../../packages/core/src/domains/tools/registry.ts#L264) |
+| `spawn_subagent` | [registry.ts](../../packages/core/src/domains/tools/registry.ts#L686) | [registry](../../packages/core/src/domains/tools/registry.ts#L263) |
+| `team_heartbeat` | [registry.ts](../../packages/core/src/domains/tools/registry.ts#L463) | [registry](../../packages/core/src/domains/tools/registry.ts#L271) |
+| `team_mailbox_claim` | [registry.ts](../../packages/core/src/domains/tools/registry.ts#L440) | [registry](../../packages/core/src/domains/tools/registry.ts#L270) |
+| `team_mailbox_send` | [registry.ts](../../packages/core/src/domains/tools/registry.ts#L417) | [registry](../../packages/core/src/domains/tools/registry.ts#L269) |
+| `team_read` | [registry.ts](../../packages/core/src/domains/tools/registry.ts#L308) | [registry](../../packages/core/src/domains/tools/registry.ts#L267) |
+| `team_task_write` | [registry.ts](../../packages/core/src/domains/tools/registry.ts#L394) | [registry](../../packages/core/src/domains/tools/registry.ts#L268) |
+| `todo_read` | [registry.ts](../../packages/core/src/domains/tools/registry.ts#L989) | [registry](../../packages/core/src/domains/tools/registry.ts#L261) |
+| `todo_write` | [registry.ts](../../packages/core/src/domains/tools/registry.ts#L1107) | [registry](../../packages/core/src/domains/tools/registry.ts#L262) |

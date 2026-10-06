@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { totalDiff, type ChangedFile, type ConnectionSnapshot, type ContextBudgetSnapshot, type ConversationTurn, type GeneratedArtifact, type EvidenceSnapshot, type ModelSurfaceSnapshot, type PendingAttachment, type PublicActivitySnapshot, type ReasoningEffort, type RunMode, type RunStatus, type TraceEvent } from "../model";
-import { compactOperationLabel, publicOperations } from "../public-progress";
+import { publicOperations } from "../public-progress";
+import { ChatProcess, TurnFailure, UserMessageText } from "./ChatProcess";
 import { useI18n } from "../i18n";
 import { MessageActions } from "./MessageActions";
 import type { WorkbenchClient } from "../client";
@@ -26,9 +27,9 @@ export function NoProject({
   modelError = null,
   onConnectModel,
   onOpenDiagnostics,
-  onCreateMedia, composer, onDraftChange,
+  onCreateMedia, composer,
 }: {
-  composer?: ReactNode; onDraftChange?: (value: string) => void;
+  composer?: ReactNode;
   onStartChat: (task: string, reasoningEffort: ReasoningEffort, attachments: readonly PendingAttachment[]) => Promise<void>;
   connection: ConnectionSnapshot;
   onReconnect?: () => Promise<void>;
@@ -72,13 +73,12 @@ export function NoProject({
     }
   };
   return (
-    <main className="state-page">
+    <main className="state-page no-project-state">
       <div className="state-hero">
         <BrandMark />
-        <h1>{t("What would you like to work on?")}</h1>
-        <p>{t("Start a conversation, or choose a project to work with files and tools.")}</p>
+        <h1>{t("Start using Outlive")}</h1>
       </div>
-      {connection.state !== "live" && (
+      {(connection.state === "connecting" || connection.state === "reconnecting") ? <div className="connection-recovery" role="status"><Icon name="refresh" size={16} /><p>{t(connection.state === "connecting" ? "Connecting to Outlive Agent…" : "Restoring your connection…")}</p></div> : connection.state !== "live" && (
         <div className="connection-recovery" role="alert">
           <span className="connection-recovery-icon"><Icon name="alert" size={16} /></span>
           <div><strong>{t("Let's get you connected")}</strong><p>{t("Try repairing the connection. If it still fails, open installation diagnostics.")}</p><details><summary>{t("Connection details")}</summary><p>{connection.message}</p></details></div>
@@ -89,14 +89,8 @@ export function NoProject({
       {!modelReady && connection.state === "live" && <ModelConnectionPrompt loading={modelLoading} error={modelError} onConnect={onConnectModel} />}
       {composer ?? <div className="plain-chat-composer">
         <textarea aria-label={t("Plain chat message")} disabled={connection.state !== "live" || chatting || modelLoading} onChange={(event) => setChatTask(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && (enterBehavior === "enter" ? !(event.metaKey || event.ctrlKey) : event.metaKey || event.ctrlKey)) { event.preventDefault(); void startChat(); } }} placeholder={t("Ask anything…")} rows={2} value={chatTask} />
-        <div className="plain-chat-composer-footer">{attachmentsAvailable && <AttachmentComposer minimal attachments={attachments} disabled={chatting || connection.state !== "live"} onChange={setAttachments} />}{onCreateMedia && <button aria-label={t("Create media")} className="composer-tool-button" disabled={chatting || connection.state !== "live"} onClick={onCreateMedia} type="button"><Icon name="spark" size={14} /></button>}<span className="composer-model">{modelName ?? t("Connect model")}</span><ReasoningEffortPicker compact disabled={connection.state !== "live" || chatting} onChange={onReasoningEffortChange} value={reasoningEffort} /><span className="composer-safety-note"><Icon name="shield" size={12} />{t("Plain chat")}</span><button aria-label={t("Send message")} className="button primary composer-send" disabled={connection.state !== "live" || chatting || !modelReady || !chatTask.trim()} onClick={() => void startChat()} type="button"><Icon name="send" size={14} /></button></div>
+        <div className="plain-chat-composer-footer">{attachmentsAvailable && <AttachmentComposer minimal attachments={attachments} disabled={chatting || connection.state !== "live"} onChange={setAttachments} />}{onCreateMedia && <button aria-label={t("Create media")} className="composer-tool-button" disabled={chatting || connection.state !== "live"} onClick={onCreateMedia} type="button"><Icon name="spark" size={14} /></button>}<span className="composer-model">{modelName ?? t("Connect model")}</span><ReasoningEffortPicker compact disabled={connection.state !== "live" || chatting} onChange={onReasoningEffortChange} value={reasoningEffort} /><button aria-label={t("Send message")} className="button primary composer-send" disabled={connection.state !== "live" || chatting || !modelReady || !chatTask.trim()} onClick={() => void startChat()} type="button"><Icon name="send" size={14} /></button></div>
       </div>}
-      <div className="entry-suggestions" aria-label={t("Conversation starters")}>
-        <button onClick={() => (onDraftChange ?? setChatTask)(t("Explain a concept step by step"))} type="button"><Icon name="spark" size={16} /><span>{t("Explain a concept")}</span></button>
-        <button onClick={() => (onDraftChange ?? setChatTask)(t("Help me write a clear first draft"))} type="button"><Icon name="file" size={16} /><span>{t("Write something")}</span></button>
-        <button onClick={() => (onDraftChange ?? setChatTask)(t("Help me turn an idea into a plan"))} type="button"><Icon name="route" size={16} /><span>{t("Make a plan")}</span></button>
-      </div>
-      <p className="entry-boundary-note"><Icon name="shield" size={13} />{t("No project filesystem or command access; media tools can create scoped Artifacts")}</p>
       {actionError && <div className="entry-error" role="alert"><Icon name="alert" size={14} />{actionError}</div>}
     </main>
   );
@@ -118,9 +112,9 @@ export function ProjectReady({
   enterBehavior = "enter",
   attachmentsAvailable = false,
   modelReady = true, modelLoading = false, modelError = null,
-  onConnectModel, onReconnect, onOpenDiagnostics, onCreateMedia, composer, onDraftChange,
+  onConnectModel, onReconnect, onOpenDiagnostics, onCreateMedia, composer,
 }: {
-  composer?: ReactNode; onDraftChange?: (value: string) => void;
+  composer?: ReactNode;
   readonly: boolean;
   connection: ConnectionSnapshot;
   projectName: string;
@@ -158,10 +152,9 @@ export function ProjectReady({
       <div className="state-hero">
         <span className="entry-project-icon"><Icon name="folder" size={25} /></span>
         <span className="eyebrow">{projectName}</span>
-        <h1>{t("Let's build something")}</h1>
-        <p>{t(readonly ? "Explore this project and make an inspectable plan. File writes are unavailable." : "Describe a task. Your agent can inspect, plan and work in this project with your active permissions.")}</p>
+        <h1>{t("Start using Outlive")}</h1>
       </div>
-      {connection.state !== "live" && <div className="connection-recovery" role="alert"><Icon name="alert" size={16} /><div><strong>{t("Let's get you connected")}</strong><p>{t("Try repairing the connection. If it still fails, open installation diagnostics.")}</p><details><summary>{t("Connection details")}</summary><p>{connection.message}</p></details></div>{onReconnect && <button className="button subtle" disabled={busy} onClick={() => { setBusy(true); void onReconnect().catch(() => setActionError(t("Couldn't reconnect. Open installation diagnostics for the next step."))).finally(() => setBusy(false)); }} type="button">{t("Repair connection")}</button>}{onOpenDiagnostics && <button className="button subtle" onClick={onOpenDiagnostics} type="button">{t("Installation diagnostics")}</button>}</div>}
+      {(connection.state === "connecting" || connection.state === "reconnecting") ? <div className="connection-recovery" role="status"><Icon name="refresh" size={16} /><p>{t(connection.state === "connecting" ? "Connecting to Outlive Agent…" : "Restoring your connection…")}</p></div> : connection.state !== "live" && <div className="connection-recovery" role="alert"><Icon name="alert" size={16} /><div><strong>{t("Let's get you connected")}</strong><p>{t("Try repairing the connection. If it still fails, open installation diagnostics.")}</p><details><summary>{t("Connection details")}</summary><p>{connection.message}</p></details></div>{onReconnect && <button className="button subtle" disabled={busy} onClick={() => { setBusy(true); void onReconnect().catch(() => setActionError(t("Couldn't reconnect. Open installation diagnostics for the next step."))).finally(() => setBusy(false)); }} type="button">{t("Repair connection")}</button>}{onOpenDiagnostics && <button className="button subtle" onClick={onOpenDiagnostics} type="button">{t("Installation diagnostics")}</button>}</div>}
       {!modelReady && connection.state === "live" && <ModelConnectionPrompt loading={modelLoading} error={modelError} onConnect={onConnectModel} />}
       {composer ?? <div className="ready-card">
         <textarea aria-label={t("Task")} disabled={busy || connection.state !== "live"} onChange={(event) => setTask(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing && (enterBehavior === "enter" ? !(event.metaKey || event.ctrlKey) : event.metaKey || event.ctrlKey) && task.trim()) { event.preventDefault(); void start(); } }} placeholder={t("Describe what you want the Agent to do…")} rows={2} value={task} />
@@ -177,17 +170,12 @@ export function ProjectReady({
         </div>
       </div>}
       {actionError && <div className="entry-error" role="alert"><Icon name="alert" size={14} />{actionError}</div>}
-      <div className="entry-suggestions" aria-label={t("Project starters")}>
-        <button onClick={() => (onDraftChange ?? setTask)(t("Explain the structure of this project and its main entry points"))} type="button"><Icon name="search" size={16} /><span>{t("Explore this project")}</span></button>
-        <button onClick={() => (onDraftChange ?? setTask)(t("Inspect the project and suggest a small, verifiable improvement"))} type="button"><Icon name="code" size={16} /><span>{t("Find an improvement")}</span></button>
-      </div>
-      <p className="entry-boundary-note"><Icon name="shield" size={13} />{t("Your permission policy applies to every tool call")}</p>
     </main>
   );
 }
 
 export function ChatView({
-  client, runId, feedbackReadable = false, feedbackWritable = false, onReviewFile,
+  client, runId, feedbackReadable = false, feedbackWritable = false, onReviewFile, onOpenProjectFile, onConfigureModel, onSaveAsMemory,
   conversation,
   events,
   task,
@@ -210,7 +198,7 @@ export function ChatView({
   runDetails,
   generatedArtifacts, onLoadGeneratedArtifact, generatedPreviewsDisabled = false, generatedPreviewsDisabledReason,
 }: {
-  client?: WorkbenchClient; runId?: string; feedbackReadable?: boolean; feedbackWritable?: boolean; onReviewFile?: (runId: string, path: string, patchEventId?: string) => void;
+  client?: WorkbenchClient; runId?: string; feedbackReadable?: boolean; feedbackWritable?: boolean; onReviewFile?: (runId: string, path: string, patchEventId?: string) => void; onOpenProjectFile?: (path: string) => void; onConfigureModel?: () => void; onSaveAsMemory?: (draft: { claim: string; sourceDescription: string }) => void;
   conversation: readonly ConversationTurn[];
   events: readonly TraceEvent[];
   task: string;
@@ -236,6 +224,7 @@ export function ChatView({
   const { language, t } = useI18n();
   const endRef = useRef<HTMLDivElement>(null);
   const followingRef = useRef(true);
+  const [showJump, setShowJump] = useState(false);
   const response =
     status === "awaiting_plan_approval"
       ? language === "zh-CN" ? "规划已写入 Todo 清单，执行会保持暂停，直到你审批当前计划版本。" : "The plan is recorded in the Todo list. Execution stays paused until you approve this exact revision."
@@ -246,23 +235,24 @@ export function ChatView({
       : status === "failed" || status === "cancelled" || status === "interrupted"
         ? outcome ?? events.at(-1)?.summary ?? (language === "zh-CN" ? "本次运行没有生成最终回答，请查看任务活动中的失败步骤。" : "This run did not produce a final answer. Inspect the failed step in task activity.")
       : status === "completed" || status === "ready_for_review" || status === "historical"
-        ? outcome ?? (language === "zh-CN" ? "本次任务已完成，可以查看结果。下方显示本次任务实际生成并验证的结果。" : "The task is ready for review. Verified results generated by this task are shown below.")
+        ? outcome ?? (language === "zh-CN" ? "暂无最终回答，请查看已记录的任务活动。" : "The final response is unavailable. Inspect recorded task activity.")
         : language === "zh-CN" ? "Agent 正在处理任务。请通过持久化轨迹查看最新的规范进度。" : "The Agent is processing the task. Follow the durable trajectory for the latest canonical progress.";
   useEffect(() => {
     if (followingRef.current) endRef.current?.scrollIntoView({ block: "end" });
   }, [conversation.length, events.length, outcome, publicActivities?.length, status, modelSurface?.length]);
   return (
-    <section className="chat-view" onScroll={(event) => { const node = event.currentTarget; followingRef.current = node.scrollHeight - node.scrollTop - node.clientHeight < 72; }}>
+    <section className="chat-view" onScroll={(event) => { const node = event.currentTarget; followingRef.current = node.scrollHeight - node.scrollTop - node.clientHeight < 72; setShowJump(!followingRef.current); }}>
       <div className="chat-date"><span />{t("Today")}<span /></div>
-      {conversation.map((turn) => <ChatTurn generatedPreviewsDisabled={generatedPreviewsDisabled} {...(generatedPreviewsDisabledReason ? { generatedPreviewsDisabledReason } : {})} {...(onLoadGeneratedArtifact ? { onLoadGeneratedArtifact } : {})} {...(turn.generatedArtifacts ? { generatedArtifacts: turn.generatedArtifacts } : {})} dataSource={dataSource} events={turn.events} key={turn.runId} runId={turn.runId} {...(client ? { client } : {})} feedbackReadable={feedbackReadable} feedbackWritable={feedbackWritable} {...(onReviewFile ? { onReviewFile } : {})} changedFiles={turn.changedFiles ?? []} response={turn.response} status={turn.status} task={turn.task} {...(turn.contextBudget === undefined ? {} : { contextBudget: turn.contextBudget })} {...(turn.elapsed === undefined ? {} : { elapsed: turn.elapsed })} {...(turn.inputTokens === undefined ? {} : { inputTokens: turn.inputTokens })} {...(turn.totalTokens === undefined ? {} : { totalTokens: turn.totalTokens })} />)}
-      <ChatTurn {...(client ? { client } : {})} {...(runId ? { runId } : {})} feedbackReadable={feedbackReadable} feedbackWritable={feedbackWritable} {...(onReviewFile ? { onReviewFile } : {})} generatedPreviewsDisabled={generatedPreviewsDisabled} {...(generatedPreviewsDisabledReason ? { generatedPreviewsDisabledReason } : {})} {...(onLoadGeneratedArtifact ? { onLoadGeneratedArtifact } : {})} {...(generatedArtifacts ? { generatedArtifacts } : {})} {...(runDetails === undefined ? {} : { runDetails })} {...(currentStep === undefined ? {} : { currentStep })} {...(onInspectEvent === undefined ? {} : { onInspectEvent })} changedFiles={changedFiles} dataSource={dataSource} events={events} evidence={evidence} progressive={progressive} response={response} status={status} task={task} {...(elapsed === undefined ? {} : { elapsed })} {...(inputTokens === undefined ? {} : { inputTokens })} {...(totalTokens === undefined ? {} : { totalTokens })} {...(contextBudget === undefined ? {} : { contextBudget })} {...(turnsCompleted === undefined ? {} : { turnsCompleted })} {...(turnLimit === undefined ? {} : { turnLimit })} {...(publicActivities === undefined ? {} : { publicActivities })} {...(modelSurface === undefined ? {} : { modelSurface })} />
+      {conversation.map((turn) => <ChatTurn {...(onConfigureModel ? { onConfigureModel } : {})} {...(onOpenProjectFile ? { onOpenProjectFile } : {})} {...(onSaveAsMemory ? { onSaveAsMemory } : {})} {...(onInspectEvent ? { onInspectEvent } : {})} generatedPreviewsDisabled={generatedPreviewsDisabled} {...(generatedPreviewsDisabledReason ? { generatedPreviewsDisabledReason } : {})} {...(onLoadGeneratedArtifact ? { onLoadGeneratedArtifact } : {})} {...(turn.generatedArtifacts ? { generatedArtifacts: turn.generatedArtifacts } : {})} dataSource={dataSource} events={turn.events} key={turn.runId} runId={turn.runId} {...(client ? { client } : {})} feedbackReadable={feedbackReadable} feedbackWritable={feedbackWritable} {...(onReviewFile ? { onReviewFile } : {})} changedFiles={turn.changedFiles ?? []} response={turn.response} status={turn.status} task={turn.task} {...(turn.contextBudget === undefined ? {} : { contextBudget: turn.contextBudget })} {...(turn.elapsed === undefined ? {} : { elapsed: turn.elapsed })} {...(turn.inputTokens === undefined ? {} : { inputTokens: turn.inputTokens })} {...(turn.totalTokens === undefined ? {} : { totalTokens: turn.totalTokens })} />)}
+      <ChatTurn {...(onConfigureModel ? { onConfigureModel } : {})} {...(onOpenProjectFile ? { onOpenProjectFile } : {})} {...(onSaveAsMemory ? { onSaveAsMemory } : {})} key={runId ?? "current"} {...(client ? { client } : {})} {...(runId ? { runId } : {})} feedbackReadable={feedbackReadable} feedbackWritable={feedbackWritable} {...(onReviewFile ? { onReviewFile } : {})} generatedPreviewsDisabled={generatedPreviewsDisabled} {...(generatedPreviewsDisabledReason ? { generatedPreviewsDisabledReason } : {})} {...(onLoadGeneratedArtifact ? { onLoadGeneratedArtifact } : {})} {...(generatedArtifacts ? { generatedArtifacts } : {})} {...(runDetails === undefined ? {} : { runDetails })} {...(currentStep === undefined ? {} : { currentStep })} {...(onInspectEvent === undefined ? {} : { onInspectEvent })} changedFiles={changedFiles} dataSource={dataSource} events={events} evidence={evidence} progressive={progressive} response={response} status={status} task={task} {...(elapsed === undefined ? {} : { elapsed })} {...(inputTokens === undefined ? {} : { inputTokens })} {...(totalTokens === undefined ? {} : { totalTokens })} {...(contextBudget === undefined ? {} : { contextBudget })} {...(turnsCompleted === undefined ? {} : { turnsCompleted })} {...(turnLimit === undefined ? {} : { turnLimit })} {...(publicActivities === undefined ? {} : { publicActivities })} {...(modelSurface === undefined ? {} : { modelSurface })} />
       <div ref={endRef} />
+      {showJump && <button className="chat-jump-bottom" aria-label={language === "zh-CN" ? "回到底部" : "Jump to latest"} onClick={() => { followingRef.current = true; setShowJump(false); endRef.current?.scrollIntoView({ block: "end" }); }} type="button">↓</button>}
     </section>
   );
 }
 
-function ChatTurn({ client, runId, feedbackReadable = false, feedbackWritable = false, onReviewFile, task, response, status, events, dataSource, changedFiles = [], evidence, contextBudget, turnsCompleted, turnLimit, publicActivities, modelSurface, elapsed, inputTokens, totalTokens, progressive = false, currentStep, onInspectEvent, runDetails, generatedArtifacts = [], onLoadGeneratedArtifact, generatedPreviewsDisabled = false, generatedPreviewsDisabledReason }: {
-  client?: WorkbenchClient; runId?: string; feedbackReadable?: boolean; feedbackWritable?: boolean; onReviewFile?: (runId: string, path: string, patchEventId?: string) => void;
+function ChatTurn({ client, runId, feedbackReadable = false, feedbackWritable = false, onReviewFile, onOpenProjectFile, onConfigureModel, onSaveAsMemory, task, response, status, events, dataSource, changedFiles = [], evidence, contextBudget, turnsCompleted, turnLimit, publicActivities, modelSurface, elapsed, inputTokens, totalTokens, progressive = false, currentStep, onInspectEvent, runDetails, generatedArtifacts = [], onLoadGeneratedArtifact, generatedPreviewsDisabled = false, generatedPreviewsDisabledReason }: {
+  client?: WorkbenchClient; runId?: string; feedbackReadable?: boolean; feedbackWritable?: boolean; onReviewFile?: (runId: string, path: string, patchEventId?: string) => void; onOpenProjectFile?: (path: string) => void; onConfigureModel?: () => void; onSaveAsMemory?: (draft: { claim: string; sourceDescription: string }) => void;
   task: string;
   response: string;
   status: RunStatus;
@@ -285,6 +275,7 @@ function ChatTurn({ client, runId, feedbackReadable = false, feedbackWritable = 
   generatedArtifacts?: readonly GeneratedArtifact[]; onLoadGeneratedArtifact?: (runId: string, artifactId: string) => Promise<GeneratedArtifactContent>; generatedPreviewsDisabled?: boolean; generatedPreviewsDisabledReason?: string;
 }) {
   const { language, t } = useI18n();
+  const [filesExpanded, setFilesExpanded] = useState(false);
   const process = publicProcess(events, publicActivities);
   const active = status === "running" || status === "indexing" || status === "reconnecting";
   const persistedPlans = process
@@ -322,53 +313,40 @@ function ChatTurn({ client, runId, feedbackReadable = false, feedbackWritable = 
   const visiblePlans = [...plansByCall.values()].sort((left, right) =>
     (decisionOrder.get(left.modelCallId) ?? left.cursor) - (decisionOrder.get(right.modelCallId) ?? right.cursor),
   );
-  const latestPublicAnswer = safeModelSurface.filter((item) => item.type === "answer_snapshot").at(-1);
-  // Keep the complete public event order. A model decision is replaced by its
-  // public plan entry when one is available; context, tool, patch, graph and
-  // test facts remain visible as their own timeline entries. This is what
-  // makes one question read like a sequence of inspectable steps instead of a
-  // single boxed paragraph.
-  const publicPlanCallIds = new Set(visiblePlans.map((item) => item.modelCallId));
-  const progressEvents = process.filter((event) =>
-    !(event.kind === "decision" && publicPlanCallIds.has(event.operationId ?? event.id)),
-  );
-  const operations = publicOperations(process);
-  const latestOperation = [...operations].reverse().find((operation) => operation.family !== "event") ?? operations.at(-1);
-  const publicStatement = visiblePlans.at(-1)?.text.split(/\n/).find((line) => line.trim()) ?? (active ? t("Waiting for the next update") : undefined);
-  const answerTarget = latestPublicAnswer?.text ?? response;
+  const latestPublicAnswer = active ? currentAnswerDraft(safeModelSurface, process) : undefined;
+  const answerTarget = active ? latestPublicAnswer?.text ?? "" : response;
+  const mediaEvent = events.filter((event) => ["generate_image", "render_diagram", "render_chart"].includes(event.toolName ?? "")).at(-1);
+  const mediaActivity = generatedArtifacts.length || !mediaEvent ? undefined : mediaEvent.state === "failed" || mediaEvent.state === "denied" || ["failed", "interrupted", "cancelled", "needs_manual_review"].includes(status)
+    ? { state: "failed" as const }
+    : status === "completed" || status === "ready_for_review" || status === "historical"
+      ? { state: "failed" as const, message: "The media operation ended without a verified Artifact in this Run." }
+      : { state: "running" as const };
   // A completed Run is durable state, not a new stream. ChatView is mounted
   // again when the user returns from Trajectory, so feeding `progressive`
   // through unconditionally would reset the hook's local cursor and replay
   // the entire answer from an empty string. Only live Run states should paint
   // incrementally; terminal states render the persisted answer immediately.
   const progressiveResponse = useProgressiveText(answerTarget, shouldUseProgressiveAnswer(status, progressive));
-  const answerStreaming = (active && latestPublicAnswer?.status === "streaming") || progressiveResponse.length < answerTarget.length;
+  const answerStreaming = active && Boolean(latestPublicAnswer) && (latestPublicAnswer?.status === "streaming" || progressiveResponse.length < answerTarget.length);
   return <>
-    <article className="chat-message user-message" data-chat-role="user"><span className="avatar user-avatar">C</span><div className="chat-turn-body"><header><strong>{t("You")}</strong><time>{dataSource === "demo" ? "10:02" : t("recorded")}</time></header><p>{task}</p><MessageActions text={task} {...(client ? { client } : {})} /></div></article>
+    <article className="chat-message user-message" data-chat-role="user"><span className="avatar user-avatar">C</span><div className="chat-turn-body"><header><strong>{t("You")}</strong><time>{dataSource === "demo" ? "10:02" : t("recorded")}</time></header><UserMessageText text={task} /></div><MessageActions text={task} {...(client ? { client } : {})} /></article>
     <article className={`chat-message agent-message ${active ? "is-live" : ""}`} data-chat-role="agent"><span className="avatar agent-avatar"><Icon name="graph" size={15} /></span><div className="chat-turn-body">
       <header><strong>Outlive</strong><time>{dataSource === "demo" ? "10:02" : t(status === "running" || status === "indexing" ? "live" : "recorded")}</time></header>
-      {(visiblePlans.length > 0 || progressEvents.length > 0 || active) && <section aria-label={t("Run activity")} title={t("Only explicit public plans and observed tool facts are shown")} className="compact-run-progress">
-        {publicStatement && <p className="current-public-statement">{publicStatement}</p>}
-        <details className="inline-activity-details">
-          <summary><Icon name={latestOperation?.state === "failed" ? "alert" : latestOperation?.state === "started" ? "activity" : "check"} size={14} /><span>{latestOperation ? t(compactOperationLabel(latestOperation)) : t("Waiting for a public update")}</span>{latestOperation && <small>{t(latestOperation.state === "started" ? "Started" : latestOperation.state === "completed" ? "Completed" : latestOperation.state === "failed" ? "Failed" : latestOperation.state === "unknown" ? "Outcome unknown" : latestOperation.state === "cancelled" ? "Cancelled" : "Recorded")}</small>}<Icon name="chevron" size={12} /></summary>
-          <div className="inline-activity-history">
-            <PublicModelSurface active={active} events={process} language={language} surface={visiblePlans} />
-            {runDetails}
-            {onInspectEvent && <div className="activity-evidence-actions">{operations.map((operation) => <button className="button subtle" key={operation.id} onClick={() => onInspectEvent(operation.event)} type="button"><Icon name="file" size={12} />{t("Inspect evidence")} · {operation.event.title}</button>)}</div>}
-          </div>
-        </details>
-      </section>}
+      <ChatProcess events={process} plans={visiblePlans} active={active} {...(runId ? { runId } : {})} {...(client ? { client } : {})} {...(elapsed ? { elapsed } : {})} {...(onInspectEvent ? { onInspectEvent } : {})} {...(onOpenProjectFile ? { onOpenProjectFile } : {})} />
+      {(["failed", "interrupted", "needs_manual_review", "cancelled"] as readonly RunStatus[]).includes(status) && <TurnFailure {...(onConfigureModel ? { onConfigureModel } : {})} message={response} status={status} {...(onInspectEvent && events.at(-1) ? { onInspect: () => onInspectEvent(events.at(-1)!) } : {})} />}
       <div className={`chat-answer ${answerStreaming ? "is-streaming" : ""}`}>
-      {latestPublicAnswer?.text
-        ? <div aria-live="polite" className="chat-live-answer"><MarkdownContent content={progressiveResponse} />{(active || answerStreaming) && <span aria-hidden="true" className="public-model-caret">▍</span>}</div>
-          : active ? null : <MarkdownContent content={progressiveResponse} />}
+      {active
+        ? latestPublicAnswer?.text && <div aria-live="polite" className="chat-live-answer" aria-label={t("Answer draft — not verified")}><p><strong>{t("Answer draft — not verified")}</strong></p><MarkdownContent content={progressiveResponse} />{answerStreaming && <span aria-hidden="true" className="public-model-caret">▍</span>}</div>
+        : !(["failed", "interrupted", "needs_manual_review", "cancelled"] as readonly RunStatus[]).includes(status) && <MarkdownContent content={response} />}
       </div>
-      <GeneratedGallery artifacts={generatedArtifacts} disabled={generatedPreviewsDisabled} {...(generatedPreviewsDisabledReason ? { disabledReason: generatedPreviewsDisabledReason } : {})} {...(onLoadGeneratedArtifact ? { onLoad: onLoadGeneratedArtifact } : {})} />
-      {changedFiles.length > 0 && <section className="turn-changed-files" aria-label={t("Edited files")}><header><Icon name="diff" size={14} /><strong>{changedFiles.length} {t("Edited files")}</strong><small>+{totalDiff(changedFiles).additions} −{totalDiff(changedFiles).deletions}</small></header>{changedFiles.map((file) => <button disabled={!runId || !onReviewFile} onClick={() => { if (runId) onReviewFile?.(runId, file.path, file.patchEventId); }} key={file.path} type="button"><Icon name="file" size={13} /><span>{file.path}</span><small>+{file.additions} −{file.deletions}</small></button>)}</section>}
-      {!active && !answerStreaming && answerTarget && <MessageActions text={answerTarget} {...(client ? { client } : {})} {...(runId ? { runId } : {})} feedbackReadable={feedbackReadable && status === "completed"} feedbackWritable={feedbackWritable && status === "completed"} />}
+      <GeneratedGallery artifacts={generatedArtifacts} disabled={generatedPreviewsDisabled} autoPreview={!active} {...(mediaActivity ? { activity: mediaActivity } : {})} {...(generatedPreviewsDisabledReason ? { disabledReason: generatedPreviewsDisabledReason } : {})} {...(onLoadGeneratedArtifact ? { onLoad: onLoadGeneratedArtifact } : {})} />
+      {changedFiles.length > 0 && <section className="turn-changed-files" aria-label={t("Edited files")}><header><Icon name="diff" size={14} /><strong>{changedFiles.length} {t("Edited files")}</strong><small>+{totalDiff(changedFiles).additions} −{totalDiff(changedFiles).deletions}</small></header>{(filesExpanded ? changedFiles : changedFiles.slice(0, 3)).map((file) => <button disabled={!runId || !onReviewFile} onClick={() => { if (runId) onReviewFile?.(runId, file.path, file.patchEventId); }} key={file.path} type="button"><Icon name="file" size={13} /><span>{file.path}</span><small>+{file.additions} −{file.deletions}</small></button>)}{changedFiles.length > 3 && <button className="turn-more-files" aria-expanded={filesExpanded} onClick={() => setFilesExpanded(!filesExpanded)} type="button">{language === "zh-CN" ? filesExpanded ? "收起文件" : `再显示 ${changedFiles.length - 3} 个文件` : filesExpanded ? "Show fewer files" : `Show ${changedFiles.length - 3} more files`}<Icon name="chevron" size={12} /></button>}</section>}
       <div className="chat-evidence" hidden>{changedFiles.length > 0 && <span><Icon name="diff" size={13} />{changedFiles.length} {t("files")} · +{totalDiff(changedFiles).additions} −{totalDiff(changedFiles).deletions}</span>}{evidence && <span><Icon name="graph" size={13} />{t("Graph")} {evidence.graph.status}</span>}<span><Icon name="shield" size={13} />{t(status)}</span></div>
-      {!active && !answerStreaming && (elapsed || contextBudget) && <ChatRunSummary language={language} {...(contextBudget === undefined ? {} : { contextBudget })} {...(elapsed === undefined ? {} : { elapsed })} />}
-    </div></article>
+      {!active && !answerStreaming && (elapsed || contextBudget) && <>
+        <ChatRunSummary language={language} {...(contextBudget === undefined ? {} : { contextBudget })} {...(elapsed === undefined ? {} : { elapsed })} />
+        {runDetails && <details className="turn-diagnostics"><summary>{language === "zh-CN" ? "任务诊断" : "Task diagnostics"}</summary>{runDetails}</details>}
+      </>}
+    </div>{!active && !answerStreaming && answerTarget && <MessageActions text={answerTarget} {...(client ? { client } : {})} {...(runId ? { runId } : {})} feedbackReadable={feedbackReadable && status === "completed"} feedbackWritable={feedbackWritable && status === "completed"} {...(onSaveAsMemory && runId && status === "completed" ? { onSaveAsMemory: (claim: string) => { const answerEvent = events.find((event) => event.sourceType === "run.completed"); if (answerEvent) onSaveAsMemory({ claim, sourceDescription: `来自 Run ${runId} 的最终回答事件 ${answerEvent.id}` }); } } : {})} />}</article>
   </>;
 }
 
@@ -377,67 +355,64 @@ export function shouldUseProgressiveAnswer(status: RunStatus, enabled: boolean):
 }
 
 /**
- * Keep the public answer readable while the Host catches up with the model
- * surface stream. The provider stream remains authoritative; this only
- * controls how quickly an already-safe public snapshot is painted.
+ * Surface cursors are not ledger sequence numbers. A draft belongs only to
+ * its explicit model call; a recorded decision settles that candidate before
+ * delivery review or verification can accept or reject the task as a whole.
  */
+function currentAnswerDraft(surface: readonly ModelSurfaceSnapshot[], events: readonly TraceEvent[]): ModelSurfaceSnapshot | undefined {
+  const candidate = surface.filter((item) => item.type === "answer_snapshot").at(-1);
+  if (!candidate?.text || candidate.status === "failed" || candidate.status === "cancelled") return undefined;
+  const modelEvents = events.filter((event) => event.sourceType === "model.request_started"
+    || event.sourceType === "model.decision" || event.sourceType === "model.request_failed"
+    || event.sourceType === "model.output_invalid" || event.sourceType === "model.request_cancelled");
+  if (modelEvents.some((event) => event.sourceType !== "model.request_started"
+    && (event.operationId === candidate.modelCallId || event.operationId === undefined))) return undefined;
+  const latestRequest = modelEvents.filter((event) => event.sourceType === "model.request_started").at(-1);
+  if (latestRequest && latestRequest.operationId !== candidate.modelCallId) return undefined;
+  // Older Hosts without model-operation history retain compatibility drafts.
+  // Once history exists, an unbound candidate cannot borrow another call's
+  // authority or survive a reconnect window containing its recorded decision.
+  if (modelEvents.length > 0 && !modelEvents.some((event) => event.operationId === candidate.modelCallId)) return undefined;
+  return candidate;
+}
+
+/** Animate only live, explicitly provisional public text. Terminal results are immediate. */
 function useProgressiveText(target: string, enabled: boolean): string {
-  // A terminal snapshot mounted for the first time should be shown at once,
-  // while a stream that was already visible must finish at the same cadence
-  // instead of jumping to the full answer when the Run becomes completed.
-  const wasLiveRef = useRef(enabled);
-  // Historical/terminal snapshots should render immediately. A live snapshot
-  // starts empty so the timer below paints it in small increments instead of
-  // flashing the whole public plan on the first render.
   const [visible, setVisible] = useState(enabled ? "" : target);
-  const shouldAnimate = enabled || wasLiveRef.current;
+  const matchingVisible = target.startsWith(visible) ? visible : "";
 
   useEffect(() => {
-    if (enabled) {
-      wasLiveRef.current = true;
-    }
-    if (!shouldAnimate) {
-      setVisible(target);
-      return;
-    }
-    setVisible((current) => target.startsWith(current) ? current : "");
-  }, [enabled, shouldAnimate, target]);
+    setVisible((current) => !enabled ? target : target.startsWith(current) ? current : "");
+  }, [enabled, target]);
 
   useEffect(() => {
     const characters = Array.from(target);
-    const visibleCharacters = Array.from(visible);
-    if (!shouldAnimate || visibleCharacters.length >= characters.length) return;
-    // Paint genuine incremental updates instead of revealing an entire answer
-    // over only a few animation frames.  Array.from keeps emoji and CJK text
-    // intact enough for a readable, stable public-answer cadence.
-    // Two code points every 28ms is roughly 70 characters/second: fast enough
-    // to feel live, but slow enough that a newly received snapshot is not
-    // revealed as one visually abrupt burst.
-    const step = 2;
+    if (!enabled || Array.from(matchingVisible).length >= characters.length) return;
+    // Array.from keeps emoji/CJK code points intact. A changed or withdrawn
+    // candidate is hidden synchronously, before this timer/effect can paint.
     const timer = window.setTimeout(() => {
-      setVisible((current) => {
-        const currentCharacters = Array.from(current);
-        return target.startsWith(current)
-          ? characters.slice(0, currentCharacters.length + step).join("")
-          : characters.slice(0, step).join("");
-      });
+      setVisible((current) => characters.slice(0, (target.startsWith(current) ? Array.from(current).length : 0) + 2).join(""));
     }, 28);
     return () => window.clearTimeout(timer);
-  }, [shouldAnimate, target, visible]);
+  }, [enabled, target, matchingVisible]);
 
-  return visible;
+  return enabled ? matchingVisible : target;
 }
 
-function PublicModelSurface({
+export const PUBLIC_ACTIVITY_PAGE_SIZE = 80;
+
+export function PublicModelSurface({
   surface,
   events,
   active,
   language,
+  onInspectEvent,
 }: {
   surface: readonly ModelSurfaceSnapshot[];
   events: readonly TraceEvent[];
   active: boolean;
   language: "zh-CN" | "en";
+  onInspectEvent?: (event: TraceEvent) => void;
 }) {
   // `thinking_snapshot` is retained in the wire schema for reconnect
   // compatibility only.  It represents provider-private reasoning and must
@@ -445,6 +420,7 @@ function PublicModelSurface({
   const plans = surface.filter((item) => item.type === "public_plan_snapshot");
   const latestPlan = plans.at(-1);
   const visiblePlanText = useProgressiveText(latestPlan?.text ?? "", active && latestPlan?.status === "streaming");
+  const [visibleCount, setVisibleCount] = useState(PUBLIC_ACTIVITY_PAGE_SIZE);
   const planCallIds = new Set(plans.map((item) => item.modelCallId));
   const decisionOrder = new Map(
     events
@@ -461,6 +437,7 @@ function PublicModelSurface({
       text: item === latestPlan ? visiblePlanText : item.text,
       label: language === "zh-CN" ? "模型计划" : "Public plan",
       streaming: item.status === "streaming" && active,
+      event: undefined,
     })),
     ...publicOperations(events.filter((event) => !(event.kind === "decision" && planCallIds.has(event.operationId ?? event.id))))
       .map((operation) => { const event = operation.event; return ({
@@ -472,25 +449,32 @@ function PublicModelSurface({
         text: event.summary,
         label: progressEventLabel(event.kind, language, event.sourceType),
         streaming: operation.state === "started",
+        event,
         detail: [event.toolName, event.target, operation.start ? `${operation.start.timestamp} · ${operation.start.summary}` : undefined].filter((value): value is string => Boolean(value)).join(" · ") || undefined,
       }); }),
   ].sort((left, right) => left.order - right.order);
+  const shown = timeline.slice(-visibleCount);
+  const hidden = timeline.length - shown.length;
+  const earlierFailures = timeline.slice(0, hidden).filter((item) => item.status === "failed" || item.status === "unknown").length;
 
   return <div aria-live="polite" className="public-model-surface">
-    {timeline.map((item) => {
-      // Keep disclosure summaries phrasing-only.  The same compact content is
-      // used for both expandable tool facts and plain public-plan rows, so a
-      // <details> row remains keyboard- and screen-reader-friendly.
-      const content = <><span className="public-progress-meta"><span>{item.label}</span><time>{item.timestamp}</time></span><span className="public-progress-copy">{item.text}{item.streaming && <span aria-hidden="true" className="public-model-caret">▍</span>}</span></>;
-      return item.kind === "event" && item.detail ? (
-        <details className={`public-progress-item is-${item.kind} is-${item.status} is-disclosure`} key={item.id}>
-          <summary>{content}<Icon aria-hidden="true" className="public-progress-chevron" name="chevron" size={13} /></summary>
-          <div className="public-progress-detail"><code>{item.detail}</code></div>
-        </details>
-      ) : <div className={`public-progress-item is-${item.kind} is-${item.status}`} key={item.id}>{content}</div>;
-    })}
+    {hidden > 0 && <div className="public-activity-pagination"><button className="button subtle" onClick={() => setVisibleCount((count) => count + PUBLIC_ACTIVITY_PAGE_SIZE)} type="button">{language === "zh-CN" ? `查看更早的活动（${hidden}）` : `Show earlier activity (${hidden})`}</button>{earlierFailures > 0 && <span role="status">{language === "zh-CN" ? `更早记录含 ${earlierFailures} 项失败或未知结果` : `${earlierFailures} earlier failed or unknown outcomes`}</span>}</div>}
+    {shown.map((item) => <PublicActivityRow key={item.id} item={item} {...(onInspectEvent ? { onInspectEvent } : {})} />)}
     {active && timeline.length === 0 && <p className="public-model-awaiting">{language === "zh-CN" ? "等待模型提供下一步公开进度…" : "Waiting for the next public model update…"}</p>}
   </div>;
+}
+
+function PublicActivityRow({ item, onInspectEvent }: {
+  item: { id: string; kind: "event" | "plan"; status: string; timestamp: string; text: string; label: string; streaming: boolean; detail?: string | undefined; event?: TraceEvent | undefined };
+  onInspectEvent?: (event: TraceEvent) => void;
+}) {
+  const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const firstLine = item.text.split(/\n/u).find((line) => line.trim()) ?? item.text;
+  return <details className={`public-progress-item is-${item.kind} is-${item.status} is-disclosure`} onToggle={(event) => setOpen(event.currentTarget.open)}>
+    <summary><span className="public-progress-meta"><span>{item.label}</span><time>{item.timestamp}</time></span><span className="public-progress-copy">{firstLine}{item.streaming && <span aria-hidden="true" className="public-model-caret">▍</span>}</span><Icon aria-hidden="true" className="public-progress-chevron" name="chevron" size={13} /></summary>
+    <div className="public-progress-detail" hidden={!open}>{open && <><p>{item.text}</p>{item.detail && <code>{item.detail}</code>}{item.event && onInspectEvent && <button className="button subtle" onClick={() => onInspectEvent(item.event!)} type="button"><Icon name="file" size={12} />{t("Inspect evidence")}</button>}</>}</div>
+  </details>;
 }
 
 function progressEventLabel(kind: TraceEvent["kind"], language: "zh-CN" | "en", sourceType?: string): string {

@@ -24,7 +24,8 @@ import { constants as fsConstants } from "node:fs";
 import { open } from "node:fs/promises";
 import { z } from "zod";
 import { createHash } from "node:crypto";
-import { McpProtocolError, McpStdioClient, type McpClientOptions, type McpRemoteTool } from "./client.js";
+import { McpProtocolError, McpStdioClient, type McpClientOptions, type McpClientPort, type McpRemoteTool } from "./client.js";
+import { McpHttpClient } from "./http-client.js";
 
 export const DEFAULT_MCP_REQUEST_TIMEOUT_MS = 15_000;
 export const DEFAULT_MCP_TOOL_TIMEOUT_MS = 30_000;
@@ -37,15 +38,17 @@ export interface McpManagerOptions {
   readonly now?: () => Date;
   readonly requestTimeoutMs?: number;
   readonly toolTimeoutMs?: number;
+  /** Shared product Host isolates unavailable features; legacy embedders keep strict startup. */
+  readonly isolateStartupFailures?: boolean;
   readonly clientFactory?: (
     config: McpServerConfig,
     options: McpClientOptions,
-  ) => McpStdioClient;
+  ) => McpClientPort;
 }
 
 interface ServerRecord {
   readonly config: McpServerConfig;
-  client: McpStdioClient | undefined;
+  client: McpClientPort | undefined;
   status: McpServerStatus;
   tools: Map<string, McpToolCatalogEntry>;
 }
@@ -77,6 +80,7 @@ export class McpManager {
   readonly #now: () => Date;
   readonly #requestTimeoutMs: number;
   readonly #toolTimeoutMs: number;
+  readonly #isolateStartupFailures: boolean;
   readonly #clientFactory: NonNullable<McpManagerOptions["clientFactory"]>;
   readonly #servers = new Map<string, ServerRecord>();
   readonly #listeners = new Set<(event: McpManagerEvent) => void | Promise<void>>();
@@ -94,7 +98,8 @@ export class McpManager {
     this.#now = options.now ?? (() => new Date());
     this.#requestTimeoutMs = boundedTimeout(options.requestTimeoutMs ?? DEFAULT_MCP_REQUEST_TIMEOUT_MS, "requestTimeoutMs");
     this.#toolTimeoutMs = boundedTimeout(options.toolTimeoutMs ?? DEFAULT_MCP_TOOL_TIMEOUT_MS, "toolTimeoutMs");
-    this.#clientFactory = options.clientFactory ?? ((config, clientOptions) => new McpStdioClient(config, clientOptions));
+    this.#isolateStartupFailures = options.isolateStartupFailures ?? false;
+    this.#clientFactory = options.clientFactory ?? ((config, clientOptions) => config.transport === "streamable-http" ? new McpHttpClient(config, clientOptions) : new McpStdioClient(config, clientOptions));
     for (const config of this.#config.servers) {
       this.#servers.set(config.name, {
         config,
@@ -159,7 +164,7 @@ export class McpManager {
             await this.#startRecord(record);
             if (record.status.state === "ready") started.push(record);
           } catch (error) {
-            if (record.config.required) {
+            if (record.config.required && !this.#isolateStartupFailures) {
               for (const previous of started.reverse()) await this.#stopRecord(previous, "required_server_failed");
               this.#started = false;
               throw error;
@@ -182,7 +187,7 @@ export class McpManager {
       try {
         await this.#startRecord(record);
       } catch (error) {
-        if (record.config.required) throw error;
+        if (record.config.required && !this.#isolateStartupFailures) throw error;
         // Optional servers are intentionally restartable without turning a
         // working Host into a failed command when the external process is
         // still unavailable. The degraded status is the durable answer.
@@ -215,7 +220,7 @@ export class McpManager {
         result = renderMcpResult(entry, raw);
       } catch (error) {
         result = {
-          status: "failure",
+          status: error instanceof McpProtocolError && error.code === "mcp_effect_unknown" ? "unknown" : "failure",
           code: error instanceof McpProtocolError ? error.code : "mcp_call_failed",
           summary: safeMessage(error),
         };
@@ -240,10 +245,14 @@ export class McpManager {
   async #startRecord(record: ServerRecord): Promise<void> {
     const config = McpServerConfigSchema.parse(record.config);
     record.status = this.#status(config, "spawning", []);
-    const environment = await this.#resolveEnvironment(config.env);
-    const client = this.#clientFactory(config, {
+    let client: McpClientPort | undefined;
+    try {
+    const environment = config.transport === "stdio" ? await this.#resolveEnvironment(config.env) : {};
+    const authorization = config.transport === "streamable-http" && config.authorization_ref !== undefined ? await this.#resolveSecret(config.authorization_ref) : undefined;
+    client = this.#clientFactory(config, {
       ...(this.#cwd === undefined ? {} : { cwd: this.#cwd }),
       env: { ...this.#environment, ...environment },
+      ...(authorization === undefined ? {} : { authorization }),
       requestTimeoutMs: this.#requestTimeoutMs,
       onToolsChanged: () => this.#serialize(() => this.#refreshRecord(record)),
       onExit: (info) => this.#serialize(async () => {
@@ -280,7 +289,6 @@ export class McpManager {
     });
     record.client = client;
     record.status = this.#status(config, "initializing", []);
-    try {
       const remoteTools = await client.start();
       const mapped = mapTools(config, remoteTools);
       record.tools.clear();
@@ -298,8 +306,8 @@ export class McpManager {
       });
     } catch (error) {
       const code = error instanceof McpProtocolError ? error.code : "mcp_start_failed";
-      const stderrTail = client.stderrTail;
-      await client.stop("start_failed").catch(() => undefined);
+      const stderrTail = client?.stderrTail;
+      await client?.stop("start_failed").catch(() => undefined);
       record.client = undefined;
       record.tools.clear();
       record.status = this.#status(config, "degraded", [], {
@@ -463,7 +471,8 @@ function mapTools(config: McpServerConfig, remoteTools: readonly McpRemoteTool[]
     qualified.add(qualifiedName);
     const inputSchema = BoundedJsonSchemaSchema.parse(remote.inputSchema);
     if (inputSchema.type !== "object") throw new McpProtocolError("mcp_tool_schema_invalid", `MCP tool ${remote.name} input must be an object`);
-    const sideEffect = remote.destructiveHint === true ? "write" : remote.readOnlyHint === true ? "read" : "write";
+    // Remote annotations describe intent, never grant read-only authority.
+    const sideEffect = config.transport === "streamable-http" ? "write" : remote.destructiveHint === true ? "write" : remote.readOnlyHint === true ? "read" : "write";
     mapped.push(McpToolCatalogEntrySchema.parse({
       server_name: config.name,
       name: remote.name,

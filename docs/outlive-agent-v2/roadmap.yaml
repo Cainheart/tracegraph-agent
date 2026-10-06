@@ -1,7 +1,7 @@
 schema_version: 1
 roadmap: outlive-agent-v2
 status: proposed
-last_reviewed: 2026-10-03
+last_reviewed: 2026-10-05
 
 execution_rules:
   one_primary_change_type_per_task: true
@@ -62,6 +62,7 @@ phases:
       - 三条核心演示可独立复现
       - HOST-087/PAR-088/CLI-089/SET-090/DEV-091/RUN-092/BRAND-093/MEDIA-094/DIST-095 与 UX-086 安装即用验收有一致实现、三端操作证据和当前文档
       - macOS/Windows 安装包携带运行时与 CLI，用户无需 Node/pnpm 或手动启动服务即可配置模型并完成任务
+      - UXD-096 至 HELP-106 的真实开发/电脑操作增量有实现、三端回执、双平台原生验证与逐页设计确认；历史界面验收不扩大覆盖范围
       - 外部用户可从零安装并跑通
 
 tasks:
@@ -835,10 +836,10 @@ tasks:
     title: Codex 风格全页面与三端本地工作台二次验收
     owner: workbench
     change_type: feature
-    depends_on: [DESK-065, DESK-066, CLIENT-068, I18N-075, HOST-087, PAR-088, CLI-089, SET-090, DEV-091, RUN-092, BRAND-093, MEDIA-094]
-    outputs: [packages/workbench, packages/api, packages/sdk, apps/web, apps/desktop, apps/desktop-host, docs/validation/ui-086-workbench-ux]
+    depends_on: [DESK-065, DESK-066, CLIENT-068, I18N-075, HOST-087, PAR-088, CLI-089, SET-090, DEV-091, RUN-092, BRAND-093, MEDIA-094, UXD-096, FLOW-097, CFG-098, GOAL-099, TEAM-100, BROW-101, COMP-102, CAP-103, DATA-104, APP-105, HELP-106]
+    outputs: [packages/contracts, packages/workbench, packages/api, packages/sdk, apps/web, apps/desktop, apps/desktop-host, docs/validation/ui-086-workbench-ux, docs/validation/codex-chat-2026-10-05, docs/validation/chat-cursor-recovery-2026-10-06]
     acceptance:
-      - 以当前 Codex 工作台为交互参考，交付可复核的核心用户旅程与 Outlive 能力差距表；复用通用交互模式，不复制品牌、素材或声称一比一复刻
+      - 以用户本次 Codex 截图为直接设计和逐项验收参考，提取共享尺寸、字体、间距、颜色及组件状态；保留 Outlive 与 B Current 品牌，旧设计和历史截图不能证明新版完成
       - 共享 Workbench 形成一致的信息架构与视觉层级，覆盖项目/会话导航、对话与任务输入、模型设置、Run/Tool 活动、变更审阅与结果；空态、加载、失败和 unavailable 状态均明确
       - Web 与 Desktop 均能通过真实 client/Host 完成项目选择、新建对话/任务、切换与恢复 Session、发送后续指令、steer/cancel、查看 Run/Tool 状态及变更/测试结果；Desktop 对已有 canonical controller 支持的 Approval/Todo/Artifact 操作补齐 schema-validated route，不以静态控件冒充可用功能
       - 继续遵守 Outlive 的权限、审批、Memory consent 和 Preview 标记语义；云任务、账号同步、多人共享等未纳入 Outlive 的 Codex 能力明确列为范围外
@@ -846,8 +847,10 @@ tasks:
       - Web/Desktop 用户旅程测试与有状态截图覆盖空工作区、活动 Run、工具结果和变更审阅；真实模式与 Preview 数据边界可观察且不混淆
 
       - 保留首轮 UX-086 历史证据；二次验收移除置顶/顶部设置/常驻页签，头像设置入口、紧凑公开进度与真实结果展开一致
-      - 现有全页面、十类设置及 Git/终端/预览/定时任务入口在 Web/Desktop 三种尺寸验证；CLI 有等价真实操作
+      - 现有全页面、扩展分类设置及 Git/终端/预览/定时任务入口在 Web/Desktop 三种尺寸验证；CLI 有等价真实操作
       - 新对话、项目和历史会话共用 Composer；左侧加号附件/项目文件上下文、权限/计划与右侧会话模型/推理、权限与执行/计划模式接入真实控制器，中文输入法和发送快捷键保持有效
+      - 公开说明与真实工具组交错显示；完成后默认折叠到用时入口，主动展开状态随事件刷新保留，内部初始化/上下文/用量进入诊断，私有推理始终过滤
+      - 错误归属具体轮次，历史失败不覆盖后续成功；展开、历史读取和成果查看始终只读，不自动重新提交任务
       - 默认仅公开当前说明与一行真实活动，点击展开不执行任务；回答复制/本机反馈、逐 Run 写入卡片及文件/变更/终端/预览/成果面板由真实事件与资源驱动
       - 宽度 1200px 起使用右侧面板，较窄使用全屏；关闭、切换、重连保留草稿、附件、未保存文件；明暗与三尺寸通过实际客户端验收
 
@@ -867,6 +870,7 @@ tasks:
       - 共享连接监督器覆盖外部 CLI 重启、崩溃、唤醒和显式停止，单一恢复请求更新实例/凭据/订阅，游标补齐且不重新提交任务
       - 明确的新应用进程启动可恢复已停止 owner；已有 Main 的激活/重开仍保持停止意图，恢复不提交或重跑任务
       - 连接状态与能力状态分离；已读值保留，失败不能显示安装版本不支持，普通界面提供中文恢复操作
+      - 安装包版本变化由旧 owner 原子关闭准入、暂停后台 producer 并核对活动资源与未知副作用后安全替换；保留显式停止意图，旧客户端不能自动降级新 owner，不重提任务
 
   - id: PAR-088
     phase: P8
@@ -895,10 +899,11 @@ tasks:
       - 新增开发资源和定时任务有等价命令；凭据通过 stdin 读取，不出现在命令行参数/输出/诊断中
       - run start --context 经受限文件读取选择版本，最多 5 文件/每文件 64 KiB/合计 128 KiB；提交内容不能拼入 task，普通 chat 拒绝项目文件上下文
       - models、files、feedback 与 sessions options-get/options-set 提供真实操作；模型密钥仅 stdin，未知保存可按命令 ID reconcile，显式 host start 才解除已停止状态；应用完整退出后的明确新启动可启动后台，已有 Main 内的窗口重开不能解除停止
+      - chat 交互与斜杠命令调用同一 SDK/控制器；选择历史继承真实会话选项而不恢复执行，活动以 canonical source event 去重，EOF/退出只断开订阅
 
   - id: SET-090
     phase: P8
-    title: 十类设置、真实生效与模型诊断
+    title: 完整分类设置、真实生效与模型诊断
     owner: settings
     change_type: feature
     depends_on: [HOST-087, PAR-088]
@@ -910,6 +915,7 @@ tasks:
       - 加载、空态、只读、失败、策略禁用区分，错误后不会永久加载；设置 CAS 防并发覆盖
       - 多服务配置与单服务旧数据迁移、独立测试与会话选项持久化；任务受理冻结模型/凭据版本，删除/替换不影响已受理任务
       - 完全访问资格保存在本机且可撤销，与会话选择和管理员上限分离；重启待生效期间不得声称完全访问已经获得
+      - 扩展设置分类覆盖个人资料、快捷键、通知、个性化、浏览器、电脑操作、Git、任务与 Agent、归档；真实能力尚缺时给出准确说明和可执行入口，不以静态控件冒充功能
 
   - id: DEV-091
     phase: P8
@@ -975,3 +981,136 @@ tasks:
       - 首次使用连接模型/保存 Key/独立真实小请求测试/打开项目/执行/查看结果闭环；MCP/LSP 等可选服务不阻塞普通对话
       - 应用自动恢复失败后才显示修复安装与脱敏诊断；普通界面不展示手动 Host 启停或本机服务未启动文案
       - 全新 macOS 与 Windows 环境完成安装/升级/错误恢复验收；签名、平台验证与外部用户证据不足时明确保持待验收
+
+  - id: UXD-096
+    phase: P8
+    title: 完整产品逐页设计与全状态审阅
+    owner: workbench
+    change_type: feature
+    depends_on: [BRAND-093]
+    outputs: [docs/validation/product-workbench-2026-10-05]
+    acceptance:
+      - 新对话/项目/历史共用输入区，19 类设置与文件/变更/终端/预览/成果/Agent 等页面具备可操作设计稿
+      - 设计稿明确为 prototype；逐页确认视觉和空/加载/运行/审批/失败/恢复状态，不能证明后端能力
+
+  - id: FLOW-097
+    phase: P8
+    title: 真实开发流程、计划终态与任务续接
+    owner: runtime
+    change_type: feature
+    depends_on: [CFG-098, DEV-091]
+    outputs: [docs/validation/product-workbench-2026-10-05]
+    acceptance:
+      - 计划模式普通回答可完成；提交执行计划明确 Todo 与版本化审批，回答快照不能冒充终态
+      - 项目已有命令发现与受限真实执行、取消/超时/未知结果核对有外部效果证据
+      - 内部回合阈值进入检查点，在有限总预算内续接；无进展或未知副作用暂停而不重复写入
+      - 显式人工恢复普通开发任务须复用原有限预算，核对工作区、模型凭据版本、权限及 Action WAL；旧验证失效后必须再次真实验证与只读审阅才可交付
+
+  - id: CFG-098
+    phase: P8
+    title: 分层有效配置、历史恢复与独立权限
+    owner: settings
+    change_type: feature
+    depends_on: [HOST-087, PAR-088, SET-090]
+    outputs: [docs/validation/product-workbench-2026-10-05]
+    acceptance:
+      - 全局/项目/会话与界面客户端覆盖有真实解析、来源、作用范围及生效时机；运行快照保留
+      - 脱敏配置历史/CAS 恢复不回读历史 Key，不借恢复重新授权；待重启值安全空闲应用
+      - 模型文字/工具/视觉/结构化测试、授权备用、网络代理、自定义权限和立即撤权各有真实控制器与负例
+
+  - id: GOAL-099
+    phase: P8
+    title: 持续目标、总预算与证据验收
+    owner: runtime
+    change_type: feature
+    depends_on: [FLOW-097, RUN-092]
+    outputs: [docs/validation/product-workbench-2026-10-05]
+    acceptance:
+      - 目标持久化明确 done 条件、用户有限时间或 Token 预算及版本化批准范围
+      - 总预算包含子 Agent/重试/审阅/UI 验证，检查点恢复不自动重复未知写入
+      - 证据检查与用户最终验收独立，Run 完成不等于 Goal 完成
+
+  - id: TEAM-100
+    phase: P8
+    title: 可写多 Agent 与独立审阅/界面校验
+    owner: runtime
+    change_type: feature
+    depends_on: [GOAL-099, DEV-091]
+    outputs: [docs/validation/product-workbench-2026-10-05]
+    acceptance:
+      - 手动/自动受限角色、模型、预算、指导/暂停/结束通过可信控制器，子权限不超过父上限
+      - 写 Agent 使用独立 worktree，保留已授权 dirty 基线，合并与冲突有实际证据
+      - 独立代码审阅/UI 校验 Agent 与真实关系/依赖/通信图有 canonical 事实
+      - 只读交付审阅必须读取完整公开需求、已消费指导、验证回执、Goal 完成条件和产物哈希清单；上下文压缩或未读完分页时不得返回通过
+
+  - id: BROW-101
+    phase: P8
+    title: 随包浏览器与已选 Chrome 标签接入
+    owner: host
+    change_type: feature
+    depends_on: [CFG-098, FLOW-097]
+    outputs: [docs/validation/product-workbench-2026-10-05]
+    acceptance:
+      - 随包匹配浏览器及控制组件真实观察/操作/画面/人工接管，Host 管理资源
+      - Chrome 扩展仅操作已授权标签和站点，不要求 debug port/资料复制/浏览器重启
+      - 未知外部写入不重发，普通用户扩展安装引导及分发状态分别验收
+
+  - id: COMP-102
+    phase: P8
+    title: 双平台原生应用操作与输入权治理
+    owner: desktop
+    change_type: feature
+    depends_on: [CFG-098, FLOW-097, BROW-101]
+    outputs: [docs/validation/product-workbench-2026-10-05]
+    acceptance:
+      - macOS/Windows 的应用观察、可访问控件与视觉操作有产品内实现和原生结果证据
+      - 独立应用一次/始终授权与撤销、单输入租约、用户输入暂停/手动交还、锁屏暂停有效
+      - 截图范围/脱敏/30 天保留/固定保留及全局快捷附加走真实上下文流程
+
+  - id: CAP-103
+    phase: P8
+    title: Skills/远程 MCP/LSP 完整能力管理
+    owner: host
+    change_type: feature
+    depends_on: [CFG-098]
+    outputs: [docs/validation/product-workbench-2026-10-05]
+    acceptance:
+      - 全局及项目 Skills 安装/导入/编辑/创建/校验/启停与来源/版本/冲突有真实控制器
+      - STDIO 与 Streamable HTTP MCP、凭据/OAuth 及 LSP/扩展配置模板/高级校验/重启闭环
+      - 服务失败只影响对应能力，必要能力缺失暂停相关任务，不阻断整个 Host
+
+  - id: DATA-104
+    phase: P8
+    title: 真实资料/用量/全文搜索与保留治理
+    owner: host
+    change_type: feature
+    depends_on: [CFG-098, GOAL-099]
+    outputs: [docs/validation/product-workbench-2026-10-05]
+    acceptance:
+      - 本机资料、项目/会话/模型/时间聚合与热图来自真实 Ledger；缺成本未知，用户价率仅标估算
+      - 公开会话全文、标题、项目/文件引用和归档筛选定位到轮次，不索引私有推理
+      - 记忆审核/来源/撤销与视觉证据清理保留 canonical 事实；后台付费默认关闭
+
+  - id: APP-105
+    phase: P8
+    title: 原生后台入口与浮动聊天
+    owner: desktop
+    change_type: feature
+    depends_on: [CFG-098, COMP-102, FLOW-097]
+    outputs: [docs/validation/product-workbench-2026-10-05]
+    acceptance:
+      - 关闭窗口后原生通知、macOS 菜单栏/Windows 托盘能定位任务并重开，不默认开机启动
+      - 防休眠仅明确启用且活动时持有；浮动/置顶共用会话草稿和控制而不重复执行
+      - 安全升级确认、备份/迁移/恢复与原生双平台验收记录一致
+
+  - id: HELP-106
+    phase: P8
+    title: 首次使用与完整操作说明
+    owner: docs
+    change_type: feature
+    depends_on: [FLOW-097, GOAL-099, TEAM-100, BROW-101, COMP-102, CAP-103, DATA-104, APP-105]
+    outputs: [docs/validation/product-workbench-2026-10-05]
+    acceptance:
+      - 首次配置/模型测试/项目/开发/电脑操作/审批/恢复流程有可搜索说明和内联用途示例
+      - 说明只描述真实可用能力和权限/来源/生效时机，失败给出具体处理动作
+      - 干净双平台与独立使用者按说明跑通；未验收范围保持 pending

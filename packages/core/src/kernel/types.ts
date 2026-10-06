@@ -36,6 +36,8 @@ export interface ModelInput {
   rolePrompt?: string;
   /** Hard provider output ceiling for this request. */
   maxOutputTokens?: number;
+  /** Trusted aggregate lease; clients never construct or grant it. */
+  requestBudget?: import("../domains/runtime/shared-run-budget.js").ModelRequestBudget;
   /** Volatile provider/model deltas for the live presentation surface. */
   onPublicProgress?: (update: PublicModelProgressUpdate) => void;
   /**
@@ -61,6 +63,7 @@ export interface ContextSummaryInput {
   promptVersion: string;
   targetTokens: number;
   sourceText: string;
+  requestBudget?: import("../domains/runtime/shared-run-budget.js").ModelRequestBudget;
   onUsage?: (usage: ModelUsageReport) => void;
   signal?: AbortSignal;
 }
@@ -94,6 +97,10 @@ export interface ModelObservation {
 
 export interface ModelAdapter {
   readonly name: string;
+  /** Real transport dispatch supports the trusted request reservation seam. */
+  readonly supportsRequestBudget?: true;
+  /** Opaque digest of immutable provider/model/capabilities/credential reference; never a key value. */
+  recoveryIdentity?(): string;
   /** Host-owned immutable model snapshot for a Run; recovery binds a fresh snapshot. */
   forRun?(): ModelAdapter;
   /** Release only after a terminal transition or Runtime shutdown. */

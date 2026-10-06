@@ -195,6 +195,11 @@ export interface TraceEvent {
   readonly operationId?: string;
   readonly toolName?: string;
   readonly target?: string;
+  /** Allowlisted command receipt facts, never provider arguments or private reasoning. */
+  readonly commandName?: string;
+  readonly exitCode?: number | null;
+  readonly receiptCode?: string;
+  readonly outputArtifactIds?: readonly string[];
   readonly input?: string;
   readonly output?: string;
   readonly contextManifestRef?: string;

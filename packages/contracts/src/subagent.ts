@@ -1,3 +1,4 @@
+import { SubagentWorkspaceBindingSchema } from "./subagent-workspace.js";
 import { z } from "zod";
 import {
   ArtifactRefSchema,
@@ -126,6 +127,7 @@ export const SubagentSpecSchema = z.object({
   budget: SubagentBudgetSchema,
   depth: z.number().int().positive().max(4),
   fork_context_manifest_ref: IdentifierSchema.optional(),
+  workspace_binding: SubagentWorkspaceBindingSchema.optional(),
 }).strict().superRefine((value, context) => {
   if (value.context_scope === "fork" && value.fork_context_manifest_ref === undefined) {
     context.addIssue({

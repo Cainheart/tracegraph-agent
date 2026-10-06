@@ -80,6 +80,8 @@ export class MemoryBackgroundPipeline {
   #historyLoaded = false;
   #recoveryTask: Promise<void> | undefined;
   #closed = false;
+  #ownerUpgradePauses = 0;
+  readonly #ownerPendingJobs=new Set<string>();
 
   constructor(options: MemoryBackgroundPipelineOptions) {
     this.#root = join(options.root, sha256(options.ownerId).slice("sha256:".length));
@@ -97,6 +99,14 @@ export class MemoryBackgroundPipeline {
 
   get historyLoaded(): boolean { return this.#historyLoaded; }
 
+  /** Owner-only lifecycle barrier; existing extraction is never cancelled to claim idle. */
+  pauseForOwnerUpgrade():{busy:boolean;resume():void} {
+    this.#ownerUpgradePauses++;
+    let resumed=false;
+    return {busy:this.#active.size>0||this.#queue.length>0||this.#timers.size>0||this.#recoveryTask!==undefined||!this.#historyLoaded||this.#ownerPendingJobs.size>0,
+      resume:()=>{if(!resumed){resumed=true;this.#ownerUpgradePauses--;this.#pump();}}};
+  }
+
   /** Repairs the terminal-commit-before-enqueue crash window and rebuilds the disposable read index. */
   recoverSettledRuns(): Promise<void> {
     if (this.#closed) return Promise.resolve();
@@ -107,7 +117,7 @@ export class MemoryBackgroundPipeline {
 
   async #recoverSettledRuns(): Promise<void> {
     this.#historyLoaded = false;
-    this.#jobIndex.clear();
+    this.#jobIndex.clear();this.#ownerPendingJobs.clear();
     for await (const runs of this.#runIdBatches()) {
       if (this.#closed) return;
       for (const { runId, projectId } of runs) {
@@ -141,6 +151,7 @@ export class MemoryBackgroundPipeline {
   }
 
   #indexJob(projectId: string, state: BackgroundJobState): void {
+    if(["waiting","running","retry"].includes(state.status))this.#ownerPendingJobs.add(state.runId);else this.#ownerPendingJobs.delete(state.runId);
     const job = MemoryBackgroundJobSchema.parse({
       runId: state.runId, projectId,
       ...(state.sourceDigest === undefined ? {} : { sourceDigest: state.sourceDigest }),
@@ -202,6 +213,7 @@ export class MemoryBackgroundPipeline {
 
   async #drainQueued(): Promise<void> {
     while (!this.#closed && (this.#queue.length > 0 || this.#active.size > 0)) {
+      if(this.#ownerUpgradePauses>0&&this.#active.size===0)return;
       if (this.#active.size === 0) {
         this.#pump();
         continue;
@@ -226,7 +238,7 @@ export class MemoryBackgroundPipeline {
   }
 
   #pump(): void {
-    if (this.#closed) return;
+    if (this.#closed || this.#ownerUpgradePauses>0) return;
     // One worker per owner/scope at a time makes consolidation ordering explicit.
     while (this.#active.size < 1 && this.#queue.length > 0) {
       const runId = this.#queue.shift()!;
@@ -258,7 +270,8 @@ export class MemoryBackgroundPipeline {
       // Only a trusted Runtime admission can write this durable creation fact.
       // Explicit one-shot media work must not incur a later chat-model request,
       // including when this worker recovers settled history after a restart.
-      if (events.find((event) => event.type === "run.created")?.data.background_model_derivation === false) return;
+      if (events.find((event) => event.type === "run.created")?.data.background_model_derivation === false
+        || events.some(event=>event.type==="workbench.command_completed"&&event.data.operation==="delivery.budget_configured"&&event.data.background_model_derivation===false)) return;
       // A competing worker may have completed the durable job while this
       // instance waited for the owner lease. Refresh its disposable projection
       // before skipping extraction so a historical running marker cannot stick.

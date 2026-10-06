@@ -1,13 +1,13 @@
 # 18. MCP 客户端：生命周期、降级启动与工具桥接
 
-> 实现状态：**已实现/已验证（G-11）**。当前支持受 Host 管理的 stdio JSON-RPC MCP server；每个 server 一个 client，支持 required/optional 启动、degraded 状态、工具发现刷新、原生工具注册、严格凭据引用与 canonical Trace。HTTP/SSE server、resources/instructions 和 PTC 子进程执行面尚未开放，均以 fail-closed 方式保留为后续扩展。
+> 实现状态：**已实现/已验证（G-11）**。当前支持受 Host 管理的 stdio JSON-RPC MCP server；每个 server 一个 client，支持 required/optional 启动、degraded 状态、工具发现刷新、原生工具注册、严格凭据引用与 canonical Trace。2026-10-05 的 CAP-103 切片增加 Streamable HTTP（POST JSON/SSE、Bearer 引用、会话结束和取消）及产品模式的服务故障隔离；OAuth 管理、完整管理表单、独立 GET 订阅、resources/instructions 和 PTC 仍待完成。
 
 ## 1. 交付边界
 
 G-11 的目标是让外部能力进入现有 Tool/Policy/Receipt/Observation/Session Ledger 链，而不是让 MCP server 直接获得 Host 权限。
 
 - 配置契约：MCP_CONFIG_VERSION = "tracegraph.mcp.v1"，默认读取 <dataDir>/mcp.json，也可用 --mcp-config 或 TRACEGRAPH_MCP_CONFIG 指定。
-- 传输：只接受 transport: "stdio"；进程以 shell: false 启动，stdout 使用有界 JSON-RPC 行协议，stderr 只保留 4 KiB 尾部。
+- 传输：接受 `transport: "stdio"` 和 `"streamable-http"`。STDIO 进程以 shell: false 启动，stdout 使用有界 JSON-RPC 行协议，stderr 只保留 4 KiB 尾部。远程配置使用 HTTPS 或 loopback HTTP，只接受凭据引用；不接受命令、进程环境或地址内的凭据。
 - 生命周期：spawning → initializing → ready → degraded → stopped。
 - 工具模式：当前交付的是 native bridge——tools/list 的每个 MCP tool 映射为一个动态内部 Tool；PTC（脚本/子进程内的 Programmatic Tool Calling）没有假装启用，未来必须复用 G-13 沙箱与 G-05 批调度后再开放。
 - 事件：mcp.server_started、mcp.server_failed、mcp.server_stopped、mcp.tools_changed、mcp.tool_called 追加到 canonical EventTypeSchema；随后 G-12 追加两个 `lsp.*`、G-20 追加两个 `code.*`，MEM-042 追加 `memory.use_status`，当前总数为 103；事件账本仍是唯一事实源。
@@ -50,9 +50,9 @@ McpConfigSchema 拒绝重复 server/tool policy 项、未知键、超限命令�
 
 `McpManager`（`packages/mcp/src/manager.ts`）负责多 server 编排。Core 自有的 [`McpRuntimePort`](../../packages/core/src/seams/mcp/ports.ts) 与 [`createMcpToolsExtension`](../../packages/core/src/seams/mcp/tool-extension.ts) 把 catalog 接到 `ExtensionManager`：
 
-- optional server 启动失败只变为 degraded，Host 继续启动；required server 失败会抛 McpStartupError，错误保留 server 名和 stderr 尾部，并阻止 Host 启动。
+- 共享产品 Host 使用 `isolateStartupFailures: true`：失败的 required/optional 服务均为 degraded，健康服务继续可用。独立 manager 默认仍保持旧的 required-server 严格启动规则。
 - ready server 的进程意外退出会撤下其旧 Tool、发 `mcp.tools_changed`，并转为 `degraded`/`mcp.server_failed`；Host 不会继续把已死亡进程伪装成 ready。
-- readOnlyHint=true 映射为 read，destructiveHint=true 映射为 write，声明缺失时默认 write。工具名使用 mcp_<server>__<tool> 命名空间，避免与内置/扩展工具碰撞。
+- STDIO 保持旧的 readOnlyHint/destructiveHint 映射；远程工具不信任服务提供的只读注解，统一按 write 进入现有策略检查。工具名使用 mcp_<server>__<tool> 命名空间，避免与内置/扩展工具碰撞。
 - MCP Tool 先进入 ExtensionManager/ToolRegistry，因此仍经过 strict input、模型 schema 白名单、G-06 Policy、Plan Mode、timeout、并发标记与标准 Receipt/Observation；MCP 工具不会拿到 Workspace 文件能力。
 - 调用参数只持久化 SHA-256 摘要；结果统一裁剪为有界 RawToolResult。server 不可用时同样追加 mcp.tool_called(status=unknown)，不会静默丢失调用事实。
 - tools_changed 会原子替换动态注册：新增工具出现在下一次 modelSchemas()，删除工具不残留；刷新失败会撤下旧工具并将 server 降级。
@@ -94,4 +94,10 @@ Web Settings 只显示 bounded status/tool count，并对 degraded server 显示
 
 ## 6. 明确限制
 
-当前不是完整的 MCP platform：只支持 stdio，不启动 HTTP/SSE transport，不暴露 resources/prompts/instructions，不动态加载第三方 npm/module，也不把 PTC 伪装成 native call。官方 @modelcontextprotocol/server-filesystem 的真实 e2e 仍是可选环境测试；离线 fixture 覆盖生命周期、降级、刷新和调用契约。PTC 若开放，必须先提供独立的沙箱/审批/批调用契约，不能让远程 MCP server 绕过既有 G-06/G-13/G-04 边界。
+当前不是完整的 MCP platform。Streamable HTTP 已支持受限的 POST JSON/SSE、协商协议/会话、Bearer 引用、取消通知及 DELETE；没有 OAuth 管理、独立 GET 订阅、分页工具目录、旧 HTTP+SSE 回退或 resources/prompts/instructions。远程服务返回错误、超时、取消或断连后，已分派的写入结果可能未知，必须检查外部状态后明确重新操作，不能自动重发。官方 @modelcontextprotocol/server-filesystem 的真实 e2e 仍是可选环境测试；离线 fixture 覆盖生命周期、降级、刷新和调用契约。PTC 若开放，必须先提供独立的沙箱/审批/批调用契约，不能让远程 MCP server 绕过既有 G-06/G-13/G-04 边界。
+
+## 7. CAP-103 切片证据（2026-10-05）
+
+[`http-client.test.ts`](../../packages/mcp/src/http-client.test.ts) 使用真实 loopback 服务核对 JSON/SSE、session/version/header、外部计数器、取消通知、超时/断连无重发、凭据与重定向拒绝及服务故障隔离。MCP 的 14 项测试通过；这不等于 OAuth、三端引导管理或完整 CAP-103 验收完成。[本轮记录](../validation/product-workbench-2026-10-05/README.md) 持续区分已验证切片与剩余范围。
+
+协议依据：[MCP Streamable HTTP 规范](https://modelcontextprotocol.io/specification/2025-06-18/basic/transports)。

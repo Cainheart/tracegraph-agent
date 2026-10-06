@@ -53,6 +53,7 @@ import type { RawToolResult, ToolExecutionContext } from "@tracegraph/tool";
 import type { TraceGraphExtension } from "../extensions/registration.js";
 import { RawToolResultSchema } from "../../kernel/raw-tool-result.js";
 import { jsonBytes, truncateUtf8 } from "@tracegraph/tool";
+import { discoverProjectCommandsTool, runProjectCommandTool } from "./project-commands.js";
 export { ActionRejectedError, validateToolCall } from "@tracegraph/tool";
 export { ToolRegistry } from "@tracegraph/tool";
 export { RawToolResultSchema } from "../../kernel/raw-tool-result.js";
@@ -65,6 +66,33 @@ export const ReadArtifactInputSchema = z.object({
   /** Byte-safe chunk bound aligned with durable Observation visibility. */
   limit: z.number().int().min(64).max(4_000).default(4_000),
 }).strict();
+
+/** A recoverable page-cursor mismatch. The Runtime owns the authoritative
+ * cursor; the registry preserves that fact in the public tool receipt. */
+export class ArtifactCursorMismatchError extends Error {
+  readonly code = "artifact_cursor_mismatch";
+
+  constructor(
+    readonly locator: string,
+    readonly requestedOffset: number,
+    readonly expectedOffset: number,
+  ) {
+    super(`Artifact page cursor is out of sequence; continue at byte ${expectedOffset}`);
+    this.name = "ArtifactCursorMismatchError";
+  }
+}
+
+/** A scoped Artifact locator could not be resolved for the active Run. */
+export class ArtifactUnavailableError extends Error {
+  constructor(
+    readonly locator: string,
+    readonly availabilityStatus: "unavailable" | "corrupt",
+    readonly reason: string,
+  ) {
+    super("Context artifact is unavailable");
+    this.name = "ArtifactUnavailableError";
+  }
+}
 export const ListArtifactsInputSchema = z.object({
   offset: z.number().int().nonnegative().max(1_000_000).default(0),
   limit: z.number().int().min(1).max(100).default(50),
@@ -177,6 +205,8 @@ export function createDefaultToolRegistry(options: DefaultToolRegistryOptions = 
     core.get("preview_patch")!,
     core.get("commit_patch")!,
     core.get("run_test")!,
+    core.get("discover_project_commands")!,
+    core.get("run_project_command")!,
   ]);
 }
 
@@ -191,6 +221,8 @@ export function createCoreToolRegistry(options: DefaultToolRegistryOptions = {})
     previewPatchTool,
     commitPatchTool,
     runTestTool,
+    discoverProjectCommandsTool,
+    runProjectCommandTool,
   ]);
 }
 
@@ -799,7 +831,9 @@ const readArtifactTool: ToolDefinition<z.infer<typeof ReadArtifactInputSchema>> 
   ...rawToolContract("read_artifact", {
     description: "Read one bounded UTF-8 page from a readable Context Artifact in the current Run.",
     timeoutMs: 5_000,
-    concurrencySafe: true,
+    // Page N+1 must see the successful Ledger receipt for page N before its
+    // offset can be trusted. Parallel guesses can split a UTF-8 character.
+    concurrencySafe: false,
     sideEffect: "read",
     callLabel: "Read Context artifact",
     resultLabel: "Context artifact page",
@@ -848,6 +882,38 @@ const readArtifactTool: ToolDefinition<z.infer<typeof ReadArtifactInputSchema>> 
       };
     } catch (error) {
       if (context.signal?.aborted) return abortedToolResult();
+      if (error instanceof ArtifactCursorMismatchError) {
+        return {
+          status: "failure",
+          code: error.code,
+          summary: redactSensitiveText(error.message),
+          facts: {
+            locator: error.locator,
+            requested_offset: error.requestedOffset,
+            expected_offset: error.expectedOffset,
+            recoverable: true,
+          },
+        };
+      }
+      if (error instanceof ArtifactUnavailableError) {
+        const recoverable = error.availabilityStatus === "unavailable";
+        return {
+          status: "failure",
+          code: "artifact_unavailable",
+          summary: recoverable
+            ? "Context artifact is unavailable; list current Run artifacts and continue from the available evidence"
+            : "Context artifact cannot be read in this Run",
+          facts: {
+            locator: error.locator,
+            availability_status: error.availabilityStatus,
+            availability_reason: error.reason,
+            recoverable,
+            ...(recoverable
+              ? { recommended_action: error.reason === "not_found" || error.reason === "out_of_scope" ? "list_artifacts" : "select_other_evidence" }
+              : {}),
+          },
+        };
+      }
       return {
         status: "failure",
         code: "artifact_read_failed",
@@ -1122,15 +1188,36 @@ function createListDirTool(
     async execute(input, context) {
       if (isSensitiveWorkspacePath(input.path)) return sensitiveFileResult(input.path);
       if (context.signal?.aborted) return abortedToolResult();
-      const directoryPath = await resolveWorkspacePath(context.workspace, input.path);
+      let directoryPath: string;
+      try {
+        directoryPath = await resolveWorkspacePath(context.workspace, input.path);
+      } catch (error) {
+        if (context.signal?.aborted) return abortedToolResult();
+        return directoryUnavailableResult(input.path, error);
+      }
       const canonicalRelativePath = relative(context.workspace.real_root, directoryPath) || ".";
       if (isSensitiveWorkspacePath(canonicalRelativePath)) return sensitiveFileResult(input.path);
       const startedAt = nowMs();
       const entries: Array<{ path: string; type: "file" | "directory" }> = [];
+      const unreadableDirectories: Array<{ path: string; reason: string }> = [];
+      const recordUnreadableDirectory = (path: string, error: unknown): void => {
+        if (unreadableDirectories.length >= 20) return;
+        unreadableDirectories.push({
+          path: relative(context.workspace.real_root, path) || ".",
+          reason: safeFilesystemErrorCode(error),
+        });
+      };
       const walk = async (path: string, depth: number): Promise<void> => {
         if (context.signal?.aborted) throw abortReason(context.signal);
         if (entries.length >= limits.maxMatches || nowMs() - startedAt >= limits.deadlineMs) return;
-        const directory = await opendir(path);
+        let directory: Awaited<ReturnType<typeof opendir>>;
+        try {
+          directory = await opendir(path);
+        } catch (error) {
+          if (context.signal?.aborted) throw abortReason(context.signal);
+          recordUnreadableDirectory(path, error);
+          return;
+        }
         try {
           for await (const entry of directory) {
             if (entries.length >= limits.maxMatches || nowMs() - startedAt >= limits.deadlineMs) return;
@@ -1145,27 +1232,69 @@ function createListDirTool(
               entries.push({ path: childRelative, type: "file" });
             }
           }
+        } catch (error) {
+          if (context.signal?.aborted) throw abortReason(context.signal);
+          recordUnreadableDirectory(path, error);
         } finally {
           await directory.close().catch(() => undefined);
         }
       };
-      try {
-        await walk(directoryPath, 0);
-      } catch (error) {
-        if (context.signal?.aborted) return abortedToolResult();
-        throw error;
+      await walk(directoryPath, 0);
+      if (entries.length === 0 && unreadableDirectories.some(({ path }) => path === canonicalRelativePath)) {
+        return directoryUnavailableResult(input.path, unreadableDirectories[0]?.reason ?? "filesystem_error");
       }
       entries.sort((left, right) => left.path.localeCompare(right.path));
-      const incomplete = entries.length >= limits.maxMatches || nowMs() - startedAt >= limits.deadlineMs;
+      const incomplete = entries.length >= limits.maxMatches
+        || nowMs() - startedAt >= limits.deadlineMs
+        || unreadableDirectories.length > 0;
       return {
         status: "success",
         code: "directory_listed",
-        summary: `Listed ${entries.length} entr${entries.length === 1 ? "y" : "ies"} under ${canonicalRelativePath}${incomplete ? " (partial)" : ""}`,
+        summary: `Listed ${entries.length} entr${entries.length === 1 ? "y" : "ies"} under ${canonicalRelativePath}${unreadableDirectories.length > 0 ? " (partial: some directories were unreadable)" : incomplete ? " (partial)" : ""}`,
         content: JSON.stringify(entries, null, 2),
         mimeType: "application/json",
-        facts: { path: canonicalRelativePath, entries, incomplete, limits: publicFileLimits(limits) },
+        facts: {
+          path: canonicalRelativePath,
+          entries,
+          incomplete,
+          ...(unreadableDirectories.length > 0 ? { unreadable_directories: unreadableDirectories } : {}),
+          limits: publicFileLimits(limits),
+        },
       };
     },
+  };
+}
+
+function directoryUnavailableResult(path: string, error: unknown): RawToolResult {
+  return {
+    status: "failure",
+    code: "directory_unavailable",
+    summary: "Requested workspace directory could not be read; check that the path exists and is accessible",
+    facts: {
+      path,
+      reason: typeof error === "string" ? error : safeFilesystemErrorCode(error),
+      recoverable: true,
+    },
+  };
+}
+
+function safeFilesystemErrorCode(error: unknown): string {
+  const code = error !== null && typeof error === "object" && "code" in error
+    ? String((error as { code?: unknown }).code)
+    : "filesystem_error";
+  return ["EACCES", "EPERM", "ENOENT", "ENOTDIR", "EISDIR", "EIO", "ELOOP", "EMFILE", "ENFILE"].includes(code)
+    ? code
+    : "filesystem_error";
+}
+
+function recoverableFileUnavailableResult(path: string, error: unknown): RawToolResult | undefined {
+  const reason = safeFilesystemErrorCode(error);
+  if (reason === "filesystem_error") return undefined;
+  return {
+    status: "failure",
+    code: "file_unavailable",
+    summary: "Requested workspace file could not be read; check that the path exists and is accessible",
+    facts: { path, reason, recoverable: true },
   };
 }
 
@@ -1189,7 +1318,15 @@ function createReadFileTool(
     async execute(input, context) {
       if (isSensitiveWorkspacePath(input.path)) return sensitiveFileResult(input.path);
       if (context.signal?.aborted) return abortedToolResult();
-      const path = await resolveWorkspacePath(context.workspace, input.path);
+      let path: string;
+      try {
+        path = await resolveWorkspacePath(context.workspace, input.path);
+      } catch (error) {
+        if (context.signal?.aborted) return abortedToolResult();
+        const unavailable = recoverableFileUnavailableResult(input.path, error);
+        if (unavailable !== undefined) return unavailable;
+        throw error;
+      }
       const canonicalRelativePath = relative(context.workspace.real_root, path);
       if (isSensitiveWorkspacePath(canonicalRelativePath)) return sensitiveFileResult(input.path);
       const startedAt = nowMs();
@@ -1221,6 +1358,8 @@ function createReadFileTool(
         };
       } catch (error) {
         if (context.signal?.aborted) return abortedToolResult();
+        const unavailable = recoverableFileUnavailableResult(input.path, error);
+        if (unavailable !== undefined) return unavailable;
         throw error;
       }
     },

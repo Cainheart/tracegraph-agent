@@ -34,7 +34,7 @@ describe("bounded file tools", () => {
     const registry = createDefaultToolRegistry();
     const schemas = registry.modelSchemas();
 
-    expect(schemas).toHaveLength(20);
+    expect(schemas).toHaveLength(22);
     expect(schemas.map(({ name }) => name)).toEqual([
       "read_file",
       "read_artifact",
@@ -56,6 +56,8 @@ describe("bounded file tools", () => {
       "preview_patch",
       "commit_patch",
       "run_test",
+      "discover_project_commands",
+      "run_project_command",
     ]);
     for (const schema of schemas) {
       expect(Object.keys(schema).sort()).toEqual(["description", "input_schema", "name"]);
@@ -71,7 +73,7 @@ describe("bounded file tools", () => {
         expect(Object.hasOwn(schema, hostOnly)).toBe(false);
       }
     }
-    expect(registry.descriptors()).toHaveLength(20);
+    expect(registry.descriptors()).toHaveLength(22);
     expect(registry.descriptors().find(({ name }) => name === "commit_patch")).toMatchObject({
       concurrency_safe: false,
       side_effect: "write",

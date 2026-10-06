@@ -88,3 +88,8 @@ flowchart LR
 UX-086 首轮基础与 Web/Desktop 核心旅程已通过[当前验收](../../validation/ui-086-workbench-ux/README.md)。HOST-087 自动管理运行时 → PAR-088 → CLI-089/SET-090 → DEV-091 → RUN-092；BRAND-093/MEDIA-094 → UX-086 安装即用验收 → DIST-095 → REL-083/084 构成本轮闭环路径。REL-083/084 必须引用新归档摘要与对应安装/窗口回执；历史摘要不证明新 UI。当前 REL-084 接受明确的维护者 Agent 模拟，P8 的真实外部用户从零安装条件仍需独立人员证据。
 
 安装即用范围要求应用携带运行时并自动恢复，用户无需开发工具或手动启动服务。BRAND-093 的兼容标识保持可读；MEDIA-094 必须产出真实文件和工具回执；DIST-095 的 macOS/Windows 干净环境验收、签名状态与外部参与者分别记录，不以维护者源码测试代替。
+
+
+## 9. 2026-10-05 增量依赖
+
+CFG-098 → FLOW-097 → GOAL-099 → TEAM-100；CFG/FLOW → BROW-101 → COMP-102；CFG → CAP-103；CFG/GOAL → DATA-104；CFG/FLOW/COMP → APP-105；各能力 → HELP-106。UXD-096 先提供逐页可审阅设计，最终 UX-086 依赖全部新增范围；DIST-095/REL-083/084 不得以旧摘要证明新增能力。当前状态见[增量报告](../../validation/product-workbench-2026-10-05/README.md)，以 machine-readable roadmap DAG 为准。

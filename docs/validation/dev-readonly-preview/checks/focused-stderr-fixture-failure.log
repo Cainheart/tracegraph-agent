@@ -1,0 +1,34 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+Permission preset: full-write (sandbox disabled)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+ ❯ src/readonly-preview.test.ts (8 tests | 1 failed) 2920ms
+   ❯ DEV-091 owned read-only preview actual processes (8)
+     × redacts the actual private cache path from owned process stderr snapshots 1207ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/readonly-preview.test.ts > DEV-091 owned read-only preview actual processes > redacts the actual private cache path from owned process stderr snapshots
+AssertionError: expected 'HTTP 200' to contain '[private preview cache]'
+
+Expected: "[private preview cache]"
+Received: "HTTP 200"
+
+ ❯ src/readonly-preview.test.ts:46:310
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  1 failed | 31 passed (32)
+   Start at  02:55:54
+   Duration  8.28s (tests 82%, transform 10%, import 8%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/readonly-preview.test.ts src/workbench-control.test.ts src/workspace-coordinator.test.ts '--maxWorkers=1'

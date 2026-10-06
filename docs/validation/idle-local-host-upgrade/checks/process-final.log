@@ -1,0 +1,34 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: no configured servers (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+ ❯ src/local-host-upgrade-owner.e2e.test.ts (3 tests | 1 failed) 4455ms
+   ❯ actual private owner build handoff (3)
+     × replaces an idle child PID atomically, deduplicates first-launch clients, and preserves model/settings/completed Run without resubmission 2597ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/local-host-upgrade-owner.e2e.test.ts > actual private owner build handoff > replaces an idle child PID atomically, deduplicates first-launch clients, and preserves model/settings/completed Run without resubmission
+AssertionError: expected 2 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ src/local-host-upgrade-owner.e2e.test.ts:30:967
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  05:17:29
+   Duration  5.55s (tests 81%, transform 13%, import 6%)
+

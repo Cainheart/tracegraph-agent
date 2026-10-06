@@ -1,0 +1,36 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench
+
+ ❯ src/current-workbench.test.tsx (24 tests | 1 failed) 202ms
+   ❯ current conversation workbench (24)
+     × saves only explicitly declared image-capable models in the configured model set, without treating a passed connection test as image proof 12ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/current-workbench.test.tsx > current conversation workbench > saves only explicitly declared image-capable models in the configured model set, without treating a passed connection test as image proof
+AssertionError: expected 'Each conversation can choose a saved …' to contain 'A connection test does not validate i…'
+
+- Expected
++ Received
+
+- A connection test does not validate image support.
++ Each conversation can choose a saved provider and model. Running tasks keep their original configuration.Providercustom · This profilegpt-4.1-mini · text-onlyImage input models: NoneCredential saved · DefaultEdit connectionTest model connectionClear API keyRemove connectionpassed · gpt-4.1-mini · 2026-10-03T00:00:00.000ZTest model capabilitiesThese small probes check one exact model and configuration. A passing fixture does not guarantee general quality or grant tool permissions. Image declarations remain unchanged.Model to testgpt-4.1-minitext-onlySelect small testsText responseNative tool callingImage inputSchema-constrained outputThis installation does not provide model capability tests.Run selected testsConnection nameProvideropenaideepseekglmqwenminimaxanthropiccustomAPI protocolOpenAI Chat CompletionsAnthropic MessagesBase URLDefault modelAvailable models (one per line)gpt-4.1-mini
++ text-onlyImage input modelsImage input is declared by you. A text connection test does not verify it; inspect a dedicated image test or a real task before relying on compatibility.Enable image input for gpt-4.1-miniEnable image input for text-onlyAPI KeySave connectionCancelCredentials are write-only. Saving configuration does not verify the provider connection.passed · connection_ok · gpt-4.1-mini · Connected
+
+ ❯ src/current-workbench.test.tsx:62:89
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 2 passed (3)
+      Tests  1 failed | 34 passed (35)
+   Start at  05:09:54
+   Duration  1.84s (import 31%, transform 29%, environment 23%, tests 17%)
+
+    Isolate  3 workers spawned · ~176ms startup each (spawn + environment, per file)
+             at least ~351ms faster with isolate: false — reuses workers across files instead of one per file
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/workbench:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/model-capability-tests.test.tsx src/current-workbench.test.tsx src/help-topics.test.tsx '--maxWorkers=1'

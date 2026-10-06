@@ -52,6 +52,7 @@ describe("MarkdownContent", () => {
 
   it("normalizes common reserved Mermaid ids before the retry", () => {
     expect(normalizeMermaidSource("Here is the chart:\n\ngraph TD\ngraph[State] --> end[Done]")).toBe("flowchart TD\ntg_graph[State] --> tg_end[Done]");
+    expect(normalizeMermaidSource("flowchart LR\nruntime --> graph\ngraph --> ext\nsubgraph tools\nend")).toBe("flowchart LR\nruntime --> tg_graph\ntg_graph --> ext\nsubgraph tools\nend");
     expect(highlightCode("const value = 1", "ts").length).toBeGreaterThan(1);
   });
 });

@@ -9,7 +9,13 @@ acceptance fixtures are synthetic, and all profiles are isolated.
 
 ## Delivered bytes
 
-| Target | Output under `_tmp_release` | SHA-256 |
+The historical package payloads listed below were removed during the
+2026-10-06 cleanup at the user's request. Their checksums and operation reports
+remain historical evidence; rebuild from the current source before a new
+platform acceptance. The latest installed macOS build is documented in
+[`desktop-install-2026-10-06`](../desktop-install-2026-10-06/README.md).
+
+| Target | Historical output (removed) | SHA-256 |
 | --- | --- | --- |
 | macOS arm64 DMG | `installed-product-complete-mac-v2/artifacts/Outlive-Agent-0.1.0-alpha.0-mac-arm64.dmg` | `4c0f86eba3be42245bbfbece0f573cc07792f63352e949399e5ed8c2cf06d1d1` |
 | macOS arm64 ZIP | `installed-product-complete-mac-v2/artifacts/Outlive-Agent-0.1.0-alpha.0-mac-arm64.zip` | `ee45109d597944f8e7b97fabe6dc5bf97d3377a6f5a01b27ac023cd72660d0ee` |

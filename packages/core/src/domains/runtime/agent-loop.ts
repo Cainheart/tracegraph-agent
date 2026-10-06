@@ -7,6 +7,7 @@ import {
 } from "../tools/runtime-service.js";
 import {
   ContextManifestSchema,
+  ContextPolicySchema,
   DecisionSchema,
   MemoryUseEventDataSchema,
   ModelUsageReportSchema,
@@ -46,7 +47,7 @@ import {
   type RawToolResult,
   type ToolDefinition,
 } from "../../kernel/types.js";
-import { DeterministicContextBuilder, type ContextBuildNotice } from "../context/runtime-service.js";
+import { DEFAULT_CONTEXT_POLICY, DeterministicContextBuilder, type ContextBuildNotice } from "../context/runtime-service.js";
 import { ArtifactStore, JsonlEventLedger, projectRun } from "../evidence/runtime-service.js";
 import { ExtensionManager, type ExtensionRuntimeError } from "../extensions/manager.js";
 import type { SkillRegistrySnapshotInternal } from "../skill/skill.js";
@@ -139,9 +140,10 @@ export interface AgentLoopState {
   readonly cancelInputId?: string;
   readonly conversationHistory: StartRunInput["conversation_history"];
   readonly lastPatchEventId?: string;
-  readonly maxTurns: number;
+  readonly maxTurns?: number;
   readonly mode: RunMode;
   readonly model: ModelAdapter;
+  readonly requestBudget?:import("./shared-run-budget.js").ModelRequestBudget;
   readonly modelImages: ModelImageInput[];
   readonly noProgressFingerprints: ProgressFingerprint[];
   readonly noProgressEvidence: Set<string>;
@@ -274,7 +276,11 @@ export interface AgentLoopPorts<State extends AgentLoopState> {
     actionDigest: string,
   ) => PolicyDecision;
   readonly toolRegistry: ToolRegistry;
-  readonly transitionAfterFinish: (state: State, outcome: string) => Promise<boolean>;
+  readonly transitionAfterFinish: (state: State, outcome: string, intent: import("@tracegraph/contracts").FinishIntent, review?:import("@tracegraph/contracts").DeliveryReviewResult) => Promise<boolean>;
+  /** Generic trusted continuation gate; false retains the deterministic ceiling. */
+  readonly continueAfterTurnLimit?: (state:State)=>Promise<boolean>;
+  /** Runtime-owned policy for a settled failure; never an automatic Tool retry. */
+  readonly continueAfterToolFailure?: (state:State,call:ToolCall,result:ExecutedTool)=>Promise<boolean>;
   readonly withRunControl: <T>(runId: string, operation: () => Promise<T>) => Promise<T>;
 }
 
@@ -300,15 +306,16 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
     ) {
       const turnTransition = transitionTurnStart({
         completedTurns: state.turn,
-        maxTurns: state.maxTurns,
+        ...(state.maxTurns===undefined?{}:{maxTurns:state.maxTurns}),
         orchestrationDepth: state.orchestration.depth,
       });
       if (turnTransition.kind === "budget_exhausted") {
+        if(await this.#ports.continueAfterTurnLimit?.(state))continue;
         await this.#ports.fail(
           state,
           turnTransition.failureCode,
           `Run exceeded the deterministic turn budget after ${state.turn} model turns (limit: ${state.maxTurns})`,
-          { turns_completed: state.turn, max_turns: state.maxTurns },
+          { turns_completed: state.turn, ...(state.maxTurns === undefined ? {} : { max_turns: state.maxTurns }) },
         );
         return;
       }
@@ -356,6 +363,18 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
         artifact_refs: [],
         created_at: this.#ports.now().toISOString(),
       }));
+      const modelCapabilities = state.model.capabilities?.();
+      const configuredContextPolicy = this.#ports.contextPolicy ?? DEFAULT_CONTEXT_POLICY;
+      const contextWindowTokens = modelCapabilities?.context_window_tokens;
+      const modelContextPolicy = contextWindowTokens === undefined && modelCapabilities?.max_output_tokens === undefined
+        ? this.#ports.contextPolicy
+        : ContextPolicySchema.parse({
+          ...configuredContextPolicy,
+          ...(contextWindowTokens === undefined ? {} : { window_tokens: contextWindowTokens }),
+          ...(modelCapabilities?.max_output_tokens === undefined ? {} : {
+            reserved_output_tokens: Math.max(256, Math.min(modelCapabilities.max_output_tokens, (contextWindowTokens ?? configuredContextPolicy.window_tokens) - 256)),
+          }),
+        });
       const built = await this.#ports.contextBuilder.buildWithStrategies({
         projectId: state.projectId,
         runId: state.runId,
@@ -375,7 +394,7 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
         retrievedMemory: featureTurnContext.retrievedMemory ?? [],
         retrievedExperience: featureTurnContext.retrievedExperience ?? [],
         tokenMeterIdentity,
-        ...(this.#ports.contextPolicy === undefined ? {} : { contextPolicy: this.#ports.contextPolicy }),
+        ...(modelContextPolicy === undefined ? {} : { contextPolicy: modelContextPolicy }),
       }, {
         artifactStore: this.#ports.artifacts,
         signal: state.cancellation.signal,
@@ -393,6 +412,7 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
         ...(state.orchestration.depth > 0 || state.model.summarizeContext === undefined ? {} : {
           summarize: async (summaryInput) => state.model.summarizeContext!({
             ...summaryInput,
+            ...(state.requestBudget?{requestBudget:state.requestBudget}:{}),
             onUsage: (usageValue) => {
               const parsed = ModelUsageReportSchema.safeParse(usageValue);
               if (!parsed.success || parsed.data.request_kind !== "summary") return;
@@ -567,6 +587,7 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
         const key = `${providerAttempt}:${parsed.data.request_kind}:${parsed.data.request_sequence}`;
         if (!reportedUsage.has(key)) reportedUsage.set(key, parsed.data);
       };
+      const maxOutputTokens = remainingSubagentTokens ?? modelCapabilities?.max_output_tokens;
       const modelInput: ModelInput = {
         projectId: state.projectId,
         runId: state.runId,
@@ -576,13 +597,14 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
         turn: state.turn,
         context: built.modelContext,
         contextManifest: ContextManifestSchema.parse(built.manifest),
+        ...(state.requestBudget?{requestBudget:state.requestBudget}:{}),
         ...(state.turn === 1 && state.modelImages.length > 0
           ? { images: state.modelImages.map((image) => ({ ...image })) }
           : {}),
         observations: built.modelObservations,
         toolSchemas: this.#ports.toolRegistry.modelSchemas(this.#ports.effectiveToolAllowlist(state)),
         ...(state.rolePrompt === undefined ? {} : { rolePrompt: state.rolePrompt }),
-        ...(remainingSubagentTokens === undefined ? {} : { maxOutputTokens: remainingSubagentTokens }),
+        ...(maxOutputTokens === undefined ? {} : { maxOutputTokens }),
         signal: state.cancellation.signal,
         onUsage: (usageValue) => captureUsage(1, usageValue),
       };
@@ -885,7 +907,7 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
       });
       if (decision.kind === "finish") {
         const outcome = decision.final_answer ?? "Run completed";
-        if (await this.#ports.transitionAfterFinish(state, outcome)) return;
+        if (await this.#ports.transitionAfterFinish(state, outcome, decision.finish_intent ?? "answer",decision.review_result)) return;
         continue;
       }
       if (decisionCalls.length === 0) {
@@ -1269,8 +1291,10 @@ export class AgentLoopCoordinator<State extends AgentLoopState> {
         return;
       }
       if (firstFailure !== undefined) {
-        await this.#ports.fail(state, firstFailure.executed.raw.code, firstFailure.executed.raw.summary);
-        return;
+        if(!await this.#ports.continueAfterToolFailure?.(state,firstFailure.prepared.call,firstFailure.executed)){
+          await this.#ports.fail(state, firstFailure.executed.raw.code, firstFailure.executed.raw.summary);
+          return;
+        }
       }
       if (preview !== undefined) return;
 

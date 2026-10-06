@@ -18,6 +18,8 @@ export type BuiltinToolName =
   | "preview_patch"
   | "commit_patch"
   | "run_test"
+  | "discover_project_commands"
+  | "run_project_command"
   | "todo_read"
   | "todo_write"
   | "spawn_subagent"
@@ -54,6 +56,8 @@ export const TOOL_OUTPUT_LIMITS: Readonly<Record<BuiltinToolName, ToolOutputLimi
   preview_patch: toolLimit(128 * 1024, 2_000, 44 * 1024, 80 * 1024),
   commit_patch: toolLimit(96 * 1024, 2_000, 44 * 1024, 48 * 1024),
   run_test: toolLimit(96 * 1024, 2_000, 64 * 1024, 28 * 1024),
+  discover_project_commands: toolLimit(48 * 1024, 2_000, 20 * 1024, 24 * 1024),
+  run_project_command: toolLimit(96 * 1024, 2_000, 72 * 1024, 20 * 1024),
   // One contract-valid Todo can contain 128 dependencies, 256 evidence ids,
   // a 4K detail, and JSON-escaped 160-character identifiers. Keep a bounded
   // ceiling that can still carry that worst-case item as a one-item page.

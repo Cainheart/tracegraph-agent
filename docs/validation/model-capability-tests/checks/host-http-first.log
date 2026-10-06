@@ -1,0 +1,91 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host
+
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+Permission preset: workspace-write (sandbox: workspace-write)
+Retrieval: local JSONL/BM25
+MCP: no configured servers
+LSP: pyright=stopped, typescript=stopped (lazy)
+Subagents: isolated-coder, readonly (parallel 2, depth 1)
+ ❯ src/model-capability-http.test.ts (4 tests | 4 failed) 315ms
+   ❯ actual shared model-capability HTTP control (4)
+     × uses the selected model, persists the exact safe receipt and never repeats a completed command after reconnect 123ms
+     × rejects changed revisions and undeclared models before any provider request with a durable failed receipt 63ms
+     × read-only environment connections remain explicitly testable without storing their key 65ms
+     × a held probe keeps its exact leased model/key through rotation, exposes busy, and releases after its receipt 64ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/model-capability-http.test.ts > actual shared model-capability HTTP control > uses the selected model, persists the exact safe receipt and never repeats a completed command after reconnect
+Error: TraceGraph client is not bootstrapped
+ ❯ TraceGraphClient.#headers ../sdk/src/index.ts:1375:29
+ ❯ TraceGraphClient.#requestResponse ../sdk/src/index.ts:1340:25
+ ❯ TraceGraphClient.#requestUnknown ../sdk/src/index.ts:1312:49
+ ❯ TraceGraphClient.#command ../sdk/src/index.ts:1274:32
+ ❯ TraceGraphClient.saveModelConnection ../sdk/src/index.ts:807:126
+ ❯ fixture src/model-capability-http.test.ts:19:42
+
+ ❯ src/model-capability-http.test.ts:25:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  src/model-capability-http.test.ts > actual shared model-capability HTTP control > rejects changed revisions and undeclared models before any provider request with a durable failed receipt
+Error: TraceGraph client is not bootstrapped
+ ❯ TraceGraphClient.#headers ../sdk/src/index.ts:1375:29
+ ❯ TraceGraphClient.#requestResponse ../sdk/src/index.ts:1340:25
+ ❯ TraceGraphClient.#requestUnknown ../sdk/src/index.ts:1312:49
+ ❯ TraceGraphClient.#command ../sdk/src/index.ts:1274:32
+ ❯ TraceGraphClient.saveModelConnection ../sdk/src/index.ts:807:126
+ ❯ fixture src/model-capability-http.test.ts:19:42
+
+ ❯ src/model-capability-http.test.ts:33:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  src/model-capability-http.test.ts > actual shared model-capability HTTP control > read-only environment connections remain explicitly testable without storing their key
+Error: TraceGraph client is not bootstrapped
+ ❯ TraceGraphClient.#headers ../sdk/src/index.ts:1375:29
+ ❯ TraceGraphClient.#requestResponse ../sdk/src/index.ts:1340:25
+ ❯ TraceGraphClient.#requestUnknown ../sdk/src/index.ts:1312:49
+ ❯ TraceGraphClient.getModelConnections ../sdk/src/index.ts:806:101
+ ❯ src/model-capability-http.test.ts:36:94
+
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+ FAIL  src/model-capability-http.test.ts > actual shared model-capability HTTP control > a held probe keeps its exact leased model/key through rotation, exposes busy, and releases after its receipt
+Error: TraceGraph client is not bootstrapped
+ ❯ TraceGraphClient.#headers ../sdk/src/index.ts:1375:29
+ ❯ TraceGraphClient.#requestResponse ../sdk/src/index.ts:1340:25
+ ❯ TraceGraphClient.#requestUnknown ../sdk/src/index.ts:1312:49
+ ❯ TraceGraphClient.#command ../sdk/src/index.ts:1274:32
+ ❯ TraceGraphClient.saveModelConnection ../sdk/src/index.ts:807:126
+ ❯ fixture src/model-capability-http.test.ts:19:42
+
+ ❯ src/model-capability-http.test.ts:39:15
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed (4)
+   Start at  04:53:15
+   Duration  1.56s (transform 53%, import 25%, tests 21%)
+
+undefined
+/Users/cain/Downloads/ai-job-search-master/tracegraph-agent/packages/host:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: vitest run src/model-capability-http.test.ts '--maxWorkers=1'

@@ -1,5 +1,10 @@
-import { app, BrowserWindow, dialog, ipcMain, session, shell, clipboard, type IpcMainInvokeEvent } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, session, shell, clipboard, screen, type IpcMainInvokeEvent } from "electron";
 import { basename, join, resolve } from "node:path";
+import { randomUUID } from "node:crypto";
+import { NativeRunNavigationSchema } from "@tracegraph/contracts";
+import { NativeBackgroundController, type NativeBackgroundRead } from "./native-background.js";
+import { WindowPresentation } from "./window-presentation.js";
+import { createNativeBackgroundEffects } from "./native-background-electron.js";
 import { stat } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { MigrationPreviewSnapshotSchema, MigrationCommitReceiptSchema, ProjectSummarySchema, type SessionRecoveryReport, HostConnectionError, HostConnectionSnapshotSchema, HostConnectionCodeSchema } from "@tracegraph/contracts";
@@ -24,7 +29,13 @@ let streams: DesktopStreamManager | null = null;
 let recovery: SessionRecoveryReport = { scanned_sessions: 0, truncated_session_ids: [], interrupted_run_ids: [], reconciled_action_ids: [], aborted_action_ids: [], diverged_action_ids: [], recovered_at: new Date().toISOString() };
 let hostFailure: string | null = null;
 let mainWindow: BrowserWindow | null = null;
+const windowPresentation = new WindowPresentation(bounds => screen.getDisplayMatching(bounds).workArea);
 let isClosing = false;
+let quitRequested = false;
+let quitDetached = false;
+let nativeLanguage = "zh-CN";
+let nativeBackground: NativeBackgroundController | null = null;
+let rendererLoading: Promise<void> | undefined;
 const previews = new NativePreviewManager();
 let migrationSources: LegacyMigrationSource[] = [];
 let migrationBusy = false;
@@ -59,7 +70,7 @@ function hostGatewayPort(address: string): number {
 }
 
 const standaloneChannels=new Set<string>([DESKTOP_IPC.startHost,DESKTOP_IPC.hostStatus,DESKTOP_IPC.getConnectionStatus,DESKTOP_IPC.readStream,DESKTOP_IPC.closeStream,DESKTOP_IPC.closePreview,DESKTOP_IPC.exitReplay,DESKTOP_IPC.commitMigration,DESKTOP_IPC.copyText]);
-const readChannels=new Set<string>([DESKTOP_IPC.listProjectFiles,DESKTOP_IPC.readProjectFile,DESKTOP_IPC.reconcileProjectFileSave,DESKTOP_IPC.getAnswerFeedback,DESKTOP_IPC.getModelConnections,DESKTOP_IPC.getSessionRunOptions,DESKTOP_IPC.getPermissionGrant,DESKTOP_IPC.listSessions,DESKTOP_IPC.getSession,DESKTOP_IPC.getRun,DESKTOP_IPC.getTodos,DESKTOP_IPC.getArtifact,DESKTOP_IPC.listProjects,DESKTOP_IPC.getModelConfig,DESKTOP_IPC.listMemoryControl,DESKTOP_IPC.listExperienceCases,DESKTOP_IPC.getImageConfig,DESKTOP_IPC.getArtifactContent,DESKTOP_IPC.getWorkbenchSettings,DESKTOP_IPC.getCapabilities,DESKTOP_IPC.getWorkbenchResources,DESKTOP_IPC.getPermissionConfig,DESKTOP_IPC.getTelemetryStatus,DESKTOP_IPC.getUsage,DESKTOP_IPC.listExtensions,DESKTOP_IPC.listSkills,DESKTOP_IPC.getMcpStatus,DESKTOP_IPC.getLspStatus,DESKTOP_IPC.getReplayDiff,DESKTOP_IPC.getAttachmentContent,DESKTOP_IPC.getSubagent,DESKTOP_IPC.getTeam,DESKTOP_IPC.getMigrationResult,DESKTOP_IPC.openStream]);
+const readChannels=new Set<string>([DESKTOP_IPC.getModelCapabilityTestReceipt,DESKTOP_IPC.listManagedSkills,DESKTOP_IPC.readManagedSkill,DESKTOP_IPC.validateManagedSkill,DESKTOP_IPC.getManagedSkillCommandReceipt,DESKTOP_IPC.getVisualRetentionSettings,DESKTOP_IPC.listVisualEvidence,DESKTOP_IPC.getVisualEvidenceCommandReceipt,DESKTOP_IPC.getPersonalProfile,DESKTOP_IPC.getPersonalProfileCommandReceipt,DESKTOP_IPC.queryPersonalUsage,DESKTOP_IPC.searchPublicSessions,DESKTOP_IPC.getGoalCreationReceipt,DESKTOP_IPC.getComputerStatus,DESKTOP_IPC.listComputerTargets,DESKTOP_IPC.getComputerCommandReceipt,DESKTOP_IPC.getComputerCapture,DESKTOP_IPC.getGoalCommandReceipt,DESKTOP_IPC.getBrowserCommandReceipt,DESKTOP_IPC.getBrowserStatus,DESKTOP_IPC.getBrowserEvidence,DESKTOP_IPC.listGoals,DESKTOP_IPC.getGoal,DESKTOP_IPC.getGoalBudget,DESKTOP_IPC.listProjectFiles,DESKTOP_IPC.readProjectFile,DESKTOP_IPC.reconcileProjectFileSave,DESKTOP_IPC.getAnswerFeedback,DESKTOP_IPC.getModelConnections,DESKTOP_IPC.getSessionRunOptions,DESKTOP_IPC.getPermissionGrant,DESKTOP_IPC.listSessions,DESKTOP_IPC.getSession,DESKTOP_IPC.getRun,DESKTOP_IPC.getTodos,DESKTOP_IPC.getArtifact,DESKTOP_IPC.listProjects,DESKTOP_IPC.getModelConfig,DESKTOP_IPC.listMemoryControl,DESKTOP_IPC.listExperienceCases,DESKTOP_IPC.getImageConfig,DESKTOP_IPC.getArtifactContent,DESKTOP_IPC.getWorkbenchSettingsHistory,DESKTOP_IPC.getProjectRunDefaults,DESKTOP_IPC.getWorkbenchSettings,DESKTOP_IPC.getCapabilities,DESKTOP_IPC.getWorkbenchResources,DESKTOP_IPC.getPermissionConfig,DESKTOP_IPC.getTelemetryStatus,DESKTOP_IPC.getUsage,DESKTOP_IPC.listExtensions,DESKTOP_IPC.listSkills,DESKTOP_IPC.getMcpStatus,DESKTOP_IPC.getLspStatus,DESKTOP_IPC.getReplayDiff,DESKTOP_IPC.getAttachmentContent,DESKTOP_IPC.getSubagent,DESKTOP_IPC.getTeam,DESKTOP_IPC.getMigrationResult,DESKTOP_IPC.openStream]);
 function registerHandler(channel:(typeof DESKTOP_IPC)[keyof typeof DESKTOP_IPC],listener:Parameters<typeof ipcMain.handle>[1]):void {
   ipcMain.handle(channel,async(event,...args:unknown[])=>{
     try {
@@ -387,6 +398,7 @@ async function launchHost(profileRoot=process.env.OUTLIVE_PROFILE_ROOT,httpPort?
 }
 
 async function createMainWindow(): Promise<void> {
+  if (isClosing || quitRequested) return;
   const window = new BrowserWindow({
     title: "Outlive Agent",
     width: 1440,
@@ -405,6 +417,7 @@ async function createMainWindow(): Promise<void> {
     },
   });
   mainWindow = window;
+  windowPresentation.attach(window);
   const streamOwner = window.webContents.id;
   window.once("ready-to-show", () => window.show());
   window.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
@@ -422,12 +435,92 @@ async function createMainWindow(): Promise<void> {
       event.preventDefault();
     }
   });
+  window.webContents.on("will-prevent-unload", (event) => {
+    // Keep the renderer and its authenticated client until the human has
+    // explicitly accepted losing unsaved edits. Electron otherwise silently
+    // vetoes app.quit after before-quit has already fired.
+    const zh = nativeLanguage !== "en";
+    const response = dialog.showMessageBoxSync(window, {
+      type: "warning", title: "Outlive Agent",
+      message: zh ? "丢弃未保存的编辑并退出？" : "Discard unsaved edits and quit?",
+      detail: zh ? "继续编辑会保留当前窗口和连接。退出应用不会停止后台任务。" : "Keep editing preserves this window and its connection. Quitting the application keeps background work running.",
+      buttons: zh ? ["继续编辑", "丢弃并退出"] : ["Keep editing", "Discard and quit"],
+      defaultId: 0, cancelId: 0, noLink: true,
+    });
+    if (response === 1) event.preventDefault();
+    else quitRequested = false;
+  });
+  window.on("close", (event) => {
+    if (nativeBackground !== null && !quitRequested && !isClosing) {
+      event.preventDefault();
+      window.hide();
+    }
+  });
   window.on("closed", () => {
     previews.close();
+    windowPresentation.detach(window);
     if (mainWindow === window) mainWindow = null;
     void streams?.closeOwner(streamOwner);
   });
-  await window.loadFile(rendererPath, { query: previewMode ? { preview: "1" } : {} });
+  const loading = window.loadFile(rendererPath, { query: previewMode ? { preview: "1" } : {} });
+  rendererLoading = loading;
+  try { await loading; } finally { if (rendererLoading === loading) rendererLoading = undefined; }
+}
+
+async function showMainWindow(): Promise<void> {
+  if (isClosing || quitRequested) throw new Error("The application is closing");
+  if (mainWindow === null || mainWindow.isDestroyed()) await createMainWindow();
+  else await rendererLoading;
+  const window = requireMainWindow(); window.show(); window.focus();
+}
+async function readNativeBackground(): Promise<NativeBackgroundRead | undefined> {
+  if (!supervisor || supervisor.getSnapshot().state !== "connected") return undefined;
+  return supervisor.read(async () => {
+    const host = requireHost(), before = supervisor!.getSnapshot();
+    if (host.client.replayActive) return undefined;
+    const [settings, resources] = await Promise.all([host.client.getWorkbenchSettings(), host.client.getWorkbenchResources()]);
+    const after = supervisor!.getSnapshot();
+    if (after.state !== "connected" || after.generation !== before.generation || settings.profile_id !== host.status.profile_id || host !== desktopHost || host.client.replayActive) return undefined;
+    nativeLanguage = settings.settings.general.language;
+    return { profileId: host.status.profile_id, ownerNonce: host.status.boot_nonce, generation: after.generation, settings, resources };
+  });
+}
+function installNativeBackground(): void {
+  if (previewMode || nativeBackground) return;
+  try {
+    const effects = createNativeBackgroundEffects(join(appDirectory, "renderer", "tray.png"), () => { void showMainWindow().catch(() => undefined); });
+    nativeBackground = new NativeBackgroundController({effects, read: readNativeBackground, showWindow: showMainWindow,
+      windowPresentation: () => windowPresentation.state(),
+      setFloating: async enabled => { await showMainWindow(); windowPresentation.setFloating(enabled); },
+      setAlwaysOnTop: async enabled => { await showMainWindow(); windowPresentation.setAlwaysOnTop(enabled); },
+      navigate: async (notification, _generation, profileId) => {
+        await showMainWindow();
+        if (!supervisor) throw new Error("The connection is unavailable");
+        await supervisor.read(async () => {
+          const host = requireHost(), before = supervisor!.getSnapshot();
+          if (host.client.replayActive || host.status.profile_id !== profileId) throw new Error("The notification belongs to another profile");
+          const run = await host.client.getRun(notification.run_id), current = supervisor!.getSnapshot();
+          if (host !== desktopHost || current.state !== "connected" || current.generation !== before.generation || host.client.replayActive || run.run_id !== notification.run_id || run.project_id !== notification.project_id || run.session_id !== notification.session_id) throw new Error("The notification Run scope changed");
+          const payload = NativeRunNavigationSchema.parse({event_id: notification.event_id, run_id: run.run_id, project_id: run.project_id, ...(run.session_id ? {session_id: run.session_id} : {}), connection_generation: current.generation});
+          requireMainWindow().webContents.send(DESKTOP_IPC.nativeRunRequested, payload);
+        });
+      },
+      setPreventSleep: async enabled => {
+        if (!supervisor) throw new Error("The connection is unavailable");
+        await supervisor.mutate(async () => {const host = requireHost(); const snapshot = await host.client.getWorkbenchSettings(); await host.client.updateWorkbenchSettings({command_id: randomUUID(), expected_revision: snapshot.revision, patch:{general:{prevent_sleep_during_tasks: enabled}}});});
+      },
+      stopBackgroundAndQuit: async snapshot => {
+        await showMainWindow();
+        const zh = snapshot.settings.settings.general.language === "zh-CN";
+        const decision = await dialog.showMessageBox(requireMainWindow(), {type: "warning", title: "Outlive Agent", message: zh ? "停止所有后台任务并退出？" : "Stop all background work and quit?", detail: zh ? "这会停止本机后台任务、终端和预览。仅退出应用可以让后台任务继续。" : "This stops local background tasks, terminals and previews. Quitting the application alone keeps background work running.", buttons: zh ? ["取消", "停止后台并退出"] : ["Cancel", "Stop background and quit"], defaultId: 0, cancelId: 0, noLink: true});
+        if (decision.response !== 1) return;
+        if (!supervisor) throw new Error("The connection is unavailable");
+        await supervisor.mutate(async () => {const host = requireHost(); if (host.status.profile_id !== snapshot.profileId) throw new Error("The profile changed while confirming"); await host.client.workbenchCommand({type:"host.stop", command_id:randomUUID()});});
+        app.quit();
+      }, quit: () => app.quit(),
+    });
+    nativeBackground.start();
+  } catch { /* Keep a usable window when the platform has no Tray support. */ }
 }
 
 registerIpcHandlers();
@@ -442,29 +535,37 @@ void app.whenReady().then(async () => {
     }
   }
   await createMainWindow();
+  installNativeBackground();
 }).catch((error: unknown) => {
   hostFailure = error instanceof Error ? error.message : "Desktop startup failed";
   app.quit();
 });
 
 app.on("activate", () => {
+  if (isClosing || quitRequested) return;
   void supervisor?.refresh();
   if (BrowserWindow.getAllWindows().length === 0) void createMainWindow();
 });
 
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") app.quit();
+  if (nativeBackground === null && process.platform !== "darwin") app.quit();
 });
 
-app.on("before-quit", (event) => {
-  if (supervisor === null || isClosing) return;
+app.on("before-quit", () => { quitRequested = true; });
+
+app.on("will-quit", (event) => {
+  if (quitDetached) return;
   event.preventDefault();
+  if (isClosing) return;
   isClosing = true;
   previews.close();
   desktopHost = null;
   // Client shutdown detaches private streams. The independent Host owns Run lifetime.
-  void (async () => { await supervisor?.close(); })().catch(() => { process.exitCode = 1; }).finally(() => {
+  void (async () => { await nativeBackground?.close(); nativeBackground = null; await supervisor?.close(); supervisor = null; })().catch(() => { process.exitCode = 1; }).finally(() => {
+    quitDetached = true;
     isClosing = false;
-    app.quit();
+    // Electron has not cleared its current native quit transaction during this
+    // promise microtask. Re-enter on the next turn after that transaction ends.
+    setImmediate(() => app.quit());
   });
 });

@@ -2,7 +2,7 @@
 
 > 定位：终端命令与实时进度入口；通过共享本机 Host 使用项目、Session、配置和后台资源。当前 Runtime/configuration 装配 owner 在 `packages/host`，CLI 不另外创建业务状态。
 > 代码：`apps/cli/src/index.ts`、`run-session-command.ts`、`run-session-command.test.ts`、`boot/profile.ts`、`profiles/cli.ts`、`extension-config.ts`、`extension-command.ts`、`team-command.ts`、`permission-config.ts`、`sandbox-config.ts`（legacy seam）、`model-config.ts`、`telemetry-config.ts`、`retrieval-config.ts`、`subagent-config.ts`、`project-registry.ts`、`composition.ts`；扩展生命周期、凭据、Permission、Sandbox、Memory、Subagent 与 Session 实现在 `packages/core`，本地检索在 `packages/retrieval`，可选 HTTP 服务/client 在 `apps/retrieval-service`，Telemetry sink 在 `packages/telemetry`
-> 最后核对：2026-10-03
+> 最后核对：2026-10-05
 > 实现状态：共享 profile/UDS typed client、命令与三条实时流、资源管理和显式迁移已有源码/测试；旧显式 serve/config helper 保留兼容。维护者本机验收与独立外部验收分开。
 
 ---
@@ -20,6 +20,7 @@ outlive files list|read|save|reconcile --project-id <id> [...]
 outlive feedback get|set --run-id <id> [...]
 outlive config permission grant-status|grant|revoke [--confirm-full-access]
 outlive projects list|create|register|remove [...]
+outlive chat [interactive] [--project-id <id> --session-id <id> --mode plan|execute --jsonl]
 outlive chat start --task <text> [--session-id <id>]
 outlive run start --project-id <id> --task <text> [--mode plan|execute]
 outlive run get|events|activity|model <run-id>
@@ -51,6 +52,14 @@ API Key 仅从 `--key-stdin` 收集，CLI 不接受 argv Key；存储由共享 H
 
 `host restart` 只提交 canonical 重启请求：活跃 Run、queued workspace claim、终端或 owned preview 会返回 busy，不能偷偷取消资源。`restart_requested` 是请求回执，需要 `host status` 观察新 owner 或后续读取确认配置应用。显式 `host stop` 保留停止意图，普通 chat/run/config 不能复活；再次使用前须明确 `host start`。终端 shell 退出、CLI 订阅结束与 OS worker 崩溃分别遵循资源/客户端/进程生命周期，不等同显式 Host stop。
 
+### 1.1.0 交互聊天与斜杠指令
+
+`outlive chat` / `outlive chat interactive` 使用同一 Profile/Host。普通输入创建或继续会话；当前 Run 活跃时进入其规范持久输入队列，`/guide` 明确提供指导。`/new` 切换对话且后台继续，`/session <id>` 只读历史并继承已保存选项，不执行 resume。`/mode`、`/model <connection-id> <configured-model>`、`/effort` 在已有会话时经共享 CAS 选项控制器保存，只影响后续任务。
+
+`/stop` 显式取消；`/approve-plan` 要求精确版本，普通 `/run approve` 仍要求原审批/action ID。其它斜杠操作复用现有命名 argv parser，不经 Shell 求值；`//` 发送以 `/` 开头的正文。凭据/附件 stdin 与 terminal attach 单独使用非交互命令。`--jsonl` 输出受校验公开活动及规范终态，失败草稿不显示成交付。活动按来源 Event 去重，可处理 owner 临时序号重置。
+
+EOF、`/quit`、Ctrl+C 只断开订阅和客户端，不取消任务或关闭 Host。十项窄检查及真实 subprocess/同 Host 终态对账见[验收记录](../validation/product-workbench-2026-10-05/checks/cli-interactive-process-proof.json)。实现不是完整 TUI，也未替代 Windows 原生终端验收。
+
 ### 1.1.1 已保存模型连接与会话选项
 
 | 命令 | 输入与结果 |
@@ -58,11 +67,15 @@ API Key 仅从 `--key-stdin` 收集，CLI 不接受 argv Key；存储由共享 H
 | `outlive models list` | 安全 registry snapshot：connection ID、revision、配置 labels、Key 是否存在、独立测试状态；没有原始 Key |
 | `outlive models save --input-file connection.json [--key-stdin] --command-id <id>` | strict JSON 包含 label/provider/protocol/base_url/model，以及可选 connection_id/expected_revision/models/clear_key；JSON 的 api_key 被拒绝，Key 只能 stdin；返回 registry snapshot |
 | `outlive models test <connection-id> --command-id <id>` | 显式 tiny connection test；保存成功不代表测试通过，测试通过不代表 Run 完成 |
+| `outlive models capability-test <connection-id> --input-file test.json --command-id <id>` | 显式具体 model/revision 的文字、原生工具、图片或结构化夹具；JSON 含 expected_revision、model、features 与 confirmed:true；不接任意 prompt |
+| `outlive models capability-receipt <command-id>` | 只读原始测试回执，不再次请求供应商；completed 仍逐项检查结果 |
 | `outlive models remove <connection-id> --expected-revision <n> --command-id <id>` | CAS 移除；进行中 Run 已冻结的配置/凭据 lease 不热切换 |
 | `outlive sessions options-get <session-id>` | Session 下一 Run 的选项与 revision |
-| `outlive sessions options-set <session-id> --input-file options.json --command-id <id>` | JSON 含 expected_revision/options；options 可选已保存 connection/model、reasoning_effort、plan/execute 和 bounded permission_preset |
+| `outlive sessions options-set <session-id> --input-file options.json --command-id <id>` | JSON 含 expected_revision 和 options 或 overrides（二选一）；完整 options 保持兼容，partial overrides 只覆盖明确字段；options 可选已保存 connection/model、reasoning_effort、plan/execute 和 bounded permission_preset |
 
 `chat start` / `run start` 支持 `--connection-id`、`--model`、`--preset`、`--mode`、`--reasoning-effort`；Host 在 admission 校验连接/model/权限并冻结本次 Run，选项调整只影响下一次提交。模型列表并不代表 provider 自动发现或所有列出的型号都已测试。[argv parser](../../apps/cli/src/workbench-command.ts)、[连接控制器](../../packages/host/src/conversation-control.ts)、[契约](../../packages/contracts/src/conversation-options.ts)是当前事实源。
+
+能力测试的 `features` 仅接受不重复的 `text/tools/image/structured`，最多四项，`confirmed:true` 是显式请求前提。每项最多一个供应商请求，缺失成本/用量保持 unknown；Anthropic structured 当前 unsupported 且零请求。直接结果或 completed receipt 内任一 unknown 使 CLI 退出 3，任一 failed/unsupported 退出 1，全部 passed 才退出 0。未知只读原 ID，不能用命令已完成冒充能力通过。实际 CLI→共享 owner→本机 HTTP 供应商夹具见[验收](../validation/model-capability-tests/README.zh.md)，不是付费模型质量评估。
 
 项目 `run start` 另支持重复 `--context <project-relative-file>`，最多五个不同路径。
 CLI 经现有 typed `files.read` 得到当前 SHA，校验每份文本不超过 64 KiB、总计
@@ -72,6 +85,20 @@ CLI 经现有 typed `files.read` 得到当前 SHA，校验每份文本不超过 
 上下文入口。原 command ID 与路径/SHA 都参与准入请求身份，变化的选择不能用同一
 ID 冒充原请求。脱敏 Artifact、真实 `artifact.stored` 来源和显式恢复边界见
 [Host/SDK 模块](09-Host-与-SDK-接口层.md)与[文件上下文契约](../../packages/contracts/src/project-file-context.ts)。
+
+### 1.1.1.1 CFG-098：继承、设置历史与 CAS 恢复
+
+| 命令 | 输入与结果 |
+|---|---|
+| `outlive config history` | 当前 Profile revision 与 canonical receipt 派生的脱敏历史，最多最新 200 条 |
+| `outlive config restore --target-revision <n> --expected-revision <n> --command-id <id>` | CAS 恢复为新版本；回执 `preserved_sections` 明示保留当前隐私参数的分组 |
+| `outlive config project-get --project-id <id>` | 项目 overrides、实际 resolved options、来源 fields 和 revision |
+| `outlive config project-set --project-id <id> --input-file defaults.json --command-id <id>` | JSON 含 expected_revision/overrides；空 overrides 回到全局继承 |
+| `outlive sessions options-reset <id> --expected-revision <n> --command-id <id>` | 删除全部会话覆盖；typed SDK 也支持选定字段重置 |
+
+新任务按 request > session overrides > project defaults > global defaults 解析。CLI 只选 `--connection-id` / `--model` 时，不再悄悄补入默认 reasoning/permission 覆盖。已准入任务保持原模型/凭据快照。项目和 Session 写入分别使用 `project_options_conflict` / `session_options_conflict`；Profile 保存或恢复使用 `settings_revision_conflict`。旧 complete session options 保留为 explicit overrides，历史恢复不会重放任务、重新授予 Full 权限或恢复旧 Key。
+
+范围限于 Profile 设置历史恢复，项目/Session 历史恢复和客户端独立设置仍未交付。[CLI parser](../../apps/cli/src/workbench-command.ts)、[CLI regressions](../../apps/cli/src/workbench-command.test.ts)、[继承/历史契约](../../packages/contracts/src/settings-history.ts) 可核对实际接口。
 
 ### 1.1.2 本地 Full 授权、项目文件与回答反馈
 

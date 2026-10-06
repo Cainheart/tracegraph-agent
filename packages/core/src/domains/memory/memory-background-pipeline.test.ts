@@ -43,6 +43,17 @@ describe("Memory background Episode pipeline", () => {
     expect((await recovered.listJobs(SCOPE)).some(job=>job.runId===media.runId)).toBe(false);
   });
 
+  it("does not bill a hidden extractor after a Plan approval admitted the finite delivery lease",async()=>{
+    const fixture=await createFixture(),calls:string[]=[];
+    const pipeline=createPipeline(fixture,{id:"extractor:approved-delivery",canExtract:()=>true,async extract(input){calls.push(input.runId);return extractionResult(input,"Unexpected hidden request.");}});
+    const delivery=await appendSettledRun(fixture.ledger,"run:approved-software","Recorded delivery result.",{}, {operation:"delivery.budget_configured",background_model_derivation:false,budget_id:"delivery:run:approved-software"});
+    const ordinary=await appendSettledRun(fixture.ledger,"run:plain-answer-control","Ordinary Run evidence.");
+    pipeline.scheduleSettledRun(delivery.terminal);pipeline.scheduleSettledRun(ordinary.terminal);
+    await waitForIndexedJob(pipeline,ordinary.runId,"complete");expect(calls).toEqual([ordinary.runId]);
+    await pipeline.shutdown();const recovered=createPipeline(fixture,{id:"extractor:delivery-recovery",canExtract:()=>true,async extract(input){calls.push(input.runId);return extractionResult(input,"Unexpected hidden request.");}});
+    await recovered.recoverSettledRuns();expect(calls).toEqual([ordinary.runId]);expect((await recovered.listJobs(SCOPE)).some(job=>job.runId===delivery.runId)).toBe(false);
+  });
+
   it("uses authenticated user correction ancestry for cross-Run exact and changed-key consolidation", async () => {
     const fixture = await createFixture();
     const pipeline = createPipeline(fixture, { id: "extractor:correction-chain", canExtract: () => true,
@@ -637,6 +648,7 @@ async function appendSettledRun(
   runId: string,
   evidenceSummary: string,
   creationData:Record<string,unknown> = {},
+  deliveryAdmission?:Record<string,unknown>,
 ): Promise<{ runId: string; terminal: SessionEvent }> {
   await ledger.append({
     type: "run.created",
@@ -647,6 +659,7 @@ async function appendSettledRun(
     summary: "A settled Memory extraction fixture Run.",
     data: creationData,
   });
+  if(deliveryAdmission)await ledger.append({type:"workbench.command_completed",project_id:PROJECT_ID,run_id:runId,attempt:0,artifact_refs:[],summary:"Approved software delivery budget configured",data:deliveryAdmission});
   await ledger.append({
     type: "tool.completed",
     project_id: PROJECT_ID,

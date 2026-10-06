@@ -19,8 +19,10 @@ import {
   type MemoryEpisodeExtractionResult,
   type ExperienceCaseExtractionInput,
   type ExperienceCaseExtractionResult,
+  type ModelProbeKind,
+  type ModelProbeResult,
 } from "@tracegraph/contracts";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import {
   ModelRequestError,
   type ContextSummaryInput,
@@ -29,6 +31,7 @@ import {
   type PublicModelRequestMetadata,
 } from "../../kernel/types.js";
 import { redactSensitiveText, registerSecretForRedaction } from "../../kernel/crypto.js";
+import { probeModelCapability } from "./model-capability-probe.js";
 
 export const MODEL_PROVIDERS = ["openai", "deepseek", "glm", "qwen", "minimax", "anthropic", "custom"] as const;
 export type ModelProvider = typeof MODEL_PROVIDERS[number];
@@ -67,6 +70,7 @@ export interface ConfigurableModelAdapterOptions {
 
 export class ConfigurableModelAdapter implements ModelAdapter {
   readonly name = "configurable-model-provider";
+  readonly supportsRequestBudget = true as const;
   readonly #resolveCredential: ((reference: string) => Promise<string>) | undefined;
   readonly #capabilities: ModelCapabilities;
   #config: ModelProviderConfig | null = null;
@@ -82,6 +86,10 @@ export class ConfigurableModelAdapter implements ModelAdapter {
     return { ...this.#capabilities };
   }
 
+  recoveryIdentity(): string {
+    return `sha256:${createHash("sha256").update(JSON.stringify({configuration:this.#config,capabilities:this.#capabilities})).digest("hex")}`;
+  }
+
   configure(value: ModelProviderConfig): void {
     this.#config = validateModelProviderConfig(value);
   }
@@ -91,6 +99,13 @@ export class ConfigurableModelAdapter implements ModelAdapter {
   }
 
   /** Explicit user-triggered probe; never sends workspace or conversation data. */
+  async testCapability(feature: ModelProbeKind, options: { signal?: AbortSignal } = {}): Promise<ModelProbeResult> {
+    if (!this.#config) throw new ModelRequestError("model_not_configured", "No model is configured");
+    const config = await this.#materializeConfig(this.#config);
+    return probeModelCapability(config, feature, modelFetch, options.signal ?? AbortSignal.timeout(15_000));
+  }
+
+  /** Compatible tiny text connection test. */
   async testConnection(options: { signal?: AbortSignal } = {}): Promise<void> {
     const captured = this.#config;
     if (!captured) throw new ModelRequestError("model_not_configured", "No model is configured");
@@ -101,7 +116,7 @@ export class ConfigurableModelAdapter implements ModelAdapter {
       headers: anthropic
         ? { "x-api-key": config.apiKey, "anthropic-version": "2023-06-01", "content-type": "application/json" }
         : { authorization: `Bearer ${config.apiKey}`, "content-type": "application/json" },
-      body: JSON.stringify({ model: config.model, ...(anthropic ? { max_tokens: 16 } : openAIOutputLimit(config, 16)), messages: [{ role: "user", content: "Connection test. Reply OK." }] }),
+      body: JSON.stringify({ model: config.model, ...(anthropic ? { max_tokens: 16 } : openAIOutputLimit(config, 16)), ...(!anthropic && config.provider === "deepseek" ? { thinking: { type: "disabled" } } : {}), messages: [{ role: "user", content: "Connection test. Reply OK." }] }),
       signal: options.signal ?? AbortSignal.timeout(15_000),
     });
     if (!response.ok) {
@@ -179,17 +194,17 @@ export class ConfigurableModelAdapter implements ModelAdapter {
       throw new ModelRequestError("model_image_unsupported", "The configured model adapter does not allow image input");
     }
     const config = await this.#materializeConfig(this.#config);
-    return config.protocol === "anthropic-messages"
-      ? callAnthropicMessages(config, input)
-      : callOpenAICompatible(config, input);
+    return withBudgetSession(input, scoped => config.protocol === "anthropic-messages"
+      ? callAnthropicMessages(config, scoped)
+      : callOpenAICompatible(config, scoped));
   }
 
   async summarizeContext(input: ContextSummaryInput): Promise<unknown> {
     if (!this.#config) throw new ModelRequestError("model_not_configured", "No model is configured. Add an API Key in Settings or configure a local environment variable before compacting Context.");
     const config = await this.#materializeConfig(this.#config);
-    return config.protocol === "anthropic-messages"
-      ? callAnthropicContextSummary(config, input)
-      : callOpenAIContextSummary(config, input);
+    return withBudgetSession(input, scoped => config.protocol === "anthropic-messages"
+      ? callAnthropicContextSummary(config, scoped)
+      : callOpenAIContextSummary(config, scoped));
   }
 
   canExtractMemoryEpisode(): boolean {
@@ -391,7 +406,7 @@ async function callOpenAIContextSummary(
       ],
     }),
     ...(input.signal === undefined ? {} : { signal: input.signal }),
-  });
+  }, {input,kind:"summary",sequence:1});
   if (!response.ok) {
     // Provider diagnostics are deliberately excluded here: summary endpoints
     // occasionally echo request text, which would turn raw Context into logs.
@@ -430,7 +445,7 @@ async function callAnthropicContextSummary(
       ],
     }),
     ...(input.signal === undefined ? {} : { signal: input.signal }),
-  });
+  }, {input,kind:"summary",sequence:1});
   if (!response.ok) {
     throw new ModelRequestError(
       `model_summary_http_${response.status}`,
@@ -606,7 +621,7 @@ async function callOpenAICompatibleJson(config: ResolvedModelProviderConfig, inp
       ],
     }),
     ...(input.signal === undefined ? {} : { signal: input.signal }),
-  });
+  }, {input,kind:"initial",sequence:1});
   if (!response.ok) {
     const detail = redactSensitiveText((await response.text()).slice(0, 500));
     throw new ModelRequestError(`model_http_${response.status}`, `Model request to ${config.provider} failed (${response.status}): ${detail || response.statusText}`);
@@ -666,7 +681,7 @@ async function callOpenAICompatibleStream(config: ResolvedModelProviderConfig, i
       ],
     }),
     ...(input.signal === undefined ? {} : { signal: input.signal }),
-  });
+  }, {input,kind:"initial",sequence:1});
   if (!response.ok) {
     const detail = redactSensitiveText((await response.text()).slice(0, 500));
     throw new ModelRequestError(`model_http_${response.status}`, `Model request to ${config.provider} failed (${response.status}): ${detail || response.statusText}`);
@@ -757,7 +772,7 @@ async function repairOpenAICompatibleDecision(
       ],
     }),
     ...(input.signal === undefined ? {} : { signal: input.signal }),
-  });
+  }, {input,kind:"repair",sequence:2});
   if (!response.ok) {
     throw new ModelRequestError(`model_repair_http_${response.status}`, `Model response repair to ${config.provider} failed (${response.status}).`);
   }
@@ -797,7 +812,7 @@ async function callAnthropicMessagesJson(config: ResolvedModelProviderConfig, in
       ],
     }),
     ...(input.signal === undefined ? {} : { signal: input.signal }),
-  });
+  }, {input,kind:"initial",sequence:1});
   if (!response.ok) {
     const detail = redactSensitiveText((await response.text()).slice(0, 500));
     throw new ModelRequestError(`model_http_${response.status}`, `Model request to ${config.provider} failed (${response.status}): ${detail || response.statusText}`);
@@ -834,7 +849,7 @@ async function callAnthropicMessagesStream(config: ResolvedModelProviderConfig, 
       ],
     }),
     ...(input.signal === undefined ? {} : { signal: input.signal }),
-  });
+  }, {input,kind:"initial",sequence:1});
   if (!response.ok) {
     const detail = redactSensitiveText((await response.text()).slice(0, 500));
     throw new ModelRequestError(`model_http_${response.status}`, `Model request to ${config.provider} failed (${response.status}): ${detail || response.statusText}`);
@@ -1408,7 +1423,30 @@ function mapOpenAIReasoningEffort(
   return undefined;
 }
 
-async function modelFetch(config: Pick<ModelProviderConfig, "provider">, url: string, init: RequestInit): Promise<Response> {
+type BudgetInput = ModelInput | ContextSummaryInput;
+const budgetSessions = new WeakMap<object,{leases:Map<string,import("../runtime/shared-run-budget.js").ModelBudgetReservation>;settles:Promise<void>[]}>();
+async function withBudgetSession<T extends BudgetInput,R>(input:T,execute:(value:T)=>Promise<R>):Promise<R>{
+  if(!input.requestBudget)return execute(input);
+  if("images" in input&&(input.images?.length??0)>0)throw new ModelRequestError("goal_image_budget_unsupported","Budgeted Goal image requests require an explicit calibrated input bound");
+  const state={leases:new Map<string,import("../runtime/shared-run-budget.js").ModelBudgetReservation>(),settles:[] as Promise<void>[]};
+  const scoped={...input,onUsage:(usage:ModelUsageReport)=>{const lease=state.leases.get(`${usage.request_kind}:${usage.request_sequence}`);if(lease){state.leases.delete(`${usage.request_kind}:${usage.request_sequence}`);state.settles.push(lease.settle(usage));}input.onUsage?.(usage);}} as T;
+  budgetSessions.set(scoped,state);
+  try{return await execute(scoped);}finally{for(const lease of state.leases.values())state.settles.push(lease.settle());await Promise.all(state.settles);budgetSessions.delete(scoped);}
+}
+async function modelFetch(config: Pick<ModelProviderConfig, "provider">, url: string, initial: RequestInit,scope?:{input:BudgetInput;kind:"initial"|"repair"|"summary";sequence:number}): Promise<Response> {
+  let init=initial;
+  if(scope?.input.requestBudget){
+    const budget=scope.input.requestBudget,state=budgetSessions.get(scope.input);if(!state||typeof init.body!=="string")throw new ModelRequestError("goal_budget_adapter_invalid","Model transport did not supply a bounded request");
+    const body=JSON.parse(init.body) as Record<string,unknown>;
+    const requested=typeof body.max_completion_tokens==="number"?body.max_completion_tokens:typeof body.max_tokens==="number"?body.max_tokens:2048;
+    const lease=await budget.reserve({runId:scope.input.runId,requestKind:scope.kind,inputTokens:Buffer.byteLength(init.body,"utf8")+1024,maxOutputTokens:Math.min(requested,8192)});
+    state.leases.set(`${scope.kind}:${scope.sequence}`,lease);
+    if("max_completion_tokens" in body||!("max_tokens" in body)&&config.provider==="openai")body.max_completion_tokens=lease.maxOutputTokens;else body.max_tokens=lease.maxOutputTokens;
+    if(isRecord(body.thinking)&&typeof body.thinking.budget_tokens==="number"&&body.thinking.budget_tokens>=lease.maxOutputTokens){await lease.cancelBeforeDispatch();state.leases.delete(`${scope.kind}:${scope.sequence}`);throw new ModelRequestError("goal_reasoning_budget_unsupported","Reasoning request exceeds the remaining Goal output reservation");}
+    const signal=init.signal?AbortSignal.any([init.signal,lease.signal]):lease.signal;
+    if(signal.aborted){await lease.cancelBeforeDispatch();state.leases.delete(`${scope.kind}:${scope.sequence}`);throw new ModelRequestError("goal_budget_stopped","Goal budget stopped before dispatch");}
+    init={...init,body:JSON.stringify(body),signal};
+  }
   try {
     return await fetch(url, init);
   } catch (error) {
@@ -1426,14 +1464,26 @@ async function modelFetch(config: Pick<ModelProviderConfig, "provider">, url: st
 }
 
 function parseDecisionOrSafeDirectAnswer(content: string): Decision {
-  if (!containsJsonObject(content)) return safeDirectAnswer(content);
+  const visibleContent = content.replace(/<think>[\s\S]*?<\/think>/giu, "").trim();
+  const decisionEnvelope = decisionJsonEnvelope(visibleContent);
+  // Markdown answers can legitimately contain braces (for example Mermaid
+  // decision nodes or code samples). Only parse a complete JSON response
+  // envelope; never classify arbitrary braces inside answer text as a Decision.
+  if (decisionEnvelope === undefined) return safeDirectAnswer(visibleContent);
   try {
-    return parseDecision(content);
+    return parseDecision(decisionEnvelope);
   } catch (error) {
-    const directAnswer = directAnswerFromNonDecisionJson(content);
+    const directAnswer = directAnswerFromNonDecisionJson(decisionEnvelope);
     if (directAnswer !== undefined) return safeDirectAnswer(directAnswer);
     throw error;
   }
+}
+
+function decisionJsonEnvelope(content: string): string | undefined {
+  const trimmed = content.trim();
+  const fencedJson = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/iu);
+  const candidate = (fencedJson?.[1] ?? trimmed).trim();
+  return candidate.startsWith("{") && candidate.endsWith("}") ? candidate : undefined;
 }
 
 function directAnswerFromNonDecisionJson(content: string): string | undefined {
@@ -1500,11 +1550,6 @@ function safeDirectAnswer(content: string): Decision {
     risk: "none",
     final_answer: answer,
   });
-}
-
-function containsJsonObject(value: string): boolean {
-  const withoutThinking = value.replace(/<think>[\s\S]*?<\/think>/giu, "").trim();
-  return withoutThinking.includes("{") && withoutThinking.includes("}");
 }
 
 function parseDecision(content: string): Decision {
@@ -1575,7 +1620,7 @@ function systemPrompt(
   return `${delegatedRole}You are the decision engine inside Outlive Agent, a controlled coding agent. JSON mode is enabled. Return exactly one JSON object, with no surrounding prose or Markdown fence.
 
 For a direct answer, return this shape and omit tool_call and tool_calls:
-{"public_reason":"Concise public plan for this response","decision_id":"decision:<unique>","kind":"finish","evidence_refs":[],"risk":"none","final_answer":"your answer"}
+{"public_reason":"Concise public plan for this response","decision_id":"decision:<unique>","kind":"finish","finish_intent":"answer","evidence_refs":[],"risk":"none","final_answer":"your answer"}
 
 To use one tool, return this shape and omit tool_calls and final_answer:
 {"public_reason":"Concise public plan for the next checked action","decision_id":"decision:<unique>","kind":"tool_call","evidence_refs":[],"risk":"none","expected_effect":"what this call should establish","tool_call":{"action_id":"action:<unique>","tool_name":"${firstToolName}","arguments":{}}}
@@ -1612,8 +1657,9 @@ Public reasoning and tool-trace rules:
 
 Plan and Todo rules:
 - Create every new Todo with state=pending or omit state. Use a separate update to move an existing Todo to in_progress; done requires prior canonical completion evidence. If a tool validation observation reports executed=false, correct the arguments; none of that rejected batch ran.
-- In plan mode, inspect with read-only tools and use todo_write to create at least one structured, actionable Todo before finishing. Workspace writes, patch previews, commands, and tests are unavailable until the user approves the plan.
+- In plan mode, ordinary explanations and knowledge answers finish directly with finish_intent=answer; they do not require Todos or approval. Only when submitting an execution plan, create at least one structured, actionable Todo with todo_write, then finish with finish_intent=submit_plan and describe the proposed plan. That explicit submission waits for approval. Workspace writes, patch previews, commands, and tests remain unavailable in plan mode. Never use answer completion to claim that pending Todos were executed.
 - In execute mode, use todo_read/todo_write to keep the accepted plan current. todo_read is paged: when its facts say truncated=true, follow next_offset until the required Todo items are visible. A model-authored transition to done must cite a prior canonical evidence_event_id exposed in an Observation.
+- For actual project build, test, lint, or other commands, use discover_project_commands, then run_project_command with the exact observed manifest hash and command name. Do not assume the fixture run_test applies to an arbitrary repository. No tool permits inventing a shell command or installing dependencies during discovery. Command exit success proves that command only; inspect its actual output and required external effects before claiming the user's task complete. Never automatically retry a timed out, cancelled, or unknown command because partial effects may already exist.
 
 Rules: choose exactly one kind, finish or tool_call; omit fields that do not apply instead of returning null; inspect before modifying; use unique decision_id and action_id values; never include credentials; finish with a useful answer when the task is answered. Current mode is ${mode}.`;
 }

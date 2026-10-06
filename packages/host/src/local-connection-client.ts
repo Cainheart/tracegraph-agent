@@ -3,7 +3,7 @@ import {HostConnectionError} from "@tracegraph/contracts";
 import {LocalHostConnectionSupervisor} from "./local-connection-supervisor.js";
 import type {ConnectedLocalHost} from "./local-host.js";
 
-const readMethods=new Set(["bootstrap","listProjects","getImageConfig","listProjectFiles","readProjectFile","reconcileProjectFileSave","getAnswerFeedback","getModelConfig","getWorkbenchSettings","getCapabilities","getWorkbenchResources","getPermissionConfig","getTelemetryStatus","getUsage","listExtensions","listSkills","getMcpStatus","getLspStatus","listMemoryControl","listExperienceCases","listSessions","getSession","getReplayDiff","getModelConnections","getSessionRunOptions","getPermissionGrant","getTodos","getRun","getSubagent","getTeam","getArtifact","getAttachmentContent","getArtifactContent"]);
+const readMethods=new Set(["getModelCapabilityTestReceipt","bootstrap","listProjects","getImageConfig","listProjectFiles","readProjectFile","reconcileProjectFileSave","getAnswerFeedback","getModelConfig","getWorkbenchSettings","getCapabilities","getWorkbenchResources","getPermissionConfig","getTelemetryStatus","getUsage","listExtensions","listSkills","getMcpStatus","getLspStatus","listMemoryControl","listExperienceCases","listSessions","getSession","getReplayDiff","getModelConnections","getSessionRunOptions","getPermissionGrant","getTodos","getRun","getSubagent","getTeam","getArtifact","getAttachmentContent","getArtifactContent"]);
 const streams=new Set(["streamEvents","streamLiveActivities","streamModelSurface"]);
 /** CLI receives a typed SDK facade. Every mutation is submitted exactly once. */
 export async function supervisedLocalHost(supervisor:LocalHostConnectionSupervisor):Promise<ConnectedLocalHost> {

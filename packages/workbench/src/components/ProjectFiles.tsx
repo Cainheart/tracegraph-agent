@@ -12,8 +12,9 @@ import { useI18n } from "../i18n";
 import { capabilityAvailable, capabilityReadable, commandId, safeError } from "./UnifiedSettings";
 import { Icon } from "./Icon";
 
-export function ProjectFiles({ client, projectId, sessionId, capabilities, readOnly, online, onDirty }: {
+export function ProjectFiles({ client, projectId, sessionId, capabilities, readOnly, online, onDirty, openRequest, onOpenRequestHandled }: {
   client: WorkbenchClient; projectId?: string; sessionId?: string; capabilities: HostCapabilities | null; readOnly: boolean; online: boolean; onDirty?: (dirty: boolean) => void;
+  openRequest?: { id: number; path: string; projectId: string }; onOpenRequestHandled?: (id: number) => void;
 }) {
   const { t } = useI18n();
   const [directory, setDirectory] = useState("");
@@ -40,13 +41,20 @@ export function ProjectFiles({ client, projectId, sessionId, capabilities, readO
   };
   useEffect(() => { setFile(null); setAttempt(null); setResult(null); setAdmissionRejected(false); setRetryReady(false); setContent(""); setListing(null); setDirectory(""); void list(""); return () => { generation.current += 1; }; }, [projectId]);
   useEffect(() => { if (online && !previousOnline.current) void list(directory); previousOnline.current = online; }, [online]);
-  const open = async (path: string, discardConfirmed = false) => {
-    if (!projectId || !client.readProjectFile || !online || (dirty && !discardConfirmed && !window.confirm(t("Discard unsaved edits?")))) return;
+  const open = async (path: string, discardConfirmed = false): Promise<boolean> => {
+    if (!projectId || !client.readProjectFile || !online || (dirty && !discardConfirmed && !window.confirm(t("Discard unsaved edits?")))) return false;
     const token = ++generation.current; setBusy(true); setError(null);
-    try { const next = await client.readProjectFile(projectId, { path }); if (token === generation.current) { setFile(next); setContent(next.content ?? ""); setAttempt(null); setResult(null); setAdmissionRejected(false); setRetryReady(false); } }
-    catch (caught) { if (token === generation.current) setError(safeError(caught)); }
+    try { const next = await client.readProjectFile(projectId, { path }); if (token === generation.current) { setFile(next); setContent(next.content ?? ""); setAttempt(null); setResult(null); setAdmissionRejected(false); setRetryReady(false); return true; } return false; }
+    catch (caught) { if (token === generation.current) setError(safeError(caught)); return false; }
     finally { if (token === generation.current) setBusy(false); }
   };
+  useEffect(() => {
+    if (!openRequest) return;
+    if (!projectId || openRequest.projectId !== projectId) { onOpenRequestHandled?.(openRequest.id); return; }
+    onOpenRequestHandled?.(openRequest.id);
+    const parent = openRequest.path.split("/").slice(0, -1).join("/");
+    void (async () => { if (await open(openRequest.path, true) && parent) await list(parent); })();
+  }, [openRequest?.id, projectId]);
   const save = async (request?: ProjectFileSaveRequest) => {
     if (!projectId || !file || !client.saveProjectFile || busy || !online || readOnly) return;
     const input = request ?? { command_id: commandId(), path: file.path, expected_sha256: file.sha256, content, ...(sessionId ? { session_id: sessionId } : {}) };

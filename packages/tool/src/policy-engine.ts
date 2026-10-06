@@ -35,6 +35,7 @@ const PLAN_MODE_READ_TOOLS = new Set([
   "read_artifact",
   "list_artifacts",
   "todo_read",
+  "discover_project_commands",
 ]);
 
 const DECISION_TIE_BREAK: Readonly<Record<PolicyDecisionKind, number>> = Object.freeze({

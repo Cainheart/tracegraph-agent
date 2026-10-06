@@ -1,0 +1,34 @@
+
+ RUN  v5.0.1 /Users/cain/Downloads/ai-job-search-master/tracegraph-agent/apps/cli
+
+ ❯ src/computer-receipt.test.ts (1 test | 1 failed) 127ms
+   ❯ CLI inspection of a real interrupted command receipt (1)
+     × keeps a completed journal with unknown native input unresolved and never repeats its actual fixture disk effect 127ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/computer-receipt.test.ts > CLI inspection of a real interrupted command receipt > keeps a completed journal with unknown native input unresolved and never repeats its actual fixture disk effect
+AssertionError: expected +0 to be 3 // Object.is equality
+
+- Expected
++ Received
+
+- 3
++ 0
+
+ ❯ src/computer-receipt.test.ts:31:17
+     29|    const connection={client:{getComputerCommandReceipt:(id:string)=>co…
+     30|    const exit=await maybeRunWorkbenchCommand(["computer","receipt",inp…
+     31|    expect(exit).toBe(3);expect(JSON.parse(writes[0]!)).toMatchObject({…
+       |                 ^
+     32|   }finally{await control.close();await rm(root,{recursive:true,force:t…
+     33|  });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  01:48:10
+   Duration  1.20s (transform 60%, import 29%, tests 11%)
+
